@@ -1,0 +1,58 @@
+'use client';
+
+import { RefreshCw, Clock } from 'lucide-react';
+import { useSchedulePosts } from './use-schedule-posts';
+import { ScheduleForm } from './schedule-form';
+import { PostList } from './post-list';
+import { ProcessButton } from './process-button';
+import { Panel } from '../ui/panel';
+import { LoadingSpinner } from '../ui/loading-spinner';
+
+export function ScheduleManager() {
+    const { posts, loading, fetchPosts } = useSchedulePosts();
+
+    const handleCancel = async (id: string) => {
+        if (!confirm('Are you sure you want to cancel this scheduled post?')) return;
+        try {
+            const res = await fetch(`/api/schedule?id=${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                alert('✅ Post cancelled');
+                fetchPosts();
+            } else {
+                const data = await res.json();
+                alert(`❌ Error: ${data.error}`);
+            }
+        } catch (error: any) {
+            alert(`❌ Error: ${error.message}`);
+        }
+    };
+
+    return (
+        <div className="space-y-8">
+            <ScheduleForm onScheduled={fetchPosts} />
+
+            <Panel
+                title="Scheduled Posts"
+                icon={<Clock className="w-6 h-6" />}
+                className="relative"
+            >
+                <div className="absolute top-8 right-8 flex items-center gap-2">
+                    <ProcessButton onProcessed={fetchPosts} />
+                    <button
+                        onClick={fetchPosts}
+                        className="p-2 hover:bg-gray-100 rounded-xl transition"
+                        title="Refresh"
+                    >
+                        <RefreshCw className="w-5 h-5 text-gray-600" />
+                    </button>
+                </div>
+
+                {loading ? (
+                    <LoadingSpinner />
+                ) : (
+                    <PostList posts={posts} onCancel={handleCancel} />
+                )}
+            </Panel>
+        </div>
+    );
+}
