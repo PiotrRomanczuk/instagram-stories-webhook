@@ -8,6 +8,7 @@ description: Standards for optimized, maintainable Next.js, TypeScript, and mode
 - Write concise, technical TypeScript code; avoid classes.
 - Use functional and declarative programming patterns.
 - Favor iteration and modularization over code duplication.
+- Adhere strictly to the **Single Responsibility Principle (SRP)**; keep files and components as small as possible (aim for <150 lines).
 - Use descriptive variable names with auxiliary verbs (e.g., `isLoading`, `hasError`).
 - File structure: exported components, subcomponents, helpers, static content, and types.
 - Directory naming: use lowercase with dashes (e.g., `components/auth-wizard`).

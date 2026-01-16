@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPendingPosts, updateScheduledPost } from '@/lib/scheduled-posts-db';
+import { getPendingPosts, updateScheduledPost, ScheduledPostWithUser } from '@/lib/scheduled-posts-db';
 import { publishMedia } from '@/lib/instagram';
 import { supabase } from '@/lib/supabase';
 
@@ -34,10 +34,16 @@ export async function GET(request: NextRequest) {
 
         for (const post of pendingPosts) {
             try {
-                console.log(`📤 Publishing scheduled post ${post.id}...`);
+                console.log(`📤 Publishing scheduled post ${post.id} for user ${post.userId}...`);
 
-                // Publish the media
-                const result = await publishMedia(post.url, post.type, post.postType || 'STORY', post.caption);
+                // Publish the media using the associated user's tokens
+                const result = await publishMedia(
+                    post.url,
+                    post.type,
+                    post.postType || 'STORY',
+                    post.caption,
+                    post.userId // Pass the userId to use their linked account
+                );
 
                 // Update status to published
                 await updateScheduledPost(post.id, {
@@ -48,7 +54,6 @@ export async function GET(request: NextRequest) {
                 console.log(`✅ Successfully published scheduled post ${post.id}`);
 
                 // 📁 Media Auto-Cleanup
-                // If it's a Supabase Storage URL, we can attempt to delete it
                 if (post.url.includes('/storage/v1/object/public/stories/')) {
                     try {
                         const pathMatch = post.url.split('/stories/')[1];
@@ -64,9 +69,8 @@ export async function GET(request: NextRequest) {
                                 console.log(`✨ Successfully deleted media ${pathMatch}`);
                             }
                         }
-                    } catch (cleanupError: unknown) {
-                        const cleanupErrorMessage = cleanupError instanceof Error ? cleanupError.message : String(cleanupError);
-                        console.warn('⚠️ Cleanup logic error:', cleanupErrorMessage);
+                    } catch (cleanupError: any) {
+                        console.warn('⚠️ Cleanup logic error:', cleanupError.message || String(cleanupError));
                     }
                 }
 
@@ -75,8 +79,8 @@ export async function GET(request: NextRequest) {
                     success: true,
                     result,
                 });
-            } catch (error: unknown) {
-                const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            } catch (error: any) {
+                const errorMessage = error.message || 'Unknown error';
                 console.error(`❌ Failed to publish scheduled post ${post.id}:`, errorMessage);
 
                 // Update status to failed
@@ -105,10 +109,9 @@ export async function GET(request: NextRequest) {
             failed: failCount,
             results,
         });
-    } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    } catch (error: any) {
+        const errorMessage = error.message || 'Unknown error';
         console.error('Error processing scheduled posts:', error);
         return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 }
-

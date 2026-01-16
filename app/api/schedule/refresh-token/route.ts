@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
-import { getTokens, saveTokens } from '@/lib/db';
+import { supabase } from '@/lib/supabase';
+import { saveLinkedFacebookAccount, LinkedAccount } from '@/lib/linked-accounts-db';
 
 /**
- * 🔄 Automated Token Refresh
- * This endpoint exchanges the current token for a new long-lived token (60 days).
- * Should be called periodically (e.g., once a week) via cron job.
+ * 🔄 Automated Token Refresh (All Users)
+ * This endpoint exchanges the current tokens for all users for new long-lived tokens.
+ * Should be called periodically via cron job.
  */
 export async function GET(request: NextRequest) {
     try {
@@ -18,55 +19,72 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const appId = process.env.NEXT_PUBLIC_FB_APP_ID || process.env.AUTH_FACEBOOK_ID;
-        const appSecret = process.env.FB_APP_SECRET || process.env.AUTH_FACEBOOK_SECRET;
+        const appId = process.env.AUTH_FACEBOOK_ID || process.env.NEXT_PUBLIC_FB_APP_ID;
+        const appSecret = process.env.AUTH_FACEBOOK_SECRET || process.env.FB_APP_SECRET;
 
         if (!appId || !appSecret) {
             console.error('🚨 Missing Meta App credentials for token extension');
             return NextResponse.json({ error: 'Missing app credentials' }, { status: 500 });
         }
 
-        const tokens = await getTokens();
-        if (!tokens?.access_token) {
-            console.warn('⚠️ No token found in database to extend');
-            return NextResponse.json({ error: 'No token found' }, { status: 404 });
+        // 1. Fetch all linked accounts from Supabase
+        const { data: accounts, error: fetchError } = await supabase
+            .from('linked_accounts')
+            .select('*')
+            .eq('provider', 'facebook');
+
+        if (fetchError) {
+            console.error('❌ Failed to fetch linked accounts:', fetchError.message);
+            return NextResponse.json({ error: 'Database fetch failed' }, { status: 500 });
         }
 
-        console.log('🔄 Attempting to extend Meta access token...');
+        if (!accounts || accounts.length === 0) {
+            return NextResponse.json({ message: 'No linked accounts found to refresh', refreshed: 0 });
+        }
 
-        // Exchange for long-lived token
-        const response = await axios.get('https://graph.facebook.com/v18.0/oauth/access_token', {
-            params: {
-                grant_type: 'fb_exchange_token',
-                client_id: appId,
-                client_secret: appSecret,
-                fb_exchange_token: tokens.access_token
+        console.log(`🔄 Attempting to refresh tokens for ${accounts.length} account(s)...`);
+
+        const results = [];
+
+        for (const account of accounts) {
+            try {
+                // Exchange for long-lived token
+                const response = await axios.get('https://graph.facebook.com/v21.0/oauth/access_token', {
+                    params: {
+                        grant_type: 'fb_exchange_token',
+                        client_id: appId,
+                        client_secret: appSecret,
+                        fb_exchange_token: account.access_token
+                    }
+                });
+
+                const newAccessToken = response.data.access_token;
+                const expiresIn = response.data.expires_in; // Seconds
+
+                await saveLinkedFacebookAccount({
+                    ...(account as unknown as LinkedAccount),
+                    access_token: newAccessToken,
+                    expires_at: expiresIn ? Date.now() + (expiresIn * 1000) : undefined,
+                    updated_at: new Date().toISOString()
+                });
+
+                results.push({ user_id: account.user_id, success: true });
+            } catch (err: any) {
+                console.error(`❌ Failed to refresh token for user ${account.user_id}:`, err.response?.data || err.message);
+                results.push({ user_id: account.user_id, success: false, error: err.message });
             }
-        });
+        }
 
-        const newAccessToken = response.data.access_token;
-        const expiresIn = response.data.expires_in; // Seconds
-
-        await saveTokens({
-            ...tokens,
-            access_token: newAccessToken,
-            expires_at: expiresIn ? Date.now() + (expiresIn * 1000) : undefined
-        });
-
-        console.log(`✅ Token extended successfully. Expires in approx ${expiresIn ? Math.floor(expiresIn / 86400) : '??'} days.`);
+        const successCount = results.filter(r => r.success).length;
 
         return NextResponse.json({
             success: true,
-            message: 'Token extended successfully',
-            expires_in_days: expiresIn ? Math.floor(expiresIn / 86400) : 'unknown'
+            message: `Refreshed ${successCount} out of ${accounts.length} tokens`,
+            results
         });
 
-    } catch (error: unknown) {
-        const errorData = axios.isAxiosError(error) ? (error.response?.data || error.message) : String(error);
-        console.error('❌ Token extension failed:', errorData);
-        return NextResponse.json({
-            error: 'Failed to extend token',
-            details: errorData
-        }, { status: 500 });
+    } catch (error: any) {
+        console.error('❌ Refresh-token API error:', error.message);
+        return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }

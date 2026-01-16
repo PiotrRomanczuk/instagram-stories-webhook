@@ -1,47 +1,63 @@
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
-import { getTokens, saveTokens } from '@/lib/db';
+import { getServerSession } from "next-auth/next";
+import { getLinkedFacebookAccount, saveLinkedFacebookAccount } from '@/lib/linked-accounts-db';
+import { authOptions } from "@/lib/auth";
 
-export async function POST(_request: NextRequest) {
-    const appId = process.env.NEXT_PUBLIC_FB_APP_ID;
-    const appSecret = process.env.FB_APP_SECRET;
-
-    if (!appId || !appSecret) {
-        return NextResponse.json({ error: 'Missing app credentials' }, { status: 500 });
-    }
-
+export async function POST(request: NextRequest) {
     try {
-        const tokens = await getTokens();
-        if (!tokens?.access_token) {
-            return NextResponse.json({ error: 'No token found to extend' }, { status: 400 });
+        const session = await getServerSession(authOptions);
+
+        if (!session?.user?.id) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Exchange short-lived token for long-lived token
-        const response = await axios.get('https://graph.facebook.com/v18.0/oauth/access_token', {
+        const linkedAccount = await getLinkedFacebookAccount(session.user.id);
+
+        if (!linkedAccount || !linkedAccount.access_token) {
+            return NextResponse.json({ error: 'Facebook not linked' }, { status: 400 });
+        }
+
+        const appId = process.env.AUTH_FACEBOOK_ID || process.env.NEXT_PUBLIC_FB_APP_ID;
+        const appSecret = process.env.AUTH_FACEBOOK_SECRET || process.env.FB_APP_SECRET;
+
+        if (!appId || !appSecret) {
+            console.error('🚨 Missing Meta App credentials for token extension');
+            return NextResponse.json({ error: 'Missing app credentials' }, { status: 500 });
+        }
+
+        console.log(`🔄 Extending token for user ${session.user.id}...`);
+
+        // Exchange for long-lived token
+        const response = await axios.get('https://graph.facebook.com/v21.0/oauth/access_token', {
             params: {
                 grant_type: 'fb_exchange_token',
                 client_id: appId,
                 client_secret: appSecret,
-                fb_exchange_token: tokens.access_token
+                fb_exchange_token: linkedAccount.access_token
             }
         });
 
-        const longLivedToken = response.data.access_token;
+        const newAccessToken = response.data.access_token;
         const expiresIn = response.data.expires_in; // Seconds
 
-        await saveTokens({
-            access_token: longLivedToken,
-            expires_at: expiresIn ? Date.now() + (expiresIn * 1000) : undefined
+        await saveLinkedFacebookAccount({
+            ...linkedAccount,
+            access_token: newAccessToken,
+            expires_at: expiresIn ? Date.now() + (expiresIn * 1000) : undefined,
+            updated_at: new Date().toISOString()
         });
+
+        console.log(`✅ Token extended successfully for user ${session.user.id}`);
 
         return NextResponse.json({
             success: true,
-            message: 'Token extended successfully',
             expires_in_days: expiresIn ? Math.floor(expiresIn / 86400) : 'unknown'
         });
-    } catch (error: unknown) {
+
+    } catch (error: any) {
         const errorData = axios.isAxiosError(error) ? (error.response?.data || error.message) : String(error);
-        console.error('Token extension error:', errorData);
+        console.error('❌ Token extension failed:', errorData);
         return NextResponse.json({
             error: 'Failed to extend token',
             details: errorData

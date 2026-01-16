@@ -1,13 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { addScheduledPost, getScheduledPosts, deleteScheduledPost, updateScheduledPost } from '@/lib/scheduled-posts-db';
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
 
-// GET - List all scheduled posts
+// GET - List all scheduled posts for the current user
 export async function GET(request: NextRequest) {
     try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
         const searchParams = request.nextUrl.searchParams;
         const status = searchParams.get('status');
 
-        let posts = await getScheduledPosts();
+        // Only fetch posts for the logged-in user
+        let posts = await getScheduledPosts(session.user.id);
 
         // Filter by status if provided
         if (status) {
@@ -18,8 +26,8 @@ export async function GET(request: NextRequest) {
         posts.sort((a, b) => a.scheduledTime - b.scheduledTime);
 
         return NextResponse.json({ posts });
-    } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    } catch (error: any) {
+        const errorMessage = error.message || 'Unknown error';
         console.error('Error fetching scheduled posts:', error);
         return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
@@ -28,6 +36,11 @@ export async function GET(request: NextRequest) {
 // POST - Schedule a new post
 export async function POST(request: NextRequest) {
     try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
         const body = await request.json();
         const { url, type, postType, caption, scheduledTime } = body;
 
@@ -61,17 +74,18 @@ export async function POST(request: NextRequest) {
             postType: targetPostType,
             caption: caption || '',
             scheduledTime: scheduledTimeMs,
+            userId: session.user.id // Associate with current user
         });
 
-        console.log(`📅 Scheduled ${targetPostType} (${mediaType}) post for ${new Date(scheduledTimeMs).toLocaleString()}`);
+        console.log(`📅 Scheduled ${targetPostType} (${mediaType}) post for user ${session.user.id} at ${new Date(scheduledTimeMs).toLocaleString()}`);
 
         return NextResponse.json({
             success: true,
             post,
             message: `Post scheduled for ${new Date(scheduledTimeMs).toLocaleString()}`
         });
-    } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    } catch (error: any) {
+        const errorMessage = error.message || 'Unknown error';
         console.error('Error scheduling post:', error);
         return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
@@ -80,6 +94,11 @@ export async function POST(request: NextRequest) {
 // DELETE - Cancel a scheduled post
 export async function DELETE(request: NextRequest) {
     try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
         const searchParams = request.nextUrl.searchParams;
         const id = searchParams.get('id');
 
@@ -87,17 +106,25 @@ export async function DELETE(request: NextRequest) {
             return NextResponse.json({ error: 'Missing "id" parameter' }, { status: 400 });
         }
 
+        // Verify ownership
+        const posts = await getScheduledPosts(session.user.id);
+        const postExists = posts.some(p => p.id === id);
+
+        if (!postExists) {
+            return NextResponse.json({ error: 'Post not found or unauthorized' }, { status: 404 });
+        }
+
         const deleted = await deleteScheduledPost(id);
 
         if (!deleted) {
-            return NextResponse.json({ error: 'Post not found' }, { status: 404 });
+            return NextResponse.json({ error: 'Failed to delete' }, { status: 500 });
         }
 
-        console.log(`🗑️ Cancelled scheduled post: ${id}`);
+        console.log(`🗑️ Cancelled scheduled post: ${id} for user ${session.user.id}`);
 
         return NextResponse.json({ success: true, message: 'Post cancelled' });
-    } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    } catch (error: any) {
+        const errorMessage = error.message || 'Unknown error';
         console.error('Error cancelling post:', error);
         return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
@@ -106,11 +133,24 @@ export async function DELETE(request: NextRequest) {
 // PATCH - Update a scheduled post
 export async function PATCH(request: NextRequest) {
     try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
         const body = await request.json();
         const { id, ...updates } = body;
 
         if (!id) {
             return NextResponse.json({ error: 'Missing "id" in request body' }, { status: 400 });
+        }
+
+        // Verify ownership
+        const posts = await getScheduledPosts(session.user.id);
+        const postExists = posts.some(p => p.id === id);
+
+        if (!postExists) {
+            return NextResponse.json({ error: 'Post not found or unauthorized' }, { status: 404 });
         }
 
         // If updating scheduledTime, validate it
@@ -136,11 +176,11 @@ export async function PATCH(request: NextRequest) {
             return NextResponse.json({ error: 'Post not found' }, { status: 404 });
         }
 
-        console.log(`✏️ Updated scheduled post: ${id}`);
+        console.log(`✏️ Updated scheduled post: ${id} for user ${session.user.id}`);
 
         return NextResponse.json({ success: true, post });
-    } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    } catch (error: any) {
+        const errorMessage = error.message || 'Unknown error';
         console.error('Error updating post:', error);
         return NextResponse.json({ error: errorMessage }, { status: 500 });
     }

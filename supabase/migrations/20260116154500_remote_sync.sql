@@ -1,0 +1,2 @@
+-- Remote migration placeholder for sync
+-- This migration exists on the remote database but was missing locally.

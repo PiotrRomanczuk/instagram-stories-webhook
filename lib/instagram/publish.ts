@@ -1,36 +1,38 @@
 import axios from 'axios';
-import { getTokens, saveTokens } from '../db';
-import { getInstagramBusinessAccountId } from './account';
+import { getFacebookAccessToken, getInstagramUserId } from '../linked-accounts-db';
 import { waitForContainerReady } from './container';
 import { MediaType, PostType } from '../types';
+import { supabaseAdmin } from '../../lib/supabase-admin';
 
-const GRAPH_API_BASE = 'https://graph.facebook.com/v24.0';
+const GRAPH_API_BASE = 'https://graph.facebook.com/v21.0';
 
+/**
+ * Publishes media to Instagram using a user's linked Facebook account.
+ */
 export async function publishMedia(
     url: string,
     mediaType: MediaType = 'IMAGE',
     postType: PostType = 'STORY',
-    caption?: string
+    caption?: string,
+    userId?: string // New parameter: who is publishing this?
 ) {
-    const tokenData = await getTokens();
-    if (!tokenData || !tokenData.access_token) {
-        throw new Error('Not authenticated');
+    // If no userId is provided, we can't find tokens in the new system.
+    // In a multi-user app, this should be mandatory.
+    if (!userId) {
+        throw new Error('UserId is required for publishing in the account-linking system.');
     }
 
-    const { access_token } = tokenData;
+    const accessToken = await getFacebookAccessToken(userId);
+    if (!accessToken) {
+        throw new Error(`No active Facebook connection found for user ${userId}. Please link your account.`);
+    }
 
-    let igUserId = tokenData.user_id;
+    const igUserId = await getInstagramUserId(userId);
     if (!igUserId) {
-        igUserId = await getInstagramBusinessAccountId(access_token) || undefined;
-        if (igUserId) {
-            await saveTokens({ ...tokenData, user_id: igUserId });
-        } else {
-            throw new Error('No Instagram Business Account found linked to this user.');
-        }
+        throw new Error(`No Instagram Business Account found for user ${userId}.`);
     }
 
     // Step 1: Create Media Container
-    // Ref: https://developers.facebook.com/docs/instagram-platform/content-publishing/
     interface ContainerData {
         access_token: string;
         caption?: string;
@@ -40,7 +42,7 @@ export async function publishMedia(
     }
 
     const containerData: ContainerData = {
-        access_token,
+        access_token: accessToken,
         caption,
     };
 
@@ -49,9 +51,6 @@ export async function publishMedia(
     } else if (postType === 'REEL') {
         containerData.media_type = 'REELS';
     }
-    // For FEED posts:
-    // - IMAGE: media_type is optional, image_url is required
-    // - VIDEO: media_type must be VIDEO, video_url is required
 
     if (mediaType === 'VIDEO') {
         containerData.video_url = url;
@@ -63,34 +62,58 @@ export async function publishMedia(
     }
 
     try {
-        console.log(`📤 Creating ${postType} container for ${mediaType}...`);
+        console.log(`📤 Creating ${postType} container for ${mediaType} (User: ${userId})...`);
         const containerRes = await axios.post(`${GRAPH_API_BASE}/${igUserId}/media`, containerData);
 
         const containerId = containerRes.data.id;
-        await waitForContainerReady(containerId, access_token);
+        await waitForContainerReady(containerId, accessToken);
 
         // Step 2: Publish Media Container
-        console.log(`🚀 Publishing container ${containerId}...`);
+        console.log(`🚀 Publishing container ${containerId} for user ${userId}...`);
         const publishRes = await axios.post(`${GRAPH_API_BASE}/${igUserId}/media_publish`, {
             creation_id: containerId,
-            access_token,
+            access_token: accessToken,
+        });
+
+        // Log Success
+        await supabaseAdmin.from('publishing_logs').insert({
+            user_id: userId,
+            media_url: url,
+            media_type: mediaType,
+            post_type: postType,
+            caption: caption,
+            status: 'SUCCESS',
+            ig_media_id: publishRes.data.id
         });
 
         return publishRes.data;
-    } catch (error: unknown) {
+    } catch (error: any) {
+        let errorMessage = 'Failed to publish to Instagram';
+
         if (axios.isAxiosError(error)) {
             const errorData = error.response?.data?.error;
             console.error('Instagram API Error:', errorData || error.message);
+            errorMessage = errorData?.message || error.message;
 
-            // Specific error handling for common Meta API issues
             if (errorData?.code === 368) {
-                throw new Error('Action blocked by Instagram. You might have reached a rate limit or content policy issue.');
+                errorMessage = 'Action blocked by Instagram (Rate Limit/Content Policy)';
             }
-
-            throw new Error(errorData?.message || 'Failed to publish to Instagram');
+        } else {
+            console.error('Non-Axios Error:', error);
+            errorMessage = error instanceof Error ? error.message : 'Unknown error';
         }
 
-        console.error('Non-Axios Error:', error);
-        throw new Error(error instanceof Error ? error.message : 'Failed to publish to Instagram');
+        // Log Failure
+        await supabaseAdmin.from('publishing_logs').insert({
+            user_id: userId,
+            media_url: url,
+            media_type: mediaType,
+            post_type: postType,
+            caption: caption,
+            status: 'FAILED',
+            error_message: errorMessage
+        });
+
+        throw new Error(errorMessage);
     }
 }

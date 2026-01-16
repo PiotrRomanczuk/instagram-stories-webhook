@@ -1,11 +1,21 @@
 import { supabase } from './supabase';
 import { ScheduledPost, MediaType, PostType } from './types';
 
-export async function getScheduledPosts(): Promise<ScheduledPost[]> {
-    const { data, error } = await supabase
+// Updated interface to include userId
+export interface ScheduledPostWithUser extends ScheduledPost {
+    userId: string;
+}
+
+export async function getScheduledPosts(userId?: string): Promise<ScheduledPost[]> {
+    let query = supabase
         .from('scheduled_posts')
-        .select('*')
-        .order('scheduled_time', { ascending: true });
+        .select('*');
+
+    if (userId) {
+        query = query.eq('user_id', userId);
+    }
+
+    const { data, error } = await query.order('scheduled_time', { ascending: true });
 
     if (error) {
         console.error('Supabase getScheduledPosts Error:', error);
@@ -22,11 +32,14 @@ export async function getScheduledPosts(): Promise<ScheduledPost[]> {
         status: post.status,
         createdAt: Number(post.created_at),
         publishedAt: post.published_at ? Number(post.published_at) : undefined,
-        error: post.error
-    }));
+        error: post.error,
+        userId: post.user_id // Include userId in the result
+    })) as ScheduledPostWithUser[];
 }
 
-export async function addScheduledPost(post: Omit<ScheduledPost, 'id' | 'status' | 'createdAt'>): Promise<ScheduledPost> {
+export async function addScheduledPost(
+    post: Omit<ScheduledPost, 'id' | 'status' | 'createdAt'> & { userId: string }
+): Promise<ScheduledPostWithUser> {
     const id = `post_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const createdAt = Date.now();
 
@@ -38,7 +51,8 @@ export async function addScheduledPost(post: Omit<ScheduledPost, 'id' | 'status'
         caption: post.caption || '',
         scheduled_time: post.scheduledTime,
         status: 'pending',
-        created_at: createdAt
+        created_at: createdAt,
+        user_id: post.userId // Set the user_id
     };
 
     const { error } = await supabase
@@ -55,7 +69,7 @@ export async function addScheduledPost(post: Omit<ScheduledPost, 'id' | 'status'
         id,
         status: 'pending',
         createdAt
-    };
+    } as ScheduledPostWithUser;
 }
 
 export async function updateScheduledPost(id: string, updates: Partial<ScheduledPost>): Promise<ScheduledPost | null> {
@@ -105,8 +119,9 @@ export async function updateScheduledPost(id: string, updates: Partial<Scheduled
         status: data.status,
         createdAt: Number(data.created_at),
         publishedAt: data.published_at ? Number(data.published_at) : undefined,
-        error: data.error
-    };
+        error: data.error,
+        userId: data.user_id
+    } as ScheduledPostWithUser;
 }
 
 export async function deleteScheduledPost(id: string): Promise<boolean> {
@@ -123,7 +138,7 @@ export async function deleteScheduledPost(id: string): Promise<boolean> {
     return true;
 }
 
-export async function getPendingPosts(): Promise<ScheduledPost[]> {
+export async function getPendingPosts(): Promise<ScheduledPostWithUser[]> {
     const now = Date.now();
     const { data, error } = await supabase
         .from('scheduled_posts')
@@ -146,17 +161,24 @@ export async function getPendingPosts(): Promise<ScheduledPost[]> {
         status: post.status,
         createdAt: Number(post.created_at),
         publishedAt: post.published_at ? Number(post.published_at) : undefined,
-        error: post.error
-    }));
+        error: post.error,
+        userId: post.user_id
+    })) as ScheduledPostWithUser[];
 }
 
-export async function getUpcomingPosts(): Promise<ScheduledPost[]> {
+export async function getUpcomingPosts(userId?: string): Promise<ScheduledPost[]> {
     const now = Date.now();
-    const { data, error } = await supabase
+    let query = supabase
         .from('scheduled_posts')
         .select('*')
         .eq('status', 'pending')
         .gt('scheduled_time', now);
+
+    if (userId) {
+        query = query.eq('user_id', userId);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
         console.error('Supabase getUpcomingPosts Error:', error);
@@ -173,6 +195,7 @@ export async function getUpcomingPosts(): Promise<ScheduledPost[]> {
         status: post.status,
         createdAt: Number(post.created_at),
         publishedAt: post.published_at ? Number(post.published_at) : undefined,
-        error: post.error
-    }));
+        error: post.error,
+        userId: post.user_id
+    })) as ScheduledPostWithUser[];
 }

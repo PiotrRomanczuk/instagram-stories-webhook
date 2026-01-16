@@ -13,7 +13,7 @@ export default function SignIn() {
                         <Instagram className="w-8 h-8 text-white" />
                     </div>
                     <h1 className="text-3xl font-black text-slate-900 tracking-tight">Welcome Back</h1>
-                    <p className="text-slate-500 font-medium mt-2">Enter your email to receive a secure login link</p>
+                    <p className="text-slate-500 font-medium mt-2">Sign in with your Google account to manage your stories</p>
                 </div>
 
                 <div className="bg-white rounded-[32px] p-8 md:p-10 shadow-2xl shadow-indigo-100/40 border border-slate-100 space-y-4">
@@ -30,22 +30,11 @@ export default function SignIn() {
                         Continue with Google
                     </button>
 
-                    <div className="relative my-8">
-                        <div className="absolute inset-0 flex items-center">
-                            <div className="w-full border-t border-slate-100"></div>
-                        </div>
-                        <div className="relative flex justify-center text-xs uppercase">
-                            <span className="bg-white px-4 text-slate-400 font-bold tracking-widest">or</span>
-                        </div>
+                    <div className="pt-4 text-center">
+                        <p className="text-xs text-slate-400">
+                            Facebook/Instagram connections are managed from your dashboard after signing in.
+                        </p>
                     </div>
-
-                    <button
-                        onClick={() => signIn('facebook', { callbackUrl: '/' })}
-                        className="w-full bg-[#1877F2] text-white py-4 rounded-2xl font-bold text-sm hover:bg-[#166fe5] transition-all shadow-xl shadow-blue-100 flex items-center justify-center gap-3 group"
-                    >
-                        <Instagram className="w-5 h-5 fill-white" />
-                        Continue with Facebook
-                    </button>
                 </div>
 
                 <div className="text-center mt-12">

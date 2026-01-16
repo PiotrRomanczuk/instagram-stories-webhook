@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { ArrowRight, CheckCircle2, ShieldAlert } from 'lucide-react';
 import { ExtendTokenButton } from '../auth/extend-token-button';
+import { ConnectFacebookButton } from '../auth/connect-facebook-button';
 
 interface StatusSectionProps {
     isConnected: boolean;
@@ -44,16 +45,7 @@ export function StatusSection({ isConnected }: StatusSectionProps) {
                 </div>
 
                 <div className="flex flex-col gap-3 w-full md:w-auto">
-                    <Link
-                        href="/api/auth/signin/facebook"
-                        className={`px-8 py-4 rounded-2xl font-bold text-sm transition shadow-xl flex items-center justify-center gap-3 group ${isConnected
-                            ? 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 shadow-slate-100'
-                            : 'bg-slate-900 text-white hover:bg-slate-800 shadow-slate-200'
-                            }`}
-                    >
-                        {isConnected ? 'Update Accounts' : 'Connect Facebook'}
-                        <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                    </Link>
+                    <ConnectFacebookButton isConnected={isConnected} />
                     {isConnected && <ExtendTokenButton />}
                 </div>
             </div>

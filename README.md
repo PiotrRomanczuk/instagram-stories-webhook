@@ -4,6 +4,12 @@ A powerful Next.js application for programmatically publishing and scheduling In
 
 ---
 
+## Documentation
+
+https://developers.facebook.com/docs/instagram-platform/content-publishing/
+https://developers.facebook.com/docs/permissions
+
+
 ## 🚀 Quick Start (5 Minutes)
 
 ### 1. Initial Setup
@@ -35,6 +41,7 @@ Once authenticated, use the **"Quick Test Suite"** on the homepage to publish yo
 | **Story Scheduling** | Schedule posts for future dates/times | `/schedule` |
 | **Meta Auth Flow** | Seamless Facebook/Instagram integration | `/api/auth` |
 | **Debug Dashboard** | Real-time connection status & API insights | `/debug` |
+| **Permissions Guide** | Detailed Meta API scope reference | `docs/META_PERMISSIONS.md` |
 
 ---
 
@@ -53,6 +60,7 @@ Check out our unified guides for detailed information:
 
 1.  **[GUIDES.md](./docs/GUIDES.md)** - Feature deep-dives, API references, and production setup.
 2.  **[TROUBLESHOOTING.md](./docs/TROUBLESHOOTING.md)** - Solve common issues, Meta account setup, and debug tools.
+3.  **[META_PERMISSIONS.md](./docs/META_PERMISSIONS.md)** - Detailed reference for API scopes and future features.
 
 ---
 
