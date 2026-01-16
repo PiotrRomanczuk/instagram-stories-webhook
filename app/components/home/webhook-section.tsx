@@ -25,7 +25,7 @@ export function WebhookSection({ webhookUrl }: WebhookSectionProps) {
                     <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div> Quick Test Suite
                 </h2>
                 <div className="bg-slate-50/50 border border-slate-100 rounded-3xl p-6">
-                    <ClientTestForm webhookUrl={webhookUrl} />
+                    <ClientTestForm />
                 </div>
             </div>
         </div>

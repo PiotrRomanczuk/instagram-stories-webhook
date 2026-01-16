@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Clock, CheckCircle, XCircle, Trash2 } from 'lucide-react';
 import { ScheduledPost } from '@/lib/types';
 import { StatusBadge } from '../ui/status-badge';
@@ -22,10 +23,11 @@ const statusColors = {
 };
 
 export function PostCard({ post, onCancel }: PostCardProps) {
+    const [now] = useState(() => Date.now());
     const StatusIcon = statusIcons[post.status];
     const colorClasses = statusColors[post.status];
     const scheduledDate = new Date(post.scheduledTime);
-    const isPast = post.scheduledTime < Date.now();
+    const isPast = post.scheduledTime < now;
 
     return (
         <div className={`${colorClasses} border rounded-2xl p-4 flex items-center justify-between gap-4`}>

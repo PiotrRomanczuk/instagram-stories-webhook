@@ -19,8 +19,9 @@ export function ProcessButton({ onProcessed }: ProcessButtonProps) {
             } else {
                 alert(`❌ Error: ${data.error}`);
             }
-        } catch (error: any) {
-            alert(`❌ Error: ${error.message}`);
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            alert(`❌ Error: ${errorMessage}`);
         } finally {
             setProcessing(false);
         }

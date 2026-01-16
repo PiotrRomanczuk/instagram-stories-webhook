@@ -43,7 +43,7 @@ Once authenticated, use the **"Quick Test Suite"** on the homepage to publish yo
 *   **App ID:** `798644479898983`
 *   **Redirect URI:** `http://localhost:3000/api/auth/callback`
 *   **Required Scopes:** `instagram_basic`, `instagram_content_publish`, `pages_read_engagement`, `pages_show_list`
-*   **Storage:** `data/tokens.json` (Auth) & `data/scheduled-posts.json` (Schedules)
+*   **Storage:** Supabase PostgreSQL (Tokens & Scheduled Posts)
 
 ---
 

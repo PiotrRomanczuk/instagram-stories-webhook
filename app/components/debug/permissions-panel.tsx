@@ -2,7 +2,10 @@ import { Shield, CheckCircle2, XCircle } from 'lucide-react';
 import { Panel } from '../ui/panel';
 
 interface PermissionsPanelProps {
-    permissions: any[];
+    permissions: Array<{
+        permission: string;
+        status: string;
+    }>;
 }
 
 export function PermissionsPanel({ permissions }: PermissionsPanelProps) {

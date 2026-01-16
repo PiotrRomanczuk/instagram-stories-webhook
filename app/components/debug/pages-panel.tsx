@@ -2,7 +2,18 @@ import { Facebook, Instagram, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Panel } from '../ui/panel';
 
 interface PagesPanelProps {
-    pages: any[];
+    pages: Array<{
+        id: string;
+        name: string;
+        access_token?: string | null;
+        category?: string;
+        instagram_business_account?: {
+            id: string;
+            username: string;
+            name?: string;
+            profile_picture_url?: string;
+        };
+    }>;
 }
 
 export function PagesPanel({ pages }: PagesPanelProps) {
@@ -16,7 +27,7 @@ export function PagesPanel({ pages }: PagesPanelProps) {
                 </div>
             ) : (
                 <div className="space-y-4">
-                    {pages.map((page: any) => (
+                    {pages.map((page) => (
                         <div key={page.id} className="p-4 rounded-2xl bg-white border border-slate-100 shadow-sm hover:border-indigo-200 transition">
                             <div className="flex items-center justify-between mb-3">
                                 <div className="flex items-center gap-3">

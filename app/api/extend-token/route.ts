@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
 import { getTokens, saveTokens } from '@/lib/db';
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
     const appId = process.env.NEXT_PUBLIC_FB_APP_ID;
     const appSecret = process.env.FB_APP_SECRET;
 
@@ -39,11 +39,12 @@ export async function POST(request: NextRequest) {
             message: 'Token extended successfully',
             expires_in_days: expiresIn ? Math.floor(expiresIn / 86400) : 'unknown'
         });
-    } catch (error: any) {
-        console.error('Token extension error:', error.response?.data || error.message);
+    } catch (error: unknown) {
+        const errorData = axios.isAxiosError(error) ? (error.response?.data || error.message) : String(error);
+        console.error('Token extension error:', errorData);
         return NextResponse.json({
             error: 'Failed to extend token',
-            details: error.response?.data || error.message
+            details: errorData
         }, { status: 500 });
     }
 }

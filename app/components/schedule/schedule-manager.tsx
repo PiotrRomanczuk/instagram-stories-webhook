@@ -22,8 +22,9 @@ export function ScheduleManager() {
                 const data = await res.json();
                 alert(`❌ Error: ${data.error}`);
             }
-        } catch (error: any) {
-            alert(`❌ Error: ${error.message}`);
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            alert(`❌ Error: ${errorMessage}`);
         }
     };
 

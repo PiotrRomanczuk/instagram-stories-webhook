@@ -19,7 +19,7 @@ export function ExtendTokenButton() {
             } else {
                 setMessage(`❌ ${data.error}`);
             }
-        } catch (error) {
+        } catch (_error) {
             setMessage('❌ Failed to extend token');
         } finally {
             setLoading(false);

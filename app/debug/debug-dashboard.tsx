@@ -51,7 +51,6 @@ export function DebugDashboard() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <TokenInfoPanel
                     tokenData={data.stored_tokens}
-                    fullToken={data.full_token}
                 />
                 <UserProfilePanel profile={data.user_profile} />
                 <PermissionsPanel permissions={data.permissions} />

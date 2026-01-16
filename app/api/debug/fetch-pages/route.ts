@@ -4,7 +4,7 @@ import { getTokens } from '@/lib/db';
 
 const GRAPH_API_BASE = 'https://graph.facebook.com/v18.0';
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
     const tokens = await getTokens();
 
     if (!tokens || !tokens.access_token) {
@@ -28,11 +28,26 @@ export async function GET(request: NextRequest) {
             }
         });
 
-        const granularScopes = debugTokenRes.data.data.granular_scopes || [];
-        const pageScopes = granularScopes.filter((s: any) => s.scope.includes('pages'));
-        const pageIds = [...new Set(pageScopes.flatMap((s: any) => s.target_ids))];
+        interface GranularScope {
+            scope: string;
+            target_ids?: string[];
+        }
+        const granularScopes = (debugTokenRes.data.data.granular_scopes || []) as GranularScope[];
+        const pageScopes = granularScopes.filter((s) => s.scope.includes('pages'));
+        const pageIds = [...new Set(pageScopes.flatMap((s) => s.target_ids || []))];
 
-        const results: any = {
+        interface FetchPagesResults {
+            detected_page_ids: string[];
+            pages: Array<{
+                success: boolean;
+                data?: unknown;
+                page_id?: string;
+                error?: unknown;
+            }>;
+            me_accounts?: unknown;
+            me_accounts_error?: unknown;
+        }
+        const results: FetchPagesResults = {
             detected_page_ids: pageIds,
             pages: []
         };
@@ -48,13 +63,16 @@ export async function GET(request: NextRequest) {
                 });
                 results.pages.push({
                     success: true,
-                    data: pageRes.data
+                    data: {
+                        ...pageRes.data,
+                        access_token: pageRes.data.access_token ? `${pageRes.data.access_token.substring(0, 10)}...` : null
+                    }
                 });
-            } catch (err: any) {
+            } catch (err: unknown) {
                 results.pages.push({
                     success: false,
                     page_id: pageId,
-                    error: err.response?.data || err.message
+                    error: axios.isAxiosError(err) ? (err.response?.data || err.message) : String(err)
                 });
             }
         }
@@ -68,17 +86,24 @@ export async function GET(request: NextRequest) {
                     access_token: tokens.access_token
                 }
             });
-            results.me_accounts = accountsRes.data;
-        } catch (err: any) {
-            results.me_accounts_error = err.response?.data || err.message;
+            results.me_accounts = {
+                ...accountsRes.data,
+                data: (accountsRes.data.data || []).map((p: { access_token?: string }) => ({
+                    ...p,
+                    access_token: p.access_token ? `${p.access_token.substring(0, 10)}...` : null
+                }))
+            };
+        } catch (err: unknown) {
+            results.me_accounts_error = axios.isAxiosError(err) ? (err.response?.data || err.message) : String(err);
         }
 
         return NextResponse.json(results, { status: 200 });
-    } catch (error: any) {
-        console.error('Fetch Pages API Error:', error.response?.data || error.message);
+    } catch (error: unknown) {
+        const errorData = axios.isAxiosError(error) ? (error.response?.data || error.message) : String(error);
+        console.error('Fetch Pages API Error:', errorData);
         return NextResponse.json({
             error: 'Failed to fetch pages',
-            details: error.response?.data || error.message
+            details: errorData
         }, { status: 500 });
     }
 }

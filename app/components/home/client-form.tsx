@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { Copy, CheckCircle2 } from 'lucide-react';
 
-export function ClientTestForm({ webhookUrl }: { webhookUrl: string }) {
+export function ClientTestForm() {
     const [url, setUrl] = useState('');
+    const [secret, setSecret] = useState('');
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState<{ success: boolean, message: string } | null>(null);
     const [copied, setCopied] = useState(false);
@@ -26,7 +27,10 @@ export function ClientTestForm({ webhookUrl }: { webhookUrl: string }) {
         try {
             const res = await fetch('/api/webhook/story', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-webhook-secret': secret
+                },
                 body: JSON.stringify({ url, type: 'IMAGE' })
             });
 
@@ -35,8 +39,8 @@ export function ClientTestForm({ webhookUrl }: { webhookUrl: string }) {
             if (!res.ok) throw new Error(data.error || 'Failed');
 
             setStatus({ success: true, message: 'Story published successfully!' });
-        } catch (err: any) {
-            setStatus({ success: false, message: err.message });
+        } catch (err: unknown) {
+            setStatus({ success: false, message: err instanceof Error ? err.message : 'An unknown error occurred' });
         } finally {
             setLoading(false);
         }
@@ -71,6 +75,17 @@ export function ClientTestForm({ webhookUrl }: { webhookUrl: string }) {
                     placeholder="https://example.com/image.jpg"
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
+                    className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                />
+            </div>
+
+            <div>
+                <label className="block text-xs font-medium text-gray-700 mb-2">Webhook Secret (Optional if not set in .env)</label>
+                <input
+                    type="password"
+                    placeholder="Enter x-webhook-secret"
+                    value={secret}
+                    onChange={(e) => setSecret(e.target.value)}
                     className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none text-sm"
                 />
             </div>

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const GRAPH_API_BASE = 'https://graph.facebook.com/v18.0';
+const GRAPH_API_BASE = 'https://graph.facebook.com/v24.0';
 
 export async function getInstagramBusinessAccountId(accessToken: string): Promise<string | null> {
     try {
@@ -20,11 +20,15 @@ export async function getInstagramBusinessAccountId(accessToken: string): Promis
                 });
 
                 // Extract page IDs from granular scopes
+                interface GranularScope {
+                    scope?: string;
+                    target_ids?: string[];
+                }
                 if (debugTokenRes.data.data.granular_scopes) {
-                    const pageScopes = debugTokenRes.data.data.granular_scopes.filter((s: any) =>
+                    const pageScopes = (debugTokenRes.data.data.granular_scopes as GranularScope[]).filter((s) =>
                         s.scope && s.scope.includes('pages')
                     );
-                    pageIds = Array.from(new Set(pageScopes.flatMap((s: any) => (s.target_ids || []) as string[]))) as string[];
+                    pageIds = Array.from(new Set(pageScopes.flatMap((s) => (s.target_ids || []) as string[]))) as string[];
                     console.log('Found page IDs from granular scopes:', pageIds);
                 }
             } catch (err) {
@@ -33,7 +37,15 @@ export async function getInstagramBusinessAccountId(accessToken: string): Promis
         }
 
         // 1. Try to get User's Pages via /me/accounts first
-        let pages: any[] = [];
+        interface FacebookPage {
+            id: string;
+            name: string;
+            instagram_business_account?: {
+                id: string;
+                username: string;
+            };
+        }
+        let pages: FacebookPage[] = [];
         try {
             const pagesRes = await axios.get(`${GRAPH_API_BASE}/me/accounts`, {
                 params: {
@@ -41,10 +53,11 @@ export async function getInstagramBusinessAccountId(accessToken: string): Promis
                     access_token: accessToken
                 },
             });
-            pages = pagesRes.data.data || [];
+            pages = (pagesRes.data.data || []) as FacebookPage[];
             console.log(`Found ${pages.length} Facebook Pages via /me/accounts`);
-        } catch (error: any) {
-            console.warn('/me/accounts failed:', error.response?.data || error.message);
+        } catch (error: unknown) {
+            const errorMessage = axios.isAxiosError(error) ? (error.response?.data || error.message) : error;
+            console.warn('/me/accounts failed:', errorMessage);
         }
 
         // 2. If /me/accounts returned empty but we have page IDs from granular scopes, fetch them directly
@@ -58,9 +71,10 @@ export async function getInstagramBusinessAccountId(accessToken: string): Promis
                             access_token: accessToken
                         }
                     });
-                    pages.push(pageRes.data);
-                } catch (err: any) {
-                    console.error(`Failed to fetch page ${pageId}:`, err.response?.data || err.message);
+                    pages.push(pageRes.data as FacebookPage);
+                } catch (err: unknown) {
+                    const errorMessage = axios.isAxiosError(err) ? (err.response?.data || err.message) : err;
+                    console.error(`Failed to fetch page ${pageId}:`, errorMessage);
                 }
             }
         }
@@ -87,14 +101,16 @@ export async function getInstagramBusinessAccountId(accessToken: string): Promis
                 if (connectedRes.data.instagram_business_account) {
                     return connectedRes.data.instagram_business_account.id;
                 }
-            } catch (err: any) {
-                console.error(`Error checking Instagram for page ${page.name}:`, err.response?.data || err.message);
+            } catch (err: unknown) {
+                const errorMessage = axios.isAxiosError(err) ? (err.response?.data || err.message) : err;
+                console.error(`Error checking Instagram for page ${page.name}:`, errorMessage);
             }
         }
 
         return null;
-    } catch (error: any) {
-        console.error('Error fetching IG Account ID:', error.response?.data || error.message);
+    } catch (error: unknown) {
+        const errorMessage = axios.isAxiosError(error) ? (error.response?.data || error.message) : error;
+        console.error('Error fetching IG Account ID:', errorMessage);
         return null;
     }
 }

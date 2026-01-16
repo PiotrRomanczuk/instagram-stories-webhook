@@ -1,18 +1,19 @@
-import { Key, CheckCircle2, AlertCircle, Copy, Info } from 'lucide-react';
+import { Key, CheckCircle2, AlertCircle, Info } from 'lucide-react';
+import { useState } from 'react';
 import { Panel } from '../ui/panel';
 
 interface TokenInfoPanelProps {
-    tokenData: any;
-    fullToken: string;
+    tokenData: {
+        access_token: string;
+        expires_at?: number;
+        user_id?: string;
+    } | null;
 }
 
-export function TokenInfoPanel({ tokenData, fullToken }: TokenInfoPanelProps) {
-    const copyToClipboard = (text: string) => {
-        navigator.clipboard.writeText(text);
-        alert('Copied to clipboard');
-    };
+export function TokenInfoPanel({ tokenData }: TokenInfoPanelProps) {
+    const [now] = useState(() => Date.now());
 
-    const isExpired = tokenData?.expires_at && tokenData.expires_at < Date.now();
+    const isExpired = tokenData?.expires_at && tokenData.expires_at < now;
     const isValid = !!tokenData?.access_token && !isExpired;
 
     return (
@@ -22,12 +23,6 @@ export function TokenInfoPanel({ tokenData, fullToken }: TokenInfoPanelProps) {
                     {isValid ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
                     <span className="font-bold">{isValid ? 'Active & Valid' : isExpired ? 'Expired' : 'Missing/Invalid'}</span>
                 </div>
-                <button
-                    onClick={() => copyToClipboard(fullToken)}
-                    className="flex items-center gap-2 px-3 py-1 bg-white/50 rounded-lg text-xs font-bold hover:bg-white/80 transition"
-                >
-                    <Copy className="w-3 h-3" /> Copy Full Token
-                </button>
             </div>
 
             <div className="mt-6 space-y-4">

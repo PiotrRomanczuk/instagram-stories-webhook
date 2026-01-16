@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ScheduledPost } from '@/lib/types';
+import { supabase } from '@/lib/supabase';
 
 export function useSchedulePosts() {
     const [posts, setPosts] = useState<ScheduledPost[]>([]);
@@ -19,9 +20,30 @@ export function useSchedulePosts() {
 
     useEffect(() => {
         fetchPosts();
-        const interval = setInterval(fetchPosts, 30000);
-        return () => clearInterval(interval);
+
+        // 🚀 Supabase Realtime Subscription
+        // This provides instant updates when the background cron job publishes a post
+        const channel = supabase
+            .channel('scheduled_posts_changes')
+            .on(
+                'postgres_changes',
+                {
+                    event: '*', // Listen for INSERT, UPDATE, DELETE
+                    schema: 'public',
+                    table: 'scheduled_posts',
+                },
+                (payload) => {
+                    console.log('📡 Realtime update received:', payload.eventType);
+                    fetchPosts();
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, [fetchPosts]);
 
     return { posts, loading, fetchPosts };
 }
+

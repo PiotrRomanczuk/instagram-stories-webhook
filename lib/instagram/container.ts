@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const GRAPH_API_BASE = 'https://graph.facebook.com/v18.0';
+const GRAPH_API_BASE = 'https://graph.facebook.com/v24.0';
 
 export async function checkContainerStatus(containerId: string, accessToken: string): Promise<{ status: string; status_code?: string }> {
     try {
@@ -11,8 +11,12 @@ export async function checkContainerStatus(containerId: string, accessToken: str
             }
         });
         return statusRes.data;
-    } catch (error: any) {
-        console.error('Error checking container status:', error.response?.data || error.message);
+    } catch (error: unknown) {
+        if (axios.isAxiosError(error)) {
+            console.error('Error checking container status:', error.response?.data || error.message);
+        } else {
+            console.error('Error checking container status:', error);
+        }
         throw error;
     }
 }
@@ -35,8 +39,9 @@ export async function waitForContainerReady(containerId: string, accessToken: st
             if (attempt < maxAttempts) {
                 await new Promise(resolve => setTimeout(resolve, delayMs));
             }
-        } catch (error: any) {
-            console.warn(`Could not check status (attempt ${attempt}): ${error.message}`);
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            console.warn(`Could not check status (attempt ${attempt}): ${errorMessage}`);
             if (attempt >= 3) {
                 return;
             }

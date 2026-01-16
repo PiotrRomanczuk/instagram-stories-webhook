@@ -1,7 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
 import { ArrowRight, CheckCircle2, ShieldAlert } from 'lucide-react';
-import { LogoutButton } from '../auth/logout-button';
 import { ExtendTokenButton } from '../auth/extend-token-button';
 
 interface StatusSectionProps {
@@ -17,7 +16,6 @@ export function StatusSection({ isConnected }: StatusSectionProps) {
                 </h2>
                 {isConnected ? (
                     <div className="flex items-center gap-4">
-                        <LogoutButton />
                         <Link href="/schedule" className="group flex items-center gap-2 text-xs font-bold text-purple-600 hover:text-purple-700 transition-colors uppercase tracking-widest border-l border-slate-200 pl-4">
                             Schedule Manager <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                         </Link>
@@ -46,8 +44,8 @@ export function StatusSection({ isConnected }: StatusSectionProps) {
                 </div>
 
                 <div className="flex flex-col gap-3 w-full md:w-auto">
-                    <a
-                        href="/api/auth"
+                    <Link
+                        href="/api/auth/signin/facebook"
                         className={`px-8 py-4 rounded-2xl font-bold text-sm transition shadow-xl flex items-center justify-center gap-3 group ${isConnected
                             ? 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 shadow-slate-100'
                             : 'bg-slate-900 text-white hover:bg-slate-800 shadow-slate-200'
@@ -55,7 +53,7 @@ export function StatusSection({ isConnected }: StatusSectionProps) {
                     >
                         {isConnected ? 'Update Accounts' : 'Connect Facebook'}
                         <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                    </a>
+                    </Link>
                     {isConnected && <ExtendTokenButton />}
                 </div>
             </div>

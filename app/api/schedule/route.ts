@@ -18,9 +18,10 @@ export async function GET(request: NextRequest) {
         posts.sort((a, b) => a.scheduledTime - b.scheduledTime);
 
         return NextResponse.json({ posts });
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         console.error('Error fetching scheduled posts:', error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 }
 
@@ -28,7 +29,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { url, type, scheduledTime } = body;
+        const { url, type, postType, caption, scheduledTime } = body;
 
         // Validation
         if (!url) {
@@ -52,23 +53,27 @@ export async function POST(request: NextRequest) {
         }
 
         const mediaType = type === 'VIDEO' ? 'VIDEO' : 'IMAGE';
+        const targetPostType = postType || 'STORY';
 
         const post = await addScheduledPost({
             url,
             type: mediaType,
+            postType: targetPostType,
+            caption: caption || '',
             scheduledTime: scheduledTimeMs,
         });
 
-        console.log(`📅 Scheduled ${mediaType} post for ${new Date(scheduledTimeMs).toLocaleString()}`);
+        console.log(`📅 Scheduled ${targetPostType} (${mediaType}) post for ${new Date(scheduledTimeMs).toLocaleString()}`);
 
         return NextResponse.json({
             success: true,
             post,
             message: `Post scheduled for ${new Date(scheduledTimeMs).toLocaleString()}`
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         console.error('Error scheduling post:', error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 }
 
@@ -91,9 +96,10 @@ export async function DELETE(request: NextRequest) {
         console.log(`🗑️ Cancelled scheduled post: ${id}`);
 
         return NextResponse.json({ success: true, message: 'Post cancelled' });
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         console.error('Error cancelling post:', error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 }
 
@@ -133,8 +139,9 @@ export async function PATCH(request: NextRequest) {
         console.log(`✏️ Updated scheduled post: ${id}`);
 
         return NextResponse.json({ success: true, post });
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         console.error('Error updating post:', error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 }

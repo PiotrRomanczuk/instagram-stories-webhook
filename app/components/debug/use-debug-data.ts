@@ -1,12 +1,40 @@
 import { useState, useEffect, useCallback } from 'react';
 
 export interface DebugData {
-    stored_tokens: any;
-    full_token: string;
-    token_info: any;
-    user_profile: any;
-    permissions: any[];
-    pages: any[];
+    stored_tokens: {
+        access_token: string;
+        expires_at?: number;
+        user_id?: string;
+    };
+    token_info?: {
+        granular_scopes?: Array<{
+            scope?: string;
+            target_ids?: string[];
+        }>;
+        [key: string]: unknown;
+    };
+    user_profile?: {
+        id: string;
+        name: string;
+        email?: string;
+    };
+    permissions?: Array<{
+        permission: string;
+        status: string;
+    }>;
+    pages: Array<{
+        id: string;
+        name: string;
+        access_token?: string | null;
+        category?: string;
+        instagram_business_account?: {
+            id: string;
+            username: string;
+            name?: string;
+            profile_picture_url?: string;
+        };
+    }>;
+    pages_source?: string;
 }
 
 export function useDebugData() {
@@ -21,8 +49,8 @@ export function useDebugData() {
             if (!res.ok) throw new Error('Failed to fetch debug data');
             const debugPayload = await res.json();
             setData(debugPayload);
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'An unknown error occurred');
         } finally {
             setLoading(false);
         }

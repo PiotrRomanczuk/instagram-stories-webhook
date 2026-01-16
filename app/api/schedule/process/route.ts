@@ -1,10 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPendingPosts, updateScheduledPost } from '@/lib/scheduled-posts-db';
-import { publishStory } from '@/lib/instagram';
+import { publishMedia } from '@/lib/instagram';
+import { supabase } from '@/lib/supabase';
 
 // This endpoint should be called periodically (e.g., every minute via cron job)
 export async function GET(request: NextRequest) {
     try {
+        // 🔒 Security Check: Secure with CRON_SECRET
+        const authHeader = request.headers.get('authorization');
+        const secret = process.env.CRON_SECRET;
+
+        // If secret is defined in env, enforce it
+        if (secret && authHeader !== `Bearer ${secret}`) {
+            console.error('🔒 Unauthorized cron attempt: Invalid or missing secret');
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
         console.log('🔄 Checking for pending scheduled posts...');
 
         const pendingPosts = await getPendingPosts();
@@ -24,12 +35,9 @@ export async function GET(request: NextRequest) {
         for (const post of pendingPosts) {
             try {
                 console.log(`📤 Publishing scheduled post ${post.id}...`);
-                console.log(`   URL: ${post.url}`);
-                console.log(`   Type: ${post.type}`);
-                console.log(`   Scheduled for: ${new Date(post.scheduledTime).toLocaleString()}`);
 
-                // Publish the story
-                const result = await publishStory(post.url, post.type);
+                // Publish the media
+                const result = await publishMedia(post.url, post.type, post.postType || 'STORY', post.caption);
 
                 // Update status to published
                 await updateScheduledPost(post.id, {
@@ -39,24 +47,48 @@ export async function GET(request: NextRequest) {
 
                 console.log(`✅ Successfully published scheduled post ${post.id}`);
 
+                // 📁 Media Auto-Cleanup
+                // If it's a Supabase Storage URL, we can attempt to delete it
+                if (post.url.includes('/storage/v1/object/public/stories/')) {
+                    try {
+                        const pathMatch = post.url.split('/stories/')[1];
+                        if (pathMatch) {
+                            console.log(`🧹 Cleaning up media: ${pathMatch}`);
+                            const { error: deleteError } = await supabase.storage
+                                .from('stories')
+                                .remove([pathMatch]);
+
+                            if (deleteError) {
+                                console.warn(`⚠️ Cleanup failed for ${pathMatch}:`, deleteError.message);
+                            } else {
+                                console.log(`✨ Successfully deleted media ${pathMatch}`);
+                            }
+                        }
+                    } catch (cleanupError: unknown) {
+                        const cleanupErrorMessage = cleanupError instanceof Error ? cleanupError.message : String(cleanupError);
+                        console.warn('⚠️ Cleanup logic error:', cleanupErrorMessage);
+                    }
+                }
+
                 results.push({
                     id: post.id,
                     success: true,
                     result,
                 });
-            } catch (error: any) {
-                console.error(`❌ Failed to publish scheduled post ${post.id}:`, error.message);
+            } catch (error: unknown) {
+                const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+                console.error(`❌ Failed to publish scheduled post ${post.id}:`, errorMessage);
 
                 // Update status to failed
                 await updateScheduledPost(post.id, {
                     status: 'failed',
-                    error: error.message,
+                    error: errorMessage,
                 });
 
                 results.push({
                     id: post.id,
                     success: false,
-                    error: error.message,
+                    error: errorMessage,
                 });
             }
         }
@@ -73,8 +105,10 @@ export async function GET(request: NextRequest) {
             failed: failCount,
             results,
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         console.error('Error processing scheduled posts:', error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 }
+

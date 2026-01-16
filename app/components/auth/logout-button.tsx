@@ -1,22 +1,18 @@
 'use client';
 
 import { LogOut } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { signOut } from 'next-auth/react';
 import { useState } from 'react';
 
 export function LogoutButton() {
-    const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
 
     const handleLogout = async () => {
-        if (!confirm('Are you sure you want to log out? This will delete your stored tokens.')) return;
+        if (!confirm('Are you sure you want to log out?')) return;
 
         setIsLoading(true);
         try {
-            const res = await fetch('/api/auth/logout', { method: 'POST' });
-            if (res.ok) {
-                router.refresh();
-            }
+            await signOut({ callbackUrl: '/' });
         } catch (error) {
             console.error('Logout failed:', error);
         } finally {

@@ -2,7 +2,16 @@ import { User } from 'lucide-react';
 import { Panel } from '../ui/panel';
 
 interface UserProfilePanelProps {
-    profile: any;
+    profile: {
+        id: string;
+        name: string;
+        email?: string;
+        picture?: {
+            data?: {
+                url?: string;
+            };
+        };
+    } | null;
 }
 
 export function UserProfilePanel({ profile }: UserProfilePanelProps) {

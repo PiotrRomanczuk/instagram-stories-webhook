@@ -4,7 +4,7 @@ import { getTokens } from '@/lib/db';
 
 const GRAPH_API_BASE = 'https://graph.facebook.com/v18.0';
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
     const tokens = await getTokens();
 
     if (!tokens || !tokens.access_token) {
@@ -12,7 +12,19 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-        const results: any = {
+        interface PageDebugResult {
+            token: string;
+            user?: unknown;
+            permissions?: unknown[];
+            pages_minimal?: unknown;
+            pages_minimal_error?: unknown;
+            pages_full?: unknown;
+            pages_full_error?: unknown;
+            businesses?: unknown;
+            businesses_error?: unknown;
+            token_debug?: unknown;
+        }
+        const results: PageDebugResult = {
             token: tokens.access_token.substring(0, 20) + '...',
         };
 
@@ -38,9 +50,15 @@ export async function GET(request: NextRequest) {
                     access_token: tokens.access_token
                 }
             });
-            results.pages_minimal = pagesMinimalRes.data;
-        } catch (err: any) {
-            results.pages_minimal_error = err.response?.data || err.message;
+            results.pages_minimal = {
+                ...pagesMinimalRes.data,
+                data: (pagesMinimalRes.data.data || []).map((p: { access_token?: string }) => ({
+                    ...p,
+                    access_token: p.access_token ? `${p.access_token.substring(0, 10)}...` : null
+                }))
+            };
+        } catch (err: unknown) {
+            results.pages_minimal_error = axios.isAxiosError(err) ? (err.response?.data || err.message) : String(err);
         }
 
         // 4. Try to get pages with all fields
@@ -51,9 +69,14 @@ export async function GET(request: NextRequest) {
                     access_token: tokens.access_token
                 }
             });
-            results.pages_full = pagesFullRes.data;
-        } catch (err: any) {
-            results.pages_full_error = err.response?.data || err.message;
+            // Mask page access tokens in the full list
+            const maskedPages = pagesFullRes.data.data.map((p: { access_token?: string }) => ({
+                ...p,
+                access_token: p.access_token ? `${p.access_token.substring(0, 10)}...` : null
+            }));
+            results.pages_full = { ...pagesFullRes.data, data: maskedPages };
+        } catch (err: unknown) {
+            results.pages_full_error = axios.isAxiosError(err) ? (err.response?.data || err.message) : String(err);
         }
 
         // 5. Try alternative endpoint - get businesses
@@ -64,8 +87,8 @@ export async function GET(request: NextRequest) {
                 }
             });
             results.businesses = businessesRes.data;
-        } catch (err: any) {
-            results.businesses_error = err.response?.data || err.message;
+        } catch (err: unknown) {
+            results.businesses_error = axios.isAxiosError(err) ? (err.response?.data || err.message) : String(err);
         }
 
         // 6. Check token debug info
@@ -83,11 +106,12 @@ export async function GET(request: NextRequest) {
         }
 
         return NextResponse.json(results, { status: 200 });
-    } catch (error: any) {
-        console.error('Pages Debug API Error:', error.response?.data || error.message);
+    } catch (error: unknown) {
+        const errorData = axios.isAxiosError(error) ? (error.response?.data || error.message) : String(error);
+        console.error('Pages Debug API Error:', errorData);
         return NextResponse.json({
             error: 'Failed to fetch pages debug information',
-            details: error.response?.data || error.message
+            details: errorData
         }, { status: 500 });
     }
 }
