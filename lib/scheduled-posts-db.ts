@@ -34,6 +34,7 @@ export async function getScheduledPosts(userId?: string): Promise<ScheduledPost[
         publishedAt: post.published_at ? Number(post.published_at) : undefined,
         error: post.error,
         igMediaId: post.ig_media_id,
+        userTags: post.user_tags,
         userId: post.user_id // Include userId in the result
     })) as ScheduledPostWithUser[];
 }
@@ -53,7 +54,8 @@ export async function addScheduledPost(
         scheduled_time: post.scheduledTime,
         status: 'pending',
         created_at: createdAt,
-        user_id: post.userId // Set the user_id
+        user_id: post.userId, // Set the user_id
+        user_tags: post.userTags || []
     };
 
     const { error } = await supabaseAdmin
@@ -85,6 +87,7 @@ export async function updateScheduledPost(id: string, updates: Partial<Scheduled
         error?: string | null;
         published_at?: number | null;
         ig_media_id?: string;
+        user_tags?: any; // JSONB
         updated_at: string;
     }
     const dbUpdates: DbScheduledPostUpdate = {
@@ -99,6 +102,7 @@ export async function updateScheduledPost(id: string, updates: Partial<Scheduled
     if (updates.error !== undefined) dbUpdates.error = updates.error;
     if (updates.publishedAt !== undefined) dbUpdates.published_at = updates.publishedAt;
     if (updates.igMediaId) dbUpdates.ig_media_id = updates.igMediaId;
+    if (updates.userTags) dbUpdates.user_tags = updates.userTags;
 
     const { data, error } = await supabaseAdmin
         .from('scheduled_posts')
@@ -124,6 +128,7 @@ export async function updateScheduledPost(id: string, updates: Partial<Scheduled
         publishedAt: data.published_at ? Number(data.published_at) : undefined,
         error: data.error,
         igMediaId: data.ig_media_id,
+        userTags: data.user_tags,
         userId: data.user_id
     } as ScheduledPostWithUser;
 }
@@ -167,6 +172,7 @@ export async function getPendingPosts(): Promise<ScheduledPostWithUser[]> {
         publishedAt: post.published_at ? Number(post.published_at) : undefined,
         error: post.error,
         igMediaId: post.ig_media_id,
+        userTags: post.user_tags,
         userId: post.user_id
     })) as ScheduledPostWithUser[];
 }
@@ -202,6 +208,7 @@ export async function getUpcomingPosts(userId?: string): Promise<ScheduledPost[]
         publishedAt: post.published_at ? Number(post.published_at) : undefined,
         error: post.error,
         igMediaId: post.ig_media_id,
+        userTags: post.user_tags,
         userId: post.user_id
     })) as ScheduledPostWithUser[];
 }

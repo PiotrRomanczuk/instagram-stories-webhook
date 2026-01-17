@@ -15,6 +15,7 @@ interface PostCardProps {
     post: ScheduledPost;
     onCancel: (id: string) => void;
     onReschedule: (id: string, newTime: Date) => void;
+    onUpdateTags?: (id: string, tags: any[]) => void;
     isDraggable?: boolean;
 }
 
@@ -32,7 +33,7 @@ const statusColors = {
     cancelled: 'bg-slate-50 border-slate-200',
 };
 
-export function PostCard({ post, onCancel, onReschedule, isDraggable = false }: PostCardProps) {
+export function PostCard({ post, onCancel, onReschedule, onUpdateTags, isDraggable = false }: PostCardProps) {
     const [now] = useState(() => Date.now());
     const [isEditing, setIsEditing] = useState(false);
     const [showModal, setShowModal] = useState(false);
@@ -41,6 +42,7 @@ export function PostCard({ post, onCancel, onReschedule, isDraggable = false }: 
     // Edit state
     const [editDate, setEditDate] = useState(() => new Date(post.scheduledTime).toISOString().split('T')[0]);
     const [editTime, setEditTime] = useState(() => new Date(post.scheduledTime).toTimeString().slice(0, 5));
+    const [editTags, setEditTags] = useState(() => (post.userTags || []).map(t => t.username).join(', '));
 
     // DnD Hooks
     const {
@@ -70,7 +72,25 @@ export function PostCard({ post, onCancel, onReschedule, isDraggable = false }: 
     const handleSave = () => {
         const newTime = new Date(`${editDate}T${editTime}`);
         if (isNaN(newTime.getTime())) return;
+
         onReschedule(post.id, newTime);
+
+        // Handle tags update
+        if (onUpdateTags) {
+            const currentTags = (post.userTags || []).map(t => t.username).sort().join(',');
+            const newTagsList = editTags.split(',').map(s => s.trim()).filter(s => s.length > 0).sort();
+            const newTagsStr = newTagsList.join(',');
+
+            if (currentTags !== newTagsStr) {
+                const tagsPayload = newTagsList.map(username => ({
+                    username,
+                    x: 0.5,
+                    y: 0.5
+                }));
+                onUpdateTags(post.id, tagsPayload);
+            }
+        }
+
         setIsEditing(false);
     };
 
@@ -196,19 +216,46 @@ export function PostCard({ post, onCancel, onReschedule, isDraggable = false }: 
                     ) : (
                         // Editing Mode
                         <div className="space-y-3">
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="date"
-                                    value={editDate}
-                                    onChange={(e) => setEditDate(e.target.value)}
-                                    className="text-xs font-bold w-full p-2 rounded-xl border border-indigo-100 outline-none focus:border-indigo-500 bg-white"
-                                />
-                                <input
-                                    type="time"
-                                    value={editTime}
-                                    onChange={(e) => setEditTime(e.target.value)}
-                                    className="text-xs font-bold w-20 p-2 rounded-xl border border-indigo-100 outline-none focus:border-indigo-500 bg-white"
-                                />
+                            <div className="flex flex-col gap-2">
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="date"
+                                        value={editDate}
+                                        onChange={(e) => setEditDate(e.target.value)}
+                                        className="text-xs font-bold w-full p-2 rounded-xl border border-indigo-100 outline-none focus:border-indigo-500 bg-white"
+                                    />
+                                    <input
+                                        type="time"
+                                        value={editTime}
+                                        onChange={(e) => setEditTime(e.target.value)}
+                                        className="text-xs font-bold w-20 p-2 rounded-xl border border-indigo-100 outline-none focus:border-indigo-500 bg-white"
+                                    />
+                                </div>
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        value={editTags}
+                                        onChange={(e) => setEditTags(e.target.value)}
+                                        placeholder="@user1, @user2"
+                                        className="text-xs w-full p-2 pr-8 rounded-xl border border-indigo-100 outline-none focus:border-indigo-500 bg-white"
+                                    />
+                                    {/* Helper to check first tag if exists */}
+                                    {editTags.split(',')[0]?.trim() && (
+                                        <a
+                                            href={`https://instagram.com/${editTags.split(',')[0].trim().replace('@', '')}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="absolute right-2 top-2 text-indigo-400 hover:text-indigo-600"
+                                            title="Verify first user on Instagram"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            <ZoomIn className="w-4 h-4" />
+                                        </a>
+                                    )}
+                                </div>
+                                <p className="text-[10px] text-gray-400 pl-1">
+                                    Format: @username (public accounts only)
+                                </p>
                             </div>
 
                             <div className="flex items-center justify-between">
@@ -236,6 +283,16 @@ export function PostCard({ post, onCancel, onReschedule, isDraggable = false }: 
                         <p className="text-xs text-slate-500 line-clamp-2 px-1">
                             {post.caption}
                         </p>
+                    )}
+                    {/* Tags Preview */}
+                    {post.userTags && post.userTags.length > 0 && !isEditing && (
+                        <div className="flex flex-wrap gap-1 px-1">
+                            {post.userTags.map((tag, i) => (
+                                <span key={i} className="text-[10px] bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded-md font-medium">
+                                    @{tag.username}
+                                </span>
+                            ))}
+                        </div>
                     )}
                 </div>
             </div>

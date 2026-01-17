@@ -20,6 +20,9 @@ export function StatusSection({ isConnected }: StatusSectionProps) {
                         <Link href="/schedule" className="group flex items-center gap-2 text-xs font-bold text-purple-600 hover:text-purple-700 transition-colors uppercase tracking-widest border-l border-slate-200 pl-4">
                             Schedule Manager <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                         </Link>
+                        <Link href="/insights" className="group flex items-center gap-2 text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors uppercase tracking-widest border-l border-slate-200 pl-4">
+                            Insights <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                        </Link>
                         <Link href="/debug" className="group flex items-center gap-2 text-xs font-bold text-indigo-600 hover:text-indigo-700 transition-colors uppercase tracking-widest border-l border-slate-200 pl-4">
                             Open Debug Center <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                         </Link>

@@ -55,7 +55,8 @@ export async function processScheduledPosts(): Promise<BatchResult> {
                     post.type,
                     post.postType || 'STORY',
                     post.caption,
-                    post.userId
+                    post.userId,
+                    post.userTags
                 );
 
                 // Update status to published

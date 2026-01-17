@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { url, type, postType, caption, scheduledTime } = body;
+        const { url, type, postType, caption, scheduledTime, userTags } = body;
 
         // Validation
         if (!url) {
@@ -74,6 +74,7 @@ export async function POST(request: NextRequest) {
             postType: targetPostType,
             caption: caption || '',
             scheduledTime: scheduledTimeMs,
+            userTags: userTags || [],
             userId: session.user.id // Associate with current user
         });
 
@@ -168,6 +169,11 @@ export async function PATCH(request: NextRequest) {
             }
 
             updates.scheduledTime = scheduledTimeMs;
+        }
+
+        // Log updates for debugging
+        if (updates.userTags) {
+            console.log(`🏷️ Updating tags for post ${id}:`, updates.userTags);
         }
 
         const post = await updateScheduledPost(id, updates);

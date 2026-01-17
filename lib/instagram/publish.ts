@@ -16,7 +16,8 @@ export async function publishMedia(
     mediaType: MediaType = 'IMAGE',
     postType: PostType = 'STORY',
     caption?: string,
-    userId?: string // New parameter: who is publishing this?
+    userId?: string, // New parameter: who is publishing this?
+    userTags?: { username: string; x: number; y: number; }[]
 ) {
     // If no userId is provided, we can't find tokens in the new system.
     // In a multi-user app, this should be mandatory.
@@ -41,11 +42,13 @@ export async function publishMedia(
         media_type?: string;
         image_url?: string;
         video_url?: string;
+        user_tags?: { username: string; x: number; y: number; }[];
     }
 
     const containerData: ContainerData = {
         access_token: accessToken,
         caption,
+        user_tags: userTags
     };
 
     if (postType === 'STORY') {

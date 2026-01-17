@@ -13,6 +13,7 @@ export function ScheduleForm({ onScheduled }: ScheduleFormProps) {
     const [type, setType] = useState<'IMAGE' | 'VIDEO'>('IMAGE');
     const [scheduledDate, setScheduledDate] = useState('');
     const [scheduledTime, setScheduledTime] = useState('');
+    const [taggedUsers, setTaggedUsers] = useState('');
     const [scheduling, setScheduling] = useState(false);
 
     // Upload state
@@ -87,6 +88,17 @@ export function ScheduleForm({ onScheduled }: ScheduleFormProps) {
         setScheduling(true);
 
         try {
+            // Process tags
+            const userTags = taggedUsers
+                .split(',')
+                .map(u => u.trim())
+                .filter(u => u.length > 0)
+                .map(username => ({
+                    username,
+                    x: 0.5,
+                    y: 0.5
+                }));
+
             const scheduledDateTime = new Date(`${scheduledDate}T${scheduledTime}`);
             const res = await fetch('/api/schedule', {
                 method: 'POST',
@@ -95,6 +107,7 @@ export function ScheduleForm({ onScheduled }: ScheduleFormProps) {
                     url,
                     type,
                     scheduledTime: scheduledDateTime.toISOString(),
+                    userTags
                 }),
             });
 
@@ -213,6 +226,20 @@ export function ScheduleForm({ onScheduled }: ScheduleFormProps) {
                                     {mType}
                                 </button>
                             ))}
+                        </div>
+                    </div>
+
+                    <div className="flex-[2] grid grid-cols-2 gap-4">
+                        <div className="col-span-2">
+                            <label className="block text-sm font-bold text-gray-700 mb-2">Tag Users (optional)</label>
+                            <input
+                                type="text"
+                                value={taggedUsers}
+                                onChange={(e) => setTaggedUsers(e.target.value)}
+                                placeholder="@username, @another_user"
+                                className="w-full px-4 py-2 text-sm rounded-xl border border-gray-200 focus:border-indigo-500 outline-none transition"
+                            />
+                            <p className="text-[10px] text-gray-400 mt-1 pl-1">Comma separated list of usernames to tag</p>
                         </div>
                     </div>
 

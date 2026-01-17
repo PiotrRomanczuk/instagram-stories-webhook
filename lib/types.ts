@@ -15,6 +15,7 @@ export interface ScheduledPost {
     publishedAt?: number;
     error?: string;
     igMediaId?: string; // ID for fetching insights later
+    userTags?: { username: string; x: number; y: number; }[]; // Tagged users for Stories/Images
 }
 
 export interface TokenData {

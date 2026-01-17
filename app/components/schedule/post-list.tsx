@@ -15,7 +15,7 @@ import {
     sortableKeyboardCoordinates,
     rectSortingStrategy
 } from '@dnd-kit/sortable';
-import { SmartSortableStrategy } from './smart-sortable-strategy'; // We might need this, but let's stick to rect first
+
 
 import { ScheduledPost } from '@/lib/types';
 import { PostCard } from './post-card';
@@ -26,9 +26,10 @@ interface PostListProps {
     onCancel: (id: string) => void;
     onReschedule: (id: string, newTime: Date) => void;
     onReorder?: (posts: ScheduledPost[]) => void;
+    onUpdateTags?: (id: string, tags: any[]) => void;
 }
 
-export function PostList({ posts, onCancel, onReschedule, onReorder }: PostListProps) {
+export function PostList({ posts, onCancel, onReschedule, onReorder, onUpdateTags }: PostListProps) {
     // Separate state for optimistic updates
     const [pendingPosts, setPendingPosts] = useState<ScheduledPost[]>([]);
 
@@ -107,6 +108,7 @@ export function PostList({ posts, onCancel, onReschedule, onReorder }: PostListP
                                         post={post}
                                         onCancel={onCancel}
                                         onReschedule={onReschedule}
+                                        onUpdateTags={onUpdateTags}
                                         isDraggable={true}
                                     />
                                 ))}
@@ -128,6 +130,7 @@ export function PostList({ posts, onCancel, onReschedule, onReorder }: PostListP
                                 post={post}
                                 onCancel={onCancel}
                                 onReschedule={onReschedule}
+                                onUpdateTags={onUpdateTags}
                                 isDraggable={false}
                             />
                         ))}
@@ -147,6 +150,7 @@ export function PostList({ posts, onCancel, onReschedule, onReorder }: PostListP
                                 post={post}
                                 onCancel={onCancel}
                                 onReschedule={onReschedule}
+                                onUpdateTags={onUpdateTags}
                                 isDraggable={false}
                             />
                         ))}
