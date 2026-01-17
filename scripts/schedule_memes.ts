@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { supabaseAdmin } from '../lib/supabase-admin';
 import { addScheduledPost } from '../lib/scheduled-posts-db';
-import { PostType, MediaType } from '../lib/types';
+
 
 async function main() {
     console.log('🚀 Starting meme scheduling script...');

@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import Image from 'next/image';
 import { Calendar, Loader, Upload, X, CheckCircle2, AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
 import { Panel } from '../ui/panel';
 import { supabase } from '@/lib/supabase';
 
@@ -33,11 +34,12 @@ export function ScheduleForm({ onScheduled }: ScheduleFormProps) {
         if (!file) return;
 
         // Validation
+
         const isVideo = file.type.startsWith('video/');
         const isImage = file.type.startsWith('image/');
 
         if (!isVideo && !isImage) {
-            alert('Please upload an image or video file.');
+            toast.error('Please upload an image or video file.');
             return;
         }
 
@@ -69,6 +71,7 @@ export function ScheduleForm({ onScheduled }: ScheduleFormProps) {
             setUploadProgress(100);
             setUrl(publicUrl);
             setType(isVideo ? 'VIDEO' : 'IMAGE');
+            toast.success('Media uploaded successfully');
 
             setTimeout(() => {
                 setUploading(false);
@@ -78,10 +81,11 @@ export function ScheduleForm({ onScheduled }: ScheduleFormProps) {
         } catch (error: unknown) {
             console.error('Upload error:', error);
             const errorMessage = error instanceof Error ? error.message : String(error);
-            alert(`Upload failed: ${errorMessage}`);
+            toast.error(`Upload failed: ${errorMessage}`);
             setUploading(false);
         }
     };
+
 
     const handleSchedule = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -112,16 +116,16 @@ export function ScheduleForm({ onScheduled }: ScheduleFormProps) {
             });
 
             if (res.ok) {
-                alert('✅ Post scheduled successfully');
+                toast.success('Post scheduled successfully');
                 setUrl('');
                 onScheduled();
             } else {
                 const data = await res.json();
-                alert(`❌ Error: ${data.error}`);
+                toast.error(data.error || 'Failed to schedule post');
             }
         } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : String(error);
-            alert(`❌ Error: ${errorMessage}`);
+            toast.error(errorMessage);
         } finally {
             setScheduling(false);
         }

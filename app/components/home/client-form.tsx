@@ -2,12 +2,13 @@
 
 import { useState } from 'react';
 import { Copy, CheckCircle2, FlaskConical, Send } from 'lucide-react';
+import { toast } from 'sonner';
 
 export function ClientTestForm() {
     const [url, setUrl] = useState('');
-    const [secret, setSecret] = useState('');
+    // Secret is optional and handled by env if missing, hiding it from UI to simplify
+    const [secret] = useState('');
     const [loading, setLoading] = useState(false);
-    const [status, setStatus] = useState<{ success: boolean, message: string } | null>(null);
     const [copied, setCopied] = useState(false);
 
     const sampleImageUrl = 'https://img.freepik.com/darmowe-wektory/prosty-wibrujacy-kwadratowy-mem-z-kotem_742173-4493.jpg?semt=ais_hybrid&w=740&q=80';
@@ -16,13 +17,13 @@ export function ClientTestForm() {
         setUrl(sampleImageUrl);
         navigator.clipboard.writeText(sampleImageUrl);
         setCopied(true);
+        toast.success('Sample URL copied to clipboard');
         setTimeout(() => setCopied(false), 2000);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-        setStatus(null);
 
         try {
             const res = await fetch('/api/webhook/story', {
@@ -38,9 +39,9 @@ export function ClientTestForm() {
 
             if (!res.ok) throw new Error(data.error || 'Failed');
 
-            setStatus({ success: true, message: 'Story published successfully!' });
+            toast.success('Story published successfully triggered!');
         } catch (err: unknown) {
-            setStatus({ success: false, message: err instanceof Error ? err.message : 'An unknown error occurred' });
+            toast.error(err instanceof Error ? err.message : 'An unknown error occurred');
         } finally {
             setLoading(false);
         }
@@ -82,19 +83,6 @@ export function ClientTestForm() {
                 </div>
             </div>
 
-            <div>
-                <label className="block text-xs font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider mb-2">
-                    Webhook Secret <span className="text-slate-400 dark:text-zinc-600 font-normal normal-case">(Optional via .env)</span>
-                </label>
-                <input
-                    type="password"
-                    placeholder="Enter x-webhook-secret"
-                    value={secret}
-                    onChange={(e) => setSecret(e.target.value)}
-                    className="w-full px-4 py-3 bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 outline-none text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-600 transition-all font-mono shadow-inner"
-                />
-            </div>
-
             <button
                 onClick={handleSubmit}
                 disabled={loading}
@@ -110,18 +98,15 @@ export function ClientTestForm() {
                     ) : (
                         <>
                             <Send className="w-4 h-4" />
-                            <span>Test Publish (Image)</span>
+                            <span>Quick Publish (Image)</span>
                         </>
                     )}
                 </div>
             </button>
 
-            {status && (
-                <div className={`p-4 rounded-xl text-sm font-medium flex items-center gap-3 border ${status.success ? 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-500/10 dark:border-emerald-500/20 dark:text-emerald-400' : 'bg-rose-50 text-rose-700 border-rose-100 dark:bg-rose-500/10 dark:border-rose-500/20 dark:text-rose-400'}`}>
-                    {status.success ? <CheckCircle2 className="w-5 h-5 shrink-0" /> : <FlaskConical className="w-5 h-5 shrink-0" />}
-                    {status.message}
-                </div>
-            )}
+            <p className="text-center text-[10px] text-slate-400 dark:text-zinc-500">
+                Webhook secret will be loaded from environment variables.
+            </p>
         </div>
     );
 }

@@ -38,7 +38,7 @@ export async function getContentPublishingLimit(
             }
         });
 
-        const data = response.data?.data?.[0]; // The endpoint returns a list with one object usually, or just the object? Graph API docs say list for some edges.
+        // The endpoint returns a list with one object usually, or just the object? Graph API docs say list for some edges.
         // Actually, for /{ig-user-id}/content_publishing_limit, it returns a single object usually or a list of 1.
         // Let's handle both object and list just in case.
 

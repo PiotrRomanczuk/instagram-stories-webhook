@@ -15,7 +15,7 @@ interface PostCardProps {
     post: ScheduledPost;
     onCancel: (id: string) => void;
     onReschedule: (id: string, newTime: Date) => void;
-    onUpdateTags?: (id: string, tags: any[]) => void;
+    onUpdateTags?: (id: string, tags: { username: string; x: number; y: number; }[]) => void;
     isDraggable?: boolean;
 }
 

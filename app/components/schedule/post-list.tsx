@@ -20,13 +20,14 @@ import {
 import { ScheduledPost } from '@/lib/types';
 import { PostCard } from './post-card';
 import { Calendar } from 'lucide-react';
+import { EmptyState } from '../ui/empty-state';
 
 interface PostListProps {
     posts: ScheduledPost[];
     onCancel: (id: string) => void;
     onReschedule: (id: string, newTime: Date) => void;
     onReorder?: (posts: ScheduledPost[]) => void;
-    onUpdateTags?: (id: string, tags: any[]) => void;
+    onUpdateTags?: (id: string, tags: { username: string; x: number; y: number; }[]) => void;
 }
 
 export function PostList({ posts, onCancel, onReschedule, onReorder, onUpdateTags }: PostListProps) {
@@ -35,6 +36,7 @@ export function PostList({ posts, onCancel, onReschedule, onReorder, onUpdateTag
 
     useEffect(() => {
         setPendingPosts(posts.filter(p => p.status === 'pending'));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [posts]);
 
     const sensors = useSensors(
@@ -69,10 +71,11 @@ export function PostList({ posts, onCancel, onReschedule, onReorder, onUpdateTag
 
     if (posts.length === 0) {
         return (
-            <div className="text-center py-12 bg-gray-50 rounded-2xl">
-                <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 font-medium">No scheduled posts yet</p>
-            </div>
+            <EmptyState
+                icon={Calendar}
+                title="No scheduled posts yet"
+                description="Your schedule is empty. Use the form above to schedule your first Instagram story."
+            />
         );
     }
 

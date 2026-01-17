@@ -1,6 +1,7 @@
 'use client';
 
 import { RefreshCw, Clock } from 'lucide-react';
+import { toast } from 'sonner';
 import { useSchedulePosts } from './use-schedule-posts';
 import { ScheduleForm } from './schedule-form';
 import { PostList } from './post-list';
@@ -16,15 +17,15 @@ export function ScheduleManager() {
         try {
             const res = await fetch(`/api/schedule?id=${id}`, { method: 'DELETE' });
             if (res.ok) {
-                alert('✅ Post cancelled');
+                toast.success('Post cancelled');
                 fetchPosts();
             } else {
                 const data = await res.json();
-                alert(`❌ Error: ${data.error}`);
+                toast.error(data.error || 'Failed to cancel post');
             }
         } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : String(error);
-            alert(`❌ Error: ${errorMessage}`);
+            toast.error(errorMessage);
         }
     };
 
@@ -40,19 +41,19 @@ export function ScheduleManager() {
             });
 
             if (res.ok) {
-                // No need to alert, real-time sync or manual refresh will handle it
+                toast.success('Post rescheduled');
                 fetchPosts();
             } else {
                 const data = await res.json();
-                alert(`❌ Error: ${data.error}`);
+                toast.error(data.error || 'Failed to reschedule');
             }
         } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : String(error);
-            alert(`❌ Error: ${errorMessage}`);
+            toast.error(errorMessage);
         }
     };
 
-    const handleReorder = async (reorderedPosts: any[]) => {
+    const handleReorder = async (reorderedPosts: import('@/lib/types').ScheduledPost[]) => {
         // 1. Get the original times from the posts, sorted
         // We assume the reorderedPosts passed in are just the PENDING ones
         const originalTimes = posts
@@ -69,9 +70,6 @@ export function ScheduleManager() {
 
         if (updates.length === 0) return;
 
-        // 3. Optimistically update local state if possible (optional, but fetchPosts will handle it)
-        // For now, we'll just fire the API calls
-
         try {
             // We could do a batch update API, but for now loop is safer with existing endpoints
             await Promise.all(updates.map(u =>
@@ -85,14 +83,15 @@ export function ScheduleManager() {
                 })
             ));
 
+            toast.success('Order updated');
             fetchPosts();
         } catch (error) {
             console.error("Reorder failed", error);
-            alert("Failed to reorder posts");
+            toast.error("Failed to reorder posts");
         }
     };
 
-    const handleUpdateTags = async (id: string, tags: any[]) => {
+    const handleUpdateTags = async (id: string, tags: { username: string; x: number; y: number; }[]) => {
         try {
             const res = await fetch('/api/schedule', {
                 method: 'PATCH',
@@ -104,14 +103,15 @@ export function ScheduleManager() {
             });
 
             if (res.ok) {
+                toast.success('Tags updated');
                 fetchPosts();
             } else {
                 const data = await res.json();
-                alert(`❌ Error: ${data.error}`);
+                toast.error(data.error || 'Failed to update tags');
             }
         } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : String(error);
-            alert(`❌ Error: ${errorMessage}`);
+            toast.error(errorMessage);
         }
     };
 

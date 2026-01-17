@@ -87,7 +87,7 @@ export async function updateScheduledPost(id: string, updates: Partial<Scheduled
         error?: string | null;
         published_at?: number | null;
         ig_media_id?: string;
-        user_tags?: any; // JSONB
+        user_tags?: { username: string; x: number; y: number; }[]; // JSONB
         updated_at: string;
     }
     const dbUpdates: DbScheduledPostUpdate = {

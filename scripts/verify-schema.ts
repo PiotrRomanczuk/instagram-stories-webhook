@@ -24,7 +24,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function check() {
     console.log("Checking for ig_media_id column in scheduled_posts...");
-    const { data, error } = await supabase
+    const { error } = await supabase
         .from('scheduled_posts')
         .select('ig_media_id')
         .limit(1);

@@ -33,10 +33,10 @@ async function main() {
     let updatedCount = 0;
     for (const post of posts) {
         // Prepare new tags
-        let currentTags = post.user_tags || [];
+        const currentTags = post.user_tags || [];
 
         // Check if already tagged to avoid duplicates
-        const alreadyTagged = currentTags.some((t: any) => t.username === targetUsername);
+        const alreadyTagged = currentTags.some((t: { username: string }) => t.username === targetUsername);
 
         if (alreadyTagged) {
             console.log(`🔹 Post ${post.id} already has tag. Skipping.`);
