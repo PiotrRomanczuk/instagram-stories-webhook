@@ -205,17 +205,3 @@ export async function getUpcomingPosts(userId?: string): Promise<ScheduledPost[]
         userId: post.user_id
     })) as ScheduledPostWithUser[];
 }
-
-export async function getTotalPendingCount(): Promise<number> {
-    const { count, error } = await supabaseAdmin
-        .from('scheduled_posts')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'pending');
-
-    if (error) {
-        console.error('Supabase getTotalPendingCount Error:', error);
-        return 0;
-    }
-
-    return count || 0;
-}
