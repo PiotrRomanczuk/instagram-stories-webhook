@@ -51,6 +51,9 @@ export class Logger {
         }
     }
 
+    private static lastLog: { key: string; timestamp: number } | null = null;
+    private static readonly DUPLICATE_WINDOW = 10 * 60 * 1000; // 10 minutes
+
     /**
      * Main log function. Returns a promise that resolves when local file write is finish,
      * BUT we also trigger Supabase update.
@@ -59,13 +62,33 @@ export class Logger {
         const { module, level = 'info', details, pushToSupabase = true } = options;
         const formatted = this.formatMessage(level, module, message);
 
-        // 1. Console Output
+        // Deduplication Logic
+        const currentKey = `${level}:${module}:${message}`;
+        let isDuplicate = false;
+
+        if (this.lastLog && this.lastLog.key === currentKey) {
+            const timeDiff = Date.now() - this.lastLog.timestamp;
+            if (timeDiff < this.DUPLICATE_WINDOW) {
+                isDuplicate = true;
+            }
+        }
+
+        if (!isDuplicate) {
+            this.lastLog = { key: currentKey, timestamp: Date.now() };
+        }
+
+        // 1. Console Output - always log to console for debugging visibility
         if (level === 'error') {
             console.error(formatted);
         } else if (level === 'warn') {
             console.warn(formatted);
         } else {
             console.log(formatted);
+        }
+
+        // Skip persistence if it's a duplicate
+        if (isDuplicate) {
+            return;
         }
 
         // 2. Local File Output
