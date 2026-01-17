@@ -1,4 +1,7 @@
 import { supabaseAdmin } from './supabase-admin';
+import { Logger } from './logger';
+
+const MODULE = 'db:accounts';
 
 /**
  * Linked Account Data - stores Facebook/Instagram tokens linked to a user
@@ -21,6 +24,7 @@ export interface LinkedAccount {
  */
 export async function getLinkedFacebookAccount(userId: string): Promise<LinkedAccount | null> {
     try {
+        Logger.debug(MODULE, `🔍 Fetching linked account for user ${userId}`);
         const { data, error } = await supabaseAdmin
             .from('linked_accounts')
             .select('*')
@@ -29,14 +33,17 @@ export async function getLinkedFacebookAccount(userId: string): Promise<LinkedAc
             .single();
 
         if (error) {
-            if (error.code === 'PGRST116') return null; // Not found
-            console.error('Supabase getLinkedFacebookAccount Error:', error);
+            if (error.code === 'PGRST116') {
+                Logger.debug(MODULE, `ℹ️ No linked account found for user ${userId}`);
+                return null;
+            }
+            Logger.error(MODULE, `❌ Supabase getLinkedFacebookAccount Error: ${error.message}`, error);
             return null;
         }
 
         return data as LinkedAccount;
     } catch (error) {
-        console.error('getLinkedFacebookAccount exception:', error);
+        Logger.error(MODULE, `❌ getLinkedFacebookAccount exception for user ${userId}`, error);
         return null;
     }
 }
@@ -50,7 +57,7 @@ export async function saveLinkedFacebookAccount(account: LinkedAccount): Promise
         const existing = await getLinkedFacebookAccount(account.user_id);
 
         if (existing) {
-            // Update existing
+            Logger.info(MODULE, `🔄 Updating Facebook account for user ${account.user_id}`);
             const { error } = await supabaseAdmin
                 .from('linked_accounts')
                 .update({
@@ -63,11 +70,11 @@ export async function saveLinkedFacebookAccount(account: LinkedAccount): Promise
                 .eq('id', existing.id);
 
             if (error) {
-                console.error('Supabase updateLinkedFacebookAccount Error:', error);
+                Logger.error(MODULE, `❌ Supabase updateLinkedFacebookAccount Error: ${error.message}`, error);
                 throw error;
             }
         } else {
-            // Insert new
+            Logger.info(MODULE, `💾 Saving new Facebook account for user ${account.user_id}`);
             const { error } = await supabaseAdmin
                 .from('linked_accounts')
                 .insert({
@@ -83,12 +90,12 @@ export async function saveLinkedFacebookAccount(account: LinkedAccount): Promise
                 });
 
             if (error) {
-                console.error('Supabase insertLinkedFacebookAccount Error:', error);
+                Logger.error(MODULE, `❌ Supabase insertLinkedFacebookAccount Error: ${error.message}`, error);
                 throw error;
             }
         }
     } catch (error) {
-        console.error('saveLinkedFacebookAccount exception:', error);
+        Logger.error(MODULE, `❌ saveLinkedFacebookAccount exception for user ${account.user_id}`, error);
         throw error;
     }
 }
@@ -98,6 +105,7 @@ export async function saveLinkedFacebookAccount(account: LinkedAccount): Promise
  */
 export async function deleteLinkedFacebookAccount(userId: string): Promise<void> {
     try {
+        Logger.info(MODULE, `🗑️ Unlinking Facebook account for user ${userId}`);
         const { error } = await supabaseAdmin
             .from('linked_accounts')
             .delete()
@@ -105,11 +113,11 @@ export async function deleteLinkedFacebookAccount(userId: string): Promise<void>
             .eq('provider', 'facebook');
 
         if (error) {
-            console.error('Supabase deleteLinkedFacebookAccount Error:', error);
+            Logger.error(MODULE, `❌ Supabase deleteLinkedFacebookAccount Error: ${error.message}`, error);
             throw error;
         }
     } catch (error) {
-        console.error('deleteLinkedFacebookAccount exception:', error);
+        Logger.error(MODULE, `❌ deleteLinkedFacebookAccount exception for user ${userId}`, error);
         throw error;
     }
 }
@@ -123,7 +131,7 @@ export async function getFacebookAccessToken(userId: string): Promise<string | n
 
     // Check if token is expired
     if (account.expires_at && account.expires_at < Date.now()) {
-        console.warn(`Facebook token for user ${userId} has expired`);
+        Logger.warn(MODULE, `⚠️ Facebook token for user ${userId} has expired`, { userId, expiresAt: account.expires_at });
         return null;
     }
 

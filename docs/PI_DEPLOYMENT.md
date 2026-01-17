@@ -33,22 +33,25 @@ sudo npm install -g pm2
    ```
    *(Follow the command returned by `pm2 startup` to enable it on boot)*
 
-## 🕒 Step 3: Configure Local Cron Jobs
-Open your crontab editor:
-```bash
-crontab -e
-```
-Add the following lines (replace `<CRON_SECRET>` with your secret and port with your app's port, default 3000):
+## 🕒 Step 3: Start the Cron Worker
+Instead of setting up system crontabs, you can run the built-in scheduler worker using PM2. This uses `node-cron` to check for posts every minute.
 
 ```bash
-# Process scheduled posts every minute
-* * * * * curl -X GET "http://localhost:3000/api/schedule/process" -H "Authorization: Bearer <CRON_SECRET>"
-
-# Refresh Meta Token every Sunday at midnight
-0 0 * * 0 curl -X GET "http://localhost:3000/api/schedule/refresh-token" -H "Authorization: Bearer <CRON_SECRET>"
+pm2 start npm --name "insta-worker" -- run worker
 ```
 
-## 🌐 Step 4: External Access (Cloudflare Tunnel)
+This worker will:
+1. Load environment variables from `.env.local`.
+2. check for pending posts every minute.
+3. Automatically handle publishing and clean up media.
+
+## 📝 Step 4: Monitor Logs
+You can monitor the output of your app and worker using:
+```bash
+pm2 logs
+```
+
+## 🌐 Step 5: External Access (Cloudflare Tunnel)
 Since your Pi is likely behind a NAT/Firewall, use a **Cloudflare Tunnel** to expose it to the internet without port forwarding.
 
 1. Install `cloudflared` on your Pi.

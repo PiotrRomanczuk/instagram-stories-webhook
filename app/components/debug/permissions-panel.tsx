@@ -2,13 +2,13 @@ import { Shield, CheckCircle2, XCircle } from 'lucide-react';
 import { Panel } from '../ui/panel';
 
 interface PermissionsPanelProps {
-    permissions: Array<{
+    permissions?: Array<{
         permission: string;
         status: string;
     }>;
 }
 
-export function PermissionsPanel({ permissions }: PermissionsPanelProps) {
+export function PermissionsPanel({ permissions = [] }: PermissionsPanelProps) {
     const requiredScopes = ['instagram_basic', 'instagram_content_publish', 'pages_read_engagement', 'pages_show_list'];
 
     return (

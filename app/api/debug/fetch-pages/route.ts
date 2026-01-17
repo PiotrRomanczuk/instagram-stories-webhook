@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import axios from 'axios';
 import { getServerSession } from "next-auth/next";
 import { getLinkedFacebookAccount } from '@/lib/linked-accounts-db';
@@ -6,7 +6,7 @@ import { authOptions } from "@/lib/auth";
 
 const GRAPH_API_BASE = 'https://graph.facebook.com/v21.0';
 
-export async function GET(_request: NextRequest) {
+export async function GET() {
     console.log("🔍 Fetching Facebook Pages...");
     const session = await getServerSession(authOptions);
 
@@ -50,12 +50,12 @@ export async function GET(_request: NextRequest) {
             detected_page_ids: string[];
             pages: Array<{
                 success: boolean;
-                data?: any;
+                data?: unknown;
                 page_id?: string;
-                error?: any;
+                error?: unknown;
             }>;
-            me_accounts?: any;
-            me_accounts_error?: any;
+            me_accounts?: unknown;
+            me_accounts_error?: unknown;
         }
         const results: FetchPagesResults = {
             detected_page_ids: pageIds,
@@ -80,8 +80,8 @@ export async function GET(_request: NextRequest) {
                         access_token: pageRes.data.access_token ? `${pageRes.data.access_token.substring(0, 10)}...` : null
                     }
                 });
-            } catch (err: any) {
-                const errMsg = err.response?.data || err.message;
+            } catch (err: unknown) {
+                const errMsg = axios.isAxiosError(err) ? (err.response?.data || err.message) : (err instanceof Error ? err.message : String(err));
                 console.error(`❌ Failed to fetch Page ${pageId}:`, JSON.stringify(errMsg));
                 results.pages.push({
                     success: false,
@@ -104,20 +104,20 @@ export async function GET(_request: NextRequest) {
             console.log(`✅ /me/accounts returned ${accountsRes.data.data?.length || 0} pages.`);
             results.me_accounts = {
                 ...accountsRes.data,
-                data: (accountsRes.data.data || []).map((p: any) => ({
+                data: (accountsRes.data.data || []).map((p: { id: string; name: string; category: string; access_token?: string }) => ({
                     ...p,
                     access_token: p.access_token ? `${p.access_token.substring(0, 10)}...` : null
                 }))
             };
-        } catch (err: any) {
-            const errMsg = err.response?.data || err.message;
+        } catch (err: unknown) {
+            const errMsg = axios.isAxiosError(err) ? (err.response?.data || err.message) : (err instanceof Error ? err.message : String(err));
             console.error("❌ /me/accounts failed:", JSON.stringify(errMsg));
             results.me_accounts_error = errMsg;
         }
 
         return NextResponse.json(results);
-    } catch (error: any) {
-        const errorData = axios.isAxiosError(error) ? (error.response?.data || error.message) : String(error);
+    } catch (error: unknown) {
+        const errorData = axios.isAxiosError(error) ? (error.response?.data || error.message) : (error instanceof Error ? error.message : String(error));
         console.error('🔥 Critical Fetch Pages API Error:', errorData);
         return NextResponse.json({
             error: 'Failed to fetch pages',

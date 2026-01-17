@@ -28,6 +28,30 @@ export function ScheduleManager() {
         }
     };
 
+    const handleReschedule = async (id: string, newTime: Date) => {
+        try {
+            const res = await fetch('/api/schedule', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id,
+                    scheduledTime: newTime.toISOString(),
+                }),
+            });
+
+            if (res.ok) {
+                // No need to alert, real-time sync or manual refresh will handle it
+                fetchPosts();
+            } else {
+                const data = await res.json();
+                alert(`❌ Error: ${data.error}`);
+            }
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            alert(`❌ Error: ${errorMessage}`);
+        }
+    };
+
     return (
         <div className="space-y-8">
             <ScheduleForm onScheduled={fetchPosts} />
@@ -51,7 +75,11 @@ export function ScheduleManager() {
                 {loading ? (
                     <LoadingSpinner />
                 ) : (
-                    <PostList posts={posts} onCancel={handleCancel} />
+                    <PostList
+                        posts={posts}
+                        onCancel={handleCancel}
+                        onReschedule={handleReschedule}
+                    />
                 )}
             </Panel>
         </div>

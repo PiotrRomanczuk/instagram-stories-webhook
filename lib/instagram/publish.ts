@@ -3,8 +3,10 @@ import { getFacebookAccessToken, getInstagramUserId } from '../linked-accounts-d
 import { waitForContainerReady } from './container';
 import { MediaType, PostType } from '../types';
 import { supabaseAdmin } from '../../lib/supabase-admin';
+import { Logger } from '../logger';
 
 const GRAPH_API_BASE = 'https://graph.facebook.com/v21.0';
+const MODULE = 'instagram';
 
 /**
  * Publishes media to Instagram using a user's linked Facebook account.
@@ -62,20 +64,20 @@ export async function publishMedia(
     }
 
     try {
-        console.log(`📤 Creating ${postType} container for ${mediaType} (User: ${userId})...`);
+        await Logger.info(MODULE, `📤 Creating ${postType} container for ${mediaType} (User: ${userId})...`);
         const containerRes = await axios.post(`${GRAPH_API_BASE}/${igUserId}/media`, containerData);
 
         const containerId = containerRes.data.id;
         await waitForContainerReady(containerId, accessToken);
 
         // Step 2: Publish Media Container
-        console.log(`🚀 Publishing container ${containerId} for user ${userId}...`);
+        await Logger.info(MODULE, `🚀 Publishing container ${containerId} for user ${userId}...`);
         const publishRes = await axios.post(`${GRAPH_API_BASE}/${igUserId}/media_publish`, {
             creation_id: containerId,
             access_token: accessToken,
         });
 
-        // Log Success
+        // Log Success to both systems
         await supabaseAdmin.from('publishing_logs').insert({
             user_id: userId,
             media_url: url,
@@ -86,24 +88,26 @@ export async function publishMedia(
             ig_media_id: publishRes.data.id
         });
 
+        await Logger.info(MODULE, `✅ Successfully published media to Instagram`, { mediaId: publishRes.data.id, userId });
+
         return publishRes.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
         let errorMessage = 'Failed to publish to Instagram';
 
         if (axios.isAxiosError(error)) {
             const errorData = error.response?.data?.error;
-            console.error('Instagram API Error:', errorData || error.message);
             errorMessage = errorData?.message || error.message;
+            await Logger.error(MODULE, `Instagram API Error: ${errorMessage}`, errorData);
 
             if (errorData?.code === 368) {
                 errorMessage = 'Action blocked by Instagram (Rate Limit/Content Policy)';
             }
         } else {
-            console.error('Non-Axios Error:', error);
             errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            await Logger.error(MODULE, `Non-Axios Error: ${errorMessage}`, error);
         }
 
-        // Log Failure
+        // Log Failure to both systems
         await supabaseAdmin.from('publishing_logs').insert({
             user_id: userId,
             media_url: url,

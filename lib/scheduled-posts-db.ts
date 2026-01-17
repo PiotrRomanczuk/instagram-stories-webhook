@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabaseAdmin } from './supabase-admin';
 import { ScheduledPost, MediaType, PostType } from './types';
 
 // Updated interface to include userId
@@ -7,7 +7,7 @@ export interface ScheduledPostWithUser extends ScheduledPost {
 }
 
 export async function getScheduledPosts(userId?: string): Promise<ScheduledPost[]> {
-    let query = supabase
+    let query = supabaseAdmin
         .from('scheduled_posts')
         .select('*');
 
@@ -55,7 +55,7 @@ export async function addScheduledPost(
         user_id: post.userId // Set the user_id
     };
 
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
         .from('scheduled_posts')
         .insert(newRecord);
 
@@ -97,7 +97,7 @@ export async function updateScheduledPost(id: string, updates: Partial<Scheduled
     if (updates.error !== undefined) dbUpdates.error = updates.error;
     if (updates.publishedAt !== undefined) dbUpdates.published_at = updates.publishedAt;
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
         .from('scheduled_posts')
         .update(dbUpdates)
         .eq('id', id)
@@ -125,7 +125,7 @@ export async function updateScheduledPost(id: string, updates: Partial<Scheduled
 }
 
 export async function deleteScheduledPost(id: string): Promise<boolean> {
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
         .from('scheduled_posts')
         .delete()
         .eq('id', id);
@@ -140,7 +140,7 @@ export async function deleteScheduledPost(id: string): Promise<boolean> {
 
 export async function getPendingPosts(): Promise<ScheduledPostWithUser[]> {
     const now = Date.now();
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
         .from('scheduled_posts')
         .select('*')
         .eq('status', 'pending')
@@ -168,7 +168,7 @@ export async function getPendingPosts(): Promise<ScheduledPostWithUser[]> {
 
 export async function getUpcomingPosts(userId?: string): Promise<ScheduledPost[]> {
     const now = Date.now();
-    let query = supabase
+    let query = supabaseAdmin
         .from('scheduled_posts')
         .select('*')
         .eq('status', 'pending')

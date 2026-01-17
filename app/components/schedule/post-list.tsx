@@ -5,9 +5,10 @@ import { Calendar } from 'lucide-react';
 interface PostListProps {
     posts: ScheduledPost[];
     onCancel: (id: string) => void;
+    onReschedule: (id: string, newTime: Date) => void;
 }
 
-export function PostList({ posts, onCancel }: PostListProps) {
+export function PostList({ posts, onCancel, onReschedule }: PostListProps) {
     if (posts.length === 0) {
         return (
             <div className="text-center py-12 bg-gray-50 rounded-2xl">
@@ -27,7 +28,7 @@ export function PostList({ posts, onCancel }: PostListProps) {
                 <div>
                     <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Pending ({pending.length})</h3>
                     <div className="space-y-3">
-                        {pending.map(post => <PostCard key={post.id} post={post} onCancel={onCancel} />)}
+                        {pending.map(post => <PostCard key={post.id} post={post} onCancel={onCancel} onReschedule={onReschedule} />)}
                     </div>
                 </div>
             )}
@@ -35,7 +36,7 @@ export function PostList({ posts, onCancel }: PostListProps) {
                 <div>
                     <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Published ({published.length})</h3>
                     <div className="space-y-3">
-                        {published.map(post => <PostCard key={post.id} post={post} onCancel={onCancel} />)}
+                        {published.map(post => <PostCard key={post.id} post={post} onCancel={onCancel} onReschedule={onReschedule} />)}
                     </div>
                 </div>
             )}
@@ -43,7 +44,7 @@ export function PostList({ posts, onCancel }: PostListProps) {
                 <div>
                     <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Failed ({failed.length})</h3>
                     <div className="space-y-3">
-                        {failed.map(post => <PostCard key={post.id} post={post} onCancel={onCancel} />)}
+                        {failed.map(post => <PostCard key={post.id} post={post} onCancel={onCancel} onReschedule={onReschedule} />)}
                     </div>
                 </div>
             )}

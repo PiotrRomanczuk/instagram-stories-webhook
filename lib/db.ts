@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabaseAdmin } from './supabase-admin';
 import { TokenData } from './types';
 
 // For the migration, we'll use a fixed ID to ensure we only ever have one active token record
@@ -7,7 +7,7 @@ const TOKEN_RECORD_ID = '00000000-0000-0000-0000-000000000001';
 
 export async function getTokens(): Promise<TokenData | null> {
     try {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseAdmin
             .from('tokens')
             .select('*')
             .eq('id', TOKEN_RECORD_ID)
@@ -32,7 +32,7 @@ export async function getTokens(): Promise<TokenData | null> {
 
 export async function saveTokens(tokens: TokenData): Promise<void> {
     try {
-        const { error } = await supabase
+        const { error } = await supabaseAdmin
             .from('tokens')
             .upsert({
                 id: TOKEN_RECORD_ID,

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 
 export async function GET() {
     try {
@@ -20,7 +20,7 @@ export async function GET() {
             const tokensData = await fs.readFile(tokensPath, 'utf-8');
             const tokens = JSON.parse(tokensData);
 
-            const { error: tokenError } = await supabase
+            const { error: tokenError } = await supabaseAdmin
                 .from('tokens')
                 .upsert({
                     id: '00000000-0000-0000-0000-000000000001',
@@ -52,7 +52,7 @@ export async function GET() {
                     error: p.error
                 }));
 
-                const { error: postError } = await supabase
+                const { error: postError } = await supabaseAdmin
                     .from('scheduled_posts')
                     .upsert(mappedPosts);
 

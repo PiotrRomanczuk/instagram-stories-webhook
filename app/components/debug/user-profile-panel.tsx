@@ -1,4 +1,5 @@
 import { User } from 'lucide-react';
+import Image from 'next/image';
 import { Panel } from '../ui/panel';
 
 interface UserProfilePanelProps {
@@ -11,7 +12,7 @@ interface UserProfilePanelProps {
                 url?: string;
             };
         };
-    } | null;
+    } | null | undefined;
 }
 
 export function UserProfilePanel({ profile }: UserProfilePanelProps) {
@@ -22,10 +23,13 @@ export function UserProfilePanel({ profile }: UserProfilePanelProps) {
             <div className="flex items-center gap-6">
                 <div className="relative">
                     {profile.picture?.data?.url ? (
-                        <img
+                        <Image
                             src={profile.picture.data.url}
                             alt={profile.name}
+                            width={80}
+                            height={80}
                             className="w-20 h-20 rounded-3xl object-cover ring-4 ring-slate-50 shadow-lg"
+                            unoptimized
                         />
                     ) : (
                         <div className="w-20 h-20 bg-slate-100 rounded-3xl flex items-center justify-center">

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import axios from 'axios';
 import { getServerSession } from "next-auth/next";
 import { getLinkedFacebookAccount } from '@/lib/linked-accounts-db';
@@ -6,7 +6,7 @@ import { authOptions } from "@/lib/auth";
 
 const GRAPH_API_BASE = 'https://graph.facebook.com/v21.0';
 
-export async function GET(_request: NextRequest) {
+export async function GET() {
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
@@ -22,15 +22,15 @@ export async function GET(_request: NextRequest) {
     try {
         interface PageDebugResult {
             token: string;
-            user?: any;
-            permissions?: any[];
-            pages_minimal?: any;
-            pages_minimal_error?: any;
-            pages_full?: any;
-            pages_full_error?: any;
-            businesses?: any;
-            businesses_error?: any;
-            token_debug?: any;
+            user?: unknown;
+            permissions?: unknown[];
+            pages_minimal?: unknown;
+            pages_minimal_error?: unknown;
+            pages_full?: unknown;
+            pages_full_error?: unknown;
+            businesses?: unknown;
+            businesses_error?: unknown;
+            token_debug?: unknown;
         }
         const results: PageDebugResult = {
             token: linkedAccount.access_token.substring(0, 20) + '...',
@@ -60,13 +60,13 @@ export async function GET(_request: NextRequest) {
             });
             results.pages_minimal = {
                 ...pagesMinimalRes.data,
-                data: (pagesMinimalRes.data.data || []).map((p: any) => ({
+                data: (pagesMinimalRes.data.data || []).map((p: { access_token?: string }) => ({
                     ...p,
                     access_token: p.access_token ? `${p.access_token.substring(0, 10)}...` : null
                 }))
             };
-        } catch (err: any) {
-            results.pages_minimal_error = err.response?.data || err.message;
+        } catch (err: unknown) {
+            results.pages_minimal_error = axios.isAxiosError(err) ? (err.response?.data || err.message) : (err instanceof Error ? err.message : String(err));
         }
 
         // 4. Try to get pages with all fields
@@ -77,13 +77,13 @@ export async function GET(_request: NextRequest) {
                     access_token: linkedAccount.access_token
                 }
             });
-            const maskedPages = (pagesFullRes.data.data || []).map((p: any) => ({
+            const maskedPages = (pagesFullRes.data.data || []).map((p: { access_token?: string }) => ({
                 ...p,
                 access_token: p.access_token ? `${p.access_token.substring(0, 10)}...` : null
             }));
             results.pages_full = { ...pagesFullRes.data, data: maskedPages };
-        } catch (err: any) {
-            results.pages_full_error = err.response?.data || err.message;
+        } catch (err: unknown) {
+            results.pages_full_error = axios.isAxiosError(err) ? (err.response?.data || err.message) : (err instanceof Error ? err.message : String(err));
         }
 
         // Check token debug info
@@ -101,8 +101,8 @@ export async function GET(_request: NextRequest) {
         }
 
         return NextResponse.json(results);
-    } catch (error: any) {
-        const errorData = axios.isAxiosError(error) ? (error.response?.data || error.message) : String(error);
+    } catch (error: unknown) {
+        const errorData = axios.isAxiosError(error) ? (error.response?.data || error.message) : (error instanceof Error ? error.message : String(error));
         console.error('Pages Debug API Error:', errorData);
         return NextResponse.json({
             error: 'Failed to fetch pages debug information',

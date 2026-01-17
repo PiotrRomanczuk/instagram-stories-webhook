@@ -69,9 +69,10 @@ export async function GET(request: NextRequest) {
                 });
 
                 results.push({ user_id: account.user_id, success: true });
-            } catch (err: any) {
-                console.error(`❌ Failed to refresh token for user ${account.user_id}:`, err.response?.data || err.message);
-                results.push({ user_id: account.user_id, success: false, error: err.message });
+            } catch (err: unknown) {
+                const errorMessage = axios.isAxiosError(err) ? (err.response?.data || err.message) : (err instanceof Error ? err.message : String(err));
+                console.error(`❌ Failed to refresh token for user ${account.user_id}:`, errorMessage);
+                results.push({ user_id: account.user_id, success: false, error: errorMessage });
             }
         }
 
@@ -83,8 +84,9 @@ export async function GET(request: NextRequest) {
             results
         });
 
-    } catch (error: any) {
-        console.error('❌ Refresh-token API error:', error.message);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        console.error('❌ Refresh-token API error:', errorMessage);
+        return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 }

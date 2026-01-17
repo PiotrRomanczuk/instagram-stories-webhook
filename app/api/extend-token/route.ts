@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import axios from 'axios';
 import { getServerSession } from "next-auth/next";
 import { getLinkedFacebookAccount, saveLinkedFacebookAccount } from '@/lib/linked-accounts-db';
 import { authOptions } from "@/lib/auth";
 
-export async function POST(request: NextRequest) {
+export async function POST() {
     try {
         const session = await getServerSession(authOptions);
 
@@ -55,8 +55,8 @@ export async function POST(request: NextRequest) {
             expires_in_days: expiresIn ? Math.floor(expiresIn / 86400) : 'unknown'
         });
 
-    } catch (error: any) {
-        const errorData = axios.isAxiosError(error) ? (error.response?.data || error.message) : String(error);
+    } catch (error: unknown) {
+        const errorData = axios.isAxiosError(error) ? (error.response?.data || error.message) : (error instanceof Error ? error.message : String(error));
         console.error('❌ Token extension failed:', errorData);
         return NextResponse.json({
             error: 'Failed to extend token',

@@ -3,11 +3,15 @@ import { getServerSession } from "next-auth/next";
 import { getInstagramBusinessAccountId } from "@/lib/instagram/account";
 import { saveLinkedFacebookAccount } from "@/lib/linked-accounts-db";
 import { authOptions } from "@/lib/auth";
+import { Logger } from "@/lib/logger";
+
+const MODULE = 'auth';
 
 /**
  * Handles the Facebook OAuth callback for account linking.
  */
 export async function GET(req: NextRequest) {
+    await Logger.info(MODULE, '📥 Facebook callback received');
     const session = await getServerSession(authOptions);
     const { searchParams } = new URL(req.url);
     const code = searchParams.get("code");
@@ -16,24 +20,28 @@ export async function GET(req: NextRequest) {
 
     // 1. Check for errors from Facebook
     if (error) {
-        console.error("Facebook OAuth Error:", error, searchParams.get("error_description"));
+        const errorDesc = searchParams.get("error_description");
+        await Logger.error(MODULE, `❌ Facebook OAuth error: ${error}`, { error, description: errorDesc });
         return NextResponse.redirect(new URL("/?error=fb_auth_failed", req.url));
     }
 
     // 2. Validate session
     if (!session?.user?.id) {
-        console.error("No session found during Facebook linking callback");
+        await Logger.warn(MODULE, "⚠️ No session found during Facebook linking callback");
         return NextResponse.redirect(new URL("/auth/signin", req.url));
     }
+
+    const userId = session.user.id;
 
     // 3. Verify state for CSRF protection
     const cookieState = req.cookies.get("fb_link_state")?.value;
     if (!state || state !== cookieState) {
-        console.error("State mismatch in Facebook linking callback");
+        await Logger.error(MODULE, "🔒 State mismatch in Facebook linking callback", { userId, state, cookieState });
         return NextResponse.redirect(new URL("/?error=state_mismatch", req.url));
     }
 
     if (!code) {
+        await Logger.error(MODULE, "❌ No code provided in Facebook callback", { userId });
         return NextResponse.redirect(new URL("/?error=no_code", req.url));
     }
 
@@ -43,16 +51,19 @@ export async function GET(req: NextRequest) {
         const redirectUri = `${process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL}/api/auth/link-facebook/callback`;
 
         // 4. Exchange code for access token
+        await Logger.info(MODULE, `🔑 Exchanging code for token...`, { userId });
         const tokenResponse = await fetch(
             `https://graph.facebook.com/v21.0/oauth/access_token?client_id=${appId}&redirect_uri=${redirectUri}&client_secret=${appSecret}&code=${code}`
         );
         const tokenData = await tokenResponse.json();
 
         if (tokenData.error) {
+            await Logger.error(MODULE, `❌ Token exchange failed: ${tokenData.error.message}`, { userId, error: tokenData.error });
             throw new Error(`Token exchange failed: ${tokenData.error.message}`);
         }
 
         const shortLivedToken = tokenData.access_token;
+        await Logger.info(MODULE, "✅ Short-lived token obtained", { userId });
 
         // 5. Exchange for long-lived token (60 days)
         const longLivedResponse = await fetch(
@@ -61,6 +72,7 @@ export async function GET(req: NextRequest) {
         const longLivedData = await longLivedResponse.json();
 
         if (longLivedData.error) {
+            await Logger.error(MODULE, `❌ Long-lived token exchange failed: ${longLivedData.error.message}`, { userId, error: longLivedData.error });
             throw new Error(`Long-lived token exchange failed: ${longLivedData.error.message}`);
         }
 
@@ -69,8 +81,18 @@ export async function GET(req: NextRequest) {
             ? Date.now() + (longLivedData.expires_in * 1000)
             : undefined;
 
+        const days = longLivedData.expires_in ? Math.floor(longLivedData.expires_in / 86400) : 'unknown';
+        await Logger.info(MODULE, `✅ Long-lived token obtained (expires in ${days} days)`, { userId, days });
+
         // 6. Fetch Instagram Business Account ID
+        await Logger.info(MODULE, "📸 Fetching Instagram Business Account ID...", { userId });
         const igUserId = await getInstagramBusinessAccountId(accessToken);
+
+        if (igUserId) {
+            await Logger.info(MODULE, `✨ Instagram Business Account found: ${igUserId}`, { userId, igUserId });
+        } else {
+            await Logger.warn(MODULE, "⚠️ No Instagram Business Account found", { userId });
+        }
 
         // 7. Get Facebook User ID (provider_account_id)
         const meResponse = await fetch(`https://graph.facebook.com/me?access_token=${accessToken}`);
@@ -79,7 +101,7 @@ export async function GET(req: NextRequest) {
 
         // 8. Save to linked_accounts table
         await saveLinkedFacebookAccount({
-            user_id: session.user.id,
+            user_id: userId,
             provider: 'facebook',
             provider_account_id: facebookUserId,
             access_token: accessToken,
@@ -87,15 +109,16 @@ export async function GET(req: NextRequest) {
             ig_user_id: igUserId || undefined
         });
 
-        console.log(`✅ Successfully linked Facebook account for user ${session.user.id}`);
+        await Logger.info(MODULE, `✅ Facebook account successfully linked for user ${userId}`, { userId, facebookUserId, igUserId });
 
         // 9. Redirect back to dashboard with success
         const response = NextResponse.redirect(new URL("/?status=linked", req.url));
         response.cookies.delete("fb_link_state");
         return response;
 
-    } catch (error: any) {
-        console.error("Error linking Facebook account:", error);
-        return NextResponse.redirect(new URL(`/?error=linking_failed&message=${encodeURIComponent(error.message)}`, req.url));
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        await Logger.error(MODULE, `❌ Facebook linking failed for user ${userId}: ${errorMessage}`, { userId, error });
+        return NextResponse.redirect(new URL(`/?error=linking_failed&message=${encodeURIComponent(errorMessage)}`, req.url));
     }
 }

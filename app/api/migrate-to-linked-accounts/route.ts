@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
             const meRes = await fetch(`https://graph.facebook.com/v21.0/me?access_token=${globalToken.access_token}`);
             const meData = await meRes.json();
             if (meData.id) providerAccountId = meData.id;
-        } catch (e) {
+        } catch {
             console.warn('Could not fetch Facebook user ID during migration, using placeholder.');
         }
 
@@ -75,8 +75,9 @@ export async function GET(request: NextRequest) {
             facebook_id: providerAccountId
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         console.error('Migration Error:', error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 }

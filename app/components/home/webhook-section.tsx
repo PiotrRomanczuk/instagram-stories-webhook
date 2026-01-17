@@ -1,5 +1,5 @@
 import React from 'react';
-import { Terminal, Copy } from 'lucide-react';
+import { Terminal } from 'lucide-react';
 
 interface WebhookSectionProps {
     webhookUrl: string;
@@ -26,8 +26,8 @@ export function WebhookSection({ webhookUrl }: WebhookSectionProps) {
                 <div className="group relative">
                     <code className="block w-full bg-slate-50 dark:bg-black/40 p-6 rounded-2xl text-xs font-mono text-slate-600 dark:text-zinc-400 break-all border border-slate-100 dark:border-white/5 shadow-inner leading-relaxed">
                         <span className="text-purple-600 dark:text-purple-400">curl</span> -X POST {webhookUrl} \<br />
-                        &nbsp;&nbsp;-H <span className="text-emerald-600 dark:text-green-400">"Content-Type: application/json"</span> \<br />
-                        &nbsp;&nbsp;-d <span className="text-amber-600 dark:text-yellow-400">'{"{"}"url": "https://...", "type": "IMAGE"{"}"}'</span>
+                        &nbsp;&nbsp;-H <span className="text-emerald-600 dark:text-green-400">&quot;Content-Type: application/json&quot;</span> \<br />
+                        &nbsp;&nbsp;-d <span className="text-amber-600 dark:text-yellow-400">&apos;{"{"}&quot;url&quot;: &quot;https://...&quot;, &quot;type&quot;: &quot;IMAGE&quot;{"}"}&apos;</span>
                     </code>
                 </div>
             </div>

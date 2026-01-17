@@ -3,6 +3,9 @@ import { JWT } from "next-auth/jwt";
 import GoogleProvider from "next-auth/providers/google";
 import { SupabaseAdapter } from "@auth/supabase-adapter";
 import * as jwt from "jsonwebtoken";
+import { Logger } from "./logger";
+
+const MODULE = 'auth:next-auth';
 
 export const authOptions: AuthOptions = {
     providers: [
@@ -18,29 +21,30 @@ export const authOptions: AuthOptions = {
     }),
     callbacks: {
         async signIn({ user, account }: { user: User; account: Account | null }) {
-            const adminEmail = process.env.ADMIN_EMAIL || "admin@example.com";
+            const adminEmail = process.env.ADMIN_EMAIL || "";
             const allowedEmails = adminEmail.split(',').map(e => e.trim().toLowerCase());
 
-            console.log('--- Auth Attempt ---');
-            console.log(`📡 Provider: ${account?.provider}`);
-            console.log(`📧 Attempting Email: ${user.email}`);
+            await Logger.info(MODULE, '--- Auth Attempt ---', {
+                provider: account?.provider,
+                email: user.email
+            });
 
             const userEmail = user.email?.toLowerCase() || "";
             const isAllowed = allowedEmails.includes(userEmail);
 
             if (account?.provider === 'google') {
                 if (isAllowed) {
-                    console.log(`✅ GOOGLE ACCESS GRANTED: ${userEmail}`);
+                    await Logger.info(MODULE, `✅ GOOGLE ACCESS GRANTED: ${userEmail}`);
                     return true;
                 } else {
-                    console.log(`❌ GOOGLE ACCESS DENIED: ${userEmail} not in ${allowedEmails}`);
+                    await Logger.warn(MODULE, `❌ GOOGLE ACCESS DENIED: ${userEmail} not in allowed list`);
                     return false;
                 }
             }
 
             // We no longer allow Facebook sign-ins for login
             if (account?.provider === 'facebook') {
-                console.log(`❌ Facebook Login Blocked (Use Link Feature instead): ${userEmail}`);
+                await Logger.warn(MODULE, `❌ Facebook Login Blocked (Use Link Feature instead): ${userEmail}`);
                 return false;
             }
 
@@ -51,7 +55,7 @@ export const authOptions: AuthOptions = {
             if (user) {
                 token.id = user.id;
                 token.email = user.email;
-                console.log(`👤 User Sign-in: ${user.email}`);
+                await Logger.info(MODULE, `👤 User JWT Created: ${user.email}`, { userId: user.id });
             }
 
             return token;

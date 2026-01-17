@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
+import { Logger } from "@/lib/logger";
+
+const MODULE = 'auth';
 
 /**
  * Initiates the Facebook OAuth flow for account linking.
@@ -9,21 +12,18 @@ import { authOptions } from "@/lib/auth";
  */
 export async function GET(req: NextRequest) {
     try {
-        console.log("🔗 Initiating Facebook Link Flow...");
-        console.log("Cookies:", req.cookies.getAll().map(c => c.name).join(', '));
+        await Logger.info(MODULE, "🔗 Initiating Facebook Link Flow...");
 
         const session = await getServerSession(authOptions);
 
-        console.log("Session User:", session?.user?.email || "None");
-        console.log("Session ID:", session?.user?.id || "None");
-
         if (!session?.user?.id) {
-            console.log("⚠️ No session found in link-facebook initiation, redirecting to signin");
-            // Add a return URL so they come back here? 
-            // Actually, we want them to just sign in first.
+            await Logger.warn(MODULE, "⚠️ No session found in link-facebook initiation, redirecting to signin");
             const signinUrl = new URL("/auth/signin", req.url);
             return NextResponse.redirect(signinUrl.toString());
         }
+
+        const userId = session.user.id;
+        await Logger.info(MODULE, `👤 Link flow requested by user: ${session.user.email}`, { userId });
 
         const appId = process.env.AUTH_FACEBOOK_ID || process.env.NEXT_PUBLIC_FB_APP_ID;
         const redirectUri = `${process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL}/api/auth/link-facebook/callback`;
@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
         // Generate a state token for CSRF protection
         const state = Buffer.from(JSON.stringify({
             timestamp: Date.now(),
-            userId: session.user.id,
+            userId: userId,
             random: Math.random().toString(36).substring(7)
         })).toString('base64');
 
@@ -50,6 +50,8 @@ export async function GET(req: NextRequest) {
         facebookAuthUrl.searchParams.set("scope", scopes);
         facebookAuthUrl.searchParams.set("state", state);
         facebookAuthUrl.searchParams.set("response_type", "code");
+
+        await Logger.debug(MODULE, `🔀 Redirecting user ${userId} to Facebook OAuth...`, { redirectUri });
 
         // Set state cookie for verification in callback
         const response = NextResponse.redirect(facebookAuthUrl.toString());
@@ -61,8 +63,9 @@ export async function GET(req: NextRequest) {
         });
 
         return response;
-    } catch (error: any) {
-        console.error("❌ Critical Error in link-facebook:", error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        await Logger.error(MODULE, `❌ Critical Error in link-facebook initiation: ${errorMessage}`, error);
+        return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 }

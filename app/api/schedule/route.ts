@@ -26,8 +26,8 @@ export async function GET(request: NextRequest) {
         posts.sort((a, b) => a.scheduledTime - b.scheduledTime);
 
         return NextResponse.json({ posts });
-    } catch (error: any) {
-        const errorMessage = error.message || 'Unknown error';
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         console.error('Error fetching scheduled posts:', error);
         return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
@@ -84,8 +84,8 @@ export async function POST(request: NextRequest) {
             post,
             message: `Post scheduled for ${new Date(scheduledTimeMs).toLocaleString()}`
         });
-    } catch (error: any) {
-        const errorMessage = error.message || 'Unknown error';
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         console.error('Error scheduling post:', error);
         return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
@@ -123,8 +123,8 @@ export async function DELETE(request: NextRequest) {
         console.log(`🗑️ Cancelled scheduled post: ${id} for user ${session.user.id}`);
 
         return NextResponse.json({ success: true, message: 'Post cancelled' });
-    } catch (error: any) {
-        const errorMessage = error.message || 'Unknown error';
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         console.error('Error cancelling post:', error);
         return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
@@ -179,8 +179,8 @@ export async function PATCH(request: NextRequest) {
         console.log(`✏️ Updated scheduled post: ${id} for user ${session.user.id}`);
 
         return NextResponse.json({ success: true, post });
-    } catch (error: any) {
-        const errorMessage = error.message || 'Unknown error';
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         console.error('Error updating post:', error);
         return NextResponse.json({ error: errorMessage }, { status: 500 });
     }

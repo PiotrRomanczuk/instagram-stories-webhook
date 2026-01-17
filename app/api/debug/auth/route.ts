@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getServerSession } from "next-auth/next";
 import { getLinkedFacebookAccount } from '@/lib/linked-accounts-db';
 import { authOptions } from "@/lib/auth";
 import axios from 'axios';
 
-export async function GET(_request: NextRequest) {
+export async function GET() {
     const session = await getServerSession(authOptions);
 
     if (!session) {
@@ -17,7 +17,7 @@ export async function GET(_request: NextRequest) {
     try {
         const linkedAccount = await getLinkedFacebookAccount(session.user.id);
 
-        const debugData: any = {
+        const debugData: Record<string, unknown> = {
             authenticated: true,
             user: {
                 id: session.user.id,
@@ -65,16 +65,17 @@ export async function GET(_request: NextRequest) {
                     });
                     debugData.token_debug = debugRes.data.data;
                 }
-            } catch (fbErr: any) {
-                debugData.facebook_live_error = fbErr.response?.data || fbErr.message;
+            } catch (fbErr: unknown) {
+                const fbErrorData = axios.isAxiosError(fbErr) ? (fbErr.response?.data || fbErr.message) : (fbErr instanceof Error ? fbErr.message : String(fbErr));
+                debugData.facebook_live_error = fbErrorData;
             }
         }
 
         return NextResponse.json(debugData);
-    } catch (error: any) {
+    } catch (error: unknown) {
         return NextResponse.json({
             authenticated: true,
-            error: error.message
+            error: error instanceof Error ? error.message : 'Unknown error'
         }, { status: 500 });
     }
 }

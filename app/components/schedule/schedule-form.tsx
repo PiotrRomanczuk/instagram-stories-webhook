@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import Image from 'next/image';
 import { Calendar, Loader, Upload, X, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Panel } from '../ui/panel';
 import { supabase } from '@/lib/supabase';
@@ -49,7 +50,7 @@ export function ScheduleForm({ onScheduled }: ScheduleFormProps) {
 
             setUploadProgress(30);
 
-            const { data: _data, error } = await supabase.storage
+            const { error } = await supabase.storage
                 .from('stories')
                 .upload(filePath, file, {
                     cacheControl: '3600',
@@ -159,7 +160,14 @@ export function ScheduleForm({ onScheduled }: ScheduleFormProps) {
                             {type === 'VIDEO' ? (
                                 <video src={url} className="w-full h-48 object-cover" controls={false} />
                             ) : (
-                                <img src={url} alt="To upload" className="w-full h-48 object-cover" />
+                                <Image
+                                    src={url}
+                                    alt="To upload"
+                                    width={400}
+                                    height={192}
+                                    className="w-full h-48 object-cover"
+                                    unoptimized
+                                />
                             )}
                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-3">
                                 <button
