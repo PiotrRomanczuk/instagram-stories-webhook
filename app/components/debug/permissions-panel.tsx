@@ -9,7 +9,7 @@ interface PermissionsPanelProps {
 }
 
 export function PermissionsPanel({ permissions = [] }: PermissionsPanelProps) {
-    const requiredScopes = ['instagram_basic', 'instagram_content_publish', 'pages_read_engagement', 'pages_show_list'];
+    const requiredScopes = ['instagram_basic', 'instagram_content_publish', 'instagram_manage_insights', 'pages_read_engagement', 'pages_show_list'];
 
     return (
         <Panel title="Permissions Guard" icon={<Shield className="w-6 h-6" />}>

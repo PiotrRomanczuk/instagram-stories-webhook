@@ -14,6 +14,7 @@ export interface ScheduledPost {
     createdAt: number;
     publishedAt?: number;
     error?: string;
+    igMediaId?: string; // ID for fetching insights later
 }
 
 export interface TokenData {

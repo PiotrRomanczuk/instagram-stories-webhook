@@ -1,4 +1,4 @@
-import { getPendingPosts, updateScheduledPost } from '../scheduled-posts-db';
+import { getPendingPosts, updateScheduledPost, getTotalPendingCount } from '../scheduled-posts-db';
 import { publishMedia } from '../instagram';
 import { supabaseAdmin } from '../supabase-admin';
 import { Logger } from '../logger';
@@ -25,13 +25,18 @@ const MODULE = 'scheduler';
  * This is shared between the API endpoint and the background cron worker.
  */
 export async function processScheduledPosts(): Promise<BatchResult> {
-    await Logger.info(MODULE, '🔄 Checking for pending scheduled posts...');
+    const totalPending = await getTotalPendingCount();
+    await Logger.info(MODULE, `🔄 Heartbeat: ${totalPending} total post(s) currently in queue`);
 
     try {
         const pendingPosts = await getPendingPosts();
 
         if (pendingPosts.length === 0) {
-            await Logger.info(MODULE, '✅ No pending posts to publish');
+            if (totalPending > 0) {
+                await Logger.info(MODULE, `⏳ No posts due yet (${totalPending} waiting for their time)`);
+            } else {
+                await Logger.info(MODULE, '✅ Queue is empty');
+            }
             return {
                 message: 'No pending posts',
                 processed: 0,
@@ -62,6 +67,7 @@ export async function processScheduledPosts(): Promise<BatchResult> {
                 await updateScheduledPost(post.id, {
                     status: 'published',
                     publishedAt: Date.now(),
+                    igMediaId: result.id // From publishRes.data.id
                 });
 
                 await Logger.info(MODULE, `✅ Successfully published scheduled post ${post.id}`);

@@ -32,6 +32,7 @@ export async function GET(req: NextRequest) {
         const scopes = [
             "instagram_basic",
             "instagram_content_publish",
+            "instagram_manage_insights",
             "pages_read_engagement",
             "pages_show_list",
             "public_profile",

@@ -6,6 +6,8 @@ import { Clock, CheckCircle, XCircle, Trash2, Pencil, Check, X, Plus, Minus, Zoo
 import { ScheduledPost } from '@/lib/types';
 import { StatusBadge } from '../ui/status-badge';
 import { MediaModal } from '../ui/media-modal';
+import { InsightsPanel } from './insights-panel';
+import { BarChart3 } from 'lucide-react';
 
 interface PostCardProps {
     post: ScheduledPost;
@@ -31,6 +33,7 @@ export function PostCard({ post, onCancel, onReschedule }: PostCardProps) {
     const [now] = useState(() => Date.now());
     const [isEditing, setIsEditing] = useState(false);
     const [showModal, setShowModal] = useState(false);
+    const [showInsights, setShowInsights] = useState(false);
 
     // Edit state
     const [editDate, setEditDate] = useState(() => new Date(post.scheduledTime).toISOString().split('T')[0]);
@@ -168,6 +171,17 @@ export function PostCard({ post, onCancel, onReschedule }: PostCardProps) {
                                         </span>
                                     </div>
 
+                                    {post.status === 'published' && post.igMediaId && (
+                                        <button
+                                            onClick={() => setShowInsights(true)}
+                                            className="px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-600 hover:text-white rounded-xl transition-all text-[10px] font-black uppercase tracking-widest border border-indigo-100 flex items-center gap-1.5 shadow-sm"
+                                            title="View Performance"
+                                        >
+                                            <BarChart3 className="w-3 h-3" />
+                                            Insights
+                                        </button>
+                                    )}
+
                                     {isPast && post.status === 'pending' && (
                                         <div className="flex items-center gap-2 animate-pulse">
                                             <div className="w-2 h-2 rounded-full bg-orange-500" />
@@ -212,6 +226,12 @@ export function PostCard({ post, onCancel, onReschedule }: PostCardProps) {
                 onClose={() => setShowModal(false)}
                 url={post.url}
                 type={post.type}
+            />
+
+            <InsightsPanel
+                postId={post.id}
+                isOpen={showInsights}
+                onClose={() => setShowInsights(false)}
             />
         </>
     );

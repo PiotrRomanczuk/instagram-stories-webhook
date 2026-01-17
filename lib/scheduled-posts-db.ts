@@ -33,6 +33,7 @@ export async function getScheduledPosts(userId?: string): Promise<ScheduledPost[
         createdAt: Number(post.created_at),
         publishedAt: post.published_at ? Number(post.published_at) : undefined,
         error: post.error,
+        igMediaId: post.ig_media_id,
         userId: post.user_id // Include userId in the result
     })) as ScheduledPostWithUser[];
 }
@@ -83,6 +84,7 @@ export async function updateScheduledPost(id: string, updates: Partial<Scheduled
         status?: string;
         error?: string | null;
         published_at?: number | null;
+        ig_media_id?: string;
         updated_at: string;
     }
     const dbUpdates: DbScheduledPostUpdate = {
@@ -96,6 +98,7 @@ export async function updateScheduledPost(id: string, updates: Partial<Scheduled
     if (updates.status) dbUpdates.status = updates.status;
     if (updates.error !== undefined) dbUpdates.error = updates.error;
     if (updates.publishedAt !== undefined) dbUpdates.published_at = updates.publishedAt;
+    if (updates.igMediaId) dbUpdates.ig_media_id = updates.igMediaId;
 
     const { data, error } = await supabaseAdmin
         .from('scheduled_posts')
@@ -120,6 +123,7 @@ export async function updateScheduledPost(id: string, updates: Partial<Scheduled
         createdAt: Number(data.created_at),
         publishedAt: data.published_at ? Number(data.published_at) : undefined,
         error: data.error,
+        igMediaId: data.ig_media_id,
         userId: data.user_id
     } as ScheduledPostWithUser;
 }
@@ -162,6 +166,7 @@ export async function getPendingPosts(): Promise<ScheduledPostWithUser[]> {
         createdAt: Number(post.created_at),
         publishedAt: post.published_at ? Number(post.published_at) : undefined,
         error: post.error,
+        igMediaId: post.ig_media_id,
         userId: post.user_id
     })) as ScheduledPostWithUser[];
 }
@@ -196,6 +201,20 @@ export async function getUpcomingPosts(userId?: string): Promise<ScheduledPost[]
         createdAt: Number(post.created_at),
         publishedAt: post.published_at ? Number(post.published_at) : undefined,
         error: post.error,
+        igMediaId: post.ig_media_id,
         userId: post.user_id
     })) as ScheduledPostWithUser[];
+}
+export async function getTotalPendingCount(): Promise<number> {
+    const { count, error } = await supabaseAdmin
+        .from('scheduled_posts')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending');
+
+    if (error) {
+        console.error('Supabase getTotalPendingCount Error:', error);
+        return 0;
+    }
+
+    return count || 0;
 }
