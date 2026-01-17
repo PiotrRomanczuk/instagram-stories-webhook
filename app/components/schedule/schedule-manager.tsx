@@ -52,6 +52,46 @@ export function ScheduleManager() {
         }
     };
 
+    const handleReorder = async (reorderedPosts: any[]) => {
+        // 1. Get the original times from the posts, sorted
+        // We assume the reorderedPosts passed in are just the PENDING ones
+        const originalTimes = posts
+            .filter(p => p.status === 'pending')
+            .map(p => p.scheduledTime)
+            .sort((a, b) => a - b);
+
+        // 2. Assign these times to the new order
+        const updates = reorderedPosts.map((post, index) => ({
+            id: post.id,
+            originalTime: post.scheduledTime,
+            newTime: originalTimes[index]
+        })).filter(u => u.originalTime !== u.newTime);
+
+        if (updates.length === 0) return;
+
+        // 3. Optimistically update local state if possible (optional, but fetchPosts will handle it)
+        // For now, we'll just fire the API calls
+
+        try {
+            // We could do a batch update API, but for now loop is safer with existing endpoints
+            await Promise.all(updates.map(u =>
+                fetch('/api/schedule', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: u.id,
+                        scheduledTime: new Date(u.newTime).toISOString(),
+                    }),
+                })
+            ));
+
+            fetchPosts();
+        } catch (error) {
+            console.error("Reorder failed", error);
+            alert("Failed to reorder posts");
+        }
+    };
+
     return (
         <div className="space-y-8">
             <ScheduleForm onScheduled={fetchPosts} />
@@ -79,6 +119,7 @@ export function ScheduleManager() {
                         posts={posts}
                         onCancel={handleCancel}
                         onReschedule={handleReschedule}
+                        onReorder={handleReorder}
                     />
                 )}
             </Panel>
