@@ -42,3 +42,6 @@ next-env.d.ts
 
 logs
 memes
+
+# Local credentials config (contains sensitive data)
+data/app-config.json

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ChevronLeft, Terminal } from 'lucide-react';
+import { ChevronLeft, Terminal, Settings } from 'lucide-react';
 import { ClientTestForm } from '../components/home/client-form';
 import { WebhookSection } from '../components/home/webhook-section';
 
@@ -62,6 +62,35 @@ export default function DeveloperPage() {
                             <WebhookSection webhookUrl={webhookUrl} />
                         </div>
                     </div>
+                </div>
+
+                {/* Settings Configuration Card */}
+                <div className="mt-8">
+                    <Link href="/settings" className="block group">
+                        <div className="p-8 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-500/5 dark:to-orange-500/5 rounded-[2.5rem] border border-amber-100 dark:border-amber-500/10 shadow-xl shadow-amber-100/50 dark:shadow-black/25 transition-all hover:shadow-2xl hover:scale-[1.01] duration-300">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/25">
+                                        <Settings className="w-6 h-6 text-white" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-xl font-black text-amber-900 dark:text-amber-100">
+                                            Application Settings
+                                        </h3>
+                                        <p className="text-sm text-amber-700/70 dark:text-amber-300/70 font-medium">
+                                            Configure API keys, credentials, and security tokens for deployment
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="hidden md:flex items-center gap-2 text-amber-600 dark:text-amber-400 font-bold text-sm uppercase tracking-wider">
+                                    Open Settings
+                                    <svg className="w-5 h-5 transition-transform group-hover:translate-x-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </Link>
                 </div>
             </div>
         </main>
