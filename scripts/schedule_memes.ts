@@ -75,7 +75,10 @@ async function main() {
             .getPublicUrl(uploadPath);
 
         // Add to schedule
-        const scheduledTime = startTime + i * 60 * 1000; // 1 minute apart
+        // Spread evenly over 24 hours (24 * 60 * 60 * 1000 ms)
+        const msPerDay = 24 * 60 * 60 * 1000;
+        const interval = Math.floor(msPerDay / selected.length);
+        const scheduledTime = startTime + i * interval;
 
         try {
             await addScheduledPost({

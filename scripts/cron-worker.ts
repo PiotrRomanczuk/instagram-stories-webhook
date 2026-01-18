@@ -30,6 +30,54 @@ async function runWorker() {
         }
     });
 
+    // Schedule identity check every 5 minutes
+    cron.schedule('*/5 * * * *', async () => {
+        Logger.info(MODULE, '🔍 Running 5-minute identity check...');
+        try {
+            const { supabaseAdmin } = await import('../lib/supabase-admin');
+
+            const { data: links, error: linkError } = await supabaseAdmin
+                .from('linked_accounts')
+                .select('*');
+
+            if (linkError) {
+                Logger.error(MODULE, '❌ Failed to fetch links', linkError);
+                return;
+            }
+
+            if (!links || links.length === 0) {
+                Logger.info(MODULE, 'ℹ️ No linked accounts found active.');
+                return;
+            }
+
+            for (const link of links) {
+                // Fetch User Email
+                const { data: userData } = await supabaseAdmin
+                    .schema('next_auth')
+                    .from('users')
+                    .select('email')
+                    .eq('id', link.user_id)
+                    .single();
+
+                // Fetch Google Account ID
+                const { data: googleData } = await supabaseAdmin
+                    .schema('next_auth')
+                    .from('accounts')
+                    .select('providerAccountId')
+                    .eq('userId', link.user_id)
+                    .eq('provider', 'google')
+                    .single();
+
+                const email = userData?.email || 'Unknown';
+                const googleId = googleData?.providerAccountId || 'Not Connected';
+
+                Logger.info(MODULE, `👤 Identity Audit | User: ${email} | Google ID: ${googleId} | FB ID: ${link.provider_account_id} | IG ID: ${link.ig_user_id || 'N/A'}`);
+            }
+        } catch (err) {
+            Logger.error(MODULE, '❌ Identity check failed', err);
+        }
+    });
+
     // Also run once on startup
     Logger.info(MODULE, '🔄 Performing initial startup check...');
     processScheduledPosts().catch(err => {

@@ -4,6 +4,8 @@ import { Calendar, Loader, Upload, X, CheckCircle2, AlertCircle } from 'lucide-r
 import { toast } from 'sonner';
 import { Panel } from '../ui/panel';
 import { supabase } from '@/lib/supabase';
+import { useMediaValidation } from '@/app/hooks/use-media-validation';
+import { AspectRatioIndicator, ProcessingPrompt } from '../media/aspect-ratio-indicator';
 
 interface ScheduleFormProps {
     onScheduled: () => void;
@@ -22,6 +24,10 @@ export function ScheduleForm({ onScheduled }: ScheduleFormProps) {
     const [uploadProgress, setUploadProgress] = useState(0);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    // Media validation state
+    const mediaValidation = useMediaValidation();
+    const [isProcessing, setIsProcessing] = useState(false);
+
     useState(() => {
         const now = new Date();
         now.setMinutes(now.getMinutes() + 5);
@@ -34,13 +40,17 @@ export function ScheduleForm({ onScheduled }: ScheduleFormProps) {
         if (!file) return;
 
         // Validation
-
         const isVideo = file.type.startsWith('video/');
         const isImage = file.type.startsWith('image/');
 
         if (!isVideo && !isImage) {
             toast.error('Please upload an image or video file.');
             return;
+        }
+
+        // Validate aspect ratio for images before upload
+        if (isImage) {
+            await mediaValidation.validateFile(file);
         }
 
         setUploading(true);
@@ -84,6 +94,50 @@ export function ScheduleForm({ onScheduled }: ScheduleFormProps) {
             toast.error(`Upload failed: ${errorMessage}`);
             setUploading(false);
         }
+    };
+
+    // Handle image processing for non-9:16 images
+    const handleProcessImage = async (options: { blurBackground: boolean }) => {
+        if (!url || type !== 'IMAGE') return;
+
+        setIsProcessing(true);
+        try {
+            const response = await fetch('/api/media/process', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    imageUrl: url,
+                    blurBackground: options.blurBackground,
+                    backgroundColor: '#000000'
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Processing failed');
+            }
+
+            if (data.wasProcessed) {
+                setUrl(data.processedUrl);
+                // Re-validate the processed image
+                await mediaValidation.validateUrl(data.processedUrl);
+                toast.success('Image optimized for Stories!');
+            } else {
+                toast.info('Image already optimized');
+            }
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Processing failed';
+            toast.error(message);
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    // Clear media and reset validation
+    const handleClearMedia = () => {
+        setUrl('');
+        mediaValidation.reset();
     };
 
 
@@ -173,31 +227,61 @@ export function ScheduleForm({ onScheduled }: ScheduleFormProps) {
                             )}
                         </div>
                     ) : (
-                        <div className="relative group rounded-3xl overflow-hidden border border-gray-100 shadow-sm">
-                            {type === 'VIDEO' ? (
-                                <video src={url} className="w-full h-48 object-cover" controls={false} />
-                            ) : (
-                                <Image
-                                    src={url}
-                                    alt="To upload"
-                                    width={400}
-                                    height={192}
-                                    className="w-full h-48 object-cover"
-                                    unoptimized
-                                />
-                            )}
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-3">
-                                <button
-                                    type="button"
-                                    onClick={() => setUrl('')}
-                                    className="p-3 bg-white/20 backdrop-blur-md rounded-2xl text-white hover:bg-red-500 transition"
-                                >
-                                    <X className="w-6 h-6" />
-                                </button>
-                                <div className="p-3 bg-green-500 rounded-2xl text-white">
-                                    <CheckCircle2 className="w-6 h-6" />
+                        <div className="space-y-3">
+                            <div className="relative group rounded-3xl overflow-hidden border border-gray-100 shadow-sm">
+                                {type === 'VIDEO' ? (
+                                    <video src={url} className="w-full h-48 object-cover" controls={false} />
+                                ) : (
+                                    <Image
+                                        src={url}
+                                        alt="To upload"
+                                        width={400}
+                                        height={192}
+                                        className="w-full h-48 object-cover"
+                                        unoptimized
+                                    />
+                                )}
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={handleClearMedia}
+                                        className="p-3 bg-white/20 backdrop-blur-md rounded-2xl text-white hover:bg-red-500 transition"
+                                    >
+                                        <X className="w-6 h-6" />
+                                    </button>
+                                    <div className="p-3 bg-green-500 rounded-2xl text-white">
+                                        <CheckCircle2 className="w-6 h-6" />
+                                    </div>
                                 </div>
+                                {/* Aspect Ratio Badge */}
+                                {type === 'IMAGE' && mediaValidation.aspectInfo && (
+                                    <div className="absolute top-3 right-3">
+                                        <AspectRatioIndicator
+                                            aspectInfo={mediaValidation.aspectInfo}
+                                            dimensions={mediaValidation.dimensions}
+                                            compact
+                                        />
+                                    </div>
+                                )}
                             </div>
+
+                            {/* Full Aspect Ratio Info */}
+                            {type === 'IMAGE' && mediaValidation.aspectInfo && (
+                                <>
+                                    <AspectRatioIndicator
+                                        aspectInfo={mediaValidation.aspectInfo}
+                                        dimensions={mediaValidation.dimensions}
+                                        isLoading={mediaValidation.isLoading}
+                                    />
+
+                                    {/* Processing Prompt for non-9:16 images */}
+                                    <ProcessingPrompt
+                                        aspectInfo={mediaValidation.aspectInfo}
+                                        onProcess={handleProcessImage}
+                                        isProcessing={isProcessing}
+                                    />
+                                </>
+                            )}
                         </div>
                     )}
 

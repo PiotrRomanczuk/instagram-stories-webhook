@@ -96,7 +96,7 @@ export async function GET() {
         try {
             const accountsRes = await axios.get(`${GRAPH_API_BASE}/me/accounts`, {
                 params: {
-                    fields: 'id,name,category,access_token',
+                    fields: 'id,name,category,access_token,instagram_business_account{id,username,name,profile_picture_url}',
                     limit: 100,
                     access_token: linkedAccount.access_token
                 }

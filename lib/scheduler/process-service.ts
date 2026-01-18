@@ -41,7 +41,16 @@ export async function processScheduledPosts(): Promise<BatchResult> {
             };
         }
 
-        await Logger.info(MODULE, `📋 Found ${pendingPosts.length} pending post(s) to publish`);
+        // Check for posts pending in the next 24 hours
+        const oneDayFromNow = Date.now() + 24 * 60 * 60 * 1000;
+        const { count: futureCount } = await supabaseAdmin
+            .from('scheduled_posts')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', 'pending')
+            .gt('scheduled_time', Date.now())
+            .lte('scheduled_time', oneDayFromNow);
+
+        await Logger.info(MODULE, `📋 Found ${pendingPosts.length} due post(s) to publish (plus ${futureCount} pending in next 24h)`);
 
         const results: ProcessResult[] = [];
 

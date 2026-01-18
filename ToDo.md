@@ -11,6 +11,11 @@ This roadmap outlines the planned enhancements and maintenance tasks for the Ins
 - [x] **Supabase Storage Integration**: Allow direct file uploads to Supabase buckets instead of just pasting URLs.
 - [ ] **Cloud Drive Picker**: Integrate Google Drive/Dropbox pickers to select media files.
 - [x] **Media Auto-Cleanup**: Automatically delete files from storage after successful publishing to save space.
+- [x] **Aspect Ratio Validation**: Check image dimensions before upload and auto-process to 9:16 for Stories.
+    - [x] Phase 1: Create `lib/media/validator.ts` with aspect ratio analysis utilities.
+    - [x] Phase 2: Create `lib/media/processor.ts` with Sharp-based image resizing/padding.
+    - [x] Phase 3: Add `/api/media/process` endpoint for server-side processing.
+    - [x] Phase 4: Update `schedule-form.tsx` with validation UI and processing prompts.
 - [ ] **Edit Schedules**: Add the ability to edit existing scheduled posts (url, time, type) rather than just deleting.
 - [ ] **Multi-Post Support**: Support scheduling multiple stories in sequence (carousels or story sequences).
 - [ ] **User Tagging**: Implement programmatic @mentions in Stories and Feed posts (Ref: `docs/FEATURE_USER_TAGGING_PLAN.md`).
@@ -19,6 +24,7 @@ This roadmap outlines the planned enhancements and maintenance tasks for the Ins
     - [ ] Phase 3: Update Frontend form to allow entering usernames for tagging.
 - [ ] **Resumable Uploads**: Implement the Meta Resumable Upload Protocol (v20+) for direct file uploads to Meta servers, reducing dependency on public URLs.
 - [ ] **Rate Limit Monitoring**: Integrate with `/{ig-user-id}/content_publishing_limit` (v24+) to check quota before scheduling/publishing.
+
 
 ## 🎨 User Experience & UI (Aesthetics & Feel)
 - [x] **Supabase Realtime**: Implement real-time status updates on the dashboard using Supabase subscriptions.
@@ -55,3 +61,16 @@ This roadmap outlines the planned enhancements and maintenance tasks for the Ins
 - [x] **Migration to Supabase**: Moved from local JSON storage to PostgreSQL.
 - [x] Refactored components for SRP (Single Responsibility Principle).
 - [x] Unified documentation structure.
+## 📋 Prioritized Next Steps
+
+### 🔧 High Priority
+- [ ] **Retry Logic**: Implement exponential backoff for failed Instagram API calls to improve reliability.
+- [ ] **Automated Testing**: Add unit tests for publishing logic and API routes.
+- [ ] **Token Health Monitor**: Background job to check token expiration and auto-refresh.
+
+### 🎨 UI Enhancements
+- [ ] **Dark Mode**: Implement a sleek, glassmorphic dark theme.
+- [ ] **Micro-animations**: Add Framer Motion transitions for state changes.
+
+### 📈 Analytics
+- [ ] **Post Analytics**: Fetch and display view/reach metrics for published stories.

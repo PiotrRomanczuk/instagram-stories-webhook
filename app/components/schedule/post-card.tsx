@@ -5,11 +5,12 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Clock, CheckCircle, XCircle, Trash2, Pencil, Check, X, Plus, Minus, ZoomIn, GripVertical, BarChart3 } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, Trash2, Pencil, Check, X, ZoomIn, BarChart3 } from 'lucide-react';
 import { ScheduledPost } from '@/lib/types';
 import { StatusBadge } from '../ui/status-badge';
 import { MediaModal } from '../ui/media-modal';
 import { InsightsPanel } from './insights-panel';
+import { ImageDimensionsBadge, AspectRatioOverlay } from '../media/image-dimensions-badge';
 
 interface PostCardProps {
     post: ScheduledPost;
@@ -136,6 +137,13 @@ export function PostCard({ post, onCancel, onReschedule, onUpdateTags, isDraggab
                         <StatusBadge status={post.status} />
                     </div>
 
+                    {/* Image Dimensions Badge - Bottom Left */}
+                    {post.type === 'IMAGE' && (
+                        <div className="absolute bottom-3 left-3 z-10">
+                            <ImageDimensionsBadge imageUrl={post.url} />
+                        </div>
+                    )}
+
                     {post.type === 'VIDEO' ? (
                         <div className="relative w-full h-full">
                             <video
@@ -150,13 +158,17 @@ export function PostCard({ post, onCancel, onReschedule, onUpdateTags, isDraggab
                             </div>
                         </div>
                     ) : (
-                        <Image
-                            src={post.url}
-                            alt="Preview"
-                            fill
-                            className="object-cover transition-transform duration-500 group-hover:scale-110"
-                            unoptimized
-                        />
+                        <>
+                            <Image
+                                src={post.url}
+                                alt="Preview"
+                                fill
+                                className="object-cover transition-transform duration-500 group-hover:scale-110"
+                                unoptimized
+                            />
+                            {/* Aspect Ratio Overlay - shows crop/pad indicators */}
+                            <AspectRatioOverlay imageUrl={post.url} type={post.type} />
+                        </>
                     )}
 
                     {/* Zoom Overlay */}
