@@ -56,6 +56,9 @@ export function ScheduleForm({ onScheduled }: ScheduleFormProps) {
         setUploading(true);
         setUploadProgress(10);
 
+        // TODO: Integrate video validation/processing here
+
+
         try {
             const fileExt = file.name.split('.').pop();
             const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
@@ -133,6 +136,9 @@ export function ScheduleForm({ onScheduled }: ScheduleFormProps) {
             setIsProcessing(false);
         }
     };
+
+    // TODO: Add handleProcessVideo function to call /api/media/process-video
+
 
     // Clear media and reset validation
     const handleClearMedia = () => {
@@ -282,7 +288,10 @@ export function ScheduleForm({ onScheduled }: ScheduleFormProps) {
                                     />
                                 </>
                             )}
+
+                            {/* TODO: Add video processing prompt and indicators for VIDEO type */}
                         </div>
+
                     )}
 
                     <div className="flex items-center gap-3">

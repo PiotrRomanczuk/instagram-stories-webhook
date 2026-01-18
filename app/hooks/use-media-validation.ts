@@ -115,6 +115,10 @@ export function useMediaValidation() {
  */
 export function useQuickAspectCheck() {
     const [aspectInfo, setAspectInfo] = useState<AspectRatioInfo | null>(null);
+    const [dimensions, setDimensions] = useState<{ width: number; height: number } | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+
+    // TODO: Add video metadata and validation state
 
     const checkDimensions = useCallback((width: number, height: number) => {
         const info = analyzeAspectRatio({ width, height });

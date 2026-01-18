@@ -10,6 +10,9 @@ interface AspectRatioIndicatorProps {
     compact?: boolean;
 }
 
+// TODO: Create VideoMetadataIndicator and VideoProcessingPrompt components
+
+
 export function AspectRatioIndicator({
     aspectInfo,
     dimensions,

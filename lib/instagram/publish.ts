@@ -59,7 +59,10 @@ export async function publishMedia(
 
     if (mediaType === 'VIDEO') {
         containerData.video_url = url;
+        // TODO: Consider adding a compliance check here to ensure video meets IG standards
+        // before attempting to create the container, or auto-process if needed.
         if (postType === 'FEED') {
+
             containerData.media_type = 'VIDEO';
         }
     } else {
