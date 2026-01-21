@@ -7,7 +7,7 @@ This roadmap outlines the planned enhancements and maintenance tasks for the Ins
 ## 🛠️ Core Features & Stability
 - [x] **Webhook Security**: Implement secret token validation for `/api/webhook/story` to prevent unauthorized triggers.
 - [x] **Cron Security**: Secure the `/api/schedule/process` endpoint with an `API_KEY` header requirement.
-- [ ] **Retry Logic**: Implement an exponential backoff retry mechanism for failed Instagram API calls.
+- [x] **Retry Logic**: Implement an exponential backoff retry mechanism for failed Instagram API calls.
 - [x] **Supabase Storage Integration**: Allow direct file uploads to Supabase buckets instead of just pasting URLs.
 - [ ] **Cloud Drive Picker**: Integrate Google Drive/Dropbox pickers to select media files.
 - [x] **Media Auto-Cleanup**: Automatically delete files from storage after successful publishing to save space.
@@ -64,8 +64,8 @@ This roadmap outlines the planned enhancements and maintenance tasks for the Ins
 ## 📋 Prioritized Next Steps
 
 ### 🔧 High Priority
-- [ ] **Retry Logic**: Implement exponential backoff for failed Instagram API calls to improve reliability.
-- [ ] **Automated Testing**: Add unit tests for publishing logic and API routes.
+- [x] **Retry Logic**: Implement exponential backoff for failed Instagram API calls to improve reliability.
+- [/] **Automated Testing**: Add unit tests for publishing logic and API routes. (Publishing logic ✅)
 - [ ] **Token Health Monitor**: Background job to check token expiration and auto-refresh.
 
 ### 🎨 UI Enhancements

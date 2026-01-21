@@ -5,8 +5,32 @@ import { MediaType, PostType, ContainerData } from '@/lib/types';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
 import { Logger } from '@/lib/utils/logger';
 
+import { withRetry } from '@/lib/utils/retry';
+
 const GRAPH_API_BASE = 'https://graph.facebook.com/v21.0';
 const MODULE = 'instagram';
+
+/**
+ * Determines if an Instagram API error should be retried.
+ */
+function isRetryableError(error: unknown): boolean {
+    if (axios.isAxiosError(error)) {
+        const statusCode = error.response?.status;
+        const fbErrorCode = error.response?.data?.error?.code;
+
+        // Retry on Server Errors (5xx)
+        if (statusCode && statusCode >= 500) return true;
+
+        // Retry on Rate Limiting (429 or FB Error Code 17, 32, 613)
+        if (statusCode === 429 || [17, 32, 613].includes(fbErrorCode)) return true;
+
+        // Retry on specific transient Instagram errors
+        // Code 2: "An unexpected error has occurred. Please retry your request later."
+        // Code 1: "An unknown error has occurred."
+        if ([1, 2].includes(fbErrorCode)) return true;
+    }
+    return false;
+}
 
 /**
  * Publishes media to Instagram using a user's linked Facebook account.
@@ -63,17 +87,25 @@ export async function publishMedia(
 
     try {
         await Logger.info(MODULE, `📤 Creating ${postType} container for ${mediaType} (User: ${userId})...`);
-        const containerRes = await axios.post(`${GRAPH_API_BASE}/${igUserId}/media`, containerData);
+        
+        const containerRes = await withRetry(
+            () => axios.post(`${GRAPH_API_BASE}/${igUserId}/media`, containerData),
+            { retryableErrors: isRetryableError }
+        );
 
         const containerId = containerRes.data.id;
         await waitForContainerReady(containerId, accessToken);
 
         // Step 2: Publish Media Container
         await Logger.info(MODULE, `🚀 Publishing container ${containerId} for user ${userId}...`);
-        const publishRes = await axios.post(`${GRAPH_API_BASE}/${igUserId}/media_publish`, {
-            creation_id: containerId,
-            access_token: accessToken,
-        });
+        
+        const publishRes = await withRetry(
+            () => axios.post(`${GRAPH_API_BASE}/${igUserId}/media_publish`, {
+                creation_id: containerId,
+                access_token: accessToken,
+            }),
+            { retryableErrors: isRetryableError }
+        );
 
         // Log Success to both systems
         await supabaseAdmin.from('publishing_logs').insert({
