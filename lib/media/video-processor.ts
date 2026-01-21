@@ -173,7 +173,7 @@ export async function getVideoMetadata(inputPath: string): Promise<VideoMetadata
  */
 export async function validateVideoForStories(inputBuffer: Buffer): Promise<VideoValidationResult> {
     const tempDir = os.tmpdir();
-    const tempInput = path.join(tempDir, `validate_${Date.now()}_${Math.random().toString(36).substring(7)}.mp4`);
+    const tempInput = path.join(tempDir, `validate_${crypto.randomUUID()}.mp4`);
 
     try {
         await fs.writeFile(tempInput, inputBuffer);
@@ -267,7 +267,7 @@ export async function processVideoForStory(
 ): Promise<VideoProcessingResult> {
     const opts = { ...DEFAULT_OPTIONS, ...options };
     const tempDir = os.tmpdir();
-    const sessionId = `${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    const sessionId = crypto.randomUUID();
     const tempInput = path.join(tempDir, `input_${sessionId}.mp4`);
     const tempOutput = path.join(tempDir, `output_${sessionId}.mp4`);
 

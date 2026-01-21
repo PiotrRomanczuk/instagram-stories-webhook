@@ -107,7 +107,7 @@ export async function POST(request: Request) {
         });
 
         // Upload the processed video to Supabase
-        const fileName = `processed/${Date.now()}_${Math.random().toString(36).substring(7)}.mp4`;
+        const fileName = `processed/${crypto.randomUUID()}.mp4`;
 
         await Logger.info(MODULE, `📤 Uploading processed video: ${fileName}`);
 
