@@ -10,11 +10,11 @@ This workflow enforces code quality standards before allowing a commit.
    ```
    If this fails, STOP and fix the errors.
 
-2. Run TypeScript Type Check.
+3. Run Unit Tests (Vitest).
    ```bash
-   npx tsc --noEmit
+   npm run test
    ```
    If this fails, STOP and fix the errors.
 
-3. If both pass, you may proceed with `git commit`.
+4. If all checks pass, you may proceed with `git commit`.
    ASK the user for the commit message if not provided.
