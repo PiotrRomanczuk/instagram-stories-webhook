@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
     DndContext,
     closestCenter,
@@ -32,12 +32,13 @@ interface PostListProps {
 
 export function PostList({ posts, onCancel, onReschedule, onReorder, onUpdateTags }: PostListProps) {
     // Separate state for optimistic updates
-    const [pendingPosts, setPendingPosts] = useState<ScheduledPost[]>([]);
+    const [pendingPosts, setPendingPosts] = useState<ScheduledPost[]>(() => posts.filter(p => p.status === 'pending'));
+    const [prevPosts, setPrevPosts] = useState<ScheduledPost[]>(posts);
 
-    useEffect(() => {
+    if (posts !== prevPosts) {
+        setPrevPosts(posts);
         setPendingPosts(posts.filter(p => p.status === 'pending'));
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [posts]);
+    }
 
     const sensors = useSensors(
         useSensor(PointerSensor, {

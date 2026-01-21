@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { Logger } from "@/lib/logger";
+import { Logger } from "@/lib/utils/logger";
 
 const MODULE = 'auth';
 

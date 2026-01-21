@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { getLinkedFacebookAccount } from "@/lib/linked-accounts-db";
+import { getLinkedFacebookAccount } from "@/lib/database/linked-accounts";
 import { getContentPublishingLimit } from "@/lib/instagram/quota";
-import { Logger } from "@/lib/logger";
+import { Logger } from "@/lib/utils/logger";
 
 const MODULE = 'api-quota';
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
         if (!session?.user?.id) {

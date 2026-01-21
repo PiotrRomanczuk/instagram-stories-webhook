@@ -7,25 +7,8 @@
 
 import sharp from 'sharp';
 import { STORY_IDEAL_WIDTH, STORY_IDEAL_HEIGHT, STORY_IDEAL_RATIO } from './validator';
+import { ProcessingOptions, ProcessingResult } from '@/lib/types';
 
-export interface ProcessingOptions {
-    /** Background color for padding (hex or named color) */
-    backgroundColor?: string;
-    /** Whether to blur the background instead of solid color */
-    blurBackground?: boolean;
-    /** Quality for JPEG output (1-100) */
-    quality?: number;
-}
-
-export interface ProcessingResult {
-    buffer: Buffer;
-    width: number;
-    height: number;
-    originalWidth: number;
-    originalHeight: number;
-    wasProcessed: boolean;
-    processingType: 'none' | 'resize' | 'pad' | 'pad_blur';
-}
 
 const DEFAULT_OPTIONS: ProcessingOptions = {
     backgroundColor: '#000000',

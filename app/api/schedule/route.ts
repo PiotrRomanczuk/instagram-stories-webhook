@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { addScheduledPost, getScheduledPosts, deleteScheduledPost, updateScheduledPost } from '@/lib/scheduled-posts-db';
+import { addScheduledPost, getScheduledPosts, deleteScheduledPost, updateScheduledPost } from '@/lib/database/scheduled-posts';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 

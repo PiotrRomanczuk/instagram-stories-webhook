@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { useForm, Controller, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Panel } from '../ui/panel';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/config/supabase';
 import { useMediaValidation } from '@/app/hooks/use-media-validation';
 import { AspectRatioIndicator, ProcessingPrompt } from '../media/aspect-ratio-indicator';
 import { createScheduledPostSchema, type CreateScheduledPostInput } from '@/lib/validations/post.schema';

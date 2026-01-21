@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
-import { supabase } from '@/lib/supabase';
-import { saveLinkedFacebookAccount, LinkedAccount } from '@/lib/linked-accounts-db';
+import { supabase } from '@/lib/config/supabase';
+import { saveLinkedFacebookAccount } from '@/lib/database/linked-accounts';
+import { LinkedAccount } from '@/lib/types';
 
 /**
  * 🔄 Automated Token Refresh (All Users)

@@ -67,7 +67,7 @@ export function PostCard({ post, onCancel, onReschedule, onUpdateTags, isDraggab
         opacity: isDragging ? 0.5 : 1,
     };
 
-    const StatusIcon = statusIcons[post.status];
+
     const colorClasses = statusColors[post.status];
     const scheduledDate = new Date(post.scheduledTime);
     const isPast = post.scheduledTime < now;
@@ -120,7 +120,7 @@ export function PostCard({ post, onCancel, onReschedule, onUpdateTags, isDraggab
                 {/* Image Section - Top Half */}
                 <div
                     className="relative w-full aspect-square bg-slate-100 group cursor-grab active:cursor-grabbing"
-                    onClick={(e) => {
+                    onClick={(_e) => {
                         // If it came from a drag, this click might fire. 
                         // But typically activationConstraint prevents drag from firing click.
                         // However, simple clicks should open modal.

@@ -7,7 +7,7 @@ if (result.error) {
     console.warn('⚠️ Could not load .env.local:', result.error.message);
 }
 
-import { Logger } from '../lib/logger';
+import { Logger } from '../lib/utils/logger';
 
 async function main() {
     try {

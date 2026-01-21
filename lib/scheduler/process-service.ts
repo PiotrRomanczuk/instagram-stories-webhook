@@ -1,23 +1,10 @@
-import { getPendingPosts, updateScheduledPost, acquireProcessingLock, releaseProcessingLock } from '../scheduled-posts-db';
-import { publishMedia } from '../instagram';
-import { supabaseAdmin } from '../supabase-admin';
-import { Logger } from '../logger';
-import { generateContentHash, checkForRecentPublish } from '../duplicate-detection';
+import { getPendingPosts, updateScheduledPost, acquireProcessingLock, releaseProcessingLock } from '@/lib/database/scheduled-posts';
+import { publishMedia } from '@/lib/instagram';
+import { supabaseAdmin } from '@/lib/config/supabase-admin';
+import { Logger } from '@/lib/utils/logger';
+import { generateContentHash, checkForRecentPublish } from '@/lib/utils/duplicate-detection';
+import { ProcessResult, BatchResult } from '@/lib/types';
 
-export interface ProcessResult {
-    id: string;
-    success: boolean;
-    error?: string;
-    result?: unknown;
-}
-
-export interface BatchResult {
-    message: string;
-    processed: number;
-    succeeded: number;
-    failed: number;
-    results: ProcessResult[];
-}
 
 const MODULE = 'scheduler';
 

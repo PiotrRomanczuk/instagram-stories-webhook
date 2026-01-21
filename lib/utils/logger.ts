@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { supabaseAdmin } from './supabase-admin';
+import { supabaseAdmin } from '../config/supabase-admin';
 
 type LogLevel = 'info' | 'warn' | 'error' | 'debug';
 
@@ -181,7 +181,7 @@ export class Logger {
                     continue;
                 }
 
-                const [_, ts, level, module, message] = match;
+                const [, ts, level, module, message] = match;
                 const isNoisy = this.NOISY_PATTERNS.some(p => message.includes(p));
 
                 if (isNoisy) {
@@ -204,7 +204,7 @@ export class Logger {
                 }
             }
 
-            for (const [_, data] of consolidated) {
+            for (const [, data] of consolidated) {
                 const suffix = data.count > 1 ? ` (occurred ${data.count} times in this hour)` : '';
                 newLines.push(data.fullMessage + suffix);
             }
@@ -230,7 +230,7 @@ export class Logger {
                 if (error || !data || data.length <= 1) continue;
 
                 const groups = new Map<string, string[]>();
-                data.forEach(row => {
+                data.forEach((row: { id: string; created_at: string; module: string }) => {
                     const d = new Date(row.created_at);
                     const hourKey = `${row.module}:${new Date(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours()).toISOString()}`;
                     if (!groups.has(hourKey)) groups.set(hourKey, []);
@@ -238,7 +238,7 @@ export class Logger {
                 });
 
                 let deleteCount = 0;
-                for (const [_, ids] of groups) {
+                for (const [, ids] of groups) {
                     if (ids.length > 1) {
                         const toDelete = ids.slice(1);
                         const { error: delError } = await supabaseAdmin

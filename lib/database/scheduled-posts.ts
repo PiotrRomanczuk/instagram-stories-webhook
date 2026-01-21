@@ -1,13 +1,13 @@
-import { supabaseAdmin } from './supabase-admin';
+import { supabaseAdmin } from '@/lib/config/supabase-admin';
 import {
     ScheduledPost,
+    MediaType,
+    PostType,
     ScheduledPostWithUser,
+    DbScheduledPostUpdate,
     ScheduledPostRow,
     mapScheduledPostRow
-} from './types';
-
-// Re-export types for backward compatibility
-export type { ScheduledPostWithUser };
+} from '@/lib/types';
 
 export async function getScheduledPosts(userId?: string): Promise<ScheduledPost[]> {
     let query = supabaseAdmin
@@ -67,25 +67,7 @@ export async function addScheduledPost(
 
 export async function updateScheduledPost(id: string, updates: Partial<ScheduledPost>): Promise<ScheduledPost | null> {
     // Map updates to DB column names
-    interface DbScheduledPostUpdate {
-        url?: string;
-        type?: string;
-        post_type?: string;
-        caption?: string;
-        scheduled_time?: number;
-        status?: string;
-        error?: string | null;
-        published_at?: number | null;
-        ig_media_id?: string;
-        user_tags?: { username: string; x: number; y: number; }[]; // JSONB
-        processing_started_at?: string | null;
-        content_hash?: string;
-        idempotency_key?: string;
-        meme_id?: string;
-        retry_count?: number;
-        updated_at: string;
-    }
-    const dbUpdates: DbScheduledPostUpdate = {
+    const dbUpdates: DbScheduledPostUpdate & { updated_at: string } = {
         updated_at: new Date().toISOString()
     };
     if (updates.url) dbUpdates.url = updates.url;
@@ -225,4 +207,3 @@ export async function releaseProcessingLock(postId: string): Promise<boolean> {
 
     return true;
 }
-

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useSchedulePosts } from '../schedule/use-schedule-posts';
-import { BarChart3, Calendar, ExternalLink, RefreshCw, Filter } from 'lucide-react';
+import { BarChart3, Calendar, ExternalLink, RefreshCw } from 'lucide-react';
 import { Panel } from '../ui/panel';
 import { LoadingSpinner } from '../ui/loading-spinner';
 import { InsightsPanel } from '../schedule/insights-panel';

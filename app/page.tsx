@@ -1,6 +1,6 @@
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { getLinkedFacebookAccount } from "@/lib/linked-accounts-db";
+import { getLinkedFacebookAccount } from "@/lib/database/linked-accounts";
 import { redirect } from "next/navigation";
 import { StatusSection } from "./components/home/status-section";
 import HomeHeader from "./components/home/home-header";

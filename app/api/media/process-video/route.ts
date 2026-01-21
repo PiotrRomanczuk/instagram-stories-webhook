@@ -24,8 +24,8 @@ import {
     checkFfmpegAvailable,
     VIDEO_MAX_DURATION_SEC
 } from '@/lib/media/video-processor';
-import { supabase } from '@/lib/supabase';
-import { Logger } from '@/lib/logger';
+import { supabase } from '@/lib/config/supabase';
+import { Logger } from '@/lib/utils/logger';
 
 const MODULE = 'api/process-video';
 

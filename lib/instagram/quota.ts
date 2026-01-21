@@ -1,17 +1,11 @@
 import axios from 'axios';
-import { getFacebookAccessToken } from '../linked-accounts-db';
-import { Logger } from '../logger';
+import { getFacebookAccessToken } from '@/lib/database/linked-accounts';
+import { Logger } from '@/lib/utils/logger';
+import { ContentPublishingLimit } from '@/lib/types';
 
 const GRAPH_API_BASE = 'https://graph.facebook.com/v24.0';
 const MODULE = 'quota';
 
-export interface ContentPublishingLimit {
-    config?: {
-        quota_duration: number; // 86400 (24h)
-        quota_total: number;    // e.g. 100
-    };
-    quota_usage: number;        // e.g. 5
-}
 
 /**
  * Fetches the user's content publishing usage and limit.

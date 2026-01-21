@@ -1,5 +1,5 @@
 
-import { supabaseAdmin } from '../lib/supabase-admin';
+import { supabaseAdmin } from '../lib/config/supabase-admin';
 
 async function main() {
     console.log('🚀 Starting tag update script...');

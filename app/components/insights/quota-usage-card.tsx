@@ -32,7 +32,7 @@ export function QuotaUsageCard() {
                     setError(data.error || 'Failed to load usage data');
                 }
             }
-        } catch (err) {
+        } catch (_err) {
             setError('Connection failed');
         } finally {
             setLoading(false);
@@ -47,7 +47,7 @@ export function QuotaUsageCard() {
 
     const total = quota?.config?.quota_total || 0; // Default to 0 if waiting
     const used = quota?.quota_usage || 0;
-    const remaining = total - used;
+
     const percentUsed = total > 0 ? (used / total) * 100 : 0;
 
     // Determine color based on usage

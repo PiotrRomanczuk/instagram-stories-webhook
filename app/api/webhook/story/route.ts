@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { publishMedia } from '@/lib/instagram';
-import { supabaseAdmin } from '@/lib/supabase-admin';
-import { Logger } from '@/lib/logger';
+import { supabaseAdmin } from '@/lib/config/supabase-admin';
+import { Logger } from '@/lib/utils/logger';
 
 const MODULE = 'webhook';
 

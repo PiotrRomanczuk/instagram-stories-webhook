@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ScheduledPost } from '@/lib/types';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/config/supabase';
 
 export function useSchedulePosts() {
     const [posts, setPosts] = useState<ScheduledPost[]>([]);

@@ -1,9 +1,9 @@
 import axios from 'axios';
-import { getFacebookAccessToken, getInstagramUserId } from '../linked-accounts-db';
+import { getFacebookAccessToken, getInstagramUserId } from '@/lib/database/linked-accounts';
 import { waitForContainerReady } from './container';
-import { MediaType, PostType } from '../types';
-import { supabaseAdmin } from '../../lib/supabase-admin';
-import { Logger } from '../logger';
+import { MediaType, PostType, ContainerData } from '@/lib/types';
+import { supabaseAdmin } from '@/lib/config/supabase-admin';
+import { Logger } from '@/lib/utils/logger';
 
 const GRAPH_API_BASE = 'https://graph.facebook.com/v21.0';
 const MODULE = 'instagram';
@@ -36,14 +36,6 @@ export async function publishMedia(
     }
 
     // Step 1: Create Media Container
-    interface ContainerData {
-        access_token: string;
-        caption?: string;
-        media_type?: string;
-        image_url?: string;
-        video_url?: string;
-        user_tags?: { username: string; x: number; y: number; }[];
-    }
 
     const containerData: ContainerData = {
         access_token: accessToken,

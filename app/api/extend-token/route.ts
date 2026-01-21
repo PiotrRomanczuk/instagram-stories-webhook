@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import axios from 'axios';
 import { getServerSession } from "next-auth/next";
-import { getLinkedFacebookAccount, saveLinkedFacebookAccount } from '@/lib/linked-accounts-db';
+import { getLinkedFacebookAccount, saveLinkedFacebookAccount } from '@/lib/database/linked-accounts';
 import { authOptions } from "@/lib/auth";
 
 export async function POST() {

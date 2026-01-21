@@ -1,8 +1,8 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { supabaseAdmin } from '../lib/supabase-admin';
-import { addScheduledPost } from '../lib/scheduled-posts-db';
+import { supabaseAdmin } from '../lib/config/supabase-admin';
+import { addScheduledPost } from '../lib/database/scheduled-posts';
 
 
 async function main() {

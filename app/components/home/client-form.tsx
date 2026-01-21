@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Copy, CheckCircle2, FlaskConical, Send } from 'lucide-react';
+import { Copy, CheckCircle2, Send } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function ClientTestForm() {

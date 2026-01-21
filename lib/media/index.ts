@@ -1,8 +1,6 @@
 // Image Processing Exports
 export { analyzeAspectRatio, validateForStories, getImageDimensionsFromUrl, getImageDimensionsFromFile, STORY_IDEAL_WIDTH, STORY_IDEAL_HEIGHT, STORY_IDEAL_RATIO } from './validator';
 export { processImageForStory, needsProcessing } from './processor';
-export type { MediaDimensions, AspectRatioInfo } from './validator';
-export type { ProcessingOptions, ProcessingResult } from './processor';
 
 // Video Processing Exports
 export {
@@ -21,9 +19,14 @@ export {
     AUDIO_BITRATE,
     MAX_FILE_SIZE_MB
 } from './video-processor';
-export type {
+
+export type { 
+    MediaDimensions, 
+    AspectRatioInfo, 
+    ProcessingOptions, 
+    ProcessingResult,
     VideoMetadata,
     VideoValidationResult,
     VideoProcessingOptions,
     VideoProcessingResult
-} from './video-processor';
+} from '../types';

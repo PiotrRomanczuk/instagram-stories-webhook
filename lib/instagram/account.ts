@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { GranularScope, FacebookPage } from '@/lib/types';
 
 const GRAPH_API_BASE = 'https://graph.facebook.com/v24.0';
 
@@ -20,10 +21,6 @@ export async function getInstagramBusinessAccountId(accessToken: string): Promis
                 });
 
                 // Extract page IDs from granular scopes
-                interface GranularScope {
-                    scope?: string;
-                    target_ids?: string[];
-                }
                 if (debugTokenRes.data.data.granular_scopes) {
                     const pageScopes = (debugTokenRes.data.data.granular_scopes as GranularScope[]).filter((s) =>
                         s.scope && s.scope.includes('pages')
@@ -37,14 +34,6 @@ export async function getInstagramBusinessAccountId(accessToken: string): Promis
         }
 
         // 1. Try to get User's Pages via /me/accounts first
-        interface FacebookPage {
-            id: string;
-            name: string;
-            instagram_business_account?: {
-                id: string;
-                username: string;
-            };
-        }
         let pages: FacebookPage[] = [];
         try {
             const pagesRes = await axios.get(`${GRAPH_API_BASE}/me/accounts`, {

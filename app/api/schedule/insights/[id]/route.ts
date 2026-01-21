@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { getMediaInsights } from "@/lib/instagram/insights";
-import { getScheduledPosts } from "@/lib/scheduled-posts-db";
-import { Logger } from "@/lib/logger";
+import { getScheduledPosts } from "@/lib/database/scheduled-posts";
+import { Logger } from "@/lib/utils/logger";
 
 const MODULE = 'api-insights';
 

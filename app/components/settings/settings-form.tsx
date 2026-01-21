@@ -18,7 +18,8 @@ import {
     AlertCircle,
     CheckCircle2,
 } from "lucide-react";
-import { AppConfig, defaultConfig } from "@/lib/config-types";
+import { AppConfig } from "@/lib/types";
+import { defaultConfig } from "@/lib/config";
 
 interface ConfigInputProps {
     label: string;

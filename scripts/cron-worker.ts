@@ -10,7 +10,7 @@ const MODULE = 'cron';
 
 async function runWorker() {
     // We use dynamic imports to ensure env vars are loaded first
-    const { Logger } = await import('../lib/logger');
+    const { Logger } = await import('../lib/utils/logger');
     const { processScheduledPosts } = await import('../lib/scheduler/process-service');
 
     Logger.info(MODULE, '🚀 Starting Instagram Story Scheduler Worker...');
@@ -34,7 +34,7 @@ async function runWorker() {
     cron.schedule('*/5 * * * *', async () => {
         Logger.info(MODULE, '🔍 Running 5-minute identity check...');
         try {
-            const { supabaseAdmin } = await import('../lib/supabase-admin');
+            const { supabaseAdmin } = await import('../lib/config/supabase-admin');
 
             const { data: links, error: linkError } = await supabaseAdmin
                 .from('linked_accounts')

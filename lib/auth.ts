@@ -3,8 +3,9 @@ import { JWT } from "next-auth/jwt";
 import GoogleProvider from "next-auth/providers/google";
 import { SupabaseAdapter } from "@auth/supabase-adapter";
 import * as jwt from "jsonwebtoken";
-import { Logger } from "./logger";
-import { isEmailAllowed, getUserRole, UserRole } from "./memes-db";
+import { Logger } from "./utils/logger";
+import { isEmailAllowed, getUserRole } from "./memes-db";
+import { UserRole } from "@/lib/types";
 
 const MODULE = 'auth:next-auth';
 
@@ -89,7 +90,7 @@ export const authOptions: AuthOptions = {
 
                 // If in DB whitelist, use that role. Otherwise check if in ADMIN_EMAIL (treat as admin)
                 if (role) {
-                    token.role = role;
+                    token.role = role as UserRole;
                 } else {
                     // Fallback for ADMIN_EMAIL users not yet in whitelist
                     const adminEmail = process.env.ADMIN_EMAIL || "";

@@ -17,7 +17,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { processImageForStory } from '@/lib/media/processor';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/config/supabase';
 
 export async function POST(request: Request) {
     try {

@@ -1,5 +1,5 @@
-import { supabaseAdmin } from './supabase-admin';
-import { TokenData } from './types';
+import { supabaseAdmin } from '@/lib/config/supabase-admin';
+import { TokenData } from '@/lib/types';
 
 // For the migration, we'll use a fixed ID to ensure we only ever have one active token record
 // mimicking the original single-file behavior.

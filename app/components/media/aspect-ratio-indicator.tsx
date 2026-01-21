@@ -1,7 +1,7 @@
 'use client';
 
 import { AlertTriangle, CheckCircle, Info, Loader2, ImageIcon } from 'lucide-react';
-import type { AspectRatioInfo, MediaDimensions } from '@/lib/media/validator';
+import type { AspectRatioInfo, MediaDimensions } from '@/lib/types';
 
 interface AspectRatioIndicatorProps {
     aspectInfo: AspectRatioInfo | null;

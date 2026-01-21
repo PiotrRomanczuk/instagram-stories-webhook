@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { Maximize2, AlertTriangle, CheckCircle } from 'lucide-react';
-import { analyzeAspectRatio, type AspectRatioInfo, type MediaDimensions } from '@/lib/media/validator';
+import { analyzeAspectRatio } from '@/lib/media/validator';
+import type { AspectRatioInfo, MediaDimensions } from '@/lib/types';
 
 interface ImageDimensionsBadgeProps {
     imageUrl: string;

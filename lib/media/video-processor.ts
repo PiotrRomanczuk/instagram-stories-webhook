@@ -14,7 +14,8 @@ import { spawn } from 'child_process';
 import { promises as fs } from 'fs';
 import path from 'path';
 import os from 'os';
-import { Logger } from '../logger';
+import { Logger } from '@/lib/utils/logger';
+import { VideoMetadata, VideoValidationResult, VideoProcessingOptions, VideoProcessingResult } from '@/lib/types';
 
 const MODULE = 'video-processor';
 
@@ -29,54 +30,6 @@ export const VIDEO_BITRATE = '3500k';
 export const AUDIO_BITRATE = '128k';
 export const MAX_FILE_SIZE_MB = 100; // Recommended max for Stories
 
-export interface VideoMetadata {
-    width: number;
-    height: number;
-    duration: number;
-    codec: string;
-    frameRate: number;
-    bitrate: number;
-    hasAudio: boolean;
-    audioCodec?: string;
-    format: string;
-    fileSize: number;
-}
-
-export interface VideoValidationResult {
-    valid: boolean;
-    errors: string[];
-    warnings: string[];
-    metadata: VideoMetadata | null;
-    needsProcessing: boolean;
-    processingReasons: string[];
-}
-
-export interface VideoProcessingOptions {
-    /** Max duration in seconds (default: 60) */
-    maxDuration?: number;
-    /** Video bitrate (default: '3500k') */
-    videoBitrate?: string;
-    /** Audio bitrate (default: '128k') */
-    audioBitrate?: string;
-    /** Target frame rate (default: 30) */
-    frameRate?: number;
-    /** Background color for padding (hex) */
-    backgroundColor?: string;
-    /** Whether to use blurred background for padding */
-    blurBackground?: boolean;
-    /** Quality preset: 'fast', 'medium', 'slow' (default: 'medium') */
-    preset?: 'ultrafast' | 'fast' | 'medium' | 'slow';
-}
-
-export interface VideoProcessingResult {
-    buffer: Buffer;
-    width: number;
-    height: number;
-    duration: number;
-    originalMetadata: VideoMetadata;
-    wasProcessed: boolean;
-    processingApplied: string[];
-}
 
 const DEFAULT_OPTIONS: VideoProcessingOptions = {
     maxDuration: VIDEO_MAX_DURATION_SEC,

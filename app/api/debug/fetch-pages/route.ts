@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import axios from 'axios';
 import { getServerSession } from "next-auth/next";
-import { getLinkedFacebookAccount } from '@/lib/linked-accounts-db';
+import { getLinkedFacebookAccount } from '@/lib/database/linked-accounts';
 import { authOptions } from "@/lib/auth";
 
 const GRAPH_API_BASE = 'https://graph.facebook.com/v21.0';

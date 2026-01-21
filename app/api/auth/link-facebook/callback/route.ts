@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { getInstagramBusinessAccountId } from "@/lib/instagram/account";
-import { saveLinkedFacebookAccount } from "@/lib/linked-accounts-db";
+import { saveLinkedFacebookAccount } from "@/lib/database/linked-accounts";
 import { authOptions } from "@/lib/auth";
-import { Logger } from "@/lib/logger";
+import { Logger } from "@/lib/utils/logger";
 
 const MODULE = 'auth';
 

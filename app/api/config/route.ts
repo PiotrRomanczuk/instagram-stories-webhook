@@ -3,8 +3,9 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { promises as fs } from "fs";
 import path from "path";
-import { AppConfig, defaultConfig } from "@/lib/config-types";
-import { Logger } from "@/lib/logger";
+import { AppConfig } from "@/lib/types";
+import { defaultConfig } from "@/lib/config";
+import { Logger } from "@/lib/utils/logger";
 
 const MODULE = "api:config";
 const CONFIG_FILE_PATH = path.join(process.cwd(), "data", "app-config.json");

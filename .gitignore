@@ -45,3 +45,6 @@ memes
 
 # Local credentials config (contains sensitive data)
 data/app-config.json
+
+playwright-report
+test-results

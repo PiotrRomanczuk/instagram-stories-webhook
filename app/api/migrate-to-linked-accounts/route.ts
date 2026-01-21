@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
-import { getTokens } from '@/lib/db';
-import { saveLinkedFacebookAccount } from '@/lib/linked-accounts-db';
+import { supabase } from '@/lib/config/supabase';
+import { getTokens } from '@/lib/database/base';
+import { saveLinkedFacebookAccount } from '@/lib/database/linked-accounts';
 
 /**
  * MIGRATION TOOL: Associates the existing global token with a user.

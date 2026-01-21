@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { BarChart3, Eye, Users, Reply, ArrowRight, ArrowLeft, LogOut, Loader2, AlertCircle } from 'lucide-react';
-import { MediaInsight } from '@/lib/instagram/insights';
+import { MediaInsight } from '@/lib/types';
 
 interface InsightsPanelProps {
     postId: string;

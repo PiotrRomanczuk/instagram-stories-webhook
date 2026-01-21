@@ -1,23 +1,12 @@
-import { supabaseAdmin } from './supabase-admin';
-import { Logger } from './logger';
+import { supabaseAdmin } from '@/lib/config/supabase-admin';
+import { Logger } from '@/lib/utils/logger';
+import { LinkedAccount } from '@/lib/types';
 
 const MODULE = 'db:accounts';
 
 /**
  * Linked Account Data - stores Facebook/Instagram tokens linked to a user
  */
-export interface LinkedAccount {
-    id?: string;
-    user_id: string;           // NextAuth user ID (from Google login)
-    provider: string;          // 'facebook'
-    provider_account_id: string; // Facebook user ID
-    access_token: string;
-    refresh_token?: string;
-    expires_at?: number;       // Unix timestamp in milliseconds
-    ig_user_id?: string;       // Instagram Business Account ID
-    created_at?: string;
-    updated_at?: string;
-}
 
 /**
  * Get a user's linked Facebook account

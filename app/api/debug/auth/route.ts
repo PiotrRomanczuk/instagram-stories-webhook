@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from "next-auth/next";
-import { getLinkedFacebookAccount } from '@/lib/linked-accounts-db';
+import { getLinkedFacebookAccount } from '@/lib/database/linked-accounts';
 import { authOptions } from "@/lib/auth";
 import axios from 'axios';
 

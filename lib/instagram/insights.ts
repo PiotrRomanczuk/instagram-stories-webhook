@@ -1,18 +1,11 @@
 import axios from 'axios';
-import { getFacebookAccessToken } from '../linked-accounts-db';
-import { Logger } from '../logger';
+import { getFacebookAccessToken } from '@/lib/database/linked-accounts';
+import { Logger } from '@/lib/utils/logger';
+import { MediaInsight, PostType } from '@/lib/types';
 
 const GRAPH_API_BASE = 'https://graph.facebook.com/v21.0';
 const MODULE = 'insights';
 
-export interface MediaInsight {
-    name: string;
-    period: string;
-    values: Array<{ value: number }>;
-    title: string;
-    description: string;
-    id: string;
-}
 
 /**
  * Fetches insights for a specific Instagram Media object.
@@ -23,7 +16,7 @@ export interface MediaInsight {
 export async function getMediaInsights(
     igMediaId: string,
     userId: string,
-    postType: 'STORY' | 'FEED' | 'REEL' = 'STORY'
+    postType: PostType = 'STORY'
 ): Promise<MediaInsight[]> {
     try {
         const accessToken = await getFacebookAccessToken(userId);

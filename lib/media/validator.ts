@@ -8,19 +8,8 @@
  * - But anything outside 9:16 will be cropped or letterboxed
  */
 
-export interface MediaDimensions {
-    width: number;
-    height: number;
-}
+import { MediaDimensions, AspectRatioInfo } from '@/lib/types';
 
-export interface AspectRatioInfo {
-    ratio: number;           // width/height
-    isIdeal: boolean;        // true if 9:16 (0.5625)
-    isAcceptable: boolean;   // true if close enough to not look bad
-    needsProcessing: boolean; // true if we should process the image
-    recommendation: 'perfect' | 'acceptable' | 'needs_padding' | 'needs_crop';
-    message: string;
-}
 
 // Instagram Story constants
 export const STORY_IDEAL_WIDTH = 1080;

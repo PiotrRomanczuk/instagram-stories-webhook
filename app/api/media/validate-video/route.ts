@@ -26,7 +26,7 @@ import {
     VIDEO_MAX_DURATION_SEC,
     MAX_FILE_SIZE_MB
 } from '@/lib/media/video-processor';
-import { Logger } from '@/lib/logger';
+import { Logger } from '@/lib/utils/logger';
 
 const MODULE = 'api/validate-video';
 
