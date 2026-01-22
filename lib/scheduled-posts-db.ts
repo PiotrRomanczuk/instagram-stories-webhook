@@ -1,10 +1,13 @@
 import { supabaseAdmin } from './supabase-admin';
-import { ScheduledPost, MediaType, PostType } from './types';
+import {
+    ScheduledPost,
+    ScheduledPostWithUser,
+    ScheduledPostRow,
+    mapScheduledPostRow
+} from './types';
 
-// Updated interface to include userId
-export interface ScheduledPostWithUser extends ScheduledPost {
-    userId: string;
-}
+// Re-export types for backward compatibility
+export type { ScheduledPostWithUser };
 
 export async function getScheduledPosts(userId?: string): Promise<ScheduledPost[]> {
     let query = supabaseAdmin
@@ -22,21 +25,7 @@ export async function getScheduledPosts(userId?: string): Promise<ScheduledPost[
         return [];
     }
 
-    return (data || []).map(post => ({
-        id: post.id,
-        url: post.url,
-        type: post.type as MediaType,
-        postType: post.post_type as PostType,
-        caption: post.caption,
-        scheduledTime: Number(post.scheduled_time),
-        status: post.status,
-        createdAt: Number(post.created_at),
-        publishedAt: post.published_at ? Number(post.published_at) : undefined,
-        error: post.error,
-        igMediaId: post.ig_media_id,
-        userTags: post.user_tags,
-        userId: post.user_id // Include userId in the result
-    })) as ScheduledPostWithUser[];
+    return (data || []).map(post => mapScheduledPostRow(post as ScheduledPostRow));
 }
 
 export async function addScheduledPost(
@@ -88,6 +77,11 @@ export async function updateScheduledPost(id: string, updates: Partial<Scheduled
         published_at?: number | null;
         ig_media_id?: string;
         user_tags?: { username: string; x: number; y: number; }[]; // JSONB
+        processing_started_at?: string | null;
+        content_hash?: string;
+        idempotency_key?: string;
+        meme_id?: string;
+        retry_count?: number;
         updated_at: string;
     }
     const dbUpdates: DbScheduledPostUpdate = {
@@ -103,6 +97,15 @@ export async function updateScheduledPost(id: string, updates: Partial<Scheduled
     if (updates.publishedAt !== undefined) dbUpdates.published_at = updates.publishedAt;
     if (updates.igMediaId) dbUpdates.ig_media_id = updates.igMediaId;
     if (updates.userTags) dbUpdates.user_tags = updates.userTags;
+    if (updates.processingStartedAt !== undefined) {
+        dbUpdates.processing_started_at = updates.processingStartedAt
+            ? new Date(updates.processingStartedAt).toISOString()
+            : null;
+    }
+    if (updates.contentHash) dbUpdates.content_hash = updates.contentHash;
+    if (updates.idempotencyKey) dbUpdates.idempotency_key = updates.idempotencyKey;
+    if (updates.memeId) dbUpdates.meme_id = updates.memeId;
+    if (updates.retryCount !== undefined) dbUpdates.retry_count = updates.retryCount;
 
     const { data, error } = await supabaseAdmin
         .from('scheduled_posts')
@@ -116,21 +119,7 @@ export async function updateScheduledPost(id: string, updates: Partial<Scheduled
         return null;
     }
 
-    return {
-        id: data.id,
-        url: data.url,
-        type: data.type as MediaType,
-        postType: data.post_type as PostType,
-        caption: data.caption,
-        scheduledTime: Number(data.scheduled_time),
-        status: data.status,
-        createdAt: Number(data.created_at),
-        publishedAt: data.published_at ? Number(data.published_at) : undefined,
-        error: data.error,
-        igMediaId: data.ig_media_id,
-        userTags: data.user_tags,
-        userId: data.user_id
-    } as ScheduledPostWithUser;
+    return mapScheduledPostRow(data as ScheduledPostRow);
 }
 
 export async function deleteScheduledPost(id: string): Promise<boolean> {
@@ -160,21 +149,7 @@ export async function getPendingPosts(): Promise<ScheduledPostWithUser[]> {
         return [];
     }
 
-    return (data || []).map(post => ({
-        id: post.id,
-        url: post.url,
-        type: post.type as MediaType,
-        postType: post.post_type as PostType,
-        caption: post.caption,
-        scheduledTime: Number(post.scheduled_time),
-        status: post.status,
-        createdAt: Number(post.created_at),
-        publishedAt: post.published_at ? Number(post.published_at) : undefined,
-        error: post.error,
-        igMediaId: post.ig_media_id,
-        userTags: post.user_tags,
-        userId: post.user_id
-    })) as ScheduledPostWithUser[];
+    return (data || []).map(post => mapScheduledPostRow(post as ScheduledPostRow));
 }
 
 export async function getUpcomingPosts(userId?: string): Promise<ScheduledPost[]> {
@@ -196,19 +171,57 @@ export async function getUpcomingPosts(userId?: string): Promise<ScheduledPost[]
         return [];
     }
 
-    return (data || []).map(post => ({
-        id: post.id,
-        url: post.url,
-        type: post.type as MediaType,
-        postType: post.post_type as PostType,
-        caption: post.caption,
-        scheduledTime: Number(post.scheduled_time),
-        status: post.status,
-        createdAt: Number(post.created_at),
-        publishedAt: post.published_at ? Number(post.published_at) : undefined,
-        error: post.error,
-        igMediaId: post.ig_media_id,
-        userTags: post.user_tags,
-        userId: post.user_id
-    })) as ScheduledPostWithUser[];
+    return (data || []).map(post => mapScheduledPostRow(post as ScheduledPostRow));
 }
+
+/**
+ * Acquire a processing lock on a scheduled post
+ * Returns true if lock was acquired, false if already being processed
+ */
+export async function acquireProcessingLock(postId: string): Promise<boolean> {
+    const now = new Date().toISOString();
+    const lockTimeout = 5 * 60 * 1000; // 5 minutes
+    const timeoutThreshold = new Date(Date.now() - lockTimeout).toISOString();
+
+    // Try to acquire lock: set processing_started_at if it's null or expired
+    const { data, error } = await supabaseAdmin
+        .from('scheduled_posts')
+        .update({
+            status: 'processing',
+            processing_started_at: now
+        })
+        .eq('id', postId)
+        .eq('status', 'pending')
+        .or(`processing_started_at.is.null,processing_started_at.lt.${timeoutThreshold}`)
+        .select()
+        .single();
+
+    if (error || !data) {
+        // Lock not acquired (already processing or doesn't exist)
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * Release a processing lock on a scheduled post
+ * Used when processing fails and we want to allow retry
+ */
+export async function releaseProcessingLock(postId: string): Promise<boolean> {
+    const { error } = await supabaseAdmin
+        .from('scheduled_posts')
+        .update({
+            status: 'pending',
+            processing_started_at: null
+        })
+        .eq('id', postId);
+
+    if (error) {
+        console.error('Error releasing processing lock:', error);
+        return false;
+    }
+
+    return true;
+}
+

@@ -1,7 +1,8 @@
-import { getPendingPosts, updateScheduledPost } from '../scheduled-posts-db';
+import { getPendingPosts, updateScheduledPost, acquireProcessingLock, releaseProcessingLock } from '../scheduled-posts-db';
 import { publishMedia } from '../instagram';
 import { supabaseAdmin } from '../supabase-admin';
 import { Logger } from '../logger';
+import { generateContentHash, checkForRecentPublish } from '../duplicate-detection';
 
 export interface ProcessResult {
     id: string;
@@ -56,9 +57,45 @@ export async function processScheduledPosts(): Promise<BatchResult> {
 
         for (const post of pendingPosts) {
             try {
+                // 1. Acquire processing lock to prevent race conditions
+                const lockAcquired = await acquireProcessingLock(post.id);
+                if (!lockAcquired) {
+                    await Logger.info(MODULE, `⏳ Post ${post.id} is already being processed or locked, skipping`);
+                    continue;
+                }
+
+                await Logger.info(MODULE, `🔒 Acquired lock for post ${post.id}`);
+
+                // 2. Generate content hash if not already present
+                let contentHash = post.contentHash;
+                if (!contentHash) {
+                    try {
+                        contentHash = await generateContentHash(post.url);
+                        await Logger.info(MODULE, `Generated content hash for post ${post.id}: ${contentHash.substring(0, 16)}...`);
+                    } catch (hashError) {
+                        await Logger.warn(MODULE, `Failed to generate content hash for post ${post.id}, proceeding without duplicate check`, hashError);
+                    }
+                }
+
+                // 3. Check for duplicates if we have a content hash
+                if (contentHash) {
+                    const duplicateCheck = await checkForRecentPublish(contentHash, post.userId, 24);
+                    if (duplicateCheck.isDuplicate) {
+                        await Logger.warn(MODULE, `⚠️ Duplicate content detected for post ${post.id}! Same content was published as ${duplicateCheck.existingPostId}`);
+
+                        // Mark as cancelled instead of publishing
+                        await updateScheduledPost(post.id, {
+                            status: 'cancelled',
+                            error: `Duplicate content detected. Already published as post ${duplicateCheck.existingPostId}`
+                        });
+
+                        continue;
+                    }
+                }
+
                 await Logger.info(MODULE, `📤 Publishing scheduled post ${post.id} for user ${post.userId}...`);
 
-                // Publish the media using the associated user's tokens
+                // 4. Publish the media using the associated user's tokens
                 const result = await publishMedia(
                     post.url,
                     post.type,
@@ -68,11 +105,12 @@ export async function processScheduledPosts(): Promise<BatchResult> {
                     post.userTags
                 );
 
-                // Update status to published
+                // 5. Update status to published with content hash
                 await updateScheduledPost(post.id, {
                     status: 'published',
                     publishedAt: Date.now(),
-                    igMediaId: result.id // From publishRes.data.id
+                    igMediaId: result.id,
+                    contentHash: contentHash || undefined // Store hash for future duplicate checks
                 });
 
                 await Logger.info(MODULE, `✅ Successfully published scheduled post ${post.id}`);
@@ -108,11 +146,27 @@ export async function processScheduledPosts(): Promise<BatchResult> {
                 const errorMessage = error instanceof Error ? error.message : 'Unknown error';
                 await Logger.error(MODULE, `❌ Failed to publish scheduled post ${post.id}: ${errorMessage}`, error);
 
-                // Update status to failed
-                await updateScheduledPost(post.id, {
-                    status: 'failed',
-                    error: errorMessage,
-                });
+                // Release lock on failure to allow future retry
+                await releaseProcessingLock(post.id);
+
+                // Increment retry count
+                const retryCount = (post.retryCount || 0) + 1;
+                const maxRetries = 3;
+
+                if (retryCount >= maxRetries) {
+                    // Max retries reached, mark as failed
+                    await updateScheduledPost(post.id, {
+                        status: 'failed',
+                        error: `${errorMessage} (after ${retryCount} attempts)`,
+                    });
+                    await Logger.error(MODULE, `❌ Post ${post.id} failed after ${retryCount} attempts, marking as failed`);
+                } else {
+                    // Update retry count but keep as pending for next attempt
+                    await updateScheduledPost(post.id, {
+                        error: `${errorMessage} (attempt ${retryCount}/${maxRetries})`,
+                    });
+                    await Logger.info(MODULE, `🔄 Post ${post.id} will be retried (attempt ${retryCount}/${maxRetries})`);
+                }
 
                 results.push({
                     id: post.id,

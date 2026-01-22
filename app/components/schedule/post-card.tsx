@@ -5,7 +5,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Clock, CheckCircle, XCircle, Trash2, Pencil, Check, X, ZoomIn, BarChart3 } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, Trash2, Pencil, Check, X, ZoomIn, BarChart3, Loader2 } from 'lucide-react';
 import { ScheduledPost } from '@/lib/types';
 import { StatusBadge } from '../ui/status-badge';
 import { MediaModal } from '../ui/media-modal';
@@ -22,6 +22,7 @@ interface PostCardProps {
 
 const statusIcons = {
     pending: Clock,
+    processing: Loader2,
     published: CheckCircle,
     failed: XCircle,
     cancelled: XCircle,
@@ -29,6 +30,7 @@ const statusIcons = {
 
 const statusColors = {
     pending: 'bg-white border-slate-200 hover:border-indigo-300',
+    processing: 'bg-indigo-50/10 border-indigo-200',
     published: 'bg-emerald-50/10 border-emerald-100',
     failed: 'bg-rose-50/10 border-rose-100',
     cancelled: 'bg-slate-50 border-slate-200',
