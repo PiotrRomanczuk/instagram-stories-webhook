@@ -128,10 +128,10 @@ export function ScheduleManager() {
                     <ProcessButton onProcessed={fetchPosts} />
                     <button
                         onClick={fetchPosts}
-                        className="p-2 hover:bg-gray-100 rounded-xl transition"
+                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition"
                         title="Refresh"
                     >
-                        <RefreshCw className="w-5 h-5 text-gray-600" />
+                        <RefreshCw className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                     </button>
                 </div>
 

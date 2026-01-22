@@ -22,6 +22,18 @@ export async function GET(request: NextRequest) {
             posts = posts.filter(p => p.status === status);
         }
 
+        // Filter to show only:
+        // - All pending posts (regardless of age)
+        // - Published posts from the last 24 hours
+        const twentyFourHoursAgo = Date.now() - (24 * 60 * 60 * 1000);
+        posts = posts.filter(p => {
+            if (p.status === 'pending') {
+                return true; // Show all pending posts
+            }
+            // For published/failed posts, only show if within last 24 hours
+            return p.scheduledTime >= twentyFourHoursAgo;
+        });
+
         // Sort by scheduled time (earliest first)
         posts.sort((a, b) => a.scheduledTime - b.scheduledTime);
 
