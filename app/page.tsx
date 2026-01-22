@@ -7,6 +7,7 @@ import HomeHeader from "./components/home/home-header";
 import { ScheduleManager } from "./components/schedule/schedule-manager";
 import Link from "next/link";
 import { ArrowRight, Terminal, Shield, Sparkles } from "lucide-react";
+import { UserRole } from "@/lib/types";
 
 export default async function Home() {
   const session = await getServerSession(authOptions);
@@ -52,7 +53,7 @@ export default async function Home() {
                 </div>
               </Link>
 
-              {(session.user as any).role === 'admin' && (
+              {(session.user as { role?: UserRole }).role === 'admin' && (
                 <Link
                   href="/admin/memes"
                   className="group relative overflow-hidden p-6 rounded-3xl bg-white dark:bg-[#121214] border border-slate-100 dark:border-white/5 shadow-lg shadow-purple-500/5 hover:shadow-purple-500/10 transition-all duration-300"

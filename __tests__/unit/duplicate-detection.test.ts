@@ -1,13 +1,13 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
 import {
     generateContentHash,
     checkForRecentPublish,
     generateIdempotencyKey
-} from '@/lib/duplicate-detection';
-import { supabaseAdmin } from '@/lib/supabase-admin';
+} from '@/lib/utils/duplicate-detection';
+import { supabaseAdmin } from '@/lib/config/supabase-admin';
 
 // Inline mock to avoid hoisting issues
-vi.mock('@/lib/supabase-admin', () => {
+vi.mock('@/lib/config/supabase-admin', () => {
     const mockData = { data: null, error: null };
     const queryBuilder = {
         select: vi.fn().mockReturnThis(),
@@ -68,9 +68,6 @@ describe('generateContentHash', () => {
 });
 
 describe('checkForRecentPublish', () => {
-    const userId = 'user_123';
-    const contentHash = 'hash_abc';
-
     beforeEach(() => {
         vi.clearAllMocks();
     });
@@ -82,7 +79,7 @@ describe('checkForRecentPublish', () => {
         };
 
         // Mock Supabase response via the mocked module
-        const queryBuilder = (supabaseAdmin.from as any)('scheduled_posts');
+        const queryBuilder = (supabaseAdmin.from as Mock)('scheduled_posts');
         queryBuilder.then = vi.fn((resolve) => resolve({ data: [recentPost], error: null }));
         queryBuilder.limit = vi.fn().mockReturnValue({
             then: vi.fn((resolve) => resolve({ data: [recentPost], error: null }))

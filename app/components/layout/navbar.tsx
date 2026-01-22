@@ -6,6 +6,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { Home, Image as ImageIcon, Shield, Calendar, LogOut, Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import { ThemeToggle } from './theme-toggle';
+import { UserRole } from '@/lib/types';
 
 export function Navbar() {
     const { data: session } = useSession();
@@ -15,7 +16,7 @@ export function Navbar() {
     // Don't show navbar on signin page
     if (pathname === '/auth/signin') return null;
 
-    const isAdmin = (session?.user as any)?.role === 'admin';
+    const isAdmin = (session?.user as { role?: UserRole })?.role === 'admin';
 
     const navItems = [
         { href: '/', label: 'Dashboard', icon: Home },

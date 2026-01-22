@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
 import { GET, POST, DELETE, PATCH } from '@/app/api/schedule/route';
 import { NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth/next';
@@ -7,15 +7,15 @@ import {
     getScheduledPosts,
     deleteScheduledPost,
     updateScheduledPost
-} from '@/lib/scheduled-posts-db';
+} from '@/lib/database/scheduled-posts';
 
 // Mock DB
-vi.mock('@/lib/scheduled-posts-db');
+vi.mock('@/lib/database/scheduled-posts');
 vi.mock('next-auth/next');
 vi.mock('@/lib/auth', () => ({ authOptions: {} }));
 
 // Helper to create request
-const createRequest = (method: string, url: string, body?: any) => {
+const createRequest = (method: string, url: string, body?: unknown) => {
     return new NextRequest(new URL(url, 'http://localhost'), {
         method,
         body: body ? JSON.stringify(body) : undefined,
@@ -29,7 +29,7 @@ describe('/api/schedule API', () => {
 
     describe('GET', () => {
         it('should return 401 if unauthorized', async () => {
-            (getServerSession as any).mockResolvedValue(null);
+            (getServerSession as Mock).mockResolvedValue(null);
 
             const req = createRequest('GET', '/api/schedule');
             const res = await GET(req);
@@ -38,9 +38,9 @@ describe('/api/schedule API', () => {
         });
 
         it('should return posts for logged in user', async () => {
-            (getServerSession as any).mockResolvedValue({ user: { id: 'user_1' } });
+            (getServerSession as Mock).mockResolvedValue({ user: { id: 'user_1' } });
             const mockPosts = [{ id: 'p1', userId: 'user_1', scheduledTime: 1000 }];
-            (getScheduledPosts as any).mockResolvedValue(mockPosts);
+            (getScheduledPosts as Mock).mockResolvedValue(mockPosts);
 
             const req = createRequest('GET', '/api/schedule');
             const res = await GET(req);
@@ -52,12 +52,12 @@ describe('/api/schedule API', () => {
         });
 
         it('should filter by status', async () => {
-            (getServerSession as any).mockResolvedValue({ user: { id: 'user_1' } });
+            (getServerSession as Mock).mockResolvedValue({ user: { id: 'user_1' } });
             const mockPosts = [
                 { id: 'p1', status: 'pending', scheduledTime: 100 },
                 { id: 'p2', status: 'published', scheduledTime: 200 }
             ];
-            (getScheduledPosts as any).mockResolvedValue(mockPosts);
+            (getScheduledPosts as Mock).mockResolvedValue(mockPosts);
 
             const req = createRequest('GET', '/api/schedule?status=pending');
             const res = await GET(req);
@@ -70,8 +70,8 @@ describe('/api/schedule API', () => {
 
     describe('POST', () => {
         it('should create schedule post', async () => {
-            (getServerSession as any).mockResolvedValue({ user: { id: 'user_1' } });
-            (addScheduledPost as any).mockResolvedValue({ id: 'new_p' });
+            (getServerSession as Mock).mockResolvedValue({ user: { id: 'user_1' } });
+            (addScheduledPost as Mock).mockResolvedValue({ id: 'new_p' });
 
             const futureTime = Date.now() + 100000;
             const body = {
@@ -95,7 +95,7 @@ describe('/api/schedule API', () => {
         });
 
         it('should fail if scheduled time is in past', async () => {
-            (getServerSession as any).mockResolvedValue({ user: { id: 'user_1' } });
+            (getServerSession as Mock).mockResolvedValue({ user: { id: 'user_1' } });
 
             const pastTime = Date.now() - 1000;
             const body = {
@@ -116,9 +116,9 @@ describe('/api/schedule API', () => {
 
     describe('DELETE', () => {
         it('should delete own post', async () => {
-            (getServerSession as any).mockResolvedValue({ user: { id: 'user_1' } });
-            (getScheduledPosts as any).mockResolvedValue([{ id: 'p1' }]); // User has p1
-            (deleteScheduledPost as any).mockResolvedValue(true);
+            (getServerSession as Mock).mockResolvedValue({ user: { id: 'user_1' } });
+            (getScheduledPosts as Mock).mockResolvedValue([{ id: 'p1' }]); // User has p1
+            (deleteScheduledPost as Mock).mockResolvedValue(true);
 
             const req = createRequest('DELETE', '/api/schedule?id=p1');
             const res = await DELETE(req);
@@ -128,8 +128,8 @@ describe('/api/schedule API', () => {
         });
 
         it('should return 404 if post not found/owned', async () => {
-            (getServerSession as any).mockResolvedValue({ user: { id: 'user_1' } });
-            (getScheduledPosts as any).mockResolvedValue([]); // User has NO posts
+            (getServerSession as Mock).mockResolvedValue({ user: { id: 'user_1' } });
+            (getScheduledPosts as Mock).mockResolvedValue([]); // User has NO posts
 
             const req = createRequest('DELETE', '/api/schedule?id=p1');
             const res = await DELETE(req);
@@ -141,9 +141,9 @@ describe('/api/schedule API', () => {
 
     describe('PATCH', () => {
         it('should update own post', async () => {
-            (getServerSession as any).mockResolvedValue({ user: { id: 'user_1' } });
-            (getScheduledPosts as any).mockResolvedValue([{ id: 'p1' }]);
-            (updateScheduledPost as any).mockResolvedValue({ id: 'p1', caption: 'New' });
+            (getServerSession as Mock).mockResolvedValue({ user: { id: 'user_1' } });
+            (getScheduledPosts as Mock).mockResolvedValue([{ id: 'p1' }]);
+            (updateScheduledPost as Mock).mockResolvedValue({ id: 'p1', caption: 'New' });
 
             const body = { id: 'p1', caption: 'New' };
             const req = createRequest('PATCH', '/api/schedule', body);

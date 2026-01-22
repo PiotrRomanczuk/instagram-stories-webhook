@@ -1,5 +1,5 @@
-import { supabaseAdmin } from './supabase-admin';
-import { Logger } from './logger';
+import { supabaseAdmin } from './config/supabase-admin';
+import { Logger } from './utils/logger';
 import {
     MemeStatus,
     UserRole,

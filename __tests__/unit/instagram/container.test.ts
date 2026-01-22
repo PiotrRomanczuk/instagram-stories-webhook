@@ -1,9 +1,15 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, Mock } from 'vitest';
 import { waitForContainerReady } from '@/lib/instagram/container';
 import axios from 'axios';
-import { mockInstagramResponses } from '../../mocks/instagram-api';
 
 vi.mock('axios');
+vi.mock('@/lib/utils/logger', () => ({
+    Logger: {
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+    }
+}));
 
 describe('waitForContainerReady', () => {
     beforeEach(() => {
@@ -16,7 +22,7 @@ describe('waitForContainerReady', () => {
     });
 
     it('should resolve immediately if status is FINISHED', async () => {
-        (axios.get as any).mockResolvedValue({
+        (axios.get as Mock).mockResolvedValue({
             data: { status_code: 'FINISHED' }
         });
 
@@ -32,7 +38,7 @@ describe('waitForContainerReady', () => {
     });
 
     it('should retry if status is IN_PROGRESS', async () => {
-        (axios.get as any)
+        (axios.get as Mock)
             .mockResolvedValueOnce({ data: { status_code: 'IN_PROGRESS' } })
             .mockResolvedValueOnce({ data: { status_code: 'IN_PROGRESS' } })
             .mockResolvedValueOnce({ data: { status_code: 'FINISHED' } });
@@ -48,25 +54,25 @@ describe('waitForContainerReady', () => {
     });
 
     it('should throw if status is ERROR', async () => {
-        (axios.get as any).mockResolvedValue({
+        (axios.get as Mock).mockResolvedValue({
             data: { status_code: 'ERROR', status: 'Something went wrong' }
         });
 
         const promise = waitForContainerReady('cont_123', 'token', 3, 100);
         await vi.runAllTimersAsync();
 
-        await expect(promise).rejects.toThrow('Media container not ready');
+        await expect(promise).rejects.toThrow('Media container processing failed on Instagram servers');
     });
 
     it('should throw on timeout', async () => {
-        (axios.get as any).mockResolvedValue({
+        (axios.get as Mock).mockResolvedValue({
             data: { status_code: 'IN_PROGRESS' }
         });
 
         // 3 attempts, 100ms delay. Should fail after 3rd attempt.
         const promise = waitForContainerReady('cont_123', 'token', 3, 100);
 
-        await vi.advanceTimersByTimeAsync(5000);
+        await vi.advanceTimersByTimeAsync(500);
 
         await expect(promise).rejects.toThrow('Media container not ready after 3 attempts');
     });

@@ -1,8 +1,6 @@
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
 import {
     ScheduledPost,
-    MediaType,
-    PostType,
     ScheduledPostWithUser,
     DbScheduledPostUpdate,
     ScheduledPostRow,

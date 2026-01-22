@@ -13,9 +13,10 @@ import { reviewMemeSchema } from '@/lib/validations/meme.schema';
 
 export async function GET(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const session = await getServerSession(authOptions);
         if (!session) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -24,7 +25,7 @@ export async function GET(
         const userId = getUserId(session);
         const role = getUserRole(session);
 
-        const meme = await getMemeSubmission(params.id);
+        const meme = await getMemeSubmission(id);
         if (!meme) {
             return NextResponse.json({ error: 'Meme not found' }, { status: 404 });
         }
@@ -43,9 +44,10 @@ export async function GET(
 
 export async function PATCH(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const session = await getServerSession(authOptions);
         requireAdmin(session);
         const adminId = getUserId(session);
@@ -56,7 +58,7 @@ export async function PATCH(
         let result;
 
         if (validated.action === 'schedule') {
-            const meme = await getMemeSubmission(params.id);
+            const meme = await getMemeSubmission(id);
             if (!meme) return NextResponse.json({ error: 'Meme not found' }, { status: 404 });
 
             const scheduledPost = await addScheduledPost({
@@ -66,13 +68,13 @@ export async function PATCH(
                 caption: meme.caption || '',
                 scheduledTime: validated.scheduledFor!.getTime(),
                 userId: meme.user_id,
-                memeId: params.id
+                memeId: id
             });
 
-            result = await scheduleMeme(params.id, validated.scheduledFor!.getTime(), scheduledPost.id);
+            result = await scheduleMeme(id, validated.scheduledFor!.getTime(), scheduledPost.id);
         } else {
             result = await reviewMemeSubmission(
-                params.id,
+                id,
                 adminId,
                 validated.action,
                 validated.rejectionReason
@@ -96,9 +98,10 @@ export async function PATCH(
 
 export async function DELETE(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const session = await getServerSession(authOptions);
         if (!session) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -107,16 +110,22 @@ export async function DELETE(
         const userId = getUserId(session);
         const role = getUserRole(session);
 
-        const meme = await getMemeSubmission(params.id);
+        const meme = await getMemeSubmission(id);
         if (!meme) {
             return NextResponse.json({ error: 'Meme not found' }, { status: 404 });
         }
 
-        if (role !== 'admin' && meme.user_id !== userId) {
-            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        // Owners can only delete if still pending. Admins can delete anything.
+        if (role !== 'admin') {
+            if (meme.user_id !== userId) {
+                return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+            }
+            if (meme.status !== 'pending') {
+                return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+            }
         }
 
-        const success = await deleteMemeSubmission(params.id);
+        const success = await deleteMemeSubmission(id);
         if (!success) {
             return NextResponse.json({ error: 'Failed to delete meme' }, { status: 500 });
         }

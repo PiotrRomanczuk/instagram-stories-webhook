@@ -1,16 +1,16 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
 import {
     addScheduledPost,
     getScheduledPosts,
     updateScheduledPost,
     acquireProcessingLock,
     releaseProcessingLock
-} from '@/lib/scheduled-posts-db';
-import { supabaseAdmin } from '@/lib/supabase-admin';
+} from '@/lib/database/scheduled-posts';
+import { supabaseAdmin } from '@/lib/config/supabase-admin';
 import type { MediaType } from '@/lib/types'; // Assuming types definition
 
 // Inline mock
-vi.mock('@/lib/supabase-admin', () => {
+vi.mock('@/lib/config/supabase-admin', () => {
     return {
         supabaseAdmin: {
             from: vi.fn(),
@@ -24,7 +24,7 @@ describe('Scheduled Posts DB', () => {
     });
 
     // Helper to setup mock chain
-    const setupSupabaseMock = (responseData: any, errorData: any = null) => {
+    const setupSupabaseMock = (responseData: unknown, errorData: unknown = null) => {
         const queryBuilder = {
             select: vi.fn().mockReturnThis(),
             insert: vi.fn().mockReturnThis(),
@@ -38,7 +38,7 @@ describe('Scheduled Posts DB', () => {
             then: vi.fn((resolve) => resolve({ data: responseData, error: errorData })),
         };
 
-        (supabaseAdmin.from as any).mockReturnValue(queryBuilder);
+        (supabaseAdmin.from as Mock).mockReturnValue(queryBuilder);
         return queryBuilder;
     };
 

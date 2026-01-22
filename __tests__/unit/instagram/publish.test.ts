@@ -1,18 +1,18 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
 import { publishMedia } from '@/lib/instagram/publish';
 import axios from 'axios';
 import { mockInstagramResponses } from '../../mocks/instagram-api';
 
 // Mock dependencies
 vi.mock('axios');
-vi.mock('@/lib/linked-accounts-db', () => ({
+vi.mock('@/lib/database/linked-accounts', () => ({
     getFacebookAccessToken: vi.fn().mockResolvedValue('fake_access_token'),
     getInstagramUserId: vi.fn().mockResolvedValue('fake_ig_user_id'),
 }));
 vi.mock('@/lib/instagram/container', () => ({
     waitForContainerReady: vi.fn().mockResolvedValue(true),
 }));
-vi.mock('@/lib/supabase-admin', () => ({
+vi.mock('@/lib/config/supabase-admin', () => ({
     supabaseAdmin: {
         from: vi.fn().mockReturnValue({
             insert: vi.fn().mockResolvedValue({ error: null }),
@@ -27,7 +27,7 @@ describe('publishMedia', () => {
 
     it('should successfully publish an image story', async () => {
         // Mock successful calls
-        (axios.post as any)
+        (axios.post as Mock)
             .mockResolvedValueOnce({ data: mockInstagramResponses.createContainer }) // Create container
             .mockResolvedValueOnce({ data: mockInstagramResponses.publishMedia });   // Publish
 
@@ -55,7 +55,7 @@ describe('publishMedia', () => {
     });
 
     it('should successfully publish a video reel', async () => {
-        (axios.post as any)
+        (axios.post as Mock)
             .mockResolvedValueOnce({ data: mockInstagramResponses.createContainer })
             .mockResolvedValueOnce({ data: mockInstagramResponses.publishMedia });
 
@@ -90,8 +90,8 @@ describe('publishMedia', () => {
                 data: mockInstagramResponses.error
             }
         };
-        (axios.post as any).mockRejectedValue(errorResponse);
-        (axios.isAxiosError as any) = vi.fn().mockReturnValue(true);
+        (axios.post as Mock).mockRejectedValue(errorResponse);
+        (axios.isAxiosError as unknown as Mock).mockReturnValue(true);
 
         await expect(publishMedia('url', 'IMAGE', 'STORY', undefined, 'user_123'))
             .rejects.toThrow('Invalid OAuth access token');
@@ -103,8 +103,8 @@ describe('publishMedia', () => {
                 data: mockInstagramResponses.contentPolicyError // Code 368
             }
         };
-        (axios.post as any).mockRejectedValue(errorResponse);
-        (axios.isAxiosError as any).mockReturnValue(true);
+        (axios.post as Mock).mockRejectedValue(errorResponse);
+        (axios.isAxiosError as unknown as Mock).mockReturnValue(true);
 
         await expect(publishMedia('url', 'IMAGE', 'STORY', undefined, 'user_123'))
             .rejects.toThrow('Action blocked by Instagram');

@@ -1,15 +1,15 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
 import { getMediaInsights } from '@/lib/instagram/insights';
 import axios from 'axios';
 import { mockInstagramResponses } from '../../mocks/instagram-api';
 
 vi.mock('axios');
-vi.mock('@/lib/linked-accounts-db', () => ({
+vi.mock('@/lib/database/linked-accounts', () => ({
     getFacebookAccessToken: vi.fn().mockResolvedValue('fake_token'),
 }));
 
 // Mock Logger to avoid supabase calls during test
-vi.mock('@/lib/logger', () => ({
+vi.mock('@/lib/utils/logger', () => ({
     Logger: {
         error: vi.fn(),
     }
@@ -21,7 +21,7 @@ describe('getMediaInsights', () => {
     });
 
     it('should fetch story metrics successfully', async () => {
-        (axios.get as any).mockResolvedValue({
+        (axios.get as Mock).mockResolvedValue({
             data: mockInstagramResponses.insights
         });
 
@@ -41,7 +41,7 @@ describe('getMediaInsights', () => {
     });
 
     it('should fetch reel metrics successfully', async () => {
-        (axios.get as any).mockResolvedValue({
+        (axios.get as Mock).mockResolvedValue({
             data: mockInstagramResponses.insights
         });
 
@@ -58,16 +58,16 @@ describe('getMediaInsights', () => {
     });
 
     it('should throw if no access token', async () => {
-        const { getFacebookAccessToken } = await import('@/lib/linked-accounts-db');
-        (getFacebookAccessToken as any).mockResolvedValueOnce(null);
+        const { getFacebookAccessToken } = await import('@/lib/database/linked-accounts');
+        (getFacebookAccessToken as Mock).mockResolvedValueOnce(null);
 
         await expect(getMediaInsights('media_123', 'user_123', 'STORY'))
             .rejects.toThrow('No access token found');
     });
 
     it('should handle API errors', async () => {
-        (axios.get as any).mockRejectedValue(new Error('API Failure'));
-        (axios.isAxiosError as any) = vi.fn().mockReturnValue(false);
+        (axios.get as Mock).mockRejectedValue(new Error('API Failure'));
+        (axios.isAxiosError as unknown as Mock).mockReturnValue(false);
 
         await expect(getMediaInsights('media_123', 'user_123', 'STORY'))
             .rejects.toThrow('API Failure');

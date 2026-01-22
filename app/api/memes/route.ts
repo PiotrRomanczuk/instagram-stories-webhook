@@ -8,6 +8,7 @@ import {
 } from '@/lib/memes-db';
 import { getUserRole, getUserId } from '@/lib/auth-helpers';
 import { submitMemeSchema } from '@/lib/validations/meme.schema';
+import { MemeStatus } from '@/lib/types';
 
 export async function GET(req: NextRequest) {
     try {
@@ -21,8 +22,8 @@ export async function GET(req: NextRequest) {
         const { searchParams } = new URL(req.url);
         const status = searchParams.get('status') || undefined;
 
-        const options: { status?: any; userId?: string } = {
-            status: status
+        const options: { status?: MemeStatus | MemeStatus[]; userId?: string } = {
+            status: status as MemeStatus || undefined
         };
 
         if (role !== 'admin') {

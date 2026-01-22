@@ -68,13 +68,14 @@ describe('Memes API Routes', () => {
                 (getServerSession as Mock).mockResolvedValue(userSession);
                 (createMemeSubmission as Mock).mockResolvedValue({ id: 'm1' });
 
-                const body = { media_url: 'https://meme.com/1.jpg', title: 'Funny' };
+                const body = { mediaUrl: 'https://meme.com/1.jpg', title: 'Funny' };
                 const req = createRequest('POST', '/api/memes', body);
                 const res = await POST_SUBMIT(req);
                 const data = await res.json();
 
                 expect(res.status).toBe(200);
-                expect(data.success).toBe(true);
+                expect(data.meme).toBeDefined();
+                expect(data.meme.id).toBe('m1');
                 expect(createMemeSubmission).toHaveBeenCalledWith(expect.objectContaining({
                     user_id: 'u1',
                     media_url: 'https://meme.com/1.jpg'

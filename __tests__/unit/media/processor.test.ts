@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { processImageForStory, needsProcessing } from '@/lib/media/processor';
 import {
     create9x16Image,
@@ -6,7 +6,6 @@ import {
     createLandscapeImage
 } from '../../fixtures/images';
 import { STORY_IDEAL_WIDTH, STORY_IDEAL_HEIGHT } from '@/lib/media/validator';
-import sharp from 'sharp';
 
 describe('processImageForStory', () => {
     it('should return 9:16 image as-is (resized)', async () => {

@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { supabaseAdmin } from './supabase-admin';
+import { supabaseAdmin } from '../config/supabase-admin';
 import { Logger } from './logger';
 
 const MODULE = 'duplicate-detection';

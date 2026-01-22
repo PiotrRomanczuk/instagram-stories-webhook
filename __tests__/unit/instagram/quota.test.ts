@@ -1,14 +1,14 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
 import { getContentPublishingLimit } from '@/lib/instagram/quota';
 import axios from 'axios';
 import { mockInstagramResponses } from '../../mocks/instagram-api';
 
 vi.mock('axios');
-vi.mock('@/lib/linked-accounts-db', () => ({
+vi.mock('@/lib/database/linked-accounts', () => ({
     getFacebookAccessToken: vi.fn().mockResolvedValue('fake_token'),
 }));
 
-vi.mock('@/lib/logger', () => ({
+vi.mock('@/lib/utils/logger', () => ({
     Logger: {
         debug: vi.fn(),
         error: vi.fn(),
@@ -21,7 +21,7 @@ describe('getContentPublishingLimit', () => {
     });
 
     it('should parse quota response (array format)', async () => {
-        (axios.get as any).mockResolvedValue({
+        (axios.get as Mock).mockResolvedValue({
             data: mockInstagramResponses.quota // contains { data: [...] }
         });
 
@@ -37,7 +37,7 @@ describe('getContentPublishingLimit', () => {
 
     it('should handle single object response format', async () => {
         // Some endpoints might return direct object depending on API version quirks or mocks
-        (axios.get as any).mockResolvedValue({
+        (axios.get as Mock).mockResolvedValue({
             data: { quota_usage: 10, config: { quota_total: 100 } }
         });
 
@@ -51,15 +51,15 @@ describe('getContentPublishingLimit', () => {
     });
 
     it('should throw if no access token', async () => {
-        const { getFacebookAccessToken } = await import('@/lib/linked-accounts-db');
-        (getFacebookAccessToken as any).mockResolvedValueOnce(null);
+        const { getFacebookAccessToken } = await import('@/lib/database/linked-accounts');
+        (getFacebookAccessToken as Mock).mockResolvedValueOnce(null);
 
         await expect(getContentPublishingLimit('ig_u', 'u'))
             .rejects.toThrow('No access token found');
     });
 
     it('should propagate API errors', async () => {
-        (axios.get as any).mockRejectedValue(new Error('Network Error'));
+        (axios.get as Mock).mockRejectedValue(new Error('Network Error'));
         await expect(getContentPublishingLimit('ig_u', 'u'))
             .rejects.toThrow('Network Error');
     });

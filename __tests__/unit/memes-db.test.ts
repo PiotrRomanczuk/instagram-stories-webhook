@@ -7,10 +7,10 @@ import {
     reviewMemeSubmission, 
     deleteMemeSubmission 
 } from '@/lib/memes-db';
-import { supabaseAdmin } from '@/lib/supabase-admin';
+import { supabaseAdmin } from '@/lib/config/supabase-admin';
 
 // Mock Supabase admin client
-vi.mock('@/lib/supabase-admin', () => ({
+vi.mock('@/lib/config/supabase-admin', () => ({
     supabaseAdmin: {
         from: vi.fn(),
         storage: {
@@ -26,8 +26,8 @@ describe('Memes Database Layer', () => {
         vi.clearAllMocks();
     });
 
-    const setupSupabaseMock = (responseData: any, errorData: any = null) => {
-        const queryBuilder: any = {
+    const setupSupabaseMock = (responseData: unknown, errorData: unknown = null) => {
+        const queryBuilder = {
             select: vi.fn().mockReturnThis(),
             insert: vi.fn().mockReturnThis(),
             update: vi.fn().mockReturnThis(),

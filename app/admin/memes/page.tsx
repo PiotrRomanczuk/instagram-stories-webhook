@@ -64,7 +64,7 @@ export default function AdminMemesPage() {
         fetchMemes();
     }, [fetchMemes]);
 
-    const handleAction = async (id: string, action: 'approve' | 'reject' | 'schedule', data?: any) => {
+    const handleAction = async (id: string, action: 'approve' | 'reject' | 'schedule', data?: { rejectionReason?: string, scheduledFor?: string }) => {
         try {
             const res = await fetch(`/api/memes/${id}`, {
                 method: 'PATCH',
