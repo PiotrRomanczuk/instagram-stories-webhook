@@ -5,9 +5,7 @@ import { z } from 'zod';
  */
 export const userAuthSchema = z.object({
     email: z
-        .string()
-        .email('Must be a valid email address')
-        .transform(val => val.toLowerCase().trim()),
+        .preprocess((val) => typeof val === 'string' ? val.trim().toLowerCase() : val, z.string().email('Must be a valid email address')),
 
     name: z
         .string()
@@ -19,14 +17,9 @@ export const userAuthSchema = z.object({
  * Schema for adding user to whitelist
  */
 export const addToWhitelistSchema = z.object({
-    email: z
-        .string()
-        .email('Must be a valid email address')
-        .transform(val => val.toLowerCase().trim()),
+    email: z.preprocess((val) => typeof val === 'string' ? val.trim().toLowerCase() : val, z.string().email('Must be a valid email address')),
 
-    role: z.enum(['user', 'admin'], {
-        errorMap: () => ({ message: 'Role must be either user or admin' })
-    }).default('user'),
+    role: z.enum(['user', 'admin']).default('user'),
 });
 
 /**

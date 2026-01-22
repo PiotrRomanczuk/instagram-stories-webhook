@@ -42,8 +42,9 @@ export async function waitForContainerReady(containerId: string, accessToken: st
         } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             console.warn(`Could not check status (attempt ${attempt}): ${errorMessage}`);
-            if (attempt >= 3) {
-                return;
+            if (attempt >= maxAttempts) {
+                // Let it fall through to the final error throw
+                break;
             }
             await new Promise(resolve => setTimeout(resolve, delayMs));
         }

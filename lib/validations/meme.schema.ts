@@ -6,26 +6,19 @@ import { z } from 'zod';
 export const submitMemeSchema = z.object({
     caption: z
         .string()
-        .min(1, 'Caption is required')
-        .max(2200, 'Caption cannot exceed 2200 characters'),
+        .max(2200, 'Caption cannot exceed 2200 characters')
+        .optional(),
 
-    mediaFile: z
-        .instanceof(File)
-        .refine(
-            (file) => file.size <= 8 * 1024 * 1024, // 8MB
-            { message: 'File size must be less than 8MB' }
-        )
-        .refine(
-            (file) => {
-                const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'video/mp4'];
-                return validTypes.includes(file.type);
-            },
-            { message: 'File must be JPEG, PNG, or MP4' }
-        ),
-
-    submittedBy: z
+    title: z
         .string()
-        .email('Must be a valid email address'),
+        .max(100, 'Title cannot exceed 100 characters')
+        .optional(),
+
+    mediaUrl: z
+        .string()
+        .url('Must be a valid URL'),
+
+    storagePath: z.string().optional(),
 });
 
 /**

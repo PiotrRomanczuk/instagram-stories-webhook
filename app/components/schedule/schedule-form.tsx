@@ -4,7 +4,7 @@ import { useState, useRef } from 'react';
 import Image from 'next/image';
 import { Calendar, Loader, Upload, X, CheckCircle2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Panel } from '../ui/panel';
 import { supabase } from '@/lib/supabase';
@@ -27,7 +27,7 @@ export function ScheduleForm({ onScheduled }: ScheduleFormProps) {
         reset,
         control
     } = useForm<CreateScheduledPostInput>({
-        resolver: zodResolver(createScheduledPostSchema) as any,
+        resolver: zodResolver(createScheduledPostSchema) as unknown as Resolver<CreateScheduledPostInput>,
         defaultValues: {
             mediaUrl: '',
             caption: '',
