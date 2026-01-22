@@ -1,25 +1,52 @@
+'use client';
+
 import { useState, useRef } from 'react';
 import Image from 'next/image';
 import { Calendar, Loader, Upload, X, CheckCircle2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Panel } from '../ui/panel';
 import { supabase } from '@/lib/supabase';
 import { useMediaValidation } from '@/app/hooks/use-media-validation';
 import { AspectRatioIndicator, ProcessingPrompt } from '../media/aspect-ratio-indicator';
+import { createScheduledPostSchema, type CreateScheduledPostInput } from '@/lib/validations/post.schema';
 
 interface ScheduleFormProps {
     onScheduled: () => void;
 }
 
 export function ScheduleForm({ onScheduled }: ScheduleFormProps) {
-    const [url, setUrl] = useState('');
-    const [type, setType] = useState<'IMAGE' | 'VIDEO'>('IMAGE');
-    const [scheduledDate, setScheduledDate] = useState('');
-    const [scheduledTime, setScheduledTime] = useState('');
-    const [taggedUsers, setTaggedUsers] = useState('');
-    const [scheduling, setScheduling] = useState(false);
+    // React Hook Form setup with Zod validation
+    const {
+        register,
+        handleSubmit,
+        formState: { errors, isSubmitting },
+        setValue,
+        watch,
+        reset,
+        control
+    } = useForm<CreateScheduledPostInput>({
+        resolver: zodResolver(createScheduledPostSchema),
+        defaultValues: {
+            mediaUrl: '',
+            caption: '',
+            scheduledFor: (() => {
+                const now = new Date();
+                now.setMinutes(now.getMinutes() + 5);
+                return now;
+            })(),
+            userTags: [],
+            hashtagTags: []
+        }
+    });
 
-    // Upload state
+    // Watch form values
+    const mediaUrl = watch('mediaUrl');
+    const scheduledFor = watch('scheduledFor');
+
+    // Local state for UI
+    const [type, setType] = useState<'IMAGE' | 'VIDEO'>('IMAGE');
     const [uploading, setUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -27,13 +54,6 @@ export function ScheduleForm({ onScheduled }: ScheduleFormProps) {
     // Media validation state
     const mediaValidation = useMediaValidation();
     const [isProcessing, setIsProcessing] = useState(false);
-
-    useState(() => {
-        const now = new Date();
-        now.setMinutes(now.getMinutes() + 5);
-        setScheduledDate(now.toISOString().split('T')[0]);
-        setScheduledTime(now.toTimeString().slice(0, 5));
-    });
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -55,9 +75,6 @@ export function ScheduleForm({ onScheduled }: ScheduleFormProps) {
 
         setUploading(true);
         setUploadProgress(10);
-
-        // TODO: Integrate video validation/processing here
-
 
         try {
             const fileExt = file.name.split('.').pop();
@@ -82,7 +99,7 @@ export function ScheduleForm({ onScheduled }: ScheduleFormProps) {
                 .getPublicUrl(filePath);
 
             setUploadProgress(100);
-            setUrl(publicUrl);
+            setValue('mediaUrl', publicUrl);
             setType(isVideo ? 'VIDEO' : 'IMAGE');
             toast.success('Media uploaded successfully');
 
@@ -101,7 +118,7 @@ export function ScheduleForm({ onScheduled }: ScheduleFormProps) {
 
     // Handle image processing for non-9:16 images
     const handleProcessImage = async (options: { blurBackground: boolean }) => {
-        if (!url || type !== 'IMAGE') return;
+        if (!mediaUrl || type !== 'IMAGE') return;
 
         setIsProcessing(true);
         try {
@@ -109,7 +126,7 @@ export function ScheduleForm({ onScheduled }: ScheduleFormProps) {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    imageUrl: url,
+                    imageUrl: mediaUrl,
                     blurBackground: options.blurBackground,
                     backgroundColor: '#000000'
                 })
@@ -122,7 +139,7 @@ export function ScheduleForm({ onScheduled }: ScheduleFormProps) {
             }
 
             if (data.wasProcessed) {
-                setUrl(data.processedUrl);
+                setValue('mediaUrl', data.processedUrl);
                 // Re-validate the processed image
                 await mediaValidation.validateUrl(data.processedUrl);
                 toast.success('Image optimized for Stories!');
@@ -137,69 +154,63 @@ export function ScheduleForm({ onScheduled }: ScheduleFormProps) {
         }
     };
 
-    // TODO: Add handleProcessVideo function to call /api/media/process-video
-
-
     // Clear media and reset validation
     const handleClearMedia = () => {
-        setUrl('');
+        setValue('mediaUrl', '');
         mediaValidation.reset();
     };
 
-
-    const handleSchedule = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setScheduling(true);
-
+    // Form submit handler
+    const onSubmit = async (data: CreateScheduledPostInput) => {
         try {
-            // Process tags
-            const userTags = taggedUsers
-                .split(',')
-                .map(u => u.trim())
-                .filter(u => u.length > 0)
-                .map(username => ({
-                    username,
-                    x: 0.5,
-                    y: 0.5
-                }));
-
-            const scheduledDateTime = new Date(`${scheduledDate}T${scheduledTime}`);
             const res = await fetch('/api/schedule', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    url,
+                    url: data.mediaUrl,
                     type,
-                    scheduledTime: scheduledDateTime.toISOString(),
-                    userTags
+                    scheduledTime: data.scheduledFor.toISOString(),
+                    userTags: data.userTags?.map(username => ({
+                        username,
+                        x: 0.5,
+                        y: 0.5
+                    })) || [],
+                    caption: data.caption
                 }),
             });
 
             if (res.ok) {
                 toast.success('Post scheduled successfully');
-                setUrl('');
+                reset();
                 onScheduled();
             } else {
-                const data = await res.json();
-                toast.error(data.error || 'Failed to schedule post');
+                const errorData = await res.json();
+                toast.error(errorData.error || 'Failed to schedule post');
             }
         } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             toast.error(errorMessage);
-        } finally {
-            setScheduling(false);
         }
+    };
+
+    // Helper to format date for input
+    const formatDateForInput = (date: Date) => {
+        return date.toISOString().split('T')[0];
+    };
+
+    const formatTimeForInput = (date: Date) => {
+        return date.toTimeString().slice(0, 5);
     };
 
     return (
         <Panel title="Schedule New Post" icon={<Calendar className="w-6 h-6" />}>
-            <form onSubmit={handleSchedule} className="space-y-6">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
 
                 {/* Media Selection */}
                 <div className="space-y-4">
                     <label className="block text-sm font-bold text-gray-700">Add Story Content</label>
 
-                    {!url ? (
+                    {!mediaUrl ? (
                         <div
                             onClick={() => fileInputRef.current?.click()}
                             className={`border-2 border-dashed border-gray-200 rounded-3xl p-10 flex flex-col items-center justify-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/30 transition group ${uploading ? 'pointer-events-none' : ''}`}
@@ -236,10 +247,10 @@ export function ScheduleForm({ onScheduled }: ScheduleFormProps) {
                         <div className="space-y-3">
                             <div className="relative group rounded-3xl overflow-hidden border border-gray-100 shadow-sm">
                                 {type === 'VIDEO' ? (
-                                    <video src={url} className="w-full h-48 object-cover" controls={false} />
+                                    <video src={mediaUrl} className="w-full h-48 object-cover" controls={false} />
                                 ) : (
                                     <Image
-                                        src={url}
+                                        src={mediaUrl}
                                         alt="To upload"
                                         width={400}
                                         height={192}
@@ -288,8 +299,6 @@ export function ScheduleForm({ onScheduled }: ScheduleFormProps) {
                                     />
                                 </>
                             )}
-
-                            {/* TODO: Add video processing prompt and indicators for VIDEO type */}
                         </div>
 
                     )}
@@ -300,13 +309,17 @@ export function ScheduleForm({ onScheduled }: ScheduleFormProps) {
                         <div className="h-px flex-1 bg-gray-100"></div>
                     </div>
 
-                    <input
-                        type="url"
-                        value={url}
-                        onChange={(e) => setUrl(e.target.value)}
-                        placeholder="https://example.com/image.jpg"
-                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition text-sm"
-                    />
+                    <div>
+                        <input
+                            type="url"
+                            {...register('mediaUrl')}
+                            placeholder="https://example.com/image.jpg"
+                            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition text-sm"
+                        />
+                        {errors.mediaUrl && (
+                            <p className="text-red-500 text-xs mt-1">{errors.mediaUrl.message}</p>
+                        )}
+                    </div>
                 </div>
 
                 <div className="flex flex-col md:flex-row gap-6">
@@ -326,40 +339,93 @@ export function ScheduleForm({ onScheduled }: ScheduleFormProps) {
                         </div>
                     </div>
 
-                    <div className="flex-[2] grid grid-cols-2 gap-4">
-                        <div className="col-span-2">
-                            <label className="block text-sm font-bold text-gray-700 mb-2">Tag Users (optional)</label>
-                            <input
-                                type="text"
-                                value={taggedUsers}
-                                onChange={(e) => setTaggedUsers(e.target.value)}
-                                placeholder="@username, @another_user"
-                                className="w-full px-4 py-2 text-sm rounded-xl border border-gray-200 focus:border-indigo-500 outline-none transition"
-                            />
-                            <p className="text-[10px] text-gray-400 mt-1 pl-1">Comma separated list of usernames to tag</p>
-                        </div>
+                    <div className="flex-[2]">
+                        <label className="block text-sm font-bold text-gray-700 mb-2">Caption (optional)</label>
+                        <input
+                            type="text"
+                            {...register('caption')}
+                            placeholder="Add a caption..."
+                            className="w-full px-4 py-2 text-sm rounded-xl border border-gray-200 focus:border-indigo-500 outline-none transition"
+                        />
+                        {errors.caption && (
+                            <p className="text-red-500 text-xs mt-1">{errors.caption.message}</p>
+                        )}
+                    </div>
+                </div>
+
+                <div className="flex flex-col md:flex-row gap-6">
+                    <div className="flex-[2]">
+                        <label className="block text-sm font-bold text-gray-700 mb-2">Tag Users (optional)</label>
+                        <Controller
+                            name="userTags"
+                            control={control}
+                            render={({ field }) => (
+                                <input
+                                    type="text"
+                                    value={field.value?.join(', ') || ''}
+                                    onChange={(e) => {
+                                        const tags = e.target.value
+                                            .split(',')
+                                            .map(t => t.trim())
+                                            .filter(t => t.length > 0);
+                                        field.onChange(tags);
+                                    }}
+                                    placeholder="@username, @another_user"
+                                    className="w-full px-4 py-2 text-sm rounded-xl border border-gray-200 focus:border-indigo-500 outline-none transition"
+                                />
+                            )}
+                        />
+                        <p className="text-[10px] text-gray-400 mt-1 pl-1">Comma separated list of usernames to tag</p>
+                        {errors.userTags && (
+                            <p className="text-red-500 text-xs mt-1">{errors.userTags.message}</p>
+                        )}
                     </div>
 
                     <div className="flex-[2] grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-bold text-gray-700 mb-2">Publish Date</label>
-                            <input
-                                type="date"
-                                value={scheduledDate}
-                                onChange={(e) => setScheduledDate(e.target.value)}
-                                min={new Date().toISOString().split('T')[0]}
-                                required
-                                className="w-full px-4 py-2 text-sm rounded-xl border border-gray-200 focus:border-indigo-500 outline-none transition"
+                            <Controller
+                                name="scheduledFor"
+                                control={control}
+                                render={({ field }) => (
+                                    <input
+                                        type="date"
+                                        value={formatDateForInput(field.value)}
+                                        onChange={(e) => {
+                                            const newDate = new Date(field.value);
+                                            const [year, month, day] = e.target.value.split('-').map(Number);
+                                            newDate.setFullYear(year, month - 1, day);
+                                            field.onChange(newDate);
+                                        }}
+                                        min={new Date().toISOString().split('T')[0]}
+                                        required
+                                        className="w-full px-4 py-2 text-sm rounded-xl border border-gray-200 focus:border-indigo-500 outline-none transition"
+                                    />
+                                )}
                             />
+                            {errors.scheduledFor && (
+                                <p className="text-red-500 text-xs mt-1">{errors.scheduledFor.message}</p>
+                            )}
                         </div>
                         <div>
                             <label className="block text-sm font-bold text-gray-700 mb-2">Time</label>
-                            <input
-                                type="time"
-                                value={scheduledTime}
-                                onChange={(e) => setScheduledTime(e.target.value)}
-                                required
-                                className="w-full px-4 py-2 text-sm rounded-xl border border-gray-200 focus:border-indigo-500 outline-none transition"
+                            <Controller
+                                name="scheduledFor"
+                                control={control}
+                                render={({ field }) => (
+                                    <input
+                                        type="time"
+                                        value={formatTimeForInput(field.value)}
+                                        onChange={(e) => {
+                                            const newDate = new Date(field.value);
+                                            const [hours, minutes] = e.target.value.split(':').map(Number);
+                                            newDate.setHours(hours, minutes);
+                                            field.onChange(newDate);
+                                        }}
+                                        required
+                                        className="w-full px-4 py-2 text-sm rounded-xl border border-gray-200 focus:border-indigo-500 outline-none transition"
+                                    />
+                                )}
                             />
                         </div>
                     </div>
@@ -368,12 +434,12 @@ export function ScheduleForm({ onScheduled }: ScheduleFormProps) {
                 <div className="pt-2">
                     <button
                         type="submit"
-                        disabled={scheduling || uploading || !url}
+                        disabled={isSubmitting || uploading || !mediaUrl}
                         className="w-full px-6 py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
-                        {scheduling ? <><Loader className="w-5 h-5 animate-spin" /> Scheduling...</> : <><Calendar className="w-5 h-5" /> Schedule Post</>}
+                        {isSubmitting ? <><Loader className="w-5 h-5 animate-spin" /> Scheduling...</> : <><Calendar className="w-5 h-5" /> Schedule Post</>}
                     </button>
-                    {!url && (
+                    {!mediaUrl && (
                         <p className="text-center text-[11px] text-gray-400 mt-3 flex items-center justify-center gap-1">
                             <AlertCircle className="w-3 h-3" /> Select media to enable scheduling
                         </p>

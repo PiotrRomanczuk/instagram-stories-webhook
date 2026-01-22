@@ -42,48 +42,65 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { url, type, postType, caption, scheduledTime, userTags } = body;
 
-        // Validation
-        if (!url) {
-            return NextResponse.json({ error: 'Missing "url" in request body' }, { status: 400 });
+        // Import Zod schema
+        const { z } = await import('zod');
+
+        // Define server-side validation schema
+        const schedulePostSchema = z.object({
+            url: z.string().url('Invalid media URL'),
+            type: z.enum(['IMAGE', 'VIDEO']),
+            postType: z.enum(['STORY']).optional().default('STORY'),
+            caption: z.string().max(2200, 'Caption cannot exceed 2200 characters').optional().default(''),
+            scheduledTime: z.string().or(z.number()).transform((val) => {
+                const timestamp = typeof val === 'string' ? new Date(val).getTime() : val;
+                if (isNaN(timestamp)) {
+                    throw new Error('Invalid scheduledTime format');
+                }
+                if (timestamp <= Date.now()) {
+                    throw new Error('scheduledTime must be in the future');
+                }
+                return timestamp;
+            }),
+            userTags: z.array(z.object({
+                username: z.string(),
+                x: z.number().min(0).max(1),
+                y: z.number().min(0).max(1)
+            })).max(20, 'Maximum 20 user tags allowed').optional().default([])
+        });
+
+        // Validate request body
+        const validationResult = schedulePostSchema.safeParse(body);
+
+        if (!validationResult.success) {
+            const errors = validationResult.error.issues.map((err) => ({
+                field: err.path.join('.'),
+                message: err.message
+            }));
+            return NextResponse.json({
+                error: 'Validation failed',
+                details: errors
+            }, { status: 400 });
         }
 
-        if (!scheduledTime) {
-            return NextResponse.json({ error: 'Missing "scheduledTime" in request body' }, { status: 400 });
-        }
-
-        const scheduledTimeMs = typeof scheduledTime === 'string'
-            ? new Date(scheduledTime).getTime()
-            : scheduledTime;
-
-        if (isNaN(scheduledTimeMs)) {
-            return NextResponse.json({ error: 'Invalid scheduledTime format' }, { status: 400 });
-        }
-
-        if (scheduledTimeMs <= Date.now()) {
-            return NextResponse.json({ error: 'scheduledTime must be in the future' }, { status: 400 });
-        }
-
-        const mediaType = type === 'VIDEO' ? 'VIDEO' : 'IMAGE';
-        const targetPostType = postType || 'STORY';
+        const { url, type, postType, caption, scheduledTime, userTags } = validationResult.data;
 
         const post = await addScheduledPost({
             url,
-            type: mediaType,
-            postType: targetPostType,
-            caption: caption || '',
-            scheduledTime: scheduledTimeMs,
-            userTags: userTags || [],
+            type,
+            postType,
+            caption,
+            scheduledTime,
+            userTags,
             userId: session.user.id // Associate with current user
         });
 
-        console.log(`📅 Scheduled ${targetPostType} (${mediaType}) post for user ${session.user.id} at ${new Date(scheduledTimeMs).toLocaleString()}`);
+        console.log(`📅 Scheduled ${postType} (${type}) post for user ${session.user.id} at ${new Date(scheduledTime).toLocaleString()}`);
 
         return NextResponse.json({
             success: true,
             post,
-            message: `Post scheduled for ${new Date(scheduledTimeMs).toLocaleString()}`
+            message: `Post scheduled for ${new Date(scheduledTime).toLocaleString()}`
         });
     } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -140,11 +157,47 @@ export async function PATCH(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { id, ...updates } = body;
 
-        if (!id) {
-            return NextResponse.json({ error: 'Missing "id" in request body' }, { status: 400 });
+        // Import Zod for validation
+        const { z } = await import('zod');
+
+        // Define validation schema for updates (all fields optional except id)
+        const updatePostSchema = z.object({
+            id: z.string().min(1, 'Post ID is required'),
+            url: z.string().url('Invalid media URL').optional(),
+            caption: z.string().max(2200, 'Caption cannot exceed 2200 characters').optional(),
+            scheduledTime: z.string().or(z.number()).transform((val) => {
+                const timestamp = typeof val === 'string' ? new Date(val).getTime() : val;
+                if (isNaN(timestamp)) {
+                    throw new Error('Invalid scheduledTime format');
+                }
+                if (timestamp <= Date.now()) {
+                    throw new Error('scheduledTime must be in the future');
+                }
+                return timestamp;
+            }).optional(),
+            userTags: z.array(z.object({
+                username: z.string(),
+                x: z.number().min(0).max(1),
+                y: z.number().min(0).max(1)
+            })).max(20, 'Maximum 20 user tags allowed').optional()
+        });
+
+        // Validate request body
+        const validationResult = updatePostSchema.safeParse(body);
+
+        if (!validationResult.success) {
+            const errors = validationResult.error.issues.map((err) => ({
+                field: err.path.join('.'),
+                message: err.message
+            }));
+            return NextResponse.json({
+                error: 'Validation failed',
+                details: errors
+            }, { status: 400 });
         }
+
+        const { id, ...updates } = validationResult.data;
 
         // Verify ownership
         const posts = await getScheduledPosts(session.user.id);
@@ -152,23 +205,6 @@ export async function PATCH(request: NextRequest) {
 
         if (!postExists) {
             return NextResponse.json({ error: 'Post not found or unauthorized' }, { status: 404 });
-        }
-
-        // If updating scheduledTime, validate it
-        if (updates.scheduledTime) {
-            const scheduledTimeMs = typeof updates.scheduledTime === 'string'
-                ? new Date(updates.scheduledTime).getTime()
-                : updates.scheduledTime;
-
-            if (isNaN(scheduledTimeMs)) {
-                return NextResponse.json({ error: 'Invalid scheduledTime format' }, { status: 400 });
-            }
-
-            if (scheduledTimeMs <= Date.now()) {
-                return NextResponse.json({ error: 'scheduledTime must be in the future' }, { status: 400 });
-            }
-
-            updates.scheduledTime = scheduledTimeMs;
         }
 
         // Log updates for debugging

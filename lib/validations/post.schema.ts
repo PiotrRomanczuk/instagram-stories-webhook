@@ -6,8 +6,9 @@ import { z } from 'zod';
 export const createScheduledPostSchema = z.object({
     caption: z
         .string()
-        .min(1, 'Caption is required')
-        .max(2200, 'Caption cannot exceed 2200 characters'),
+        .max(2200, 'Caption cannot exceed 2200 characters')
+        .optional()
+        .default(''),
 
     mediaUrl: z
         .string()
