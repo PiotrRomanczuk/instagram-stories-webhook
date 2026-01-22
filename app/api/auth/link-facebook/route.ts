@@ -45,8 +45,9 @@ export async function GET(req: NextRequest) {
         const state = Buffer.from(JSON.stringify({
             timestamp: Date.now(),
             userId: userId,
-            random: Math.random().toString(36).substring(7)
+            nonce: crypto.randomUUID()
         })).toString('base64');
+
 
         const facebookAuthUrl = new URL("https://www.facebook.com/v21.0/dialog/oauth");
         facebookAuthUrl.searchParams.set("client_id", appId || "");

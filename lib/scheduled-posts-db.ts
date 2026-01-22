@@ -31,8 +31,9 @@ export async function getScheduledPosts(userId?: string): Promise<ScheduledPost[
 export async function addScheduledPost(
     post: Omit<ScheduledPost, 'id' | 'status' | 'createdAt'> & { userId: string }
 ): Promise<ScheduledPostWithUser> {
-    const id = `post_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const id = `post_${crypto.randomUUID()}`;
     const createdAt = Date.now();
+
 
     const newRecord = {
         id,

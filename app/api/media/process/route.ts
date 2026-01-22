@@ -62,7 +62,7 @@ export async function POST(request: Request) {
         }
 
         // Upload the processed image to Supabase
-        const fileName = `processed/${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
+        const fileName = `processed/${crypto.randomUUID()}.jpg`;
 
         const { error: uploadError } = await supabase.storage
             .from('stories')

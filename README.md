@@ -63,6 +63,12 @@ Check out our unified guides for detailed information:
 3.  **[META_PERMISSIONS.md](./docs/META_PERMISSIONS.md)** - Detailed reference for API scopes and future features.
 4.  **[CLIENT_SETUP_GUIDE.md](./docs/CLIENT_SETUP_GUIDE.md)** - Complete step-by-step guide for new client deployments.
 5.  **[PI_DEPLOYMENT.md](./docs/PI_DEPLOYMENT.md)** - Raspberry Pi local deployment instructions.
+6.  **[CI/CD Pipeline](.github/workflows/ci.yml)** - Automated testing and deployment configuration.
+
+### 🧪 CI/CD Features
+- **CI**: Automated Linting, TypeScript type checking, and Vitest unit testing on every push.
+- **E2E**: Playwright tests run in CI to catch UI regressions.
+- **CD**: Deployment templates for Vercel and Raspberry Pi webhooks.
 
 ### ⚙️ Application Settings
 
