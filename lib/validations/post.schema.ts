@@ -21,13 +21,10 @@ export const createScheduledPostSchema = z.object({
             { message: 'Media must be an image or video file' }
         ),
 
-    scheduledFor: z
-        .coerce
-        .date()
-        .refine(
-            (date) => date > new Date(),
-            { message: 'Scheduled time must be in the future' }
-        ),
+    scheduledFor: z.coerce.date().refine(
+        (date) => date > new Date(),
+        { message: 'Scheduled time must be in the future' }
+    ),
 
     userTags: z
         .array(z.string())

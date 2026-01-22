@@ -27,7 +27,7 @@ export function ScheduleForm({ onScheduled }: ScheduleFormProps) {
         reset,
         control
     } = useForm<CreateScheduledPostInput>({
-        resolver: zodResolver(createScheduledPostSchema),
+        resolver: zodResolver(createScheduledPostSchema) as any,
         defaultValues: {
             mediaUrl: '',
             caption: '',
@@ -43,7 +43,6 @@ export function ScheduleForm({ onScheduled }: ScheduleFormProps) {
 
     // Watch form values
     const mediaUrl = watch('mediaUrl');
-    const scheduledFor = watch('scheduledFor');
 
     // Local state for UI
     const [type, setType] = useState<'IMAGE' | 'VIDEO'>('IMAGE');
