@@ -41,7 +41,8 @@ yarn-error.log*
 next-env.d.ts
 
 logs
-memes
+# memes folder (local storage) - commenting out or being more specific if needed
+# /memes
 
 # Local credentials config (contains sensitive data)
 data/app-config.json
