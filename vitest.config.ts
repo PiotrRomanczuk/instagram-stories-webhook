@@ -8,6 +8,11 @@ export default defineConfig({
         setupFiles: ['__tests__/setup.ts'],
         include: ['__tests__/**/*.test.{ts,tsx}'],
         exclude: ['node_modules', '.next', '__tests__/e2e/**'],
+        env: {
+            NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
+            NEXT_PUBLIC_SUPABASE_ANON_KEY: 'test-anon-key',
+            SUPABASE_SERVICE_ROLE_KEY: 'test-service-key',
+        },
         coverage: {
             provider: 'istanbul',
             reporter: ['text', 'json', 'html'],

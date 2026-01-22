@@ -1,0 +1,156 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { GET, POST, DELETE, PATCH } from '@/app/api/schedule/route';
+import { NextRequest } from 'next/server';
+import { getServerSession } from 'next-auth/next';
+import {
+    addScheduledPost,
+    getScheduledPosts,
+    deleteScheduledPost,
+    updateScheduledPost
+} from '@/lib/scheduled-posts-db';
+
+// Mock DB
+vi.mock('@/lib/scheduled-posts-db');
+vi.mock('next-auth/next');
+vi.mock('@/lib/auth', () => ({ authOptions: {} }));
+
+// Helper to create request
+const createRequest = (method: string, url: string, body?: any) => {
+    return new NextRequest(new URL(url, 'http://localhost'), {
+        method,
+        body: body ? JSON.stringify(body) : undefined,
+    });
+};
+
+describe('/api/schedule API', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    describe('GET', () => {
+        it('should return 401 if unauthorized', async () => {
+            (getServerSession as any).mockResolvedValue(null);
+
+            const req = createRequest('GET', '/api/schedule');
+            const res = await GET(req);
+
+            expect(res.status).toBe(401);
+        });
+
+        it('should return posts for logged in user', async () => {
+            (getServerSession as any).mockResolvedValue({ user: { id: 'user_1' } });
+            const mockPosts = [{ id: 'p1', userId: 'user_1', scheduledTime: 1000 }];
+            (getScheduledPosts as any).mockResolvedValue(mockPosts);
+
+            const req = createRequest('GET', '/api/schedule');
+            const res = await GET(req);
+            const data = await res.json();
+
+            expect(res.status).toBe(200);
+            expect(data.posts).toHaveLength(1);
+            expect(getScheduledPosts).toHaveBeenCalledWith('user_1');
+        });
+
+        it('should filter by status', async () => {
+            (getServerSession as any).mockResolvedValue({ user: { id: 'user_1' } });
+            const mockPosts = [
+                { id: 'p1', status: 'pending', scheduledTime: 100 },
+                { id: 'p2', status: 'published', scheduledTime: 200 }
+            ];
+            (getScheduledPosts as any).mockResolvedValue(mockPosts);
+
+            const req = createRequest('GET', '/api/schedule?status=pending');
+            const res = await GET(req);
+            const data = await res.json();
+
+            expect(data.posts).toHaveLength(1);
+            expect(data.posts[0].id).toBe('p1');
+        });
+    });
+
+    describe('POST', () => {
+        it('should create schedule post', async () => {
+            (getServerSession as any).mockResolvedValue({ user: { id: 'user_1' } });
+            (addScheduledPost as any).mockResolvedValue({ id: 'new_p' });
+
+            const futureTime = Date.now() + 100000;
+            const body = {
+                url: 'http://img.com',
+                type: 'IMAGE',
+                postType: 'STORY',
+                scheduledTime: futureTime,
+                caption: 'Hi'
+            };
+
+            const req = createRequest('POST', '/api/schedule', body);
+            const res = await POST(req);
+            const data = await res.json();
+
+            expect(res.status).toBe(200);
+            expect(data.success).toBe(true);
+            expect(addScheduledPost).toHaveBeenCalledWith(expect.objectContaining({
+                userId: 'user_1',
+                url: 'http://img.com'
+            }));
+        });
+
+        it('should fail if scheduled time is in past', async () => {
+            (getServerSession as any).mockResolvedValue({ user: { id: 'user_1' } });
+
+            const pastTime = Date.now() - 1000;
+            const body = {
+                url: 'http://img.com',
+                scheduledTime: pastTime
+            };
+
+            const req = createRequest('POST', '/api/schedule', body);
+            const res = await POST(req);
+
+            const data = await res.json();
+            if (res.status === 500) {
+                console.error('API Error:', data.error);
+            }
+            expect(res.status).toBe(400);
+        });
+    });
+
+    describe('DELETE', () => {
+        it('should delete own post', async () => {
+            (getServerSession as any).mockResolvedValue({ user: { id: 'user_1' } });
+            (getScheduledPosts as any).mockResolvedValue([{ id: 'p1' }]); // User has p1
+            (deleteScheduledPost as any).mockResolvedValue(true);
+
+            const req = createRequest('DELETE', '/api/schedule?id=p1');
+            const res = await DELETE(req);
+
+            expect(res.status).toBe(200);
+            expect(deleteScheduledPost).toHaveBeenCalledWith('p1');
+        });
+
+        it('should return 404 if post not found/owned', async () => {
+            (getServerSession as any).mockResolvedValue({ user: { id: 'user_1' } });
+            (getScheduledPosts as any).mockResolvedValue([]); // User has NO posts
+
+            const req = createRequest('DELETE', '/api/schedule?id=p1');
+            const res = await DELETE(req);
+
+            expect(res.status).toBe(404);
+            expect(deleteScheduledPost).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('PATCH', () => {
+        it('should update own post', async () => {
+            (getServerSession as any).mockResolvedValue({ user: { id: 'user_1' } });
+            (getScheduledPosts as any).mockResolvedValue([{ id: 'p1' }]);
+            (updateScheduledPost as any).mockResolvedValue({ id: 'p1', caption: 'New' });
+
+            const body = { id: 'p1', caption: 'New' };
+            const req = createRequest('PATCH', '/api/schedule', body);
+            const res = await PATCH(req);
+
+            expect(res.status).toBe(200);
+            expect(updateScheduledPost).toHaveBeenCalledWith('p1', expect.objectContaining({ caption: 'New' }));
+        });
+    });
+});

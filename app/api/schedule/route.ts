@@ -52,16 +52,12 @@ export async function POST(request: NextRequest) {
             type: z.enum(['IMAGE', 'VIDEO']),
             postType: z.enum(['STORY']).optional().default('STORY'),
             caption: z.string().max(2200, 'Caption cannot exceed 2200 characters').optional().default(''),
-            scheduledTime: z.string().or(z.number()).transform((val) => {
-                const timestamp = typeof val === 'string' ? new Date(val).getTime() : val;
-                if (isNaN(timestamp)) {
-                    throw new Error('Invalid scheduledTime format');
-                }
-                if (timestamp <= Date.now()) {
-                    throw new Error('scheduledTime must be in the future');
-                }
-                return timestamp;
-            }),
+            scheduledTime: z.string().or(z.number())
+                .pipe(z.coerce.date())
+                .refine((date) => date.getTime() > Date.now(), {
+                    message: 'scheduledTime must be in the future'
+                })
+                .transform(date => date.getTime()),
             userTags: z.array(z.object({
                 username: z.string(),
                 x: z.number().min(0).max(1),
