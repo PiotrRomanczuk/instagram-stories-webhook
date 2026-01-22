@@ -52,7 +52,7 @@ function ConfigInput({
     return (
         <div className="space-y-2">
             <div className="flex items-center justify-between">
-                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                <label className="text-sm font-semibold text-slate-700">
                     {label}
                 </label>
                 {helpLink && (
@@ -72,14 +72,14 @@ function ConfigInput({
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                     placeholder={placeholder}
-                    className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition-all font-mono text-sm"
+                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all font-mono text-sm"
                 />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                     {isSecret && (
                         <button
                             type="button"
                             onClick={() => setShowSecret(!showSecret)}
-                            className="p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+                            className="p-2 rounded-lg hover:bg-slate-200 transition-colors"
                         >
                             {showSecret ? (
                                 <EyeOff className="w-4 h-4 text-slate-400" />
@@ -92,7 +92,7 @@ function ConfigInput({
                         <button
                             type="button"
                             onClick={handleCopy}
-                            className="p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+                            className="p-2 rounded-lg hover:bg-slate-200 transition-colors"
                         >
                             {copied ? (
                                 <Check className="w-4 h-4 text-emerald-500" />
@@ -104,7 +104,7 @@ function ConfigInput({
                 </div>
             </div>
             {helpText && (
-                <p className="text-xs text-slate-500 dark:text-slate-400">{helpText}</p>
+                <p className="text-xs text-slate-500">{helpText}</p>
             )}
         </div>
     );
@@ -215,13 +215,13 @@ export function SettingsForm() {
         <div className="space-y-8">
             {/* Status Indicator */}
             {!hasConfig && (
-                <div className="bg-yellow-50 dark:bg-yellow-500/10 border border-yellow-200 dark:border-yellow-500/20 rounded-2xl p-5 flex items-start gap-4">
-                    <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+                <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-5 flex items-start gap-4">
+                    <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
                     <div>
-                        <h3 className="font-bold text-yellow-900 dark:text-yellow-200">
+                        <h3 className="font-bold text-yellow-900">
                             Configuration Required
                         </h3>
-                        <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+                        <p className="text-sm text-yellow-700 mt-1">
                             Please fill in all the required fields below to complete the
                             application setup.
                         </p>
@@ -230,17 +230,17 @@ export function SettingsForm() {
             )}
 
             {/* App Settings Section */}
-            <div className="bg-white dark:bg-[#121214] rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-xl shadow-slate-200/50 dark:shadow-black/50 overflow-hidden">
-                <div className="p-6 border-b border-slate-100 dark:border-white/5">
+            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden">
+                <div className="p-6 border-b border-slate-100">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center">
-                            <Globe className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                        <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+                            <Globe className="w-5 h-5 text-blue-600" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                            <h2 className="text-lg font-bold text-slate-900">
                                 Application Settings
                             </h2>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">
+                            <p className="text-sm text-slate-500">
                                 Base URL and admin configuration
                             </p>
                         </div>
@@ -265,17 +265,17 @@ export function SettingsForm() {
             </div>
 
             {/* Google OAuth Section */}
-            <div className="bg-white dark:bg-[#121214] rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-xl shadow-slate-200/50 dark:shadow-black/50 overflow-hidden">
-                <div className="p-6 border-b border-slate-100 dark:border-white/5">
+            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden">
+                <div className="p-6 border-b border-slate-100">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-500/10 flex items-center justify-center">
-                            <Key className="w-5 h-5 text-red-600 dark:text-red-400" />
+                        <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+                            <Key className="w-5 h-5 text-red-600" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                            <h2 className="text-lg font-bold text-slate-900">
                                 Google OAuth
                             </h2>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">
+                            <p className="text-sm text-slate-500">
                                 Used for admin authentication
                             </p>
                         </div>
@@ -300,17 +300,17 @@ export function SettingsForm() {
             </div>
 
             {/* Facebook/Meta Section */}
-            <div className="bg-white dark:bg-[#121214] rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-xl shadow-slate-200/50 dark:shadow-black/50 overflow-hidden">
-                <div className="p-6 border-b border-slate-100 dark:border-white/5">
+            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden">
+                <div className="p-6 border-b border-slate-100">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center">
-                            <Key className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                        <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
+                            <Key className="w-5 h-5 text-indigo-600" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                            <h2 className="text-lg font-bold text-slate-900">
                                 Meta / Facebook
                             </h2>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">
+                            <p className="text-sm text-slate-500">
                                 Instagram Business API access
                             </p>
                         </div>
@@ -335,17 +335,17 @@ export function SettingsForm() {
             </div>
 
             {/* Supabase Section */}
-            <div className="bg-white dark:bg-[#121214] rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-xl shadow-slate-200/50 dark:shadow-black/50 overflow-hidden">
-                <div className="p-6 border-b border-slate-100 dark:border-white/5">
+            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden">
+                <div className="p-6 border-b border-slate-100">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center">
-                            <Database className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                        <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
+                            <Database className="w-5 h-5 text-emerald-600" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                            <h2 className="text-lg font-bold text-slate-900">
                                 Supabase Database
                             </h2>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">
+                            <p className="text-sm text-slate-500">
                                 Database connection and authentication
                             </p>
                         </div>
@@ -398,18 +398,18 @@ export function SettingsForm() {
             </div>
 
             {/* Security Secrets Section */}
-            <div className="bg-white dark:bg-[#121214] rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-xl shadow-slate-200/50 dark:shadow-black/50 overflow-hidden">
-                <div className="p-6 border-b border-slate-100 dark:border-white/5">
+            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden">
+                <div className="p-6 border-b border-slate-100">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center">
-                                <Shield className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                            <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center">
+                                <Shield className="w-5 h-5 text-purple-600" />
                             </div>
                             <div>
-                                <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                                <h2 className="text-lg font-bold text-slate-900">
                                     Security Secrets
                                 </h2>
-                                <p className="text-sm text-slate-500 dark:text-slate-400">
+                                <p className="text-sm text-slate-500">
                                     Internal authentication tokens
                                 </p>
                             </div>
@@ -425,7 +425,7 @@ export function SettingsForm() {
                                     },
                                 }));
                             }}
-                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 font-semibold text-sm hover:bg-purple-100 dark:hover:bg-purple-500/20 transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-50 text-purple-600 font-semibold text-sm hover:bg-purple-100 transition-colors"
                         >
                             <Sparkles className="w-4 h-4" />
                             Generate All
@@ -463,12 +463,12 @@ export function SettingsForm() {
             </div>
 
             {/* Save Button */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-slate-50 dark:bg-white/5 rounded-2xl p-6 border border-slate-100 dark:border-white/5">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-slate-50 rounded-2xl p-6 border border-slate-100">
                 <div className="flex items-center gap-3">
                     {saveStatus === "success" && (
                         <>
                             <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                            <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                            <span className="text-emerald-600 font-medium">
                                 Configuration saved successfully!
                             </span>
                         </>
@@ -476,13 +476,13 @@ export function SettingsForm() {
                     {saveStatus === "error" && (
                         <>
                             <AlertCircle className="w-5 h-5 text-red-500" />
-                            <span className="text-red-600 dark:text-red-400 font-medium">
+                            <span className="text-red-600 font-medium">
                                 Failed to save. Check console for errors.
                             </span>
                         </>
                     )}
                     {saveStatus === "idle" && config.lastUpdated && (
-                        <span className="text-sm text-slate-500 dark:text-slate-400">
+                        <span className="text-sm text-slate-500">
                             Last saved:{" "}
                             {new Date(config.lastUpdated).toLocaleString()}
                         </span>
@@ -492,7 +492,7 @@ export function SettingsForm() {
                     {envContent && (
                         <button
                             onClick={() => setShowEnv(!showEnv)}
-                            className="px-5 py-3 rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-white/10 transition-colors"
+                            className="px-5 py-3 rounded-xl bg-white border border-slate-200 text-slate-700 font-semibold text-sm hover:bg-slate-50 transition-colors"
                         >
                             {showEnv ? "Hide" : "Show"} .env
                         </button>

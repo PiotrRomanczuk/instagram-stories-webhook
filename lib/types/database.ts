@@ -1,4 +1,4 @@
-import { ScheduledPost, UserTag } from './posts';
+import { UserTag } from './posts';
 
 export interface LinkedAccount {
     id?: string;
@@ -13,9 +13,7 @@ export interface LinkedAccount {
     updated_at?: string;
 }
 
-export interface ScheduledPostWithUser extends ScheduledPost {
-    userId: string;
-}
+
 
 export interface DbScheduledPostUpdate {
     url?: string;

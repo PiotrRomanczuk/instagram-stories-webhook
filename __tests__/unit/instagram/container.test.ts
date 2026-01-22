@@ -59,9 +59,11 @@ describe('waitForContainerReady', () => {
         });
 
         const promise = waitForContainerReady('cont_123', 'token', 3, 100);
-        await vi.runAllTimersAsync();
-
-        await expect(promise).rejects.toThrow('Media container processing failed on Instagram servers');
+        
+        await Promise.all([
+            vi.runAllTimersAsync(),
+            expect(promise).rejects.toThrow('Media container processing failed on Instagram servers')
+        ]);
     });
 
     it('should throw on timeout', async () => {
@@ -72,8 +74,9 @@ describe('waitForContainerReady', () => {
         // 3 attempts, 100ms delay. Should fail after 3rd attempt.
         const promise = waitForContainerReady('cont_123', 'token', 3, 100);
 
-        await vi.advanceTimersByTimeAsync(500);
-
-        await expect(promise).rejects.toThrow('Media container not ready after 3 attempts');
+        await Promise.all([
+            vi.advanceTimersByTimeAsync(500),
+            expect(promise).rejects.toThrow('Media container not ready after 3 attempts')
+        ]);
     });
 });

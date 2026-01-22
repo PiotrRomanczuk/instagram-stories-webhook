@@ -39,7 +39,7 @@ describe('/api/schedule API', () => {
 
         it('should return posts for logged in user', async () => {
             (getServerSession as Mock).mockResolvedValue({ user: { id: 'user_1' } });
-            const mockPosts = [{ id: 'p1', userId: 'user_1', scheduledTime: 1000 }];
+            const mockPosts = [{ id: 'p1', userId: 'user_1', scheduledTime: Date.now() + 10000, status: 'pending' }];
             (getScheduledPosts as Mock).mockResolvedValue(mockPosts);
 
             const req = createRequest('GET', '/api/schedule');
@@ -54,8 +54,8 @@ describe('/api/schedule API', () => {
         it('should filter by status', async () => {
             (getServerSession as Mock).mockResolvedValue({ user: { id: 'user_1' } });
             const mockPosts = [
-                { id: 'p1', status: 'pending', scheduledTime: 100 },
-                { id: 'p2', status: 'published', scheduledTime: 200 }
+                { id: 'p1', status: 'pending', scheduledTime: Date.now() + 10000 },
+                { id: 'p2', status: 'published', scheduledTime: Date.now() } // Recent published
             ];
             (getScheduledPosts as Mock).mockResolvedValue(mockPosts);
 
@@ -65,6 +65,36 @@ describe('/api/schedule API', () => {
 
             expect(data.posts).toHaveLength(1);
             expect(data.posts[0].id).toBe('p1');
+        });
+
+        it('should filter out old published posts but keep pending ones', async () => {
+            (getServerSession as Mock).mockResolvedValue({ user: { id: 'user_1' } });
+            
+            const now = Date.now();
+            const oldTime = now - (25 * 60 * 60 * 1000); // 25 hours ago
+            const recentTime = now - (1 * 60 * 60 * 1000); // 1 hour ago
+            const futureTime = now + (1 * 60 * 60 * 1000); // 1 hour future
+
+            const mockPosts = [
+                { id: 'p1', status: 'pending', scheduledTime: futureTime }, // Should keep (pending)
+                { id: 'p2', status: 'pending', scheduledTime: oldTime }, // Should keep (pending, even if old/overdue)
+                { id: 'p3', status: 'published', scheduledTime: recentTime }, // Should keep (recent published)
+                { id: 'p4', status: 'published', scheduledTime: oldTime }, // Should DROP (old published)
+                { id: 'p5', status: 'failed', scheduledTime: oldTime } // Should DROP (old failed)
+            ];
+            (getScheduledPosts as Mock).mockResolvedValue(mockPosts);
+
+            const req = createRequest('GET', '/api/schedule');
+            const res = await GET(req);
+            const data = await res.json();
+
+            expect(data.posts).toHaveLength(3);
+            const ids = data.posts.map((p: { id: string }) => p.id);
+            expect(ids).toContain('p1');
+            expect(ids).toContain('p2');
+            expect(ids).toContain('p3');
+            expect(ids).not.toContain('p4');
+            expect(ids).not.toContain('p5');
         });
     });
 

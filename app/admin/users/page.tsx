@@ -89,7 +89,7 @@ export default function AdminUsersPage() {
     };
 
     return (
-        <main className="min-h-screen bg-slate-50 dark:bg-[#09090b] p-4 md:p-8 lg:p-12">
+        <main className="min-h-screen bg-slate-50 p-4 md:p-8 lg:p-12">
             <div className="max-w-4xl mx-auto">
                 {/* Header */}
                 <div className="mb-8">
@@ -100,17 +100,17 @@ export default function AdminUsersPage() {
                         <ChevronLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
                         Meme Review
                     </Link>
-                    <h1 className="text-4xl font-black text-slate-900 dark:text-white">
+                    <h1 className="text-4xl font-black text-slate-900">
                         User <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">Whitelist</span>
                     </h1>
-                    <p className="text-slate-500 dark:text-slate-400 mt-1">
+                    <p className="text-slate-500 mt-1">
                         Manage who can access the meme submission system
                     </p>
                 </div>
 
                 {/* Add User Form */}
-                <form onSubmit={handleAddUser} className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 mb-8">
-                    <h2 className="font-bold text-lg text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                <form onSubmit={handleAddUser} className="bg-white rounded-2xl p-6 border border-slate-200 mb-8">
+                    <h2 className="font-bold text-lg text-slate-900 mb-4 flex items-center gap-2">
                         <Plus className="w-5 h-5" />
                         Add User
                     </h2>
@@ -120,13 +120,13 @@ export default function AdminUsersPage() {
                             value={newEmail}
                             onChange={(e) => setNewEmail(e.target.value)}
                             placeholder="user@gmail.com"
-                            className="flex-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400"
+                            className="flex-1 px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-900 placeholder:text-slate-400"
                             required
                         />
                         <select
                             value={newRole}
                             onChange={(e) => setNewRole(e.target.value as UserRole)}
-                            className="px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                            className="px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-900"
                         >
                             <option value="user">User</option>
                             <option value="admin">Admin</option>
@@ -143,7 +143,7 @@ export default function AdminUsersPage() {
                 </form>
 
                 {/* User List */}
-                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
                     {isLoading ? (
                         <div className="flex items-center justify-center py-12">
                             <Loader className="w-8 h-8 text-indigo-500 animate-spin" />
@@ -154,18 +154,18 @@ export default function AdminUsersPage() {
                         </div>
                     ) : (
                         <table className="w-full">
-                            <thead className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700">
+                            <thead className="bg-slate-50 border-b border-slate-200">
                                 <tr>
                                     <th className="text-left px-6 py-4 text-xs font-bold uppercase text-slate-500">Email</th>
                                     <th className="text-left px-6 py-4 text-xs font-bold uppercase text-slate-500">Role</th>
                                     <th className="w-20"></th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                            <tbody className="divide-y divide-slate-100">
                                 {users.map(user => (
-                                    <tr key={user.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                                    <tr key={user.id} className="hover:bg-slate-50">
                                         <td className="px-6 py-4">
-                                            <span className="font-medium text-slate-900 dark:text-white">
+                                            <span className="font-medium text-slate-900">
                                                 {user.email}
                                             </span>
                                             {user.display_name && (
@@ -179,8 +179,8 @@ export default function AdminUsersPage() {
                                                 value={user.role}
                                                 onChange={(e) => handleRoleChange(user.email, e.target.value as UserRole)}
                                                 className={`px-3 py-1.5 rounded-lg text-sm font-semibold border-0 ${user.role === 'admin'
-                                                        ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300'
-                                                        : 'bg-slate-100 text-slate-700 dark:bg-slate-600 dark:text-slate-200'
+                                                        ? 'bg-purple-100 text-purple-700'
+                                                        : 'bg-slate-100 text-slate-700'
                                                     }`}
                                             >
                                                 <option value="user">User</option>
@@ -190,7 +190,7 @@ export default function AdminUsersPage() {
                                         <td className="px-6 py-4">
                                             <button
                                                 onClick={() => handleDelete(user.email)}
-                                                className="p-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
+                                                className="p-2 rounded-lg text-red-500 hover:bg-red-50 transition-colors"
                                             >
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
