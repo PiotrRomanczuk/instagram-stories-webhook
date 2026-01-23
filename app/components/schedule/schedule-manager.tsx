@@ -2,15 +2,21 @@
 
 import { RefreshCw, Clock } from 'lucide-react';
 import { toast } from 'sonner';
+import { useSession } from 'next-auth/react';
 import { useSchedulePosts } from './use-schedule-posts';
 import { ScheduleForm } from './schedule-form';
 import { PostList } from './post-list';
 import { ProcessButton } from './process-button';
 import { Panel } from '../ui/panel';
 import { LoadingSpinner } from '../ui/loading-spinner';
+import { UserRole } from '@/lib/types';
 
 export function ScheduleManager() {
-    const { posts, loading, fetchPosts } = useSchedulePosts();
+    const { data: session } = useSession();
+    const isAdmin = (session?.user as { role?: UserRole })?.role === 'admin' || 
+                    (session?.user as { role?: UserRole })?.role === 'developer';
+    
+    const { posts, loading, fetchPosts } = useSchedulePosts({ showAll: isAdmin });
 
     const handleCancel = async (id: string) => {
         if (!confirm('Are you sure you want to cancel this scheduled post?')) return;
@@ -115,6 +121,22 @@ export function ScheduleManager() {
         }
     };
 
+    const handlePostImmediately = async (id: string) => {
+        try {
+            const res = await fetch(`/api/schedule/process?id=${id}`);
+            const data = await res.json();
+            if (res.ok) {
+                toast.success('Post processed successfully');
+                fetchPosts();
+            } else {
+                toast.error(data.error || 'Failed to process post');
+            }
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            toast.error(errorMessage);
+        }
+    };
+
     return (
         <div className="space-y-8">
             <ScheduleForm onScheduled={fetchPosts} />
@@ -144,6 +166,7 @@ export function ScheduleManager() {
                         onReschedule={handleReschedule}
                         onReorder={handleReorder}
                         onUpdateTags={handleUpdateTags}
+                        onPostImmediately={handlePostImmediately}
                     />
                 )}
             </Panel>

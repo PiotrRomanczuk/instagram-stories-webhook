@@ -4,6 +4,7 @@ import { requireDeveloper, getSession } from '@/lib/auth-helpers';
 import { redirect } from 'next/navigation';
 import { ClientTestForm } from '../components/home/client-form';
 import { WebhookSection } from '../components/home/webhook-section';
+import { DebugPublisher } from '../components/debug/debug-publisher';
 
 export default async function DeveloperPage() {
     const session = await getSession();
@@ -40,6 +41,11 @@ export default async function DeveloperPage() {
                         <Terminal className="w-4 h-4 text-indigo-500" />
                         <span className="text-xs font-black text-slate-600 uppercase tracking-widest">Dev Mode Active</span>
                     </div>
+                </div>
+
+                {/* Debug Publisher - Full Width */}
+                <div className="mb-8">
+                    <DebugPublisher />
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

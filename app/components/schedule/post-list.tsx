@@ -17,23 +17,24 @@ import {
 } from '@dnd-kit/sortable';
 
 
-import { ScheduledPost } from '@/lib/types';
+import { ScheduledPost, ScheduledPostWithUser } from '@/lib/types';
 import { PostCard } from './post-card';
 import { Calendar } from 'lucide-react';
 import { EmptyState } from '../ui/empty-state';
 
 interface PostListProps {
-    posts: ScheduledPost[];
+    posts: ScheduledPostWithUser[];
     onCancel: (id: string) => void;
     onReschedule: (id: string, newTime: Date) => void;
-    onReorder?: (posts: ScheduledPost[]) => void;
+    onReorder?: (posts: ScheduledPostWithUser[]) => void;
     onUpdateTags?: (id: string, tags: { username: string; x: number; y: number; }[]) => void;
+    onPostImmediately?: (id: string) => void;
 }
 
-export function PostList({ posts, onCancel, onReschedule, onReorder, onUpdateTags }: PostListProps) {
+export function PostList({ posts, onCancel, onReschedule, onReorder, onUpdateTags, onPostImmediately }: PostListProps) {
     // Separate state for optimistic updates
-    const [pendingPosts, setPendingPosts] = useState<ScheduledPost[]>(() => posts.filter(p => p.status === 'pending'));
-    const [prevPosts, setPrevPosts] = useState<ScheduledPost[]>(posts);
+    const [pendingPosts, setPendingPosts] = useState<ScheduledPostWithUser[]>(() => posts.filter(p => p.status === 'pending'));
+    const [prevPosts, setPrevPosts] = useState<ScheduledPostWithUser[]>(posts);
 
     if (posts !== prevPosts) {
         setPrevPosts(posts);
@@ -113,6 +114,7 @@ export function PostList({ posts, onCancel, onReschedule, onReorder, onUpdateTag
                                         onCancel={onCancel}
                                         onReschedule={onReschedule}
                                         onUpdateTags={onUpdateTags}
+                                        onPostImmediately={onPostImmediately}
                                         isDraggable={true}
                                     />
                                 ))}
@@ -135,6 +137,7 @@ export function PostList({ posts, onCancel, onReschedule, onReorder, onUpdateTag
                                 onCancel={onCancel}
                                 onReschedule={onReschedule}
                                 onUpdateTags={onUpdateTags}
+                                onPostImmediately={onPostImmediately}
                                 isDraggable={false}
                             />
                         ))}
@@ -155,6 +158,7 @@ export function PostList({ posts, onCancel, onReschedule, onReorder, onUpdateTag
                                 onCancel={onCancel}
                                 onReschedule={onReschedule}
                                 onUpdateTags={onUpdateTags}
+                                onPostImmediately={onPostImmediately}
                                 isDraggable={false}
                             />
                         ))}

@@ -89,9 +89,19 @@ export async function PATCH(
     } catch (_error) {
         const message = _error instanceof Error ? _error.message : 'Internal Server Error';
         if (message === 'Admin access required') return NextResponse.json({ error: message }, { status: 403 });
+        
+        // Handle Zod validation errors with full details
         if (_error instanceof Error && _error.name === 'ZodError') {
-            return NextResponse.json({ error: 'Validation failed', details: _error }, { status: 400 });
+            const zodError = _error as unknown as { issues: Array<{ path: string[], message: string }> };
+            const details = zodError.issues?.map(i => `${i.path.join('.')}: ${i.message}`).join('; ');
+            console.error('[Meme PATCH] Zod validation failed:', details);
+            return NextResponse.json({ 
+                error: 'Validation failed', 
+                details 
+            }, { status: 400 });
         }
+        
+        console.error('[Meme PATCH] Error:', _error);
         return NextResponse.json({ error: message }, { status: 500 });
     }
 }

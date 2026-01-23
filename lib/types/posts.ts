@@ -41,6 +41,7 @@ export interface ScheduledPost {
 
 export interface ScheduledPostWithUser extends ScheduledPost {
     userId: string;
+    userEmail?: string;
 }
 
 // ============== MEME SUBMISSION TYPES ==============
@@ -90,6 +91,7 @@ export interface ScheduledPostRow {
     ig_media_id?: string;
     user_tags?: UserTag[];
     user_id: string;
+    user_email?: string; // From joined users table
     processing_started_at?: string | null;
     content_hash?: string | null;
     idempotency_key?: string | null;
@@ -136,6 +138,7 @@ export function mapScheduledPostRow(row: ScheduledPostRow): ScheduledPostWithUse
         igMediaId: row.ig_media_id,
         userTags: row.user_tags,
         userId: row.user_id,
+        userEmail: row.user_email,
         processingStartedAt: row.processing_started_at ? new Date(row.processing_started_at).getTime() : undefined,
         contentHash: row.content_hash ?? undefined,
         idempotencyKey: row.idempotency_key ?? undefined,

@@ -86,7 +86,10 @@ export default function AdminMemesPage() {
                 body: JSON.stringify({ action, ...data })
             });
             const result = await res.json();
-            if (!res.ok) throw new Error(result.error);
+            if (!res.ok) {
+                const errorMsg = result.details ? `${result.error}: ${result.details}` : result.error;
+                throw new Error(errorMsg);
+            }
 
             toast.success(`Meme ${action}ed successfully`);
             fetchMemes();

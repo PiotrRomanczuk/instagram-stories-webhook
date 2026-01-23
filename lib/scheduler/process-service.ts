@@ -3,7 +3,7 @@ import { publishMedia } from '@/lib/instagram';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
 import { Logger } from '@/lib/utils/logger';
 import { generateContentHash, checkForRecentPublish } from '@/lib/utils/duplicate-detection';
-import { ProcessResult, BatchResult } from '@/lib/types';
+import { ProcessResult, BatchResult, ScheduledPostWithUser, mapScheduledPostRow, ScheduledPostRow } from '@/lib/types';
 
 
 const MODULE = 'scheduler';
@@ -11,12 +11,38 @@ const MODULE = 'scheduler';
 /**
  * Core logic for processing pending scheduled posts.
  * This is shared between the API endpoint and the background cron worker.
+ * If a postId is provided, it attempts to process that specific post immediately.
  */
-export async function processScheduledPosts(): Promise<BatchResult> {
-    await Logger.info(MODULE, '🔄 Checking for pending scheduled posts...');
+export async function processScheduledPosts(postId?: string): Promise<BatchResult> {
+    await Logger.info(MODULE, postId ? `🚀 Attempting to post ${postId} immediately...` : '🔄 Checking for pending scheduled posts...');
 
     try {
-        const pendingPosts = await getPendingPosts();
+        let pendingPosts: ScheduledPostWithUser[] = [];
+
+        if (postId) {
+            // Fetch specific post regardless of scheduled time
+            const { data, error } = await supabaseAdmin
+                .from('scheduled_posts')
+                .select('*')
+                .eq('id', postId)
+                .or('status.eq.pending,status.eq.processing')
+                .single();
+
+            if (error || !data) {
+                await Logger.warn(MODULE, `⚠️ Post ${postId} not found or not in pending status`);
+                return {
+                    message: 'Post not found or not pending',
+                    processed: 0,
+                    succeeded: 0,
+                    failed: 0,
+                    results: []
+                };
+            }
+            pendingPosts = [mapScheduledPostRow(data as ScheduledPostRow)];
+        } else {
+            // Standard cron-style processing of due posts
+            pendingPosts = await getPendingPosts();
+        }
 
         if (pendingPosts.length === 0) {
             await Logger.info(MODULE, '✅ No pending posts to publish');
@@ -29,16 +55,21 @@ export async function processScheduledPosts(): Promise<BatchResult> {
             };
         }
 
-        // Check for posts pending in the next 24 hours
-        const oneDayFromNow = Date.now() + 24 * 60 * 60 * 1000;
-        const { count: futureCount } = await supabaseAdmin
-            .from('scheduled_posts')
-            .select('*', { count: 'exact', head: true })
-            .eq('status', 'pending')
-            .gt('scheduled_time', Date.now())
-            .lte('scheduled_time', oneDayFromNow);
+        // Only log future count if we are doing a broad sweep
+        if (!postId) {
+            // Check for posts pending in the next 24 hours
+            const oneDayFromNow = Date.now() + 24 * 60 * 60 * 1000;
+            const { count: futureCount } = await supabaseAdmin
+                .from('scheduled_posts')
+                .select('*', { count: 'exact', head: true })
+                .eq('status', 'pending')
+                .gt('scheduled_time', Date.now())
+                .lte('scheduled_time', oneDayFromNow);
 
-        await Logger.info(MODULE, `📋 Found ${pendingPosts.length} due post(s) to publish (plus ${futureCount} pending in next 24h)`);
+            await Logger.info(MODULE, `📋 Found ${pendingPosts.length} due post(s) to publish (plus ${futureCount} pending in next 24h)`);
+        } else {
+            await Logger.info(MODULE, `📋 Processing specific post: ${postId}`);
+        }
 
         const results: ProcessResult[] = [];
 

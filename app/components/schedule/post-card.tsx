@@ -5,18 +5,19 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Clock, XCircle, Trash2, Pencil, Check, X, ZoomIn, BarChart3 } from 'lucide-react';
-import { ScheduledPost } from '@/lib/types';
+import { Clock, XCircle, Trash2, Pencil, Check, X, ZoomIn, BarChart3, Send, Loader, User } from 'lucide-react';
+import { ScheduledPostWithUser } from '@/lib/types';
 import { StatusBadge } from '../ui/status-badge';
 import { MediaModal } from '../ui/media-modal';
 import { InsightsPanel } from './insights-panel';
 import { ImageDimensionsBadge, AspectRatioOverlay } from '../media/image-dimensions-badge';
 
 interface PostCardProps {
-    post: ScheduledPost;
+    post: ScheduledPostWithUser;
     onCancel: (id: string) => void;
     onReschedule: (id: string, newTime: Date) => void;
     onUpdateTags?: (id: string, tags: { username: string; x: number; y: number; }[]) => void;
+    onPostImmediately?: (id: string) => void;
     isDraggable?: boolean;
 }
 
@@ -28,11 +29,12 @@ const statusColors = {
     cancelled: 'bg-slate-50 border-slate-200',
 };
 
-export function PostCard({ post, onCancel, onReschedule, onUpdateTags, isDraggable = false }: PostCardProps) {
+export function PostCard({ post, onCancel, onReschedule, onUpdateTags, onPostImmediately, isDraggable = false }: PostCardProps) {
     const [now] = useState(() => Date.now());
     const [isEditing, setIsEditing] = useState(false);
     const [showModal, setShowModal] = useState(false);
     const [showInsights, setShowInsights] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
 
     // Edit state
     const [editDate, setEditDate] = useState(() => new Date(post.scheduledTime).toISOString().split('T')[0]);
@@ -186,6 +188,16 @@ export function PostCard({ post, onCancel, onReschedule, onUpdateTags, isDraggab
                                 </span>
                             </div>
 
+                            {/* User Email Badge */}
+                            {post.userEmail && (
+                                <div className="flex items-center gap-1.5 px-2 py-1 bg-purple-50 rounded-lg border border-purple-100" title={`Owner: ${post.userEmail}`}>
+                                    <User className="w-3 h-3 text-purple-500" />
+                                    <span className="text-[10px] font-bold text-purple-600 truncate max-w-[80px]">
+                                        {post.userEmail.split('@')[0]}
+                                    </span>
+                                </div>
+                            )}
+
                             {/* Action Buttons */}
                             <div className="flex items-center gap-1">
                                 {post.status === 'published' && post.igMediaId && (
@@ -205,6 +217,25 @@ export function PostCard({ post, onCancel, onReschedule, onUpdateTags, isDraggab
                                         title="Reschedule"
                                     >
                                         <Pencil className="w-4 h-4" />
+                                    </button>
+                                )}
+
+                                {post.status === 'pending' && onPostImmediately && (
+                                    <button
+                                        onClick={async (e) => {
+                                            e.stopPropagation();
+                                            setIsProcessing(true);
+                                            try {
+                                                await onPostImmediately(post.id);
+                                            } finally {
+                                                setIsProcessing(false);
+                                            }
+                                        }}
+                                        disabled={isProcessing}
+                                        className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition disabled:opacity-50"
+                                        title="Post Immediately"
+                                    >
+                                        {isProcessing ? <Loader className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                                     </button>
                                 )}
 

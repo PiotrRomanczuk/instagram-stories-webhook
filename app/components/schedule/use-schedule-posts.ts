@@ -1,14 +1,20 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ScheduledPost } from '@/lib/types';
+import { ScheduledPost, ScheduledPostWithUser } from '@/lib/types';
 import { supabase } from '@/lib/config/supabase';
 
-export function useSchedulePosts() {
-    const [posts, setPosts] = useState<ScheduledPost[]>([]);
+interface UseSchedulePostsOptions {
+    showAll?: boolean;
+}
+
+export function useSchedulePosts(options: UseSchedulePostsOptions = {}) {
+    const [posts, setPosts] = useState<ScheduledPostWithUser[]>([]);
     const [loading, setLoading] = useState(true);
+    const { showAll = false } = options;
 
     const fetchPosts = useCallback(async () => {
         try {
-            const res = await fetch('/api/schedule');
+            const url = showAll ? '/api/schedule?all=true' : '/api/schedule';
+            const res = await fetch(url);
             const data = await res.json();
             setPosts(data.posts || []);
         } catch (error) {
@@ -16,7 +22,7 @@ export function useSchedulePosts() {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [showAll]);
 
     useEffect(() => {
         fetchPosts();
@@ -46,4 +52,3 @@ export function useSchedulePosts() {
 
     return { posts, loading, fetchPosts };
 }
-

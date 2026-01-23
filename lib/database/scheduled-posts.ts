@@ -26,6 +26,46 @@ export async function getScheduledPosts(userId?: string): Promise<ScheduledPost[
     return (data || []).map(post => mapScheduledPostRow(post as ScheduledPostRow));
 }
 
+/**
+ * Get all scheduled posts (admin only) with user email
+ */
+export async function getAllScheduledPosts(): Promise<ScheduledPost[]> {
+    // First get all posts
+    const { data: posts, error } = await supabaseAdmin
+        .from('scheduled_posts')
+        .select('*')
+        .order('scheduled_time', { ascending: true });
+
+    if (error) {
+        console.error('Supabase getAllScheduledPosts Error:', error);
+        return [];
+    }
+
+    if (!posts || posts.length === 0) {
+        return [];
+    }
+
+    // Get unique user IDs
+    const userIds = [...new Set(posts.map(p => p.user_id))];
+    
+    // Fetch user emails
+    const { data: users } = await supabaseAdmin
+        .from('users')
+        .select('id, email')
+        .in('id', userIds);
+
+    // Create a map of user_id to email
+    const userEmailMap = new Map<string, string>();
+    users?.forEach(u => userEmailMap.set(u.id, u.email));
+
+    // Map posts with user emails
+    return posts.map(post => {
+        const row = post as ScheduledPostRow;
+        row.user_email = userEmailMap.get(row.user_id);
+        return mapScheduledPostRow(row);
+    });
+}
+
 export async function addScheduledPost(
     post: Omit<ScheduledPost, 'id' | 'status' | 'createdAt'> & { userId: string }
 ): Promise<ScheduledPostWithUser> {
@@ -160,28 +200,50 @@ export async function getUpcomingPosts(userId?: string): Promise<ScheduledPost[]
  * Returns true if lock was acquired, false if already being processed
  */
 export async function acquireProcessingLock(postId: string): Promise<boolean> {
-    const now = new Date().toISOString();
+    const now = new Date();
     const lockTimeout = 5 * 60 * 1000; // 5 minutes
-    const timeoutThreshold = new Date(Date.now() - lockTimeout).toISOString();
+    const timeoutThreshold = new Date(Date.now() - lockTimeout);
 
-    // Try to acquire lock: set processing_started_at if it's null or expired
-    const { data, error } = await supabaseAdmin
+    // Step 1: Fetch current state of the post
+    const { data: post, error: fetchError } = await supabaseAdmin
         .from('scheduled_posts')
-        .update({
-            status: 'processing',
-            processing_started_at: now
-        })
+        .select('status, processing_started_at')
         .eq('id', postId)
-        .eq('status', 'pending')
-        .or(`processing_started_at.is.null,processing_started_at.lt.${timeoutThreshold}`)
-        .select()
         .single();
 
-    if (error || !data) {
-        // Lock not acquired (already processing or doesn't exist)
+    if (fetchError || !post) {
+        console.log(`[Lock] Post ${postId} not found`);
         return false;
     }
 
+    const status = post.status;
+    const processingStartedAt = post.processing_started_at ? new Date(post.processing_started_at) : null;
+
+    // Step 2: Determine if we can acquire the lock
+    const canAcquire =
+        status === 'pending' ||
+        (status === 'processing' && processingStartedAt && processingStartedAt < timeoutThreshold);
+
+    if (!canAcquire) {
+        console.log(`[Lock] Cannot acquire lock for ${postId}: status=${status}, processing_started_at=${processingStartedAt?.toISOString()}, threshold=${timeoutThreshold.toISOString()}`);
+        return false;
+    }
+
+    // Step 3: Acquire the lock
+    const { error: updateError } = await supabaseAdmin
+        .from('scheduled_posts')
+        .update({
+            status: 'processing',
+            processing_started_at: now.toISOString()
+        })
+        .eq('id', postId);
+
+    if (updateError) {
+        console.error(`[Lock] Failed to acquire lock for ${postId}:`, updateError);
+        return false;
+    }
+
+    console.log(`[Lock] ✅ Acquired lock for ${postId}`);
     return true;
 }
 

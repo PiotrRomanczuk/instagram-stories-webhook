@@ -73,4 +73,5 @@ This roadmap outlines the planned enhancements and maintenance tasks for the Ins
 - [ ] **Micro-animations**: Add Framer Motion transitions for state changes.
 
 ### 📈 Analytics
-- [ ] **Post Analytics**: Fetch and display view/reach metrics for published stories.
+- [x] **Post Analytics**: Fetch and display view/reach metrics for published stories. (Previously implemented)
+- [x] **3-Tier User Role System**: Implemented `developer`, `admin`, and `user` roles with full RBAC on pages and API routes.

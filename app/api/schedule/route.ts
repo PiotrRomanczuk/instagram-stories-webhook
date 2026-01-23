@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { addScheduledPost, getScheduledPosts, deleteScheduledPost, updateScheduledPost } from '@/lib/database/scheduled-posts';
+import { addScheduledPost, getScheduledPosts, getAllScheduledPosts, deleteScheduledPost, updateScheduledPost } from '@/lib/database/scheduled-posts';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
+import { isAdmin } from "@/lib/auth-helpers";
 
-// GET - List all scheduled posts for the current user
+// GET - List all scheduled posts for the current user (or all posts for admins)
 export async function GET(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
@@ -13,9 +14,15 @@ export async function GET(request: NextRequest) {
 
         const searchParams = request.nextUrl.searchParams;
         const status = searchParams.get('status');
+        const showAll = searchParams.get('all') === 'true';
 
-        // Only fetch posts for the logged-in user
-        let posts = await getScheduledPosts(session.user.id);
+        // Admins can see all posts if ?all=true is passed
+        let posts;
+        if (isAdmin(session) && showAll) {
+            posts = await getAllScheduledPosts();
+        } else {
+            posts = await getScheduledPosts(session.user.id);
+        }
 
         // Filter by status if provided
         if (status) {
