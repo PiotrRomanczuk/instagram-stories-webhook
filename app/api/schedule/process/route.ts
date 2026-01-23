@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { processScheduledPosts } from '@/lib/scheduler/process-service';
+import { cleanupOldMedia } from '@/lib/scheduler/cleanup-service';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
@@ -40,6 +41,12 @@ export async function GET(request: NextRequest) {
         }
 
         const result = await processScheduledPosts(postId);
+
+        // Run cleanup only on general background sweeps (cron), not on specific user triggers
+        if (!postId) {
+            // Non-blocking cleanup (fire and forget)
+            cleanupOldMedia().catch(err => console.error('Cleanup failed:', err));
+        }
 
         // If a specific post was requested but not processed, return an error
         if (postId && result.processed === 0) {

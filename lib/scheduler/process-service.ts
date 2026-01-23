@@ -133,7 +133,9 @@ export async function processScheduledPosts(postId?: string): Promise<BatchResul
 
                 await Logger.info(MODULE, `✅ Successfully published scheduled post ${post.id}`);
 
-                // 📁 Media Auto-Cleanup
+                // 📁 Media Auto-Cleanup disabled to allow 24h preview
+                // Files should be cleaned up by a separate cron job after 24h
+                /*
                 if (post.url.includes('/storage/v1/object/public/stories/')) {
                     try {
                         const pathMatch = post.url.split('/stories/')[1];
@@ -154,6 +156,7 @@ export async function processScheduledPosts(postId?: string): Promise<BatchResul
                         await Logger.warn(MODULE, '⚠️ Cleanup logic error', cleanupError);
                     }
                 }
+                */
 
                 results.push({
                     id: post.id,
