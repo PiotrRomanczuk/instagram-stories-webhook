@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
-import { Home, Image as ImageIcon, Shield, Calendar, LogOut, Menu, X, Terminal } from 'lucide-react';
+import { Home, Image as ImageIcon, Shield, Calendar, LogOut, Menu, X, Terminal, Users } from 'lucide-react';
 import { useState } from 'react';
 import { UserRole } from '@/lib/types';
 
@@ -26,7 +26,8 @@ export function Navbar() {
 
     if (isAdminOrDev) {
         navItems.push({ href: '/schedule', label: 'Schedule', icon: Calendar });
-        navItems.push({ href: '/admin/memes', label: 'Admin', icon: Shield });
+        navItems.push({ href: '/admin/memes', label: 'Memes Admin', icon: Shield });
+        navItems.push({ href: '/admin/users', label: 'Users', icon: Users });
     }
 
     if (isDev) {

@@ -5,16 +5,8 @@ import Link from 'next/link';
 import { ChevronLeft, Plus, Trash2, Shield, User, Loader, Terminal } from 'lucide-react';
 import { toast } from 'sonner';
 import { AllowedUser, UserRole } from '@/lib/memes-db';
-import { requireAdmin, getSession } from '@/lib/auth-helpers';
-import { redirect } from 'next/navigation';
 
-export default async function AdminUsersPage() {
-    const session = await getSession();
-    try {
-        requireAdmin(session);
-    } catch (e) {
-        redirect('/');
-    }
+export default function AdminUsersPage() {
     const [users, setUsers] = useState<AllowedUser[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [newEmail, setNewEmail] = useState('');
