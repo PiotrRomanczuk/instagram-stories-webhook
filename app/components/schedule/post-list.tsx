@@ -17,7 +17,7 @@ import {
 } from '@dnd-kit/sortable';
 
 
-import { ScheduledPost, ScheduledPostWithUser } from '@/lib/types';
+import { ScheduledPostWithUser } from '@/lib/types';
 import { PostCard } from './post-card';
 import { Calendar } from 'lucide-react';
 import { EmptyState } from '../ui/empty-state';

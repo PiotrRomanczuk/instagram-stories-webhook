@@ -69,7 +69,7 @@ describe('/api/schedule API', () => {
 
         it('should filter out old published posts but keep pending ones', async () => {
             (getServerSession as Mock).mockResolvedValue({ user: { id: 'user_1' } });
-            
+
             const now = Date.now();
             const oldTime = now - (25 * 60 * 60 * 1000); // 25 hours ago
             const recentTime = now - (1 * 60 * 60 * 1000); // 1 hour ago
@@ -130,6 +130,7 @@ describe('/api/schedule API', () => {
             const pastTime = Date.now() - 1000;
             const body = {
                 url: 'http://img.com',
+                type: 'IMAGE',
                 scheduledTime: pastTime
             };
 

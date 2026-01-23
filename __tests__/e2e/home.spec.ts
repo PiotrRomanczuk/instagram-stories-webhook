@@ -1,20 +1,19 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Homepage', () => {
-  test('should load the homepage', async ({ page }) => {
+  test('should load the sign-in page when unauthenticated', async ({ page }) => {
     await page.goto('/');
-    
-    // Check for a common element on your homepage
-    // Based on README, there should be a "Connect Facebook" button or similar
-    // We'll just check for the title/heading for now
+
+    // It should redirect to /auth/signin
+    await expect(page).toHaveURL(/\/auth\/signin/);
     await expect(page).toHaveTitle(/Instagram/i);
   });
 
-  test('should show login options when not authenticated', async ({ page }) => {
-    await page.goto('/');
-    
-    // Check if the page contains "Sign in" or "Connect"
+  test('should show login options on the sign-in page', async ({ page }) => {
+    await page.goto('/auth/signin');
+
+    // Check if the page contains "Google" or "Sign in"
     const bodyText = await page.innerText('body');
-    expect(bodyText).toMatch(/Sign in|Connect|Login/i);
+    expect(bodyText).toMatch(/Google|Sign in|Welcome/i);
   });
 });

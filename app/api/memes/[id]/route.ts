@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { 
-    getMemeSubmission, 
-    reviewMemeSubmission, 
+import {
+    getMemeSubmission,
+    reviewMemeSubmission,
     deleteMemeSubmission,
     scheduleMeme
 } from '@/lib/memes-db';
@@ -36,8 +36,8 @@ export async function GET(
 
         return NextResponse.json({ meme });
     } catch (error) {
-        return NextResponse.json({ 
-            error: error instanceof Error ? error.message : 'Internal Server Error' 
+        return NextResponse.json({
+            error: error instanceof Error ? error.message : 'Internal Server Error'
         }, { status: 500 });
     }
 }
@@ -88,19 +88,19 @@ export async function PATCH(
         return NextResponse.json({ meme: result });
     } catch (_error) {
         const message = _error instanceof Error ? _error.message : 'Internal Server Error';
-        if (message === 'Admin access required') return NextResponse.json({ error: message }, { status: 403 });
-        
+        if (message === 'Authorized access required') return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+
         // Handle Zod validation errors with full details
         if (_error instanceof Error && _error.name === 'ZodError') {
             const zodError = _error as unknown as { issues: Array<{ path: string[], message: string }> };
             const details = zodError.issues?.map(i => `${i.path.join('.')}: ${i.message}`).join('; ');
             console.error('[Meme PATCH] Zod validation failed:', details);
-            return NextResponse.json({ 
-                error: 'Validation failed', 
-                details 
+            return NextResponse.json({
+                error: 'Validation failed',
+                details
             }, { status: 400 });
         }
-        
+
         console.error('[Meme PATCH] Error:', _error);
         return NextResponse.json({ error: message }, { status: 500 });
     }
@@ -142,8 +142,8 @@ export async function DELETE(
 
         return NextResponse.json({ success: true });
     } catch (error) {
-        return NextResponse.json({ 
-            error: error instanceof Error ? error.message : 'Internal Server Error' 
+        return NextResponse.json({
+            error: error instanceof Error ? error.message : 'Internal Server Error'
         }, { status: 500 });
     }
 }

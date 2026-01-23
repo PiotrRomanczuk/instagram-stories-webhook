@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ScheduledPost, ScheduledPostWithUser } from '@/lib/types';
+import { ScheduledPostWithUser } from '@/lib/types';
 import { supabase } from '@/lib/config/supabase';
 
 interface UseSchedulePostsOptions {

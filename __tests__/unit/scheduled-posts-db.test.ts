@@ -115,8 +115,8 @@ describe('Scheduled Posts DB', () => {
 
     describe('Processing Locks', () => {
         it('acquireProcessingLock should return true if successful', async () => {
-            // Mock update returning data (successful lock)
-            setupSupabaseMock({ id: 'p1' });
+            // Mock fetch returning pending status so it can be acquired
+            setupSupabaseMock({ id: 'p1', status: 'pending', processing_started_at: null });
 
             const success = await acquireProcessingLock('p1');
             expect(success).toBe(true);

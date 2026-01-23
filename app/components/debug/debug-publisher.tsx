@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Upload, Send, Loader, CheckCircle, XCircle, Image as ImageIcon } from 'lucide-react';
+import Image from 'next/image';
+import { Upload, Send, Loader, CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '@/lib/config/supabase';
 
 interface LogEntry {
@@ -26,9 +27,9 @@ export function DebugPublisher() {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const addLog = (message: string) => {
-        setLogs(prev => [...prev, { 
-            timestamp: new Date().toLocaleTimeString(), 
-            message 
+        setLogs(prev => [...prev, {
+            timestamp: new Date().toLocaleTimeString(),
+            message
         }]);
     };
 
@@ -45,7 +46,7 @@ export function DebugPublisher() {
             const fileName = `debug-${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
             const filePath = `uploads/${fileName}`;
 
-            const { data, error } = await supabase.storage
+            const { error } = await supabase.storage
                 .from('stories')
                 .upload(filePath, file, {
                     cacheControl: '3600',
@@ -131,7 +132,7 @@ export function DebugPublisher() {
                 {/* Image Upload Section */}
                 <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-700">Image</label>
-                    
+
                     <div className="flex gap-2">
                         <input
                             type="text"
@@ -164,10 +165,11 @@ export function DebugPublisher() {
                     {/* Image Preview */}
                     {imageUrl && (
                         <div className="mt-2 relative w-32 h-32 rounded-xl overflow-hidden bg-gray-100 border border-gray-200">
-                            <img
+                            <Image
                                 src={imageUrl}
                                 alt="Preview"
-                                className="w-full h-full object-cover"
+                                fill
+                                className="object-cover"
                                 onError={() => addLog('⚠️ Image preview failed to load')}
                             />
                         </div>
@@ -195,11 +197,10 @@ export function DebugPublisher() {
 
                 {/* Result Badge */}
                 {result && (
-                    <div className={`p-4 rounded-xl flex items-center gap-3 ${
-                        result.success 
-                            ? 'bg-emerald-50 border border-emerald-200' 
-                            : 'bg-rose-50 border border-rose-200'
-                    }`}>
+                    <div className={`p-4 rounded-xl flex items-center gap-3 ${result.success
+                        ? 'bg-emerald-50 border border-emerald-200'
+                        : 'bg-rose-50 border border-rose-200'
+                        }`}>
                         {result.success ? (
                             <CheckCircle className="w-6 h-6 text-emerald-600" />
                         ) : (
@@ -210,7 +211,7 @@ export function DebugPublisher() {
                                 {result.success ? 'Published Successfully!' : 'Publish Failed'}
                             </p>
                             <p className="text-sm text-gray-600">
-                                {result.success 
+                                {result.success
                                     ? `Media ID: ${result.result?.id} (${result.duration}ms)`
                                     : result.error
                                 }
