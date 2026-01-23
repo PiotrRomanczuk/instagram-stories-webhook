@@ -1,9 +1,17 @@
 import Link from 'next/link';
 import { ChevronLeft, Terminal, Settings } from 'lucide-react';
+import { requireDeveloper, getSession } from '@/lib/auth-helpers';
+import { redirect } from 'next/navigation';
 import { ClientTestForm } from '../components/home/client-form';
 import { WebhookSection } from '../components/home/webhook-section';
 
-export default function DeveloperPage() {
+export default async function DeveloperPage() {
+    const session = await getSession();
+    try {
+        requireDeveloper(session);
+    } catch (e) {
+        redirect('/');
+    }
     // Since we don't have a database column for webhookUrl yet, we'll construct it from env
     const appUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     const webhookUrl = `${appUrl}/api/webhook/story`;

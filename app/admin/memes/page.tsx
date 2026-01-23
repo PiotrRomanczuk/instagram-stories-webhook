@@ -17,8 +17,16 @@ import { toast } from 'sonner';
 import { MemeSubmission, MemeStatus } from '@/lib/types';
 import { MemeStatusBadge } from '@/app/components/ui/meme-status-badge';
 import Image from 'next/image';
+import { requireAdmin, getSession } from '@/lib/auth-helpers';
+import { redirect } from 'next/navigation';
 
-export default function AdminMemesPage() {
+export default async function AdminMemesPage() {
+    const session = await getSession();
+    try {
+        requireAdmin(session);
+    } catch (e) {
+        redirect('/');
+    }
     const [memes, setMemes] = useState<MemeSubmission[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [filter, setFilter] = useState<MemeStatus | 'all'>('all');

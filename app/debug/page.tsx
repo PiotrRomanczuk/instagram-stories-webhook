@@ -1,8 +1,16 @@
 import { DebugDashboard } from './debug-dashboard';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
+import { requireDeveloper, getSession } from '@/lib/auth-helpers';
+import { redirect } from 'next/navigation';
 
-export default function DebugPage() {
+export default async function DebugPage() {
+    const session = await getSession();
+    try {
+        requireDeveloper(session);
+    } catch (e) {
+        redirect('/');
+    }
     return (
         <main className="min-h-screen bg-[#F8FAFC] p-4 md:p-12 lg:p-24">
             <div className="max-w-6xl mx-auto space-y-8">

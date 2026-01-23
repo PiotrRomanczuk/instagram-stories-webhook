@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
-import { Home, Image as ImageIcon, Shield, Calendar, LogOut, Menu, X } from 'lucide-react';
+import { Home, Image as ImageIcon, Shield, Calendar, LogOut, Menu, X, Terminal } from 'lucide-react';
 import { useState } from 'react';
 import { UserRole } from '@/lib/types';
 
@@ -15,16 +15,23 @@ export function Navbar() {
     // Don't show navbar on signin page
     if (pathname === '/auth/signin') return null;
 
+    const isDev = (session?.user as { role?: UserRole })?.role === 'developer';
     const isAdmin = (session?.user as { role?: UserRole })?.role === 'admin';
+    const isAdminOrDev = isAdmin || isDev;
 
     const navItems = [
         { href: '/', label: 'Dashboard', icon: Home },
         { href: '/memes', label: 'Memes', icon: ImageIcon },
-        { href: '/schedule', label: 'Schedule', icon: Calendar },
     ];
 
-    if (isAdmin) {
+    if (isAdminOrDev) {
+        navItems.push({ href: '/schedule', label: 'Schedule', icon: Calendar });
         navItems.push({ href: '/admin/memes', label: 'Admin', icon: Shield });
+    }
+
+    if (isDev) {
+        // We'll add developer sub-items or a single Dev icon
+        navItems.push({ href: '/developer', label: 'Dev Tools', icon: Terminal });
     }
 
     const isActive = (path: string) => pathname === path;

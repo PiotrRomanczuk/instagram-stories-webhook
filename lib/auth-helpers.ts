@@ -10,10 +10,18 @@ export async function getSession() {
 }
 
 /**
- * Check if the current user is an admin
+ * Check if the current user is an admin or developer
  */
 export function isAdmin(session: { user?: { role?: UserRole } } | null): boolean {
-    return session?.user?.role === 'admin';
+    const role = session?.user?.role;
+    return role === 'admin' || role === 'developer';
+}
+
+/**
+ * Check if the current user is a developer
+ */
+export function isDeveloper(session: { user?: { role?: UserRole } } | null): boolean {
+    return session?.user?.role === 'developer';
 }
 
 /**
@@ -24,11 +32,20 @@ export function isAuthenticated(session: { user?: { id?: string } } | null): boo
 }
 
 /**
- * Require admin role - throws if not admin
+ * Require admin or developer role - throws if not authorized
  */
 export function requireAdmin(session: { user?: { role?: UserRole } } | null): void {
     if (!isAdmin(session)) {
-        throw new Error('Admin access required');
+        throw new Error('Authorized access required');
+    }
+}
+
+/**
+ * Require developer role - throws if not developer
+ */
+export function requireDeveloper(session: { user?: { role?: UserRole } } | null): void {
+    if (!isDeveloper(session)) {
+        throw new Error('Developer access required');
     }
 }
 

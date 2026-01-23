@@ -4,9 +4,15 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft, Settings, Shield, Key, Database, Globe } from "lucide-react";
 import { SettingsForm } from "../components/settings/settings-form";
+import { requireDeveloper, getSession } from "@/lib/auth-helpers";
 
 export default async function SettingsPage() {
-    const session = await getServerSession(authOptions);
+    const session = await getSession();
+    try {
+        requireDeveloper(session);
+    } catch (e) {
+        redirect("/");
+    }
 
     if (!session?.user?.id) {
         redirect("/auth/signin");

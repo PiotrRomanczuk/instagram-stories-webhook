@@ -2,11 +2,19 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, Plus, Trash2, Shield, User, Loader } from 'lucide-react';
+import { ChevronLeft, Plus, Trash2, Shield, User, Loader, Terminal } from 'lucide-react';
 import { toast } from 'sonner';
 import { AllowedUser, UserRole } from '@/lib/memes-db';
+import { requireAdmin, getSession } from '@/lib/auth-helpers';
+import { redirect } from 'next/navigation';
 
-export default function AdminUsersPage() {
+export default async function AdminUsersPage() {
+    const session = await getSession();
+    try {
+        requireAdmin(session);
+    } catch (e) {
+        redirect('/');
+    }
     const [users, setUsers] = useState<AllowedUser[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [newEmail, setNewEmail] = useState('');
@@ -130,6 +138,7 @@ export default function AdminUsersPage() {
                         >
                             <option value="user">User</option>
                             <option value="admin">Admin</option>
+                            <option value="developer">Developer</option>
                         </select>
                         <button
                             type="submit"
@@ -185,6 +194,7 @@ export default function AdminUsersPage() {
                                             >
                                                 <option value="user">User</option>
                                                 <option value="admin">Admin</option>
+                                                <option value="developer">Developer</option>
                                             </select>
                                         </td>
                                         <td className="px-6 py-4">
@@ -204,6 +214,10 @@ export default function AdminUsersPage() {
 
                 {/* Legend */}
                 <div className="mt-6 flex gap-6 text-sm text-slate-500">
+                    <div className="flex items-center gap-2">
+                        <Terminal className="w-4 h-4 text-indigo-500" />
+                        Developer = Full access (Dev Tools + Admin)
+                    </div>
                     <div className="flex items-center gap-2">
                         <Shield className="w-4 h-4 text-purple-500" />
                         Admin = Can review + publish memes

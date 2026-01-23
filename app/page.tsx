@@ -4,7 +4,6 @@ import { getLinkedFacebookAccount } from "@/lib/database/linked-accounts";
 import { redirect } from "next/navigation";
 import { StatusSection } from "./components/home/status-section";
 import HomeHeader from "./components/home/home-header";
-import { ScheduleManager } from "./components/schedule/schedule-manager";
 import Link from "next/link";
 import { ArrowRight, Terminal, Shield, Sparkles } from "lucide-react";
 import { UserRole } from "@/lib/types";
@@ -50,7 +49,7 @@ export default async function Home() {
                 </div>
               </Link>
 
-              {(session.user as { role?: UserRole }).role === 'admin' && (
+              {['admin', 'developer'].includes((session.user as { role?: UserRole }).role || '') && (
                 <Link
                   href="/admin/memes"
                   className="group relative overflow-hidden p-6 rounded-3xl bg-white border border-slate-100 shadow-lg shadow-purple-500/5 hover:shadow-purple-500/10 transition-all duration-300"
@@ -69,10 +68,7 @@ export default async function Home() {
               )}
             </div>
 
-            {/* Main Scheduler Content */}
-            <div className={`transition-all duration-500 ${isFacebookConnected ? 'opacity-100 translate-y-0' : 'opacity-40 translate-y-4 pointer-events-none grayscale'}`}>
-              <ScheduleManager />
-            </div>
+            {/* Dashboard Navigation Cards Only */}
 
             {/* Developer Tools Link */}
             <div className="flex justify-center pt-8 pb-12">
