@@ -11,27 +11,27 @@ interface MemeCardProps {
 export function MemeCard({ meme }: MemeCardProps) {
     const statusConfig = {
         pending: {
-            color: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border-amber-100 dark:border-amber-900/50',
+            color: 'text-amber-600 bg-amber-50 border-amber-100',
             icon: <Clock className="w-3 h-3" />,
             label: 'Pending Review'
         },
         approved: {
-            color: 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/30 border-green-100 dark:border-green-900/50',
+            color: 'text-green-600 bg-green-50 border-green-100',
             icon: <CheckCircle2 className="w-3 h-3" />,
             label: 'Approved'
         },
         rejected: {
-            color: 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 border-red-100 dark:border-red-900/50',
+            color: 'text-red-600 bg-red-50 border-red-100',
             icon: <AlertCircle className="w-3 h-3" />,
             label: 'Rejected'
         },
         scheduled: {
-            color: 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 border-indigo-100 dark:border-indigo-900/50',
+            color: 'text-indigo-600 bg-indigo-50 border-indigo-100',
             icon: <Calendar className="w-3 h-3" />,
             label: 'Scheduled'
         },
         published: {
-            color: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 border-blue-100 dark:border-blue-900/50',
+            color: 'text-blue-600 bg-blue-50 border-blue-100',
             icon: <CheckCircle2 className="w-3 h-3" />,
             label: 'Published'
         }
@@ -41,9 +41,9 @@ export function MemeCard({ meme }: MemeCardProps) {
     const isVideo = meme.media_url.toLowerCase().endsWith('.mp4');
 
     return (
-        <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden group hover:shadow-md transition-all duration-300">
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden group hover:shadow-md transition-all duration-300">
             {/* Media Preview */}
-            <div className="relative aspect-square bg-slate-100 dark:bg-slate-800 overflow-hidden">
+            <div className="relative aspect-square bg-slate-100 overflow-hidden">
                 {isVideo ? (
                     <video 
                         src={meme.media_url} 
@@ -61,7 +61,7 @@ export function MemeCard({ meme }: MemeCardProps) {
                 )}
                 
                 {/* Status Badge Over Image */}
-                <div className={`absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 border backdrop-blur-md ${config.color.replace(/bg-[\w-]+/, 'bg-white/80 dark:bg-slate-900/80')}`}>
+                <div className={`absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 border backdrop-blur-md ${config.color.replace('bg-', 'bg-white/80 ')}`}>
                     {config.icon}
                     {config.label}
                 </div>
@@ -70,13 +70,13 @@ export function MemeCard({ meme }: MemeCardProps) {
             {/* Content */}
             <div className="p-5 space-y-3">
                 {meme.title && (
-                    <h3 className="font-bold text-slate-900 dark:text-white leading-tight">
+                    <h3 className="font-bold text-slate-900 leading-tight">
                         {meme.title}
                     </h3>
                 )}
                 
                 {meme.caption && (
-                    <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2">
+                    <p className="text-sm text-slate-500 line-clamp-2">
                         {meme.caption}
                     </p>
                 )}
@@ -86,7 +86,7 @@ export function MemeCard({ meme }: MemeCardProps) {
                 )}
 
                 {/* Meta Info */}
-                <div className="pt-3 border-t border-slate-50 dark:border-slate-800 flex items-center justify-between text-[11px] font-medium text-slate-400 dark:text-slate-500">
+                <div className="pt-3 border-t border-slate-50 flex items-center justify-between text-[11px] font-medium text-slate-400">
                     <span className="flex items-center gap-1">
                         <Clock className="w-3 h-3" />
                         {meme.created_at ? new Date(meme.created_at).toLocaleDateString() : 'Just now'}

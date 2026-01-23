@@ -6,9 +6,9 @@ import { ChevronLeft, Sparkles } from 'lucide-react';
 
 export default function MemesPage() {
     return (
-        <main className="min-h-screen bg-background pb-24 transition-colors">
+        <main className="min-h-screen bg-[#F8FAFC] pb-24">
             {/* Hero Header */}
-            <div className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 mb-12">
+            <div className="bg-white border-b border-slate-100 mb-12">
                 <div className="max-w-6xl mx-auto px-4 py-12 md:py-20 lg:py-24">
                     <Link
                         href="/"
