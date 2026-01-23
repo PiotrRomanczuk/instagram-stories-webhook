@@ -21,12 +21,12 @@ export function MemeList({ memes, isLoading }: MemeListProps) {
 
     if (memes.length === 0) {
         return (
-            <div className="bg-white border border-dashed border-slate-200 rounded-[2rem] py-24 flex flex-col items-center justify-center text-center px-6">
-                <div className="p-4 bg-slate-50 text-slate-400 rounded-2xl mb-4">
+            <div className="bg-white dark:bg-slate-900/50 border border-dashed border-slate-200 dark:border-slate-800 rounded-[2rem] py-24 flex flex-col items-center justify-center text-center px-6">
+                <div className="p-4 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 rounded-2xl mb-4">
                     <PlusCircle className="w-8 h-8" />
                 </div>
-                <h3 className="text-lg font-bold text-slate-900">No submissions yet</h3>
-                <p className="mt-2 text-sm text-slate-500 max-w-xs">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">No submissions yet</h3>
+                <p className="mt-2 text-sm text-slate-500 dark:text-slate-400 max-w-xs">
                     Your meme submissions will appear here after you upload them.
                 </p>
             </div>

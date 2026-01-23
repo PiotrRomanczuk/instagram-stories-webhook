@@ -38,7 +38,7 @@ export function Navbar() {
     const isActive = (path: string) => pathname === path;
 
     return (
-        <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
+        <nav className="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16">
                     {/* Logo */}
@@ -46,7 +46,7 @@ export function Navbar() {
                         <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
                             MARSZAL
                         </span>
-                        <span className="text-slate-900">ARTS</span>
+                        <span className="text-slate-900 dark:text-white">ARTS</span>
                     </Link>
 
                     {/* Desktop Nav */}
@@ -58,8 +58,8 @@ export function Navbar() {
                                     key={item.href}
                                     href={item.href}
                                     className={`flex items-center gap-2 text-sm font-bold transition-colors ${isActive(item.href)
-                                            ? 'text-indigo-600'
-                                            : 'text-slate-600 hover:text-slate-900'
+                                            ? 'text-indigo-600 dark:text-indigo-400'
+                                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                                         }`}
                                 >
                                     <Icon className="w-4 h-4" />
@@ -74,7 +74,7 @@ export function Navbar() {
                         {session ? (
                             <button
                                 onClick={() => signOut({ callbackUrl: '/auth/signin' })}
-                                className="p-2 text-slate-500 hover:text-red-500 transition-colors"
+                                className="p-2 text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
                                 title="Sign Out"
                             >
                                 <LogOut className="w-5 h-5" />
@@ -91,7 +91,7 @@ export function Navbar() {
 
                     {/* Mobile Menu Button */}
                     <button
-                        className="md:hidden p-2 text-slate-600"
+                        className="md:hidden p-2 text-slate-600 dark:text-slate-400"
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
                     >
                         {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -101,7 +101,7 @@ export function Navbar() {
 
             {/* Mobile Menu */}
             {isMenuOpen && (
-                <div className="md:hidden border-t border-slate-200 bg-white px-4 py-4 space-y-4">
+                <div className="md:hidden border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-4 space-y-4">
                     {navItems.map((item) => {
                         const Icon = item.icon;
                         return (
@@ -110,8 +110,8 @@ export function Navbar() {
                                 href={item.href}
                                 onClick={() => setIsMenuOpen(false)}
                                 className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${isActive(item.href)
-                                        ? 'bg-indigo-50 text-indigo-600'
-                                        : 'text-slate-600 hover:bg-slate-50'
+                                        ? 'bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400'
+                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
                                     }`}
                             >
                                 <Icon className="w-5 h-5" />
@@ -119,8 +119,8 @@ export function Navbar() {
                             </Link>
                         );
                     })}
-                    <div className="pt-4 border-t border-slate-100 flex items-center justify-between px-4">
-                        <span className="text-sm font-semibold text-slate-500">
+                    <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between px-4">
+                        <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">
                             {session?.user?.email}
                         </span>
                         <div className="flex items-center gap-4">

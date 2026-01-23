@@ -4,33 +4,36 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 import path from 'path';
 
 export default defineConfig({
-    plugins: [react(), tsconfigPaths()],
+    // plugins: [react(), tsconfigPaths()],
     test: {
         globals: true,
-        environment: 'happy-dom',
-        setupFiles: ['__tests__/setup.ts'],
+        environment: 'jsdom',
+        // setupFiles: ['__tests__/setup.ts'],
         include: ['__tests__/**/*.test.{ts,tsx}'],
         exclude: ['node_modules', '.next', '__tests__/e2e/**'],
-        env: {
-            NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
-            NEXT_PUBLIC_SUPABASE_ANON_KEY: 'test-anon-key',
-            SUPABASE_SERVICE_ROLE_KEY: 'test-service-key',
-        },
-        coverage: {
-            provider: 'istanbul',
-            reporter: ['text', 'json', 'html'],
-            exclude: [
-                'node_modules/',
-                '__tests__/',
-                '.next/',
-                '*.config.{ts,js}',
-                'types/',
-            ],
-        },
+        // pool: 'forks',
+        // env: {
+        //     NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
+        //     NEXT_PUBLIC_SUPABASE_ANON_KEY: 'test-anon-key',
+        //     SUPABASE_SERVICE_ROLE_KEY: 'test-service-key',
+        // },
+        // testTimeout: 20000,
+        // fileParallelism: false,
+        // coverage: {
+        //     provider: 'istanbul',
+        //     reporter: ['text', 'json', 'html'],
+        //     exclude: [
+        //         'node_modules/',
+        //         '__tests__/',
+        //         '.next/',
+        //         '*.config.{ts,js}',
+        //         'types/',
+        //     ],
+        // },
     },
-    resolve: {
-        alias: {
-            '@': path.resolve(__dirname, './'),
-        },
-    },
+    // resolve: {
+    //     alias: {
+    //         '@': path.resolve(__dirname, './'),
+    //     },
+    // },
 });

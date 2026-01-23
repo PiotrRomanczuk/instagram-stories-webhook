@@ -24,11 +24,12 @@ This roadmap outlines the planned enhancements and maintenance tasks for the Ins
     - [ ] Phase 3: Update Frontend form to allow entering usernames for tagging.
 - [ ] **Resumable Uploads**: Implement the Meta Resumable Upload Protocol (v20+) for direct file uploads to Meta servers, reducing dependency on public URLs.
 - [ ] **Rate Limit Monitoring**: Integrate with `/{ig-user-id}/content_publishing_limit` (v24+) to check quota before scheduling/publishing.
+- [x] **Community Memes**: User submission portal and Admin review dashboard.
 
 
 ## 🎨 User Experience & UI (Aesthetics & Feel)
 - [x] **Supabase Realtime**: Implement real-time status updates on the dashboard using Supabase subscriptions.
-- [ ] **Dark Mode**: Add a sleek, glassmorphic dark mode theme.
+- [x] **Dark Mode**: Add a sleek, glassmorphic dark mode theme.
 - [x] **Media Preview**: Show a live preview of the image/video when pasteing a URL in the scheduling form.
 - [ ] **Calendar View**: Implement a visual calendar to manage scheduled content.
 - [ ] **Micro-animations**: Add Framer Motion transitions for state changes and form submissions.
@@ -69,7 +70,7 @@ This roadmap outlines the planned enhancements and maintenance tasks for the Ins
 - [ ] **Token Health Monitor**: Background job to check token expiration and auto-refresh.
 
 ### 🎨 UI Enhancements
-- [ ] **Dark Mode**: Implement a sleek, glassmorphic dark theme.
+- [x] **Dark Mode**: Implement a sleek, glassmorphic dark theme.
 - [ ] **Micro-animations**: Add Framer Motion transitions for state changes.
 
 ### 📈 Analytics

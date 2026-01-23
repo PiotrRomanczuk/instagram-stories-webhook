@@ -159,17 +159,17 @@ export function MemeSubmitForm({ onSubmitted }: MemeSubmitFormProps) {
     };
 
     return (
-        <Panel title="Submit New Meme" icon={<ImageIcon className="w-5 h-5 text-indigo-600" />}>
+        <Panel title="Submit New Meme" icon={<ImageIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />}>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                 
                 {/* Media Upload Area */}
                 <div className="space-y-4">
-                    <label className="block text-sm font-bold text-slate-700">Meme Media</label>
+                    <label className="block text-sm font-bold text-slate-700 dark:text-slate-300">Meme Media</label>
                     
                     {!mediaUrl ? (
                         <div
                             onClick={() => fileInputRef.current?.click()}
-                            className={`border-2 border-dashed border-slate-200 rounded-[2rem] p-12 flex flex-col items-center justify-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/30 transition-all group ${uploading ? 'pointer-events-none' : ''}`}
+                            className={`border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-[2rem] p-12 flex flex-col items-center justify-center cursor-pointer hover:border-indigo-400 dark:hover:border-indigo-500 hover:bg-indigo-50/30 dark:hover:bg-indigo-900/20 transition-all group ${uploading ? 'pointer-events-none' : ''}`}
                         >
                             <input
                                 type="file"
@@ -181,7 +181,7 @@ export function MemeSubmitForm({ onSubmitted }: MemeSubmitFormProps) {
 
                             {uploading ? (
                                 <div className="flex flex-col items-center gap-4 w-full max-w-xs">
-                                    <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                                    <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2.5 overflow-hidden">
                                         <div
                                             className="bg-gradient-to-r from-indigo-500 to-purple-500 h-full transition-all duration-300"
                                             style={{ width: `${uploadProgress}%` }}
@@ -191,17 +191,17 @@ export function MemeSubmitForm({ onSubmitted }: MemeSubmitFormProps) {
                                 </div>
                             ) : (
                                 <>
-                                    <div className="p-5 bg-slate-50 text-slate-400 rounded-2xl group-hover:scale-110 group-hover:bg-indigo-100 group-hover:text-indigo-600 transition duration-500">
+                                    <div className="p-5 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 rounded-2xl group-hover:scale-110 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/50 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition duration-500">
                                         <Upload className="w-8 h-8" />
                                     </div>
-                                    <p className="mt-5 text-slate-600 font-bold">Drop your meme here or browse</p>
-                                    <p className="text-xs text-slate-400 mt-2">MP4, JPEG, PNG • Up to 50MB</p>
+                                    <p className="mt-5 text-slate-600 dark:text-slate-300 font-bold">Drop your meme here or browse</p>
+                                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">MP4, JPEG, PNG • Up to 50MB</p>
                                 </>
                             )}
                         </div>
                     ) : (
                         <div className="space-y-4">
-                            <div className="relative group rounded-[2rem] overflow-hidden border border-slate-100 shadow-lg">
+                            <div className="relative group rounded-[2rem] overflow-hidden border border-slate-100 dark:border-slate-800 shadow-lg">
                                 {mediaType === 'VIDEO' ? (
                                     <video src={mediaUrl} className="w-full h-64 object-cover" controls={false} />
                                 ) : (
@@ -259,27 +259,27 @@ export function MemeSubmitForm({ onSubmitted }: MemeSubmitFormProps) {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
                             <Type className="w-4 h-4 text-slate-400" /> Meme Title
                         </label>
                         <input
                             type="text"
                             {...register('title')}
                             placeholder="A catchy title..."
-                            className="w-full px-5 py-3.5 rounded-2xl border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-sm font-medium"
+                            className="w-full px-5 py-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-sm font-medium"
                         />
                         {errors.title && <p className="text-red-500 text-xs mt-1.5 font-bold">{errors.title.message}</p>}
                     </div>
 
                     <div>
-                        <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                        <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
                             <MessageSquare className="w-4 h-4 text-slate-400" /> IG Caption
                         </label>
                         <input
                             type="text"
                             {...register('caption')}
                             placeholder="Add a fun caption..."
-                            className="w-full px-5 py-3.5 rounded-2xl border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-sm font-medium"
+                            className="w-full px-5 py-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/50 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-sm font-medium"
                         />
                         {errors.caption && <p className="text-red-500 text-xs mt-1.5 font-bold">{errors.caption.message}</p>}
                     </div>
@@ -289,7 +289,7 @@ export function MemeSubmitForm({ onSubmitted }: MemeSubmitFormProps) {
                     <button
                         type="submit"
                         disabled={isSubmitting || uploading || !mediaUrl}
-                        className="w-full px-8 py-5 bg-indigo-600 text-white rounded-[1.5rem] font-black text-sm uppercase tracking-widest hover:bg-slate-900 transition-all duration-300 shadow-xl shadow-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 group"
+                        className="w-full px-8 py-5 bg-indigo-600 text-white rounded-[1.5rem] font-black text-sm uppercase tracking-widest hover:bg-slate-900 dark:hover:bg-indigo-700 transition-all duration-300 shadow-xl shadow-indigo-200 dark:shadow-none disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 group"
                     >
                         {isSubmitting ? (
                             <><Loader className="w-5 h-5 animate-spin" /> Submitting...</>

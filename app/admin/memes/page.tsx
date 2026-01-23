@@ -114,7 +114,7 @@ export default function AdminMemesPage() {
     };
 
     return (
-        <main className="min-h-screen bg-[#F8FAFC] p-4 md:p-8 lg:p-12">
+        <main className="min-h-screen bg-background p-4 md:p-8 lg:p-12 transition-colors">
             <div className="max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="mb-8">
@@ -127,10 +127,10 @@ export default function AdminMemesPage() {
                     </Link>
                     <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
                         <div>
-                            <h1 className="text-4xl font-black text-slate-900">
+                            <h1 className="text-4xl font-black text-foreground">
                                 Meme <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">Review</span>
                             </h1>
-                            <p className="text-slate-500 mt-1">
+                            <p className="text-slate-500 dark:text-slate-400 mt-1">
                                 Review and publish community submissions
                             </p>
                         </div>
@@ -201,7 +201,7 @@ function MemeCard({ meme, onAction, onDelete }: {
     const [scheduledDate, setScheduledDate] = useState('');
 
     return (
-        <div className="group bg-white rounded-3xl border border-slate-200 overflow-hidden transition-all hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-1">
+        <div className="group bg-white dark:bg-slate-900/50 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden transition-all hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-1">
             {/* Media Preview */}
             <div className="relative aspect-square bg-slate-100 overflow-hidden">
                 <Image
@@ -219,10 +219,10 @@ function MemeCard({ meme, onAction, onDelete }: {
             <div className="p-5">
                 <div className="flex justify-between items-start mb-3">
                     <div className="overflow-hidden">
-                        <h3 className="font-bold text-slate-900 truncate">
+                        <h3 className="font-bold text-slate-900 dark:text-white truncate">
                             {meme.title || 'Untitled Meme'}
                         </h3>
-                        <p className="text-xs text-slate-500 truncate">
+                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                             by {meme.user_email}
                         </p>
                     </div>
@@ -234,7 +234,7 @@ function MemeCard({ meme, onAction, onDelete }: {
                     </button>
                 </div>
 
-                <p className="text-sm text-slate-600 line-clamp-2 mb-4 h-10">
+                <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-2 mb-4 h-10">
                     {meme.caption || <span className="italic opacity-40">No caption</span>}
                 </p>
 
@@ -279,9 +279,9 @@ function MemeCard({ meme, onAction, onDelete }: {
                     )}
 
                     {meme.status === 'rejected' && meme.rejection_reason && (
-                        <div className="bg-rose-50 rounded-xl p-3 flex items-start gap-2">
+                        <div className="bg-rose-50 dark:bg-rose-950/30 rounded-xl p-3 flex items-start gap-2">
                             <AlertCircle className="w-4 h-4 text-rose-500 flex-shrink-0 mt-0.5" />
-                            <p className="text-xs font-medium text-rose-600 line-clamp-2">
+                            <p className="text-xs font-medium text-rose-600 dark:text-rose-400 line-clamp-2">
                                 {meme.rejection_reason}
                             </p>
                         </div>

@@ -2,7 +2,22 @@
 
 :root {
   --background: #F8FAFC;
-  --foreground: #171717;
+  --foreground: #0f172a;
+  
+  /* Glassmorphism */
+  --glass-border: rgba(255, 255, 255, 0.2);
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+}
+
+.dark {
+  --background: #0f172a;
+  --foreground: #f8fafc;
+  
+  /* Dark Glassmorphism */
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-bg: rgba(15, 23, 42, 0.6);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
 }
 
 @theme inline {
@@ -15,5 +30,19 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Utilities */
+@utility glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+@utility glass-card {
+  @apply glass rounded-3xl;
 }

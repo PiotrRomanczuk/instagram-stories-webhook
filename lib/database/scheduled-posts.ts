@@ -83,7 +83,8 @@ export async function addScheduledPost(
         status: 'pending',
         created_at: createdAt,
         user_id: post.userId, // Set the user_id
-        user_tags: post.userTags || []
+        user_tags: post.userTags || [],
+        meme_id: post.memeId
     };
 
     const { error } = await supabaseAdmin
