@@ -14,11 +14,27 @@ import {
     ImageIcon
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { MemeSubmission, MemeStatus } from '@/lib/types';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { MemeSubmission, MemeStatus, UserRole } from '@/lib/types';
 import { MemeStatusBadge } from '@/app/components/ui/meme-status-badge';
 import Image from 'next/image';
 
 export default function AdminMemesPage() {
+    const { data: session, status } = useSession();
+    const router = useRouter();
+    
+    useEffect(() => {
+        if (status === 'unauthenticated') {
+            router.push('/auth/signin');
+        } else if (status === 'authenticated') {
+            const role = (session?.user as { role?: UserRole })?.role;
+            if (role !== 'admin' && role !== 'developer') {
+                router.push('/');
+            }
+        }
+    }, [status, session, router]);
+
     const [memes, setMemes] = useState<MemeSubmission[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [filter, setFilter] = useState<MemeStatus | 'all'>('all');

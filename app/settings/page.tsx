@@ -1,5 +1,3 @@
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft, Settings, Shield, Key, Database, Globe } from "lucide-react";
@@ -10,7 +8,7 @@ export default async function SettingsPage() {
     const session = await getSession();
     try {
         requireDeveloper(session);
-    } catch (e) {
+    } catch (_) {
         redirect("/");
     }
 

@@ -9,7 +9,7 @@ export default async function DeveloperPage() {
     const session = await getSession();
     try {
         requireDeveloper(session);
-    } catch (e) {
+    } catch (_) {
         redirect('/');
     }
     // Since we don't have a database column for webhookUrl yet, we'll construct it from env

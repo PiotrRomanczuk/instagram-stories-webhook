@@ -9,7 +9,7 @@ export default async function InsightsPage() {
     const session = await getSession();
     try {
         requireAdmin(session);
-    } catch (e) {
+    } catch (_) {
         redirect('/');
     }
     return (

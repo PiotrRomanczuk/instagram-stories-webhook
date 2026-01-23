@@ -8,7 +8,7 @@ export default async function DebugPage() {
     const session = await getSession();
     try {
         requireDeveloper(session);
-    } catch (e) {
+    } catch (_) {
         redirect('/');
     }
     return (

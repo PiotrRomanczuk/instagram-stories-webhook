@@ -5,11 +5,26 @@ import Link from 'next/link';
 import { ChevronLeft, Plus, Trash2, Shield, User, Loader, Terminal } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { AllowedUser, UserRole } from '@/lib/memes-db';
 
+
 export default function AdminUsersPage() {
-    const { data: session } = useSession();
+    const { data: session, status } = useSession();
+    const router = useRouter();
     const isDev = (session?.user as { role?: UserRole })?.role === 'developer';
+    
+    useEffect(() => {
+        if (status === 'unauthenticated') {
+            router.push('/auth/signin');
+        } else if (status === 'authenticated') {
+            const role = (session?.user as { role?: UserRole })?.role;
+            if (role !== 'admin' && role !== 'developer') {
+                router.push('/');
+            }
+        }
+    }, [status, session, router]);
+
     const [users, setUsers] = useState<AllowedUser[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [newEmail, setNewEmail] = useState('');
