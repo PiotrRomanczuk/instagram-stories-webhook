@@ -3,12 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently --kill-others \"npm run dev:next\" \"npm run worker\"",
-    "dev:next": "next dev",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "worker": "tsx scripts/cron-worker.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:unit": "vitest run",

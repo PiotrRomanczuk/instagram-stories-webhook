@@ -44,7 +44,35 @@ export async function POST(request: NextRequest) {
         const mediaType = type === 'VIDEO' ? 'VIDEO' : 'IMAGE';
 
         // Resolve user
-        const targetEmail = email || (process.env.ADMIN_EMAIL?.split(',')[0].trim());
+        let targetEmail = email;
+
+        // SECURITY CHECK: IDOR Prevention
+        // If authenticated via session (not secret header), ensure user is not impersonating
+        if (isSessionAuth && !isHeaderAuth) {
+            // We import isAdmin dynamically or check role manually if helper not available, 
+            // but we see auth-helpers exists. Let's assume we can import it or just check role directly from session if type allows.
+            // safely check role from session object if we don't want to add import at top yet, 
+            // BUT simpler to just enforce: specific email request requires ADMIN or SECRET.
+            // If just session, default to session user.
+
+            const sessionEmail = session?.user?.email;
+            const userRole = (session?.user as any)?.role; // Type assertion for safety
+            const isUserAdmin = userRole === 'admin' || userRole === 'developer';
+
+            if (!isUserAdmin) {
+                if (targetEmail && targetEmail !== sessionEmail) {
+                    await Logger.warn(MODULE, `🚨 IDOR Attempt: User ${sessionEmail} tried to post as ${targetEmail}`);
+                    return NextResponse.json({ error: 'Forbidden: You can only post for your own account' }, { status: 403 });
+                }
+                // Force target to be their own email
+                targetEmail = sessionEmail;
+            }
+        }
+
+        // Fallback for system automations (Header Auth) or Admin usage
+        if (!targetEmail) {
+            targetEmail = process.env.ADMIN_EMAIL?.split(',')[0].trim();
+        }
 
         if (!targetEmail) {
             await Logger.error(MODULE, '❌ No target user email found for webhook');

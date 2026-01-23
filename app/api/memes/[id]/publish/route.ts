@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { getMemeSubmission, markMemePublished } from '@/lib/memes-db';
 import { requireAdmin, getUserId } from '@/lib/auth-helpers';
 import { publishMedia } from '@/lib/instagram/publish';
-import { Logger } from '@/lib/logger';
+import { Logger } from '@/lib/utils/logger';
 
 const MODULE = 'api:memes:publish';
 

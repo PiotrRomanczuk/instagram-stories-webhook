@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { getMemeSubmission, reviewMemeSubmission } from '@/lib/memes-db';
 import { requireAdmin, getUserId } from '@/lib/auth-helpers';
-import { Logger } from '@/lib/logger';
+import { Logger } from '@/lib/utils/logger';
 
 const MODULE = 'api:memes:review';
 

@@ -13,7 +13,7 @@ import { Panel } from '../ui/panel';
 import Image from 'next/image';
 
 interface MemeSubmitFormProps {
-    onSubmitted: () => void;
+    onSubmitted?: () => void;
 }
 
 export function MemeSubmitForm({ onSubmitted }: MemeSubmitFormProps) {
@@ -22,7 +22,7 @@ export function MemeSubmitForm({ onSubmitted }: MemeSubmitFormProps) {
     const [isProcessing, setIsProcessing] = useState(false);
     const [mediaType, setMediaType] = useState<'IMAGE' | 'VIDEO'>('IMAGE');
     const fileInputRef = useRef<HTMLInputElement>(null);
-    
+
     const mediaValidation = useMediaValidation();
 
     const {
@@ -147,7 +147,7 @@ export function MemeSubmitForm({ onSubmitted }: MemeSubmitFormProps) {
             if (res.ok) {
                 toast.success('Meme submitted successfully! Waiting for admin review.');
                 reset();
-                onSubmitted();
+                if (onSubmitted) onSubmitted();
             } else {
                 const errorData = await res.json();
                 toast.error(errorData.error || 'Failed to submit meme');
@@ -161,11 +161,11 @@ export function MemeSubmitForm({ onSubmitted }: MemeSubmitFormProps) {
     return (
         <Panel title="Submit New Meme" icon={<ImageIcon className="w-5 h-5 text-indigo-600" />}>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                
+
                 {/* Media Upload Area */}
                 <div className="space-y-4">
                     <label className="block text-sm font-bold text-slate-700">Meme Media</label>
-                    
+
                     {!mediaUrl ? (
                         <div
                             onClick={() => fileInputRef.current?.click()}
@@ -227,7 +227,7 @@ export function MemeSubmitForm({ onSubmitted }: MemeSubmitFormProps) {
                                         <CheckCircle2 className="w-6 h-6" />
                                     </div>
                                 </div>
-                                
+
                                 {mediaType === 'IMAGE' && mediaValidation.aspectInfo && (
                                     <div className="absolute top-4 right-4">
                                         <AspectRatioIndicator

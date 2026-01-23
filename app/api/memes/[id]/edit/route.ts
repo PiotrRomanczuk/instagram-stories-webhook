@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { getMemeSubmission } from '@/lib/memes-db';
-import { supabaseAdmin } from '@/lib/supabase-admin';
+import { supabaseAdmin } from '@/lib/config/supabase-admin';
 import { requireAuth, getUserId } from '@/lib/auth-helpers';
-import { Logger } from '@/lib/logger';
+import { Logger } from '@/lib/utils/logger';
 
 const MODULE = 'api:memes:edit';
 

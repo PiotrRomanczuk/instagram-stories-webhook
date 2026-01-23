@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { getMemeSubmission, scheduleMeme } from '@/lib/memes-db';
-import { addScheduledPost } from '@/lib/scheduled-posts-db';
+import { addScheduledPost } from '@/lib/database/scheduled-posts';
 import { requireAdmin, getUserId } from '@/lib/auth-helpers';
-import { Logger } from '@/lib/logger';
+import { Logger } from '@/lib/utils/logger';
 
 const MODULE = 'api:memes:schedule';
 

@@ -1,0 +1,12 @@
+{
+    "crons": [
+        {
+            "path": "/api/cron/process",
+            "schedule": "* * * * *"
+        },
+        {
+            "path": "/api/cron/identity-audit",
+            "schedule": "*/5 * * * *"
+        }
+    ]
+}
