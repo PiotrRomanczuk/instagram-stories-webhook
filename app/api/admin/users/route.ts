@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { getAllowedUsers, addAllowedUser, UserRole } from '@/lib/memes-db';
-import { requireAdmin, getUserId } from '@/lib/auth-helpers';
+import { requireAdmin, requireDeveloper, getUserId } from '@/lib/auth-helpers';
 import { Logger } from '@/lib/utils/logger';
 
 const MODULE = 'api:admin:users';
@@ -37,7 +37,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
-        requireAdmin(session);
+        requireDeveloper(session);
 
         const adminId = getUserId(session);
         const body = await request.json();
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
         const message = error instanceof Error ? error.message : 'Failed to add user';
         Logger.error(MODULE, `POST error: ${message}`, error);
 
-        if (message === 'Admin access required') {
+        if (message === 'Admin access required' || message === 'Developer access required') {
             return NextResponse.json({ error: message }, { status: 403 });
         }
 

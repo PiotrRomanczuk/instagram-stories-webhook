@@ -4,9 +4,12 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, Plus, Trash2, Shield, User, Loader, Terminal } from 'lucide-react';
 import { toast } from 'sonner';
+import { useSession } from 'next-auth/react';
 import { AllowedUser, UserRole } from '@/lib/memes-db';
 
 export default function AdminUsersPage() {
+    const { data: session } = useSession();
+    const isDev = (session?.user as { role?: UserRole })?.role === 'developer';
     const [users, setUsers] = useState<AllowedUser[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [newEmail, setNewEmail] = useState('');
@@ -134,11 +137,11 @@ export default function AdminUsersPage() {
                         </select>
                         <button
                             type="submit"
-                            disabled={isAdding}
+                            disabled={isAdding || !isDev}
                             className="px-6 py-3 rounded-xl bg-indigo-500 text-white font-bold hover:bg-indigo-600 disabled:opacity-50 flex items-center gap-2"
                         >
                             {isAdding ? <Loader className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                            Add
+                            {!isDev ? 'Dev Only' : 'Add'}
                         </button>
                     </div>
                 </form>
@@ -179,10 +182,11 @@ export default function AdminUsersPage() {
                                             <select
                                                 value={user.role}
                                                 onChange={(e) => handleRoleChange(user.email, e.target.value as UserRole)}
+                                                disabled={!isDev}
                                                 className={`px-3 py-1.5 rounded-lg text-sm font-semibold border-0 ${user.role === 'admin'
                                                         ? 'bg-purple-100 text-purple-700'
                                                         : 'bg-slate-100 text-slate-700'
-                                                    }`}
+                                                    } disabled:opacity-70`}
                                             >
                                                 <option value="user">User</option>
                                                 <option value="admin">Admin</option>
@@ -192,7 +196,8 @@ export default function AdminUsersPage() {
                                         <td className="px-6 py-4">
                                             <button
                                                 onClick={() => handleDelete(user.email)}
-                                                className="p-2 rounded-lg text-red-500 hover:bg-red-50 transition-colors"
+                                                disabled={!isDev}
+                                                className="p-2 rounded-lg text-red-500 hover:bg-red-50 transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
                                             >
                                                 <Trash2 className="w-4 h-4" />
                                             </button>

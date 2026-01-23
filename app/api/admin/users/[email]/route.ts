@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { removeAllowedUser, updateUserRole, UserRole } from '@/lib/memes-db';
-import { requireAdmin, getUserId, getUserEmail } from '@/lib/auth-helpers';
+import { requireAdmin, requireDeveloper, getUserId, getUserEmail } from '@/lib/auth-helpers';
 import { Logger } from '@/lib/utils/logger';
 
 const MODULE = 'api:admin:users:[email]';
@@ -18,7 +18,7 @@ interface RouteParams {
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
     try {
         const session = await getServerSession(authOptions);
-        requireAdmin(session);
+        requireDeveloper(session);
 
         const { email } = await params;
         const decodedEmail = decodeURIComponent(email).toLowerCase();
@@ -46,7 +46,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         const message = error instanceof Error ? error.message : 'Failed to update user';
         Logger.error(MODULE, `PATCH error: ${message}`, error);
 
-        if (message === 'Admin access required') {
+        if (message === 'Developer access required') {
             return NextResponse.json({ error: message }, { status: 403 });
         }
 
