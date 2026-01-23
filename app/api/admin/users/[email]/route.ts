@@ -13,7 +13,7 @@ interface RouteParams {
 
 /**
  * PATCH /api/admin/users/[email] - Update user role
- * Body: { role: 'admin' | 'user' }
+ * Body: { role: 'developer' | 'admin' | 'user' }
  */
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
     try {
@@ -26,9 +26,9 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         const body = await request.json();
         const { role } = body;
 
-        if (!role || !['admin', 'user'].includes(role)) {
+        if (!role || !['developer', 'admin', 'user'].includes(role)) {
             return NextResponse.json(
-                { error: "role must be 'admin' or 'user'" },
+                { error: "role must be 'developer', 'admin', or 'user'" },
                 { status: 400 }
             );
         }

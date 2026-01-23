@@ -32,7 +32,7 @@ export async function GET() {
 
 /**
  * POST /api/admin/users - Add user to whitelist
- * Body: { email: string, role?: 'admin' | 'user', display_name?: string }
+ * Body: { email: string, role?: 'developer' | 'admin' | 'user', display_name?: string }
  */
 export async function POST(request: NextRequest) {
     try {
@@ -47,9 +47,9 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'email is required' }, { status: 400 });
         }
 
-        if (role && !['admin', 'user'].includes(role)) {
+        if (role && !['developer', 'admin', 'user'].includes(role)) {
             return NextResponse.json(
-                { error: "role must be 'admin' or 'user'" },
+                { error: "role must be 'developer', 'admin', or 'user'" },
                 { status: 400 }
             );
         }
