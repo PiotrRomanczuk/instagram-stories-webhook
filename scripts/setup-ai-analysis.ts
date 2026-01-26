@@ -36,7 +36,7 @@ async function setupAIAnalysis() {
         if (tableError) {
             console.warn('   ⚠️  Could not verify schema (this is OK if RLS is enabled)');
         } else {
-            const hasTable = tables?.some((t: any) => t.table_name === 'ai_meme_analysis');
+            const hasTable = tables?.some((t: { table_name: string }) => t.table_name === 'ai_meme_analysis');
             if (hasTable) {
                 console.log('   ✅ ai_meme_analysis table exists');
             } else {

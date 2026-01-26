@@ -19,6 +19,7 @@ export default async function Home() {
   const linkedAccount = await getLinkedFacebookAccount(session.user.id);
   
   // Check for valid token and expiration
+  // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
   const isExpired = linkedAccount?.expires_at && linkedAccount.expires_at < now;
   const isFacebookConnected = !!linkedAccount && !!linkedAccount.ig_user_id && !isExpired;

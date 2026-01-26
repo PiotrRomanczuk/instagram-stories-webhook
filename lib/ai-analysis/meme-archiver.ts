@@ -214,7 +214,7 @@ export async function getPendingAnalysisMemes(limit = 50): Promise<AnalysisRecor
  */
 export async function updateAnalysisResults(
     analysisId: string,
-    analysisData: Record<string, any>
+    analysisData: Record<string, unknown>
 ): Promise<boolean> {
     try {
         const { error } = await supabaseAdmin

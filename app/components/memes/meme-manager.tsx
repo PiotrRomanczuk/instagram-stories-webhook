@@ -17,7 +17,6 @@ export function MemeManager() {
     const [status, setStatus] = useState('');
     const [page, setPage] = useState(1);
     const [editingMeme, setEditingMeme] = useState<MemeSubmission | null>(null);
-    const [isSaving, setIsSaving] = useState(false);
 
     const { memes, pagination, isLoading, refresh } = useUserMemes({
         search,
@@ -49,7 +48,6 @@ export function MemeManager() {
     const handleSaveEdit = async (updates: { title?: string; caption?: string }) => {
         if (!editingMeme) return;
 
-        setIsSaving(true);
         try {
             const response = await fetch(`/api/memes/${editingMeme.id}/edit`, {
                 method: 'PATCH',
@@ -69,8 +67,6 @@ export function MemeManager() {
             const message = error instanceof Error ? error.message : 'Failed to update meme';
             toast.error(message);
             Logger.error('meme-manager:edit', message, error);
-        } finally {
-            setIsSaving(false);
         }
     };
 

@@ -9,10 +9,7 @@ import { authOptions } from '@/lib/auth';
 import { isAdmin } from '@/lib/auth-helpers';
 import {
     getPendingAnalysisMemes,
-    getAnalysisRecord,
-    updateAnalysisResults,
-    getSignedAnalysisUrl,
-    archiveOldAnalysis
+    updateAnalysisResults
 } from '@/lib/ai-analysis/meme-archiver';
 
 /**

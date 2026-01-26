@@ -41,7 +41,7 @@ export function ScheduleManager() {
         updatedPost?: { url?: string; caption?: string }
     ) => {
         try {
-            const updatePayload: any = {
+            const updatePayload: { id: string; scheduledTime: string; url?: string; caption?: string } = {
                 id,
                 scheduledTime: newTime.toISOString(),
             };
