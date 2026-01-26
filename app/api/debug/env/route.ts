@@ -15,7 +15,7 @@ export async function GET() {
         'NEXT_PUBLIC_APP_URL'
     ];
 
-    const status: Record<string, any> = {};
+    const status: Record<string, string> = {};
     const issues: string[] = [];
 
     vars.forEach(v => {
@@ -52,9 +52,10 @@ export async function GET() {
         } else {
             dbStatus = `✅ Connected. Users count: ${count}`;
         }
-    } catch (e: any) {
-        dbStatus = `❌ Exception: ${e.message}`;
-        issues.push(`Database Exception: ${e.message}`);
+    } catch (e) {
+        const msg = e instanceof Error ? e.message : 'Unknown error';
+        dbStatus = `❌ Exception: ${msg}`;
+        issues.push(`Database Exception: ${msg}`);
     }
 
     return NextResponse.json({
