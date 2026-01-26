@@ -118,33 +118,70 @@ This roadmap outlines the planned enhancements and maintenance tasks for the Ins
     - PR Template with security & quality checklists
     - .github/github-guide.md - Guide for using templates
     - All templates linked to CLAUDE.md and WORKFLOWS.md
-## 📄 Documentation & Process Improvements (Future)
-- [ ] **Contributing Guide**: Create `.github/CONTRIBUTING.md` that ties all documentation together
-- [ ] **README Update**: Add developer resources section linking to CLAUDE.md, WORKFLOWS.md, GitHub guide
-- [ ] **Runbooks**: Convert WORKFLOWS.md playbooks into executable checklists/automation scripts
-- [ ] **Metrics Collection**: Track documentation usage (which sections are referenced most)
-- [ ] **Regular Reviews**: Schedule quarterly documentation reviews to keep patterns current
-- [ ] **Video Tutorials**: Create screen recordings for complex workflows (migration, debugging)
-- [ ] **Onboarding Assessment**: Track new developer time-to-first-commit using these docs
+## 📄 Documentation & Analysis
+- [x] **CLAUDE.md**: Comprehensive development guide (1400+ lines)
+- [x] **WORKFLOWS.md**: 11 task playbooks (800+ lines)
+- [x] **Feature Matrix**: Complete feature/user type analysis (FEATURE-MATRIX.md)
+- [x] **Feature Quick Ref**: Quick reference guide (FEATURE-MATRIX-QUICK-REF.md)
+- [x] **GitHub Integration**: 7 issue templates + PR template
+- [ ] **Contributing Guide**: Create `.github/CONTRIBUTING.md` that ties all docs
+- [ ] **README Update**: Add developer resources & feature matrix link
+- [ ] **Video Tutorials**: Create screen recordings for complex workflows
+- [ ] **Runbooks**: Convert WORKFLOWS.md into executable checklist scripts
 
-## 📋 Prioritized Next Steps
+## 📋 Prioritized Next Steps (Based on Feature Matrix)
 
-### 🔧 High Priority
-- [x] **Retry Logic**: Implement exponential backoff for failed Instagram API calls to improve reliability.
-- [x] **Automated Testing**: Add unit tests for publishing logic and API routes. (Publishing logic ✅; Framework documented ✅)
-- [ ] **Token Health Monitor**: Background job to check token expiration and auto-refresh.
-- [ ] **Implement Tests**: Use patterns from CLAUDE.md & WORKFLOWS.md to add comprehensive test suite
+### 🔴 CRITICAL - Test Coverage Gaps
+- [ ] **Authentication E2E Tests**: Google OAuth flow, session management, role verification
+  - Current Coverage: 43% (3/7 tested)
+  - Impact: All users blocked if auth fails
+  - Effort: 2-3 days
+  - File: `FEATURE-MATRIX.md` → Auth & Accounts section
 
-### 🎨 UI Enhancements
+- [ ] **Scheduling & Publishing E2E Tests**: Full flow, concurrent publishing, retry logic
+  - Current Coverage: 56% (5/9 tested)
+  - Impact: Core feature, affects user experience
+  - Effort: 3-4 days
+  - File: `FEATURE-MATRIX.md` → Scheduling section
+
+- [ ] **Instagram API Error Handling Tests**: Error codes 190, 368, 100, rate limiting
+  - Current Coverage: 50% (5/10 tested)
+  - Impact: Publishing reliability
+  - Effort: 2-3 days
+  - File: `FEATURE-MATRIX.md` → Instagram API section
+
+### 🟠 HIGH - Feature Implementation Gaps
+- [ ] **Edit Scheduled Posts**: Implement missing feature (API + UI)
+  - Current: ❌ Not implemented
+  - Effort: 2-3 days
+  - File: `FEATURE-MATRIX.md` → Scheduling section
+
+- [ ] **User Management RBAC Tests**: Add/remove/change role operations
+  - Current Coverage: 13% (1/8 tested)
+  - Effort: 2-3 days
+  - File: `FEATURE-MATRIX.md` → User Management section
+
+- [ ] **Analytics Enhancements**: Add date filtering, trends, export
+  - Current Coverage: 29% (2/7 tested)
+  - Effort: 3-4 days
+  - File: `FEATURE-MATRIX.md` → Analytics section
+
+### 🎨 UI/UX Enhancements
 - [ ] **Dark Mode**: Implement a sleek, glassmorphic dark theme.
 - [ ] **Micro-animations**: Add Framer Motion transitions for state changes.
+- [ ] **Analytics Dashboard**: Add date range, trends, export (see FEATURE-MATRIX.md)
+- [ ] **Pagination UI**: Add pagination to meme/schedule lists
 
-### 📈 Analytics
-- [x] **Post Analytics**: Fetch and display view/reach metrics for published stories. (Previously implemented)
-- [x] **3-Tier User Role System**: Implemented `developer`, `admin`, and `user` roles with full RBAC on pages and API routes.
+### 📈 Analytics & Insights
+- [x] **Post Analytics**: Fetch and display view/reach metrics. (Implemented)
+- [x] **3-Tier User Role System**: Full RBAC on pages and API routes.
+- [ ] **Date Range Filtering**: Add to analytics dashboard
+- [ ] **Historical Trends**: Track engagement over time
+- [ ] **Export to CSV/PDF**: Let users export analytics
 
-### 🚀 Developer Experience (Next)
-- [ ] **Apply CLAUDE.md Patterns**: Audit codebase against newly documented patterns
-- [ ] **Add Security Tests**: Use Pre-Deployment Security Audit checklist to create test suite
-- [ ] **Implement Monitoring**: Follow Monitoring & Alerting Strategy from CLAUDE.md
-- [ ] **Setup CI/CD**: Add pre-deployment checks based on checklists
+### 🚀 Developer Experience (Phase 2)
+- [ ] **Apply CLAUDE.md Patterns**: Audit codebase against documented patterns
+- [ ] **Add Security Tests**: Pre-Deployment Security Audit checklist tests
+- [ ] **Implement Monitoring**: Follow Monitoring & Alerting Strategy
+- [ ] **Setup CI/CD**: Add pre-deployment checks
+- [ ] **Feature Matrix Review**: Verify implementation vs. matrix (see FEATURE-MATRIX.md)
