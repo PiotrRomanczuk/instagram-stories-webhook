@@ -16,8 +16,10 @@ const LOG_FILE = path.join(LOG_DIR, 'app.log');
 const MAX_LOG_SIZE = 1024 * 1024; // 1MB
 const MAX_BACKUP_FILES = 5;
 
-// Ensure logs directory exists
-if (!fs.existsSync(LOG_DIR)) {
+// Ensure logs directory exists (ONLY if not in Vercel Lambda)
+const IS_VERCEL = process.env.VERCEL === '1' || process.env.AWS_LAMBDA_FUNCTION_NAME;
+
+if (!IS_VERCEL && !fs.existsSync(LOG_DIR)) {
     fs.mkdirSync(LOG_DIR, { recursive: true });
 }
 
@@ -64,6 +66,9 @@ export class Logger {
     }
 
     private static async writeToLocalFile(formattedMessage: string) {
+        // Skip file logging in Vercel/Lambda environment as filesystem is read-only
+        if (IS_VERCEL) return;
+
         try {
             if (typeof window === 'undefined') {
                 await this.rotateLogs();
