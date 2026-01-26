@@ -129,15 +129,106 @@ npx playwright test tests/e2e/some-flow.spec.ts --headed
 
 ## Testing Strategy
 
+### Coverage Rules & Limitations
+
+**CRITICAL - What MUST be tested:**
+- ✅ Everything up to scheduled post creation (in `scheduled_posts` table)
+- ✅ All meme submission workflows (user → admin → schedule)
+- ✅ Search, pagination, filtering
+- ✅ Bulk operations (approve/reject/reschedule)
+- ✅ Edit workflows (submissions, scheduled posts)
+- ✅ Database operations and RLS policies
+- ✅ Auth flows and role-based access control
+- ✅ Input validation and error handling
+
+**CANNOT be automated - Meta API calls:**
+- ❌ Meta Graph API publishing (requires real FB user account linked to IG account)
+- ❌ Instagram container creation and status checks
+- ❌ Actual media upload to Instagram servers
+- ❌ Real IG media ID retrieval
+
+**Strategy for Meta API testing:**
+- Use MSW (Mock Service Worker) to mock all Meta API responses in unit tests
+- Test the integration layer that calls Meta API (error handling, retries, etc.)
+- Mock successful/failed response scenarios
+- Manual/staging testing required for actual IG integration
+- Don't mock at the axios level - mock the actual Meta API endpoints
+
 ### Unit Tests (Vitest + MSW)
 - Mock Meta API responses via `tests/mocks/handlers.ts`
 - Test business logic, utilities, and API routes in isolation
 - Global MSW setup in `tests/setup.ts`
+- **Meta API mocking**: Mock `https://graph.instagram.com/v*` endpoints for container creation, status checks, publish, etc.
 
 ### E2E Tests (Playwright)
-- Test real user flows and UI interactions
+- Test real user flows and UI interactions up to scheduling
 - Save authentication state to bypass login in subsequent tests: `page.context().storageState({ path: 'auth.json' })`
 - Configuration in `playwright.config.ts` (handles dev server startup)
+- Do NOT attempt to test actual Instagram publishing - verify data is prepared for publishing instead
+
+### Integration Tests
+- Test database operations with real Supabase (or local emulator)
+- Test API routes with mocked Meta API responses
+- Verify RLS policies work correctly
+- Test error handling and edge cases
+
+### Test Focus by Feature (Meme-to-Schedule Workflow)
+
+**Section 2: Meme Submissions** ✅ FULLY TESTABLE
+```
+Tests required:
+ ✅ Create submission (upload file, validation)
+ ✅ Search memes (by title/caption, with filters)
+ ✅ Pagination (page navigation, correct items)
+ ✅ Edit submission (title/caption update)
+ ✅ Delete submission (with confirmation)
+ ✅ View own/all memes (based on role)
+```
+
+**Section 3: Meme Review & Admin** ✅ FULLY TESTABLE
+```
+Tests required:
+ ✅ Approve single meme
+ ✅ Reject single meme with reason
+ ✅ Bulk approve (multiple memes)
+ ✅ Bulk reject (multiple memes)
+ ✅ View pending memes (admin only)
+ ✅ Edit submission after review blocked
+```
+
+**Section 4: Scheduling & Publishing** ⚠️ PARTIALLY TESTABLE
+```
+Tests required:
+ ✅ Schedule post (create with future datetime)
+ ✅ Edit scheduled post (time, URL, caption, tags)
+ ✅ View scheduled posts
+ ✅ Bulk reschedule (multiple posts to new time)
+ ✅ Delete scheduled post
+ ✅ Validate datetime (must be future)
+ ✅ Check publish quota API response
+ ✅ Database record created correctly
+
+ ❌ CANNOT TEST (requires Meta API):
+ ❌ Actual publishing to Instagram
+ ❌ Cron job triggering
+ ❌ Meta container creation
+ ❌ Real IG media ID retrieval
+
+ ✅ CAN TEST (with mocked Meta API):
+ ✅ Publishing logic with mocked responses
+ ✅ Error handling (rate limit, token expired)
+ ✅ Retry logic
+ ✅ Database status updates on mock success
+```
+
+### Testing Best Practices
+
+1. **Mock Meta API at the HTTP level**: Use MSW to intercept `graph.instagram.com` requests
+2. **Test the integration layer**: Verify code that calls Meta API handles responses correctly
+3. **Don't test external services**: Focus on your code's behavior, not Meta's API behavior
+4. **RLS policy testing**: Create tests that verify data isolation between users
+5. **Staging environment**: Use for manual end-to-end testing with real IG accounts
+6. **Acceptance criteria**: If it reaches `scheduled_posts` table correctly, it's ready for publishing
 
 ## Code Standards (from .agent rules)
 
