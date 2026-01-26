@@ -7,6 +7,8 @@ import { toast } from 'sonner';
 import { useForm, Controller, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Panel } from '../ui/panel';
+import { TagInput } from '../ui/tag-input';
+import { DateTimePicker } from '../ui/datetime-picker';
 import { supabase } from '@/lib/config/supabase';
 import { useMediaValidation } from '@/app/hooks/use-media-validation';
 import { AspectRatioIndicator, ProcessingPrompt } from '../media/aspect-ratio-indicator';
@@ -67,9 +69,20 @@ export function ScheduleForm({ onScheduled }: ScheduleFormProps) {
             return;
         }
 
-        // Validate aspect ratio for images before upload
+        // Validate aspect ratio for images BEFORE upload
         if (isImage) {
-            await mediaValidation.validateFile(file);
+            const validation = await mediaValidation.validateFile(file);
+            if (!validation) {
+                toast.error('Failed to validate image');
+                return;
+            }
+
+            // Show validation results
+            if (!validation.valid) {
+                // Invalid aspect ratio - show warning but allow upload
+                // User will see processing options after upload
+                toast.warning(`Image aspect ratio not ideal for Stories. Will show processing options after upload.`);
+            }
         }
 
         setUploading(true);
@@ -174,6 +187,7 @@ export function ScheduleForm({ onScheduled }: ScheduleFormProps) {
                         x: 0.5,
                         y: 0.5
                     })) || [],
+                    hashtagTags: data.hashtagTags || [],
                     caption: data.caption
                 }),
             });
@@ -192,14 +206,6 @@ export function ScheduleForm({ onScheduled }: ScheduleFormProps) {
         }
     };
 
-    // Helper to format date for input
-    const formatDateForInput = (date: Date) => {
-        return date.toISOString().split('T')[0];
-    };
-
-    const formatTimeForInput = (date: Date) => {
-        return date.toTimeString().slice(0, 5);
-    };
 
     return (
         <Panel title="Schedule New Post" icon={<Calendar className="w-6 h-6" />}>
@@ -340,93 +346,90 @@ export function ScheduleForm({ onScheduled }: ScheduleFormProps) {
 
                     <div className="flex-[2]">
                         <label className="block text-sm font-bold text-gray-700 mb-2">Caption (optional)</label>
-                        <input
-                            type="text"
-                            {...register('caption')}
-                            placeholder="Add a caption..."
-                            className="w-full px-4 py-2 text-sm rounded-xl border border-gray-200 bg-white text-gray-900 focus:border-indigo-500 outline-none transition"
+                        <Controller
+                            name="caption"
+                            control={control}
+                            render={({ field }) => (
+                                <div>
+                                    <textarea
+                                        {...field}
+                                        placeholder="Add a caption..."
+                                        rows={3}
+                                        maxLength={2200}
+                                        className="w-full px-4 py-2 text-sm rounded-xl border border-gray-200 bg-white text-gray-900 focus:border-indigo-500 outline-none transition resize-none"
+                                    />
+                                    <div className="flex items-center justify-between mt-1">
+                                        {errors.caption && (
+                                            <p className="text-red-500 text-xs">{errors.caption.message}</p>
+                                        )}
+                                        <span className="text-[11px] text-gray-400 font-medium ml-auto">
+                                            {(field.value || '').length} / 2200
+                                        </span>
+                                    </div>
+                                </div>
+                            )}
                         />
-                        {errors.caption && (
-                            <p className="text-red-500 text-xs mt-1">{errors.caption.message}</p>
-                        )}
                     </div>
+                </div>
+
+                <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Tag Users (optional)</label>
+                    <Controller
+                        name="userTags"
+                        control={control}
+                        render={({ field }) => (
+                            <TagInput
+                                tags={field.value || []}
+                                onChange={field.onChange}
+                                placeholder="@username"
+                                maxTags={20}
+                            />
+                        )}
+                    />
+                    {errors.userTags && (
+                        <p className="text-red-500 text-xs mt-2">{errors.userTags.message}</p>
+                    )}
+                </div>
+
+                <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Add Hashtags (optional)</label>
+                    <Controller
+                        name="hashtagTags"
+                        control={control}
+                        render={({ field }) => (
+                            <TagInput
+                                tags={field.value || []}
+                                onChange={field.onChange}
+                                placeholder="#hashtag"
+                                maxTags={30}
+                            />
+                        )}
+                    />
+                    {errors.hashtagTags && (
+                        <p className="text-red-500 text-xs mt-2">{errors.hashtagTags.message}</p>
+                    )}
                 </div>
 
                 <div className="flex flex-col md:flex-row gap-6">
                     <div className="flex-[2]">
-                        <label className="block text-sm font-bold text-gray-700 mb-2">Tag Users (optional)</label>
+                        <label className="block text-sm font-bold text-gray-700 mb-2">Publish Date & Time</label>
                         <Controller
-                            name="userTags"
+                            name="scheduledFor"
                             control={control}
                             render={({ field }) => (
-                                <input
-                                    type="text"
-                                    value={field.value?.join(', ') || ''}
-                                    onChange={(e) => {
-                                        const tags = e.target.value
-                                            .split(',')
-                                            .map(t => t.trim())
-                                            .filter(t => t.length > 0);
-                                        field.onChange(tags);
-                                    }}
-                                    placeholder="@username, @another_user"
-                                    className="w-full px-4 py-2 text-sm rounded-xl border border-gray-200 bg-white text-gray-900 focus:border-indigo-500 outline-none transition"
+                                <DateTimePicker
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    minDate={new Date()}
                                 />
                             )}
                         />
-                        <p className="text-[10px] text-gray-400 mt-1 pl-1">Comma separated list of usernames to tag</p>
-                        {errors.userTags && (
-                            <p className="text-red-500 text-xs mt-1">{errors.userTags.message}</p>
+                        {errors.scheduledFor && (
+                            <p className="text-red-500 text-xs mt-1">{errors.scheduledFor.message}</p>
                         )}
-                    </div>
-
-                    <div className="flex-[2] grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-2">Publish Date</label>
-                            <Controller
-                                name="scheduledFor"
-                                control={control}
-                                render={({ field }) => (
-                                    <input
-                                        type="date"
-                                        value={formatDateForInput(field.value)}
-                                        onChange={(e) => {
-                                            const newDate = new Date(field.value);
-                                            const [year, month, day] = e.target.value.split('-').map(Number);
-                                            newDate.setFullYear(year, month - 1, day);
-                                            field.onChange(newDate);
-                                        }}
-                                        min={new Date().toISOString().split('T')[0]}
-                                        required
-                                        className="w-full px-4 py-2 text-sm rounded-xl border border-gray-200 bg-white text-gray-900 focus:border-indigo-500 outline-none transition"
-                                    />
-                                )}
-                            />
-                            {errors.scheduledFor && (
-                                <p className="text-red-500 text-xs mt-1">{errors.scheduledFor.message}</p>
-                            )}
-                        </div>
-                        <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-2">Time</label>
-                            <Controller
-                                name="scheduledFor"
-                                control={control}
-                                render={({ field }) => (
-                                    <input
-                                        type="time"
-                                        value={formatTimeForInput(field.value)}
-                                        onChange={(e) => {
-                                            const newDate = new Date(field.value);
-                                            const [hours, minutes] = e.target.value.split(':').map(Number);
-                                            newDate.setHours(hours, minutes);
-                                            field.onChange(newDate);
-                                        }}
-                                        required
-                                        className="w-full px-4 py-2 text-sm rounded-xl border border-gray-200 bg-white text-gray-900 focus:border-indigo-500 outline-none transition"
-                                    />
-                                )}
-                            />
-                        </div>
+                        <p className="text-[10px] text-gray-400 mt-1.5 pl-1">
+                            Timezone: {new Intl.DateTimeFormat().resolvedOptions().timeZone}
+                        </p>
                     </div>
                 </div>
 

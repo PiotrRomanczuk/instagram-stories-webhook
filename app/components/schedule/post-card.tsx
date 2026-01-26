@@ -5,11 +5,12 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Clock, XCircle, Trash2, Pencil, Check, X, ZoomIn, BarChart3, Send, Loader, User } from 'lucide-react';
+import { Clock, XCircle, Trash2, Pencil, ZoomIn, BarChart3, Send, Loader, User, Copy } from 'lucide-react';
 import { ScheduledPostWithUser } from '@/lib/types';
 import { StatusBadge } from '../ui/status-badge';
 import { MediaModal } from '../ui/media-modal';
 import { InsightsPanel } from './insights-panel';
+import { PostEditModal } from './post-edit-modal';
 import { ImageDimensionsBadge, AspectRatioOverlay } from '../media/image-dimensions-badge';
 
 interface PostCardProps {
@@ -18,6 +19,7 @@ interface PostCardProps {
     onReschedule: (id: string, newTime: Date) => void;
     onUpdateTags?: (id: string, tags: { username: string; x: number; y: number; }[]) => void;
     onPostImmediately?: (id: string) => void;
+    onDuplicate?: (post: ScheduledPostWithUser) => void;
     isDraggable?: boolean;
 }
 
@@ -29,17 +31,13 @@ const statusColors = {
     cancelled: 'bg-slate-50 border-slate-200',
 };
 
-export function PostCard({ post, onCancel, onReschedule, onUpdateTags, onPostImmediately, isDraggable = false }: PostCardProps) {
+export function PostCard({ post, onCancel, onReschedule, onUpdateTags, onPostImmediately, onDuplicate, isDraggable = false }: PostCardProps) {
     const [now] = useState(() => Date.now());
-    const [isEditing, setIsEditing] = useState(false);
-    const [showModal, setShowModal] = useState(false);
+    const [showMediaModal, setShowMediaModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
     const [showInsights, setShowInsights] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
-
-    // Edit state
-    const [editDate, setEditDate] = useState(() => new Date(post.scheduledTime).toISOString().split('T')[0]);
-    const [editTime, setEditTime] = useState(() => new Date(post.scheduledTime).toTimeString().slice(0, 5));
-    const [editTags, setEditTags] = useState(() => (post.userTags || []).map(t => t.username).join(', '));
+    const [expandedError, setExpandedError] = useState(false);
 
     // DnD Hooks
     const {
@@ -51,7 +49,7 @@ export function PostCard({ post, onCancel, onReschedule, onUpdateTags, onPostImm
         isDragging
     } = useSortable({
         id: post.id,
-        disabled: !isDraggable || isEditing
+        disabled: !isDraggable
     });
 
     const style = {
@@ -66,20 +64,16 @@ export function PostCard({ post, onCancel, onReschedule, onUpdateTags, onPostImm
     const scheduledDate = new Date(post.scheduledTime);
     const isPast = post.scheduledTime < now;
 
-    const handleSave = () => {
-        const newTime = new Date(`${editDate}T${editTime}`);
-        if (isNaN(newTime.getTime())) return;
-
+    const handleEditSave = (newTime: Date, newTags: string[]) => {
         onReschedule(post.id, newTime);
 
         // Handle tags update
         if (onUpdateTags) {
             const currentTags = (post.userTags || []).map(t => t.username).sort().join(',');
-            const newTagsList = editTags.split(',').map(s => s.trim()).filter(s => s.length > 0).sort();
-            const newTagsStr = newTagsList.join(',');
+            const newTagsStr = newTags.sort().join(',');
 
             if (currentTags !== newTagsStr) {
-                const tagsPayload = newTagsList.map(username => ({
+                const tagsPayload = newTags.map(username => ({
                     username,
                     x: 0.5,
                     y: 0.5
@@ -88,15 +82,7 @@ export function PostCard({ post, onCancel, onReschedule, onUpdateTags, onPostImm
             }
         }
 
-        setIsEditing(false);
-    };
-
-    const adjustMinutes = (amount: number) => {
-        const currentDate = new Date(`${editDate}T${editTime}`);
-        if (isNaN(currentDate.getTime())) return;
-        currentDate.setMinutes(currentDate.getMinutes() + amount);
-        setEditDate(currentDate.toISOString().split('T')[0]);
-        setEditTime(currentDate.toTimeString().slice(0, 5));
+        setExpandedError(false);
     };
 
     return (
@@ -115,10 +101,10 @@ export function PostCard({ post, onCancel, onReschedule, onUpdateTags, onPostImm
                 <div
                     className="relative w-full aspect-square bg-slate-100 group cursor-grab active:cursor-grabbing"
                     onClick={(_e) => {
-                        // If it came from a drag, this click might fire. 
+                        // If it came from a drag, this click might fire.
                         // But typically activationConstraint prevents drag from firing click.
                         // However, simple clicks should open modal.
-                        setShowModal(true);
+                        setShowMediaModal(true);
                     }}
                 >
                     {/* Type Badge */}
@@ -176,153 +162,110 @@ export function PostCard({ post, onCancel, onReschedule, onUpdateTags, onPostImm
                 {/* Content Section - Bottom Half */}
                 <div className="p-3 flex flex-col flex-1 gap-2 bg-white">
                     {/* Date/Time Row */}
-                    {!isEditing ? (
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-100">
-                                <Clock className="w-3.5 h-3.5 text-slate-400" />
-                                <span className="text-xs font-black text-slate-700 uppercase tracking-tight">
-                                    {scheduledDate.toLocaleDateString([], { day: '2-digit', month: '2-digit' })}
-                                </span>
-                                <span className="text-xs font-black text-indigo-600">
-                                    {scheduledDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-100">
+                            <Clock className="w-3.5 h-3.5 text-slate-400" />
+                            <span className="text-xs font-black text-slate-700 uppercase tracking-tight">
+                                {scheduledDate.toLocaleDateString([], { day: '2-digit', month: '2-digit' })}
+                            </span>
+                            <span className="text-xs font-black text-indigo-600">
+                                {scheduledDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                        </div>
+
+                        {/* User Email Badge */}
+                        {post.userEmail && (
+                            <div className="flex items-center gap-1.5 px-2 py-1 bg-purple-50 rounded-lg border border-purple-100" title={`Owner: ${post.userEmail}`}>
+                                <User className="w-3 h-3 text-purple-500" />
+                                <span className="text-[10px] font-bold text-purple-600 truncate max-w-[80px]">
+                                    {post.userEmail.split('@')[0]}
                                 </span>
                             </div>
+                        )}
 
-                            {/* User Email Badge */}
-                            {post.userEmail && (
-                                <div className="flex items-center gap-1.5 px-2 py-1 bg-purple-50 rounded-lg border border-purple-100" title={`Owner: ${post.userEmail}`}>
-                                    <User className="w-3 h-3 text-purple-500" />
-                                    <span className="text-[10px] font-bold text-purple-600 truncate max-w-[80px]">
-                                        {post.userEmail.split('@')[0]}
-                                    </span>
-                                </div>
+                        {/* Action Buttons */}
+                        <div className="flex items-center gap-1">
+                            {post.status === 'published' && post.igMediaId && (
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); setShowInsights(true); }}
+                                    className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-xl transition"
+                                    title="View Insights"
+                                >
+                                    <BarChart3 className="w-4 h-4" />
+                                </button>
                             )}
 
-                            {/* Action Buttons */}
-                            <div className="flex items-center gap-1">
-                                {post.status === 'published' && post.igMediaId && (
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); setShowInsights(true); }}
-                                        className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-xl transition"
-                                        title="View Insights"
-                                    >
-                                        <BarChart3 className="w-4 h-4" />
-                                    </button>
-                                )}
+                            {post.status === 'pending' && !isPast && (
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); setShowEditModal(true); }}
+                                    className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition"
+                                    title="Reschedule"
+                                >
+                                    <Pencil className="w-4 h-4" />
+                                </button>
+                            )}
 
-                                {post.status === 'pending' && !isPast && (
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}
-                                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition"
-                                        title="Reschedule"
-                                    >
-                                        <Pencil className="w-4 h-4" />
-                                    </button>
-                                )}
+                            {post.status === 'pending' && onDuplicate && (
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); onDuplicate(post); }}
+                                    className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition"
+                                    title="Duplicate Post"
+                                >
+                                    <Copy className="w-4 h-4" />
+                                </button>
+                            )}
 
-                                {post.status === 'pending' && onPostImmediately && (
-                                    <button
-                                        onClick={async (e) => {
-                                            e.stopPropagation();
-                                            setIsProcessing(true);
-                                            try {
-                                                await onPostImmediately(post.id);
-                                            } finally {
-                                                setIsProcessing(false);
-                                            }
-                                        }}
-                                        disabled={isProcessing}
-                                        className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition disabled:opacity-50"
-                                        title="Post Immediately"
-                                    >
-                                        {isProcessing ? <Loader className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                                    </button>
-                                )}
+                            {post.status === 'pending' && onPostImmediately && (
+                                <button
+                                    onClick={async (e) => {
+                                        e.stopPropagation();
+                                        setIsProcessing(true);
+                                        try {
+                                            await onPostImmediately(post.id);
+                                        } finally {
+                                            setIsProcessing(false);
+                                        }
+                                    }}
+                                    disabled={isProcessing}
+                                    className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition disabled:opacity-50"
+                                    title="Post Immediately"
+                                >
+                                    {isProcessing ? <Loader className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                                </button>
+                            )}
 
-                                {post.status === 'pending' && (
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); onCancel(post.id); }}
-                                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition"
-                                        title="Cancel Post"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
-                                )}
-                            </div>
+                            {post.status === 'pending' && (
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); onCancel(post.id); }}
+                                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition"
+                                    title="Cancel Post"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                            )}
                         </div>
-                    ) : (
-                        // Editing Mode
-                        <div className="space-y-3">
-                            <div className="flex flex-col gap-2">
-                                <div className="flex items-center gap-2">
-                                    <input
-                                        type="date"
-                                        value={editDate}
-                                        onChange={(e) => setEditDate(e.target.value)}
-                                        className="text-xs font-bold w-full p-2 rounded-xl border border-indigo-100 outline-none focus:border-indigo-500 bg-white"
-                                    />
-                                    <input
-                                        type="time"
-                                        value={editTime}
-                                        onChange={(e) => setEditTime(e.target.value)}
-                                        className="text-xs font-bold w-20 p-2 rounded-xl border border-indigo-100 outline-none focus:border-indigo-500 bg-white"
-                                    />
-                                </div>
-                                <div className="relative">
-                                    <input
-                                        type="text"
-                                        value={editTags}
-                                        onChange={(e) => setEditTags(e.target.value)}
-                                        placeholder="@user1, @user2"
-                                        className="text-xs w-full p-2 pr-8 rounded-xl border border-indigo-100 outline-none focus:border-indigo-500 bg-white"
-                                    />
-                                    {/* Helper to check first tag if exists */}
-                                    {editTags.split(',')[0]?.trim() && (
-                                        <a
-                                            href={`https://instagram.com/${editTags.split(',')[0].trim().replace('@', '')}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="absolute right-2 top-2 text-indigo-400 hover:text-indigo-600"
-                                            title="Verify first user on Instagram"
-                                            onClick={(e) => e.stopPropagation()}
-                                        >
-                                            <ZoomIn className="w-4 h-4" />
-                                        </a>
-                                    )}
-                                </div>
-                                <p className="text-[10px] text-gray-400 pl-1">
-                                    Format: @username (public accounts only)
-                                </p>
-                            </div>
-
-                            <div className="flex items-center justify-between">
-                                <div className="flex gap-1">
-                                    <button onClick={() => adjustMinutes(-1)} className="p-1 px-2 text-[10px] font-bold bg-slate-100 rounded hover:bg-rose-100 hover:text-rose-600">-1m</button>
-                                    <button onClick={() => adjustMinutes(1)} className="p-1 px-2 text-[10px] font-bold bg-slate-100 rounded hover:bg-emerald-100 hover:text-emerald-600">+1m</button>
-                                </div>
-                                <div className="flex gap-1">
-                                    <button onClick={handleSave} className="p-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 shadow-sm"><Check className="w-4 h-4" /></button>
-                                    <button onClick={() => setIsEditing(false)} className="p-2 bg-slate-100 text-slate-500 rounded-lg hover:bg-slate-200"><X className="w-4 h-4" /></button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                    </div>
 
                     {post.error && (
-                        <div className="p-2 bg-rose-50 border border-rose-100 rounded-xl flex items-start gap-2">
-                            <XCircle className="w-3.5 h-3.5 text-rose-500 mt-0.5" />
-                            <p className="text-[10px] font-bold text-rose-600 uppercase tracking-tight leading-relaxed">{post.error}</p>
+                        <div
+                            className="p-2 bg-rose-50 border border-rose-100 rounded-xl flex items-start gap-2 cursor-pointer hover:bg-rose-100 transition"
+                            onClick={() => setExpandedError(!expandedError)}
+                        >
+                            <XCircle className="w-3.5 h-3.5 text-rose-500 mt-0.5 flex-shrink-0" />
+                            <p className={`text-[10px] font-bold text-rose-600 uppercase tracking-tight leading-relaxed ${expandedError ? '' : 'line-clamp-1'}`}>
+                                {post.error}
+                            </p>
                         </div>
                     )}
 
                     {/* Caption Preview (truncated) */}
-                    {post.caption && !isEditing && (
+                    {post.caption && (
                         <p className="text-xs text-slate-500 line-clamp-2 px-1">
                             {post.caption}
                         </p>
                     )}
                     {/* Tags Preview */}
-                    {post.userTags && post.userTags.length > 0 && !isEditing && (
+                    {post.userTags && post.userTags.length > 0 && (
                         <div className="flex flex-wrap gap-1 px-1">
                             {post.userTags.map((tag, i) => (
                                 <span key={i} className="text-[10px] bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded-md font-medium">
@@ -335,10 +278,17 @@ export function PostCard({ post, onCancel, onReschedule, onUpdateTags, onPostImm
             </div>
 
             <MediaModal
-                isOpen={showModal}
-                onClose={() => setShowModal(false)}
+                isOpen={showMediaModal}
+                onClose={() => setShowMediaModal(false)}
                 url={post.url}
                 type={post.type}
+            />
+
+            <PostEditModal
+                isOpen={showEditModal}
+                onClose={() => setShowEditModal(false)}
+                post={post}
+                onSave={handleEditSave}
             />
 
             <InsightsPanel

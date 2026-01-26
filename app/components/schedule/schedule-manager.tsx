@@ -137,6 +137,21 @@ export function ScheduleManager() {
         }
     };
 
+    const handleDuplicate = (post: import('@/lib/types').ScheduledPostWithUser) => {
+        const duplicateData = {
+            mediaUrl: post.url,
+            caption: post.caption,
+            userTags: post.userTags?.map(t => t.username) || [],
+            scheduledTime: new Date(post.scheduledTime).toLocaleString()
+        };
+
+        navigator.clipboard.writeText(JSON.stringify(duplicateData, null, 2)).then(() => {
+            toast.success('Post data copied to clipboard! Scroll to form and create new post.');
+        }).catch(() => {
+            toast.error('Could not copy to clipboard');
+        });
+    };
+
     return (
         <div className="space-y-8">
             <ScheduleForm onScheduled={fetchPosts} />
@@ -167,6 +182,7 @@ export function ScheduleManager() {
                         onReorder={handleReorder}
                         onUpdateTags={handleUpdateTags}
                         onPostImmediately={handlePostImmediately}
+                        onDuplicate={handleDuplicate}
                     />
                 )}
             </Panel>
