@@ -7,12 +7,12 @@ import { MemeSubmission } from '@/lib/types';
 const mockMeme: MemeSubmission = {
     id: 'm1',
     user_id: 'u1',
+    user_email: 'user@example.com',
     title: 'Original Title',
     caption: 'Original Caption',
     media_url: 'https://example.com/image.jpg',
     status: 'pending',
     created_at: new Date().toISOString(),
-    rejection_reason: null,
 };
 
 describe('MemeEditModal', () => {

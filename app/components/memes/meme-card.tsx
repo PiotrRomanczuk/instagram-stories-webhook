@@ -10,7 +10,7 @@ interface MemeCardProps {
     onDelete?: (id: string) => void;
 }
 
-export function MemeCard({ meme }: MemeCardProps) {
+export function MemeCard({ meme, onEdit, onDelete }: MemeCardProps) {
     const statusConfig = {
         pending: {
             color: 'text-amber-600 bg-amber-50 border-amber-100',
@@ -119,9 +119,9 @@ export function MemeCard({ meme }: MemeCardProps) {
                                     Edit
                                 </button>
                             )}
-                            {onDelete && (
+                            {onDelete && meme.id && (
                                 <button
-                                    onClick={() => onDelete(meme.id)}
+                                    onClick={() => onDelete(meme.id!)}
                                     className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold text-rose-600 bg-rose-50 rounded-lg hover:bg-rose-100 transition border border-rose-100"
                                 >
                                     <Trash2 className="w-3 h-3" />

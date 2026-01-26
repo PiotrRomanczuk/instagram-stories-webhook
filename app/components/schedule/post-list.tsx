@@ -25,7 +25,7 @@ import { EmptyState } from '../ui/empty-state';
 interface PostListProps {
     posts: ScheduledPostWithUser[];
     onCancel: (id: string) => void;
-    onReschedule: (id: string, newTime: Date) => void;
+    onReschedule: (id: string, newTime: Date, updatedPost?: { url?: string; caption?: string }) => void;
     onReorder?: (posts: ScheduledPostWithUser[]) => void;
     onUpdateTags?: (id: string, tags: { username: string; x: number; y: number; }[]) => void;
     onPostImmediately?: (id: string) => void;

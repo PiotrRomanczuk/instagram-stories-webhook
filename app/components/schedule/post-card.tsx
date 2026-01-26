@@ -16,7 +16,7 @@ import { ImageDimensionsBadge, AspectRatioOverlay } from '../media/image-dimensi
 interface PostCardProps {
     post: ScheduledPostWithUser;
     onCancel: (id: string) => void;
-    onReschedule: (id: string, newTime: Date) => void;
+    onReschedule: (id: string, newTime: Date, updatedPost?: { url?: string; caption?: string }) => void;
     onUpdateTags?: (id: string, tags: { username: string; x: number; y: number; }[]) => void;
     onPostImmediately?: (id: string) => void;
     onDuplicate?: (post: ScheduledPostWithUser) => void;
