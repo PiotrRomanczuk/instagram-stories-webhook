@@ -35,23 +35,37 @@ export function ScheduleManager() {
         }
     };
 
-    const handleReschedule = async (id: string, newTime: Date) => {
+    const handleReschedule = async (
+        id: string,
+        newTime: Date,
+        updatedPost?: { url?: string; caption?: string }
+    ) => {
         try {
+            const updatePayload: any = {
+                id,
+                scheduledTime: newTime.toISOString(),
+            };
+
+            if (updatedPost?.url) {
+                updatePayload.url = updatedPost.url;
+            }
+
+            if (updatedPost?.caption !== undefined) {
+                updatePayload.caption = updatedPost.caption;
+            }
+
             const res = await fetch('/api/schedule', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    id,
-                    scheduledTime: newTime.toISOString(),
-                }),
+                body: JSON.stringify(updatePayload),
             });
 
             if (res.ok) {
-                toast.success('Post rescheduled');
+                toast.success('Post updated successfully');
                 fetchPosts();
             } else {
                 const data = await res.json();
-                toast.error(data.error || 'Failed to reschedule');
+                toast.error(data.error || 'Failed to update post');
             }
         } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : String(error);

@@ -11,20 +11,40 @@ interface PostEditModalProps {
     isOpen: boolean;
     onClose: () => void;
     post: ScheduledPostWithUser;
-    onSave: (newTime: Date, tags: string[]) => void;
+    onSave: (newTime: Date, tags: string[], updatedPost?: { url?: string; caption?: string }) => void;
     onCancel?: () => void;
 }
 
 export function PostEditModal({ isOpen, onClose, post, onSave, onCancel }: PostEditModalProps) {
     const [editDate, setEditDate] = useState(new Date(post.scheduledTime));
     const [editTags, setEditTags] = useState(post.userTags?.map(t => t.username) || []);
+    const [editUrl, setEditUrl] = useState(post.url);
+    const [editCaption, setEditCaption] = useState(post.caption || '');
     const [isSaving, setIsSaving] = useState(false);
     const [showMediaPreview, setShowMediaPreview] = useState(false);
+    const [urlError, setUrlError] = useState('');
 
     const handleSave = async () => {
+        setUrlError('');
+
+        if (!editUrl) {
+            setUrlError('Media URL is required');
+            return;
+        }
+
+        try {
+            new URL(editUrl);
+        } catch {
+            setUrlError('Please enter a valid URL');
+            return;
+        }
+
         setIsSaving(true);
         try {
-            onSave(editDate, editTags);
+            onSave(editDate, editTags, {
+                url: editUrl,
+                caption: editCaption
+            });
             onClose();
         } finally {
             setIsSaving(false);
@@ -113,6 +133,44 @@ export function PostEditModal({ isOpen, onClose, post, onSave, onCancel }: PostE
 
                         {/* Edit Fields */}
                         <div className="space-y-4">
+                            {/* Media URL */}
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">Media URL</label>
+                                <input
+                                    type="url"
+                                    value={editUrl}
+                                    onChange={(e) => {
+                                        setEditUrl(e.target.value);
+                                        setUrlError('');
+                                    }}
+                                    placeholder="https://example.com/image.jpg"
+                                    className={`w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 ${
+                                        urlError
+                                            ? 'border-rose-300 bg-rose-50 focus:ring-rose-500'
+                                            : 'border-gray-200 focus:ring-indigo-500'
+                                    }`}
+                                />
+                                {urlError && (
+                                    <p className="text-xs text-rose-600 mt-1">{urlError}</p>
+                                )}
+                            </div>
+
+                            {/* Caption */}
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">Caption</label>
+                                <textarea
+                                    value={editCaption}
+                                    onChange={(e) => setEditCaption(e.target.value)}
+                                    placeholder="Add a caption (optional)"
+                                    maxLength={2200}
+                                    rows={3}
+                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                                />
+                                <p className="text-[10px] text-gray-400 mt-1 text-right">
+                                    {editCaption.length}/2200
+                                </p>
+                            </div>
+
                             {/* Date & Time */}
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-2">

@@ -17,7 +17,11 @@ export default async function Home() {
 
   // Check if Facebook is connected via the database
   const linkedAccount = await getLinkedFacebookAccount(session.user.id);
-  const isFacebookConnected = !!linkedAccount && !!linkedAccount.ig_user_id;
+  
+  // Check for valid token and expiration
+  const now = Date.now();
+  const isExpired = linkedAccount?.expires_at && linkedAccount.expires_at < now;
+  const isFacebookConnected = !!linkedAccount && !!linkedAccount.ig_user_id && !isExpired;
 
   return (
     <main className="min-h-screen bg-[#F8FAFC] text-slate-900 selection:bg-indigo-500/30">

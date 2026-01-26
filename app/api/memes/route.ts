@@ -21,9 +21,22 @@ export async function GET(req: NextRequest) {
         const role = getUserRole(session);
         const { searchParams } = new URL(req.url);
         const status = searchParams.get('status') || undefined;
+        const search = searchParams.get('search') || undefined;
+        const page = parseInt(searchParams.get('page') || '1', 10);
+        const limit = parseInt(searchParams.get('limit') || '12', 10);
+        const offset = (page - 1) * limit;
 
-        const options: { status?: MemeStatus | MemeStatus[]; userId?: string } = {
-            status: status as MemeStatus || undefined
+        const options: {
+            status?: MemeStatus | MemeStatus[];
+            userId?: string;
+            search?: string;
+            limit?: number;
+            offset?: number;
+        } = {
+            status: status as MemeStatus || undefined,
+            search,
+            limit,
+            offset
         };
 
         if (role !== 'admin') {
@@ -32,11 +45,19 @@ export async function GET(req: NextRequest) {
 
         const memes = await getMemeSubmissions(options);
         const stats = role === 'admin' ? await getMemeStats() : null;
-        
-        return NextResponse.json({ memes, stats });
+
+        return NextResponse.json({
+            memes,
+            stats,
+            pagination: {
+                page,
+                limit,
+                hasMore: memes.length === limit
+            }
+        });
     } catch (error) {
-        return NextResponse.json({ 
-            error: error instanceof Error ? error.message : 'Failed to fetch memes' 
+        return NextResponse.json({
+            error: error instanceof Error ? error.message : 'Failed to fetch memes'
         }, { status: 500 });
     }
 }

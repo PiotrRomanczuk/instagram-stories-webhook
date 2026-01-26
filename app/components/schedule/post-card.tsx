@@ -64,8 +64,8 @@ export function PostCard({ post, onCancel, onReschedule, onUpdateTags, onPostImm
     const scheduledDate = new Date(post.scheduledTime);
     const isPast = post.scheduledTime < now;
 
-    const handleEditSave = (newTime: Date, newTags: string[]) => {
-        onReschedule(post.id, newTime);
+    const handleEditSave = (newTime: Date, newTags: string[], updatedPost?: { url?: string; caption?: string }) => {
+        onReschedule(post.id, newTime, updatedPost);
 
         // Handle tags update
         if (onUpdateTags) {

@@ -203,6 +203,8 @@ export async function getMemeSubmissions(options?: {
     userId?: string;
     status?: MemeStatus | MemeStatus[];
     limit?: number;
+    offset?: number;
+    search?: string;
 }): Promise<MemeSubmission[]> {
     try {
         let query = supabaseAdmin
@@ -221,9 +223,16 @@ export async function getMemeSubmissions(options?: {
             }
         }
 
+        if (options?.search) {
+            const searchTerm = options.search.toLowerCase();
+            query = query.or(`title.ilike.%${searchTerm}%,caption.ilike.%${searchTerm}%`);
+        }
+
         query = query.order('created_at', { ascending: false });
 
-        if (options?.limit) {
+        if (options?.offset) {
+            query = query.range(options.offset, options.offset + (options.limit || 12) - 1);
+        } else if (options?.limit) {
             query = query.limit(options.limit);
         }
 
