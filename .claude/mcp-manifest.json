@@ -1,0 +1,94 @@
+{
+  "name": "instagram-stories-webhook-context",
+  "version": "1.0.0",
+  "description": "MCP context provider for Claude Code working with instagram-stories-webhook project",
+  "tools": [
+    {
+      "name": "fetch-claude-md",
+      "description": "Fetch CLAUDE.md guidelines and patterns for this project",
+      "path": "CLAUDE.md",
+      "sections": [
+        "Project Overview",
+        "Architecture Overview",
+        "Code Standards",
+        "Database Schema & Relationships",
+        "Performance Profiling",
+        "Security Audit Checklist",
+        "Component Composition Decision Tree",
+        "Testing Strategy"
+      ]
+    },
+    {
+      "name": "fetch-workflows",
+      "description": "Fetch WORKFLOWS.md for task-specific playbooks",
+      "path": "WORKFLOWS.md",
+      "workflows": [
+        "Create & Deploy Database Migration",
+        "Debug Scheduled Post Failures",
+        "Pre-Deployment Security Audit",
+        "Investigate High Error Rate",
+        "Implement Feature Flag Rollout",
+        "Optimize Slow API Endpoint",
+        "Handle Instagram API Rate Limit",
+        "Handle Critical Production Issue",
+        "Add Comprehensive Tests for Feature",
+        "Troubleshoot Development Environment",
+        "Update Dependencies Safely"
+      ]
+    }
+  ],
+  "contextProviders": [
+    {
+      "id": "code-patterns",
+      "description": "Provides Key Files & Patterns section from CLAUDE.md",
+      "references": ["Request/Response Handling", "Database Queries", "Meta API Calls"],
+      "triggers": ["when implementing API routes", "when writing database queries", "when calling Instagram API"]
+    },
+    {
+      "id": "security-checklist",
+      "description": "Provides Pre-Deployment Security Audit Checklist from CLAUDE.md",
+      "triggers": ["before deploying to production", "for security review", "for authentication work"]
+    },
+    {
+      "id": "debugging-guide",
+      "description": "Provides Common Debugging Tasks and Advanced Debugging Workflows",
+      "triggers": ["when investigating errors", "when debugging performance", "when troubleshooting issues"]
+    },
+    {
+      "id": "workflow-suggestion",
+      "description": "Suggests appropriate workflow based on task type",
+      "examples": {
+        "database schema change": "Create & Deploy Database Migration",
+        "posts not publishing": "Debug Scheduled Post Failures",
+        "before merge to main": "Pre-Deployment Security Audit",
+        "high error alerts": "Investigate High Error Rate",
+        "new feature": "Add Comprehensive Tests for Feature",
+        "api slow": "Optimize Slow API Endpoint",
+        "instagram error": "Handle Instagram API Rate Limit",
+        "production broken": "Handle Critical Production Issue",
+        "environment issues": "Troubleshoot Development Environment"
+      }
+    }
+  ],
+  "suggestedPrompts": [
+    "Which workflow applies to my task?",
+    "Show me the security audit checklist",
+    "What are the component composition rules?",
+    "How do I debug scheduled post failures?",
+    "What are the database migration best practices?",
+    "Show me the code review guidelines",
+    "How do I handle Instagram rate limits?",
+    "What's the error recovery pattern?"
+  ],
+  "integrations": {
+    "claude-code": {
+      "enabled": true,
+      "features": [
+        "Auto-suggest workflows based on task description",
+        "Provide context snippets from CLAUDE.md when relevant",
+        "Reference WORKFLOWS.md in task instructions",
+        "Validate against security checklist before suggesting deploy"
+      ]
+    }
+  }
+}
