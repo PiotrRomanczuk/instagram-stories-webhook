@@ -24,6 +24,7 @@ async function initStorage() {
         return;
     }
 
+    // 1. Initialize 'stories' bucket (public, for meme uploads)
     const bucketName = 'stories';
     const exists = buckets.find(b => b.name === bucketName);
 
@@ -43,6 +44,30 @@ async function initStorage() {
     } else {
         console.log(`✅ Bucket "${bucketName}" already exists.`);
     }
+
+    // 2. Initialize 'ai-analysis' bucket (private, for AI processing - Pro plan)
+    const aiAnalysisBucketName = 'ai-analysis';
+    const aiAnalysisExists = buckets.find(b => b.name === aiAnalysisBucketName);
+
+    if (!aiAnalysisExists) {
+        console.log(`Creating bucket "${aiAnalysisBucketName}"...`);
+        const { error: createError } = await supabase.storage.createBucket(aiAnalysisBucketName, {
+            public: false, // Private bucket for AI analysis
+            fileSizeLimit: 104857600 // 100MB (Pro plan allows more)
+        });
+
+        if (createError) {
+            console.error('Error creating bucket:', createError);
+        } else {
+            console.log(`✅ Bucket "${aiAnalysisBucketName}" created successfully (private)!`);
+        }
+    } else {
+        console.log(`✅ Bucket "${aiAnalysisBucketName}" already exists.`);
+    }
+
+    console.log('\n📊 Storage Setup Summary:');
+    console.log(`   - stories (public): For user uploads and scheduling`);
+    console.log(`   - ai-analysis (private): For AI analysis of published memes (Pro plan)`);
 }
 
 initStorage();

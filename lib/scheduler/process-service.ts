@@ -3,6 +3,7 @@ import { publishMedia } from '@/lib/instagram';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
 import { Logger } from '@/lib/utils/logger';
 import { generateContentHash, checkForRecentPublish } from '@/lib/utils/duplicate-detection';
+import { saveMemeForAnalysis } from '@/lib/ai-analysis/meme-archiver';
 import { ProcessResult, BatchResult, ScheduledPostWithUser, mapScheduledPostRow, ScheduledPostRow } from '@/lib/types';
 
 
@@ -132,6 +133,25 @@ export async function processScheduledPosts(postId?: string): Promise<BatchResul
                 });
 
                 await Logger.info(MODULE, `✅ Successfully published scheduled post ${post.id}`);
+
+                // 6. Save meme to AI analysis bucket (Pro plan feature)
+                // Extract filename from URL for storage naming
+                const urlParts = post.url.split('/');
+                const fileName = urlParts[urlParts.length - 1] || `media-${Date.now()}`;
+
+                const analysisRecord = await saveMemeForAnalysis({
+                    memeId: post.id,
+                    igMediaId: result.id,
+                    mediaUrl: post.url,
+                    fileType: post.type === 'VIDEO' ? 'video' : 'image',
+                    fileName
+                });
+
+                if (analysisRecord) {
+                    await Logger.info(MODULE, `📊 Saved to AI analysis bucket`, { analysisId: analysisRecord.id, path: analysisRecord.storagePath });
+                } else {
+                    await Logger.warn(MODULE, `⚠️ Failed to save to AI analysis bucket for post ${post.id}`, { igMediaId: result.id });
+                }
 
                 // 📁 Media Auto-Cleanup disabled to allow 24h preview
                 // Files should be cleaned up by a separate cron job after 24h

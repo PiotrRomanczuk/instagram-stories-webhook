@@ -77,6 +77,20 @@ npx playwright test tests/e2e/some-flow.spec.ts --headed
 - **Video Processing**: Transcoding and format conversion in `lib/media/video-processor.ts`
 - **Cleanup**: 24-hour delay before media deletion to allow Instagram preview generation
 
+### AI Analysis Storage (Pro Plan)
+- **Storage Bucket**: Private `ai-analysis` bucket (Supabase Pro)
+- **Auto-Archival**: Published memes automatically saved for AI analysis
+- **Tracking Table**: `ai_meme_analysis` stores metadata and analysis results
+- **Workflow**: Publish → Download → Archive → Track → Ready for Analysis
+- **Access**: Admin-only via signed URLs with expiry
+- **Integration**: `lib/ai-analysis/meme-archiver.ts` handles all operations
+- **APIs**:
+  - `GET /api/ai-analysis` - List pending memes
+  - `POST /api/ai-analysis/results` - Submit analysis results
+  - `POST /api/ai-analysis/signed-url` - Get download URLs
+- **Setup**: Run migration `20260126180000_ai_analysis_storage.sql`
+- **Docs**: See `docs/AI_ANALYSIS_SETUP.md` for detailed guide
+
 ### API Endpoint Security
 - **Webhook Secret**: `/api/webhook/story` requires `Authorization` header matching `WEBHOOK_SECRET`
 - **API Key Protection**: Scheduler endpoints require `API_KEY` header for external triggering
