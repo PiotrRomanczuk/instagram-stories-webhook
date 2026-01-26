@@ -25,11 +25,19 @@ export const submitMemeSchema = z.object({
  * Schema for updating meme submission (while pending)
  */
 export const updateMemeSubmissionSchema = z.object({
+    title: z
+        .string()
+        .max(100, 'Title cannot exceed 100 characters')
+        .optional(),
+
     caption: z
         .string()
-        .min(1, 'Caption is required')
-        .max(2200, 'Caption cannot exceed 2200 characters'),
-});
+        .max(2200, 'Caption cannot exceed 2200 characters')
+        .optional(),
+}).refine(
+    (data) => data.title || data.caption,
+    { message: 'At least title or caption is required' }
+);
 
 /**
  * Schema for admin approving/rejecting meme

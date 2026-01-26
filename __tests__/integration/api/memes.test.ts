@@ -1,14 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GET as GET_LIST, POST as POST_SUBMIT } from '@/app/api/memes/route';
 import { GET as GET_SINGLE, PATCH as PATCH_REVIEW, DELETE as DELETE_MEME } from '@/app/api/memes/[id]/route';
+import { PATCH as PATCH_EDIT } from '@/app/api/memes/[id]/edit/route';
 import { NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth/next';
-import { 
-    getMemeSubmissions, 
-    createMemeSubmission, 
-    getMemeSubmission, 
-    reviewMemeSubmission, 
-    deleteMemeSubmission 
+import {
+    getMemeSubmissions,
+    createMemeSubmission,
+    getMemeSubmission,
+    reviewMemeSubmission,
+    deleteMemeSubmission
 } from '@/lib/memes-db';
 
 // Mock DB and Auth
@@ -158,6 +159,62 @@ describe('Memes API Routes', () => {
 
                 const res = await DELETE_MEME(createRequest('DELETE', '/api/memes/m1'), { params: Promise.resolve({ id: 'm1' }) });
                 expect(res.status).toBe(200);
+            });
+        });
+    });
+
+    describe('/api/memes/[id]/edit (User Edit)', () => {
+        const userSession = { user: { id: 'u1', role: 'user' } };
+        const mockPendingMeme = { id: 'm1', user_id: 'u1', status: 'pending', title: 'Original', caption: 'Original caption' };
+
+        describe('PATCH', () => {
+            it('should return 401 if not authenticated', async () => {
+                (getServerSession as Mock).mockResolvedValue(null);
+
+                const body = { title: 'Updated Title' };
+                const res = await PATCH_EDIT(createRequest('PATCH', '/api/memes/m1/edit', body), { params: Promise.resolve({ id: 'm1' }) });
+
+                expect(res.status).toBe(401);
+            });
+
+            it('should return 403 if not owner', async () => {
+                (getServerSession as Mock).mockResolvedValue({ user: { id: 'u2', role: 'user' } });
+                (getMemeSubmission as Mock).mockResolvedValue(mockPendingMeme);
+
+                const body = { title: 'Updated Title' };
+                const res = await PATCH_EDIT(createRequest('PATCH', '/api/memes/m1/edit', body), { params: Promise.resolve({ id: 'm1' }) });
+
+                expect(res.status).toBe(403);
+            });
+
+            it('should return 404 if meme not found', async () => {
+                (getServerSession as Mock).mockResolvedValue(userSession);
+                (getMemeSubmission as Mock).mockResolvedValue(null);
+
+                const body = { title: 'Updated Title' };
+                const res = await PATCH_EDIT(createRequest('PATCH', '/api/memes/m1/edit', body), { params: Promise.resolve({ id: 'm1' }) });
+
+                expect(res.status).toBe(404);
+            });
+
+            it('should return 400 if meme is not pending', async () => {
+                (getServerSession as Mock).mockResolvedValue(userSession);
+                (getMemeSubmission as Mock).mockResolvedValue({ ...mockPendingMeme, status: 'approved' });
+
+                const body = { title: 'Updated Title' };
+                const res = await PATCH_EDIT(createRequest('PATCH', '/api/memes/m1/edit', body), { params: Promise.resolve({ id: 'm1' }) });
+
+                expect(res.status).toBe(400);
+            });
+
+            it('should return 400 if no fields provided', async () => {
+                (getServerSession as Mock).mockResolvedValue(userSession);
+                (getMemeSubmission as Mock).mockResolvedValue(mockPendingMeme);
+
+                const body = {};
+                const res = await PATCH_EDIT(createRequest('PATCH', '/api/memes/m1/edit', body), { params: Promise.resolve({ id: 'm1' }) });
+
+                expect(res.status).toBe(400);
             });
         });
     });

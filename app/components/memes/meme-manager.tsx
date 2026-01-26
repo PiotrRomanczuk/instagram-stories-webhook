@@ -3,15 +3,21 @@
 import { MemeSubmitForm } from './meme-submit-form';
 import { MemeList } from './meme-list';
 import { MemeSearchFilter } from './meme-search-filter';
+import { MemeEditModal } from './meme-edit-modal';
 import { useUserMemes } from './use-user-memes';
 import { LayoutGrid, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
+import { MemeSubmission } from '@/lib/types';
+import { Logger } from '@/lib/utils/logger';
+import { toast } from 'sonner';
 
 export function MemeManager() {
     const [showForm, setShowForm] = useState(false);
     const [search, setSearch] = useState('');
     const [status, setStatus] = useState('');
     const [page, setPage] = useState(1);
+    const [editingMeme, setEditingMeme] = useState<MemeSubmission | null>(null);
+    const [isSaving, setIsSaving] = useState(false);
 
     const { memes, pagination, isLoading, refresh } = useUserMemes({
         search,
@@ -34,6 +40,60 @@ export function MemeManager() {
     const handleStatusChange = (newStatus: string) => {
         setStatus(newStatus);
         setPage(1);
+    };
+
+    const handleEditMeme = (meme: MemeSubmission) => {
+        setEditingMeme(meme);
+    };
+
+    const handleSaveEdit = async (updates: { title?: string; caption?: string }) => {
+        if (!editingMeme) return;
+
+        setIsSaving(true);
+        try {
+            const response = await fetch(`/api/memes/${editingMeme.id}/edit`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updates),
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to update meme');
+            }
+
+            toast.success('Meme updated successfully');
+            setEditingMeme(null);
+            refresh();
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Failed to update meme';
+            toast.error(message);
+            Logger.error('meme-manager:edit', message, error);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleDeleteMeme = async (id: string) => {
+        if (!confirm('Are you sure you want to delete this meme submission?')) return;
+
+        try {
+            const response = await fetch(`/api/memes/${id}`, {
+                method: 'DELETE',
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to delete meme');
+            }
+
+            toast.success('Meme deleted successfully');
+            refresh();
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Failed to delete meme';
+            toast.error(message);
+            Logger.error('meme-manager:delete', message, error);
+        }
     };
 
     return (
@@ -90,7 +150,12 @@ export function MemeManager() {
                         Page {page} - {memes.length} {memes.length === 1 ? 'Meme' : 'Memes'} Displayed
                     </div>
                 )}
-                <MemeList memes={memes} isLoading={isLoading} />
+                <MemeList
+                    memes={memes}
+                    isLoading={isLoading}
+                    onEdit={handleEditMeme}
+                    onDelete={handleDeleteMeme}
+                />
 
                 {/* Pagination Controls */}
                 {!showForm && memes.length > 0 && (
@@ -119,6 +184,16 @@ export function MemeManager() {
                     </div>
                 )}
             </div>
+
+            {/* Edit Modal */}
+            {editingMeme && (
+                <MemeEditModal
+                    isOpen={!!editingMeme}
+                    onClose={() => setEditingMeme(null)}
+                    meme={editingMeme}
+                    onSave={handleSaveEdit}
+                />
+            )}
         </div>
     );
 }

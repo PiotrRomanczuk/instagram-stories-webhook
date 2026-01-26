@@ -56,10 +56,44 @@ describe('updateMemeSubmissionSchema', () => {
         expect(result.success).toBe(true);
     });
 
-    it('should reject empty caption', () => {
-        // This schema has .min(1)
+    it('should accept valid title update', () => {
         const result = updateMemeSubmissionSchema.safeParse({
+            title: 'Updated Title',
+        });
+        expect(result.success).toBe(true);
+    });
+
+    it('should accept both title and caption updates', () => {
+        const result = updateMemeSubmissionSchema.safeParse({
+            title: 'Updated Title',
+            caption: 'Updated caption',
+        });
+        expect(result.success).toBe(true);
+    });
+
+    it('should reject if both title and caption are empty', () => {
+        const result = updateMemeSubmissionSchema.safeParse({
+            title: '',
             caption: '',
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it('should reject if no fields provided', () => {
+        const result = updateMemeSubmissionSchema.safeParse({});
+        expect(result.success).toBe(false);
+    });
+
+    it('should reject caption exceeding 2200 characters', () => {
+        const result = updateMemeSubmissionSchema.safeParse({
+            caption: 'a'.repeat(2201),
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it('should reject title exceeding 100 characters', () => {
+        const result = updateMemeSubmissionSchema.safeParse({
+            title: 'a'.repeat(101),
         });
         expect(result.success).toBe(false);
     });

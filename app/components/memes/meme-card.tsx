@@ -1,11 +1,13 @@
 'use client';
 
 import Image from 'next/image';
-import { Clock, CheckCircle2, AlertCircle, Calendar, Info } from 'lucide-react';
+import { Clock, CheckCircle2, AlertCircle, Calendar, Info, Edit2, Trash2 } from 'lucide-react';
 import { MemeSubmission } from '@/lib/types';
 
 interface MemeCardProps {
     meme: MemeSubmission;
+    onEdit?: (meme: MemeSubmission) => void;
+    onDelete?: (id: string) => void;
 }
 
 export function MemeCard({ meme }: MemeCardProps) {
@@ -85,21 +87,47 @@ export function MemeCard({ meme }: MemeCardProps) {
                     <p className="text-xs text-slate-400 italic">No description provided</p>
                 )}
 
-                {/* Meta Info */}
-                <div className="pt-3 border-t border-slate-50 flex items-center justify-between text-[11px] font-medium text-slate-400">
-                    <span className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {meme.created_at ? new Date(meme.created_at).toLocaleDateString() : 'Just now'}
-                    </span>
-                    
-                    {meme.status === 'rejected' && meme.rejection_reason && (
-                        <div className="group/reason relative">
-                            <button className="p-1 hover:text-red-500 transition-colors">
-                                <Info className="w-3.5 h-3.5" />
-                            </button>
-                            <div className="absolute bottom-full right-0 mb-2 w-48 p-2 bg-slate-900 text-white text-[10px] rounded-lg opacity-0 group-hover/reason:opacity-100 transition-opacity pointer-events-none z-10">
-                                <strong>Reason:</strong> {meme.rejection_reason}
+                {/* Meta Info & Actions */}
+                <div className="pt-3 border-t border-slate-50 space-y-3">
+                    <div className="flex items-center justify-between text-[11px] font-medium text-slate-400">
+                        <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {meme.created_at ? new Date(meme.created_at).toLocaleDateString() : 'Just now'}
+                        </span>
+
+                        {meme.status === 'rejected' && meme.rejection_reason && (
+                            <div className="group/reason relative">
+                                <button className="p-1 hover:text-red-500 transition-colors">
+                                    <Info className="w-3.5 h-3.5" />
+                                </button>
+                                <div className="absolute bottom-full right-0 mb-2 w-48 p-2 bg-slate-900 text-white text-[10px] rounded-lg opacity-0 group-hover/reason:opacity-100 transition-opacity pointer-events-none z-10">
+                                    <strong>Reason:</strong> {meme.rejection_reason}
+                                </div>
                             </div>
+                        )}
+                    </div>
+
+                    {/* Action Buttons for Pending Memes */}
+                    {meme.status === 'pending' && (onEdit || onDelete) && (
+                        <div className="flex gap-2">
+                            {onEdit && (
+                                <button
+                                    onClick={() => onEdit(meme)}
+                                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition border border-indigo-100"
+                                >
+                                    <Edit2 className="w-3 h-3" />
+                                    Edit
+                                </button>
+                            )}
+                            {onDelete && (
+                                <button
+                                    onClick={() => onDelete(meme.id)}
+                                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold text-rose-600 bg-rose-50 rounded-lg hover:bg-rose-100 transition border border-rose-100"
+                                >
+                                    <Trash2 className="w-3 h-3" />
+                                    Delete
+                                </button>
+                            )}
                         </div>
                     )}
                 </div>

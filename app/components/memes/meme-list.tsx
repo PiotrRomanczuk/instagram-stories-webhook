@@ -7,9 +7,11 @@ import { Loader2, PlusCircle } from 'lucide-react';
 interface MemeListProps {
     memes: MemeSubmission[];
     isLoading: boolean;
+    onEdit?: (meme: MemeSubmission) => void;
+    onDelete?: (id: string) => void;
 }
 
-export function MemeList({ memes, isLoading }: MemeListProps) {
+export function MemeList({ memes, isLoading, onEdit, onDelete }: MemeListProps) {
     if (isLoading) {
         return (
             <div className="flex flex-col items-center justify-center py-24 space-y-4">
@@ -36,7 +38,12 @@ export function MemeList({ memes, isLoading }: MemeListProps) {
     return (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {memes.map((meme) => (
-                <MemeCard key={meme.id} meme={meme} />
+                <MemeCard
+                    key={meme.id}
+                    meme={meme}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                />
             ))}
         </div>
     );
