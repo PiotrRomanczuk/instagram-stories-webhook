@@ -2,8 +2,22 @@ import { NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
+import { getSession, requireDeveloper } from '@/lib/auth-helpers';
 
 export async function GET() {
+    // Block in production
+    if (process.env.NODE_ENV === 'production') {
+        return NextResponse.json({ error: 'Not available in production' }, { status: 404 });
+    }
+
+    // Require developer role
+    const session = await getSession();
+    try {
+        requireDeveloper(session);
+    } catch {
+        return NextResponse.json({ error: 'Developer access required' }, { status: 403 });
+    }
+
     try {
         interface MigrationResults {
             tokens: string;

@@ -9,6 +9,7 @@ export const createMockSession = (overrides?: Partial<Session>): Session => ({
         email: 'test@example.com',
         name: 'Test User',
         image: null,
+        role: 'user',
     },
     expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
     ...overrides,
@@ -23,5 +24,6 @@ export const createMockAdminSession = (): Session => createMockSession({
         email: 'admin@example.com',
         name: 'Admin User',
         image: null,
+        role: 'admin',
     },
 });

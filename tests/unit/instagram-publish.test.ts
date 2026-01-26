@@ -5,7 +5,7 @@ import { getFacebookAccessToken, getInstagramUserId } from '@/lib/database/linke
 import { waitForContainerReady } from '@/lib/instagram/container';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
 import { http, HttpResponse } from 'msw';
-import { server } from '../setup';
+import { server } from '../../__tests__/setup';
 
 // Mock dependencies
 vi.mock('@/lib/database/linked-accounts', () => ({

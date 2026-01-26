@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { waitForContainerReady } from '@/lib/instagram/container';
 import { http, HttpResponse } from 'msw';
-import { server } from '../setup';
+import { server } from '../../__tests__/setup';
 
 // Mock Supabase to avoid initialization error when Logger is imported
 vi.mock('@/lib/config/supabase-admin', () => ({

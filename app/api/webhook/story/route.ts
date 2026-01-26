@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
             // If just session, default to session user.
 
             const sessionEmail = session?.user?.email;
-            const userRole = (session?.user as any)?.role; // Type assertion for safety
+            const userRole = (session?.user as { role?: string })?.role;
             const isUserAdmin = userRole === 'admin' || userRole === 'developer';
 
             if (!isUserAdmin) {

@@ -5,6 +5,11 @@ import { authOptions } from "@/lib/auth";
 import axios from 'axios';
 
 export async function GET() {
+    // Block in production
+    if (process.env.NODE_ENV === 'production') {
+        return NextResponse.json({ error: 'Not available in production' }, { status: 404 });
+    }
+
     const session = await getServerSession(authOptions);
 
     if (!session) {

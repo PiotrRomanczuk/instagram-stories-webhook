@@ -9,6 +9,11 @@ import { publishMedia } from '@/lib/instagram';
  * Body: { url: string, type: 'IMAGE' | 'VIDEO' }
  */
 export async function POST(request: NextRequest) {
+    // Block in production
+    if (process.env.NODE_ENV === 'production') {
+        return NextResponse.json({ error: 'Not available in production' }, { status: 404 });
+    }
+
     const startTime = Date.now();
     const logs: string[] = [];
     

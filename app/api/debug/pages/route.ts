@@ -7,6 +7,11 @@ import { authOptions } from "@/lib/auth";
 const GRAPH_API_BASE = 'https://graph.facebook.com/v21.0';
 
 export async function GET() {
+    // Block in production
+    if (process.env.NODE_ENV === 'production') {
+        return NextResponse.json({ error: 'Not available in production' }, { status: 404 });
+    }
+
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {

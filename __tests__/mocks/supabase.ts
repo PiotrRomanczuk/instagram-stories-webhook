@@ -27,7 +27,7 @@ export const createMockSupabaseClient = () => {
     };
 
     return {
-        from: vi.fn(() => queryBuilder),
+        from: vi.fn((_table?: string) => queryBuilder),
         auth: {
             getUser: vi.fn().mockResolvedValue({ data: { user: null }, error: null }),
             signInWithOAuth: vi.fn().mockResolvedValue({ data: null, error: null }),
