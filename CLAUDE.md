@@ -38,6 +38,32 @@ npx vitest __tests__/lib/some-module.test.ts
 npx playwright test tests/e2e/some-flow.spec.ts --headed
 ```
 
+## Pre-Commit Checklist
+
+**CRITICAL: Before EVERY git commit, you MUST run these commands in order:**
+
+```bash
+npm run lint        # ✅ Lint all code (ESLint)
+npx tsc             # ✅ Type check (TypeScript)
+npm run test        # ✅ Run all tests (Vitest)
+```
+
+If ANY of these commands fail, **DO NOT COMMIT**. Fix all errors first, then re-run all three commands before committing.
+
+**One-liner for quick verification:**
+```bash
+npm run lint && npx tsc && npm run test
+```
+
+**Consequences of skipping:**
+- Broken builds in CI/CD
+- Runtime errors in production
+- Type safety violations
+- Test coverage gaps
+- Lint violations accumulating
+
+**No exceptions.** This applies to every single commit without fail.
+
 ## Architecture Overview
 
 ### Authentication Flow
@@ -254,6 +280,14 @@ Tests required:
 - Store tokens server-side only (Supabase or encrypted files)
 - Sanitize user-provided URLs before passing to Instagram API
 - Ensure all protected routes use `getServerSession()` or similar session checks
+
+### Quality Gates (Non-Negotiable)
+- **EVERY commit requires:**
+  - ✅ `npm run lint` passes (zero ESLint errors)
+  - ✅ `npx tsc` passes (zero TypeScript errors)
+  - ✅ `npm run test` passes (all tests pass)
+- No exceptions. No partial commits. No "I'll fix it later."
+- Use: `npm run lint && npx tsc && npm run test` as pre-commit verification
 
 ## Common Debugging Tasks
 
