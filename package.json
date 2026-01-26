@@ -12,7 +12,9 @@
     "test:unit": "vitest run",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "setup:storage": "tsx scripts/init-storage.ts",
+    "setup:ai-analysis": "tsx scripts/setup-ai-analysis.ts"
   },
   "dependencies": {
     "@auth/supabase-adapter": "^1.11.1",
