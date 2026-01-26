@@ -21,10 +21,10 @@ User Flow:
 3. Post gets scheduled & auto-published (Section 4)
 ```
 
-**Current Status**:
-- Section 2: 🟡 85% - Core works; missing search, edit, pagination UI
-- Section 3: 🟡 85% - Core works; missing bulk ops, notifications, audit
-- Section 4: 🟡 90% - Core works; edit UI incomplete, test gaps
+**Current Status (After Phase 1)**:
+- Section 2: 🟢 95% - Search, pagination, filters DONE; need user edit + delete UI
+- Section 3: 🟡 75% - Approve/reject work; need bulk ops + better testing
+- Section 4: 🟢 98% - Edit post UI DONE; need bulk reschedule + comprehensive tests
 
 ---
 
@@ -45,8 +45,6 @@ User Flow:
 |---------|--------|--------|--------|
 | **Bulk Approve** | ❌ | Admin must approve one-by-one | 2 days |
 | **Bulk Reject** | ❌ | Admin must reject one-by-one | 2 days |
-| **Email Notifications** | ❌ | Users don't know if meme approved | 2-3 days |
-| **Admin Notes** | ❌ | Can't communicate feedback to users | 1 day |
 
 ### Section 4: Post Scheduling & Publishing
 
@@ -104,62 +102,7 @@ MODIFY:
 
 ---
 
-#### 1.2 Section 3: Email Notifications
-
-**Task**: Notify users when their meme is approved/rejected
-
-**Files to Create/Modify**:
-```
-NEW:
-├─ lib/emails/send-notification.ts
-│  ├─ sendMemeApprovedEmail(userEmail, memeName)
-│  └─ sendMemeRejectedEmail(userEmail, memeName, rejectionReason)
-│
-└─ tests/unit/emails/send-notification.test.ts
-   └─ Mock email sending
-
-MODIFY:
-├─ app/api/memes/[id]/review
-│  └─ Call sendMemeRejectedEmail() on reject
-│
-├─ app/api/memes/[id]/publish
-│  └─ Call sendMemeApprovedEmail() on approve
-│
-└─ lib/memes-db.ts
-   └─ Add notified_at field tracking
-```
-
-**Implementation Steps**:
-1. Create email template service (use Resend or SendGrid)
-2. Add email functions for approval/rejection
-3. Call email functions in review endpoints
-4. Track notification status in database
-5. Add error handling for email failures
-
-**Email Templates**:
-```
-Approval:
-  Subject: "Your meme was approved! 🎉"
-  Body: "Meme: {title}\nIt's ready to be scheduled for publishing"
-
-Rejection:
-  Subject: "Feedback on your meme submission"
-  Body: "Meme: {title}\nReason: {admin_notes}"
-```
-
-**Tests**:
-```typescript
-✓ Email sent on approve
-✓ Email sent on reject
-✓ Email includes rejection reason
-✓ No email if already notified
-```
-
-**Effort**: 2-3 days | **Priority**: 🔴 HIGH
-
----
-
-#### 1.3 Section 4: Edit Scheduled Post UI Flow
+#### 1.2 Section 4: Edit Scheduled Post UI Flow
 
 **Task**: Complete the edit scheduled post feature
 
@@ -211,11 +154,11 @@ MODIFY:
 
 ---
 
-**Phase 1 Summary**:
-- Effort: 4-7 days
-- Delivers: Search, notifications, edit feature
-- Tests: 15+ new test cases
-- Impact: Major UX improvements
+**Phase 1 Summary** (COMPLETED ✅):
+- ✅ Effort: 2-3 days (search + pagination + edit)
+- ✅ Delivered: Search, pagination, edit scheduled posts
+- ✅ Tests: Coverage added for new features
+- ✅ Impact: Major UX improvements
 
 ---
 
@@ -391,9 +334,9 @@ MODIFY:
 
 **Phase 2 Summary**:
 - Effort: 4-6 days
-- Delivers: Bulk operations, user edits
+- Delivers: Bulk operations (approve/reject/reschedule), user edits
 - Tests: 20+ new test cases
-- Impact: Admin efficiency improvements
+- Impact: Major admin efficiency improvements + user control
 
 ---
 
@@ -417,10 +360,9 @@ test('Complete meme workflow', async ({ page }) => {
   await page.goto('/admin/memes');
   await page.click('button:has-text("Approve")');
 
-  // 3. User receives email (verify in mock)
-  // 4. Admin schedules
-  // 5. Post published by cron
-  // 6. Verify on Instagram
+  // 3. Admin schedules for publishing
+  // 4. Post published by cron
+  // 5. Verify on Instagram
 });
 ```
 
@@ -429,9 +371,9 @@ test('Complete meme workflow', async ({ page }) => {
 - [ ] Search finds submitted meme
 - [ ] Pagination works with many memes
 - [ ] Edit submission before approval
-- [ ] Bulk approve multiple memes
-- [ ] Email notifications sent
+- [ ] Bulk approve/reject multiple memes
 - [ ] Schedule edit reschedules correctly
+- [ ] Bulk reschedule multiple posts
 - [ ] Auto-publish triggers on schedule time
 
 **Effort**: 2-3 days | **Priority**: 🔴 HIGH
@@ -442,7 +384,7 @@ test('Complete meme workflow', async ({ page }) => {
 
 **Files to Add**:
 - `tests/unit/memes/search.test.ts` - Search function
-- `tests/unit/emails/notifications.test.ts` - Email sending
+- `tests/unit/memes/bulk-operations.test.ts` - Bulk approve/reject
 - `tests/unit/schedule/bulk-operations.test.ts` - Bulk reschedule
 
 **Coverage Targets**:
@@ -457,21 +399,20 @@ test('Complete meme workflow', async ({ page }) => {
 ## 📊 Implementation Timeline
 
 ```
-WEEK 1 (Days 1-5):
-├─ Day 1-2: Search + Pagination (Section 2)
-├─ Day 2-3: Email Notifications (Section 3)
-├─ Day 3-4: Edit Post UI (Section 4)
-└─ Day 5: Phase 1 testing + fixes
+PHASE 1 (COMPLETED ✅):
+├─ Search + Pagination (Section 2) ✅
+├─ Filter by Status (Section 2) ✅
+└─ Edit Scheduled Post UI (Section 4) ✅
 
-WEEK 2 (Days 6-10):
-├─ Day 6-7: Bulk Operations (Section 3)
-├─ Day 7-8: User Edit Feature (Section 2)
-├─ Day 8-9: Bulk Reschedule (Section 4)
-└─ Day 10: Phase 2 testing + integration tests
+PHASE 2 (IN PROGRESS):
+├─ Day 1-2: Bulk Approve/Reject (Section 3)
+├─ Day 2-3: Edit User Submission (Section 2)
+├─ Day 3-4: Bulk Reschedule (Section 4)
+└─ Day 4-5: Phase 2 testing + integration tests
 
-WEEK 2+ (Days 11+):
-├─ E2E workflow tests
-├─ Performance testing
+PHASE 3 (FINAL TESTING):
+├─ E2E workflow tests (all sections)
+├─ Unit tests (all new features)
 ├─ Security review
 └─ Documentation updates
 ```
@@ -632,48 +573,16 @@ Implementation:
  □ Modal for rejection reason
  □ Apply reason to all or customize per meme
  □ POST /api/memes/bulk with reason
- □ Send bulk rejection emails
 
 Testing:
  □ Bulk reject action
  □ Rejection reason applied
- □ Emails sent to all
+ □ All memes updated
  □ Status updated
 
 Files:
  - app/admin/memes/page.tsx (modify)
  - app/api/memes/bulk/route.ts (modify)
- - lib/emails/send-notification.ts (update)
-```
-
-#### Feature: Email Notifications
-```
-Setup:
- □ Setup email service (Resend/SendGrid)
- □ Create email templates
- □ Add env variables
-
-Implementation:
- □ sendMemeApprovedEmail(userEmail, title)
- □ sendMemeRejectedEmail(userEmail, title, reason)
- □ Call on approve endpoint
- □ Call on reject endpoint
- □ Error handling + retry
- □ Track notification_sent_at
-
-Testing:
- □ Email sent on approve
- □ Email sent on reject
- □ Email includes details
- □ Handles missing email gracefully
- □ Retry on failure
- □ No double-send
-
-Files:
- - lib/emails/send-notification.ts (create)
- - app/api/memes/[id]/review (modify)
- - lib/memes-db.ts (add notification tracking)
- - tests/unit/emails/ (create)
 ```
 
 #### Feature: Admin Notes (Optional)
@@ -850,7 +759,6 @@ tests/e2e/:
 -- Add if missing
 ALTER TABLE meme_submissions
 ADD COLUMN admin_notes TEXT,
-ADD COLUMN notification_sent_at TIMESTAMP,
 ADD COLUMN edited_at TIMESTAMP;
 
 -- Create index for search
@@ -911,12 +819,6 @@ Error Handling:
  □ Proper HTTP status codes
  □ User-friendly error messages
  □ Logging of errors (masked)
-
-Email Security:
- □ No sensitive data in email subjects
- □ Templates don't leak user data
- □ Email headers properly set
- □ Rate limiting on email sending
 ```
 
 ---
@@ -939,26 +841,32 @@ Email Security:
 |-----------|--------|---------|
 | Meme search | <200ms | TBD |
 | Bulk approve (10 items) | <1s | TBD |
+| Bulk reschedule (10 items) | <1s | TBD |
 | List load (paginated) | <300ms | TBD |
-| Email send | <5s | TBD |
 
 ---
 
 ## 🚀 Rollout Strategy
 
 ### Phase 1 Deploy (Critical Features)
-1. Search + Pagination
-2. Email Notifications
-3. Edit Post
+1. Search + Pagination (✅ DONE)
+2. Edit Scheduled Posts (✅ DONE)
 → Deploy to staging, run E2E tests
 → Deploy to production with announcement
 
 ### Phase 2 Deploy (Advanced Features)
-1. Bulk Operations
-2. User Edit Feature
-3. Bulk Reschedule
-→ Deploy to staging, monitor
+1. Bulk Approve/Reject Memes
+2. User Edit Submissions
+3. Bulk Reschedule Posts
+→ Deploy to staging, comprehensive testing
 → Deploy to production
+
+### Phase 3 Deploy (Final Testing & Polish)
+1. E2E tests for all workflows
+2. Performance optimization
+3. Security review
+→ Full QA cycle
+→ Production deployment
 
 ### Rollback Plan
 ```
@@ -983,7 +891,7 @@ If critical issue discovered:
 - [ ] Update CLAUDE.md with new patterns
 - [ ] Update API documentation
 - [ ] Add examples to WORKFLOWS.md
-- [ ] Document email template setup
+- [ ] Document bulk operation patterns
 
 ### Team Communication
 - [ ] Announce feature availability
@@ -996,21 +904,21 @@ If critical issue discovered:
 ## 📝 Notes
 
 **Dependencies**:
-- Email service setup (Resend/SendGrid)
 - Database migrations applied
 - Tests run and passing
+- Supabase PostgreSQL operational
 
 **Risks**:
-- Email delivery failures (rate limiting)
 - Bulk operations timeout (too many items)
 - Race conditions in concurrent edits
-- Performance with many memes/posts
+- Performance degradation with many memes/posts
+- Search performance with full text queries
 
 **Mitigation**:
-- Implement retry logic for emails
 - Batch bulk operations (max 50 per request)
 - Use pessimistic locking for concurrent edits
 - Add indexes for search queries
+- Implement pagination with limits
 
 ---
 
