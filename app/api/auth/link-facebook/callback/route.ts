@@ -4,6 +4,7 @@ import { getInstagramBusinessAccountId } from "@/lib/instagram/account";
 import { saveLinkedFacebookAccount } from "@/lib/database/linked-accounts";
 import { authOptions } from "@/lib/auth";
 import { Logger } from "@/lib/utils/logger";
+import { verifySignedState } from "@/lib/utils/crypto-signing";
 
 const MODULE = 'auth';
 
@@ -33,11 +34,29 @@ export async function GET(req: NextRequest) {
 
     const userId = session.user.id;
 
-    // 3. Verify state for CSRF protection
+    // 3. Verify cryptographically signed state for CSRF protection
     const cookieState = req.cookies.get("fb_link_state")?.value;
     if (!state || state !== cookieState) {
         await Logger.error(MODULE, "🔒 State mismatch in Facebook linking callback", { userId, state, cookieState });
         return NextResponse.redirect(new URL("/?error=state_mismatch", req.url));
+    }
+
+    // Verify state signature and contents
+    const stateSecret = process.env.NEXTAUTH_SECRET || process.env.WEBHOOK_SECRET || '';
+    const stateVerification = verifySignedState(state, stateSecret);
+
+    if (!stateVerification.valid) {
+        await Logger.error(MODULE, `🔒 State signature verification failed: ${stateVerification.error}`, { userId });
+        return NextResponse.redirect(new URL("/?error=invalid_state", req.url));
+    }
+
+    // Verify the userId in state matches the session (prevents session fixation)
+    if (stateVerification.data?.userId !== userId) {
+        await Logger.error(MODULE, "🔒 State userId mismatch - possible session fixation attack", {
+            sessionUserId: userId,
+            stateUserId: stateVerification.data?.userId
+        });
+        return NextResponse.redirect(new URL("/?error=user_mismatch", req.url));
     }
 
     if (!code) {
