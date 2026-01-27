@@ -64,6 +64,155 @@ npm run lint && npx tsc && npm run test
 
 **No exceptions.** This applies to every single commit without fail.
 
+## Pull Request Creation & CI/CD Verification
+
+**CRITICAL: After EVERY pull request creation, you MUST verify CI/CD checks pass.**
+
+### PR Creation Process
+
+When creating a pull request, follow these steps:
+
+1. **Create the PR** using `gh` CLI:
+```bash
+gh pr create --title "Your PR title" --body "$(cat <<'EOF'
+## Summary
+- Brief description of changes
+
+## Testing
+- Tests performed
+
+https://claude.ai/code/session_XXXXX
+EOF
+)"
+```
+
+2. **IMMEDIATELY verify CI/CD status** (mandatory):
+```bash
+# Get the PR number from the output above, then check status
+gh pr view <PR_NUMBER> --json statusCheckRollup
+
+# Or check your current branch's PR
+gh pr view --json statusCheckRollup
+```
+
+3. **Wait for checks to complete**:
+```bash
+# Watch checks in real-time (recommended)
+gh pr checks --watch
+
+# Or check status manually every 30 seconds
+while true; do
+  gh pr checks && break || sleep 30
+done
+```
+
+### Mandatory Verification Steps
+
+**You MUST NOT consider a PR complete until:**
+
+- [ ] All CI/CD checks are green (passing)
+- [ ] Lint check passed
+- [ ] TypeScript compilation passed
+- [ ] All tests passed
+- [ ] Build succeeded
+
+**If ANY check fails:**
+
+1. **Read the failure logs**:
+```bash
+# View detailed check results
+gh pr checks
+
+# View logs for specific failed check
+gh run view <RUN_ID> --log-failed
+```
+
+2. **Fix the issues locally**:
+```bash
+# Reproduce the failure
+npm run lint && npx tsc && npm run test && npm run build
+
+# Fix the errors
+# ... make changes ...
+
+# Verify locally
+npm run lint && npx tsc && npm run test
+```
+
+3. **Push fixes**:
+```bash
+git add .
+git commit -m "fix: resolve CI/CD failures
+
+- Fixed linting errors
+- Fixed type errors
+- Fixed test failures
+
+https://claude.ai/code/session_XXXXX"
+git push
+```
+
+4. **Re-verify CI/CD** (repeat from step 2 above)
+
+### Automated Status Check
+
+**Recommended approach** - Use this one-liner after PR creation:
+
+```bash
+# Create PR, capture URL, then watch checks
+PR_URL=$(gh pr create --title "..." --body "..." | grep -o 'https://github.com/[^[:space:]]*') && \
+echo "Created: $PR_URL" && \
+echo "Waiting for CI/CD checks..." && \
+sleep 10 && \
+gh pr checks --watch
+```
+
+### Common CI/CD Failures & Fixes
+
+**ESLint errors:**
+```bash
+npm run lint          # See errors
+npm run lint -- --fix # Auto-fix
+```
+
+**TypeScript errors:**
+```bash
+npx tsc              # See errors
+# Fix manually in code
+```
+
+**Test failures:**
+```bash
+npm run test         # Run all tests
+npm run test:watch   # Watch mode for rapid fixes
+```
+
+**Build failures:**
+```bash
+npm run build        # Reproduce locally
+# Fix errors, then rebuild
+```
+
+### Why This Matters
+
+**Consequences of skipping CI/CD verification:**
+- ❌ Broken code merged to branch
+- ❌ Blocking other developers
+- ❌ Failed deployments
+- ❌ Production incidents
+- ❌ Wasted time rolling back
+
+**Benefits of verifying:**
+- ✅ Catch issues before merge
+- ✅ Maintain code quality
+- ✅ Faster review process
+- ✅ Reliable deployments
+- ✅ Team confidence in PRs
+
+**Remember:** The pre-commit checklist catches issues locally; CI/CD verification catches issues that might occur in different environments or configurations.
+
+**No exceptions.** Every PR must have verified passing CI/CD checks before being considered complete.
+
 ## Architecture Overview
 
 ### Authentication Flow
