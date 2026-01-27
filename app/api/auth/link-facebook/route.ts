@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { Logger } from "@/lib/utils/logger";
+import { createSignedState } from "@/lib/utils/crypto-signing";
 
 const MODULE = 'auth';
 
@@ -41,12 +42,12 @@ export async function GET(req: NextRequest) {
             "public_profile",
         ].join(",");
 
-        // Generate a state token for CSRF protection
-        const state = Buffer.from(JSON.stringify({
-            timestamp: Date.now(),
-            userId: userId,
-            nonce: crypto.randomUUID()
-        })).toString('base64');
+        // Generate a cryptographically signed state token for CSRF protection
+        const stateSecret = process.env.NEXTAUTH_SECRET || process.env.WEBHOOK_SECRET || '';
+        if (!stateSecret) {
+            throw new Error('Missing signing secret for OAuth state');
+        }
+        const state = createSignedState({ userId }, stateSecret);
 
 
         const facebookAuthUrl = new URL("https://www.facebook.com/v21.0/dialog/oauth");
