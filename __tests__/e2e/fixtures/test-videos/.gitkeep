@@ -1,0 +1,7 @@
+# Test Videos Placeholder
+
+Run `npm run setup:test-media` or manually run `./setup-media.sh` to generate test videos.
+
+Required files:
+- valid-video.mp4 (1080x1920, 5s)
+- invalid-format.avi

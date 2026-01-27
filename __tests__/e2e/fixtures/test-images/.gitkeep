@@ -1,0 +1,9 @@
+# Test Images Placeholder
+
+Run `npm run setup:test-media` or manually run `./setup-media.sh` to generate test images.
+
+Required files:
+- valid-square.jpg (1080x1080, 1:1)
+- valid-story.jpg (1080x1920, 9:16)
+- invalid-aspect.jpg (1920x1080, 16:9)
+- oversized.jpg (> 8MB)
