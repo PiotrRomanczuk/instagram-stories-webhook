@@ -1,5 +1,3 @@
-import fs from 'fs';
-import path from 'path';
 import { supabaseAdmin } from '../config/supabase-admin';
 
 type LogLevel = 'info' | 'warn' | 'error' | 'debug';
@@ -11,16 +9,33 @@ interface LogOptions {
     pushToSupabase?: boolean;
 }
 
-const LOG_DIR = path.resolve(process.cwd(), 'logs');
-const LOG_FILE = path.join(LOG_DIR, 'app.log');
+// Only import fs and path in Node.js environment
+let fs: typeof import('fs') | null = null;
+let path: typeof import('path') | null = null;
+let LOG_DIR = '';
+let LOG_FILE = '';
+
 const MAX_LOG_SIZE = 1024 * 1024; // 1MB
 const MAX_BACKUP_FILES = 5;
 
 // Ensure logs directory exists (ONLY if not in Vercel Lambda)
 const IS_VERCEL = process.env.VERCEL === '1' || process.env.AWS_LAMBDA_FUNCTION_NAME;
+const IS_SERVER = typeof window === 'undefined';
 
-if (!IS_VERCEL && !fs.existsSync(LOG_DIR)) {
-    fs.mkdirSync(LOG_DIR, { recursive: true });
+// Initialize fs/path only on server side
+if (IS_SERVER && !IS_VERCEL) {
+    try {
+        fs = require('fs');
+        path = require('path');
+        LOG_DIR = path.resolve(process.cwd(), 'logs');
+        LOG_FILE = path.join(LOG_DIR, 'app.log');
+
+        if (!fs.existsSync(LOG_DIR)) {
+            fs.mkdirSync(LOG_DIR, { recursive: true });
+        }
+    } catch (error) {
+        console.warn('Failed to initialize file logging:', error);
+    }
 }
 
 export class Logger {
@@ -40,6 +55,8 @@ export class Logger {
     }
 
     private static async rotateLogs() {
+        if (!fs || !path) return;
+
         try {
             if (!fs.existsSync(LOG_FILE)) return;
 
@@ -67,7 +84,7 @@ export class Logger {
 
     private static async writeToLocalFile(formattedMessage: string) {
         // Skip file logging in Vercel/Lambda environment as filesystem is read-only
-        if (IS_VERCEL) return;
+        if (IS_VERCEL || !fs) return;
 
         try {
             if (typeof window === 'undefined') {
@@ -171,7 +188,7 @@ export class Logger {
     }
 
     private static async cleanupLocalFile() {
-        if (typeof window !== 'undefined' || !fs.existsSync(LOG_FILE)) return;
+        if (typeof window !== 'undefined' || !fs || !fs.existsSync(LOG_FILE)) return;
         try {
             console.log('📄 Cleaning local app.log...');
             const content = fs.readFileSync(LOG_FILE, 'utf-8');
