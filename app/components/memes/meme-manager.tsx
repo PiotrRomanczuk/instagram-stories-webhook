@@ -8,7 +8,6 @@ import { useUserMemes } from './use-user-memes';
 import { LayoutGrid, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { MemeSubmission } from '@/lib/types';
-import { Logger } from '@/lib/utils/logger';
 import { toast } from 'sonner';
 
 export function MemeManager() {
@@ -66,7 +65,7 @@ export function MemeManager() {
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Failed to update meme';
             toast.error(message);
-            Logger.error('meme-manager:edit', message, error);
+            console.error('[meme-manager:edit]', message, error);
         }
     };
 
@@ -88,7 +87,7 @@ export function MemeManager() {
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Failed to delete meme';
             toast.error(message);
-            Logger.error('meme-manager:delete', message, error);
+            console.error('[meme-manager:delete]', message, error);
         }
     };
 
