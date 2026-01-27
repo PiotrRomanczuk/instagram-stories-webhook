@@ -70,8 +70,8 @@ export default defineConfig({
       name: 'chromium',
       use: {
         ...devices['Desktop Chrome'],
-        // Store authentication state
-        storageState: '__tests__/e2e/fixtures/auth/.auth.json',
+        // Note: storageState is optional - tests handle auth internally
+        // storageState: '__tests__/e2e/fixtures/auth/.auth.json',
       },
     },
 

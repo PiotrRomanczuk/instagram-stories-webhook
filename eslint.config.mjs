@@ -1,31 +1,36 @@
-import { defineConfig, globalIgnores } from "eslint/config";
-import nextVitals from "eslint-config-next/core-web-vitals";
-import nextTs from "eslint-config-next/typescript";
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
 
-const eslintConfig = defineConfig([
-  ...nextVitals,
-  ...nextTs,
+// Use Next.js ESLint config
+const nextConfig = require('eslint-config-next');
+
+/** @type {import('eslint').Linter.Config[]} */
+const eslintConfig = [
+  ...nextConfig,
+  {
+    ignores: [
+      '.next/**',
+      'out/**',
+      'build/**',
+      'next-env.d.ts',
+      '__tests__/e2e/**',
+      'playwright-report/**',
+      'test-results/**',
+    ],
+  },
   {
     rules: {
-      "@typescript-eslint/no-explicit-any": "error",
-      "@typescript-eslint/no-unused-vars": [
-        "error",
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
         {
-          "argsIgnorePattern": "^_",
-          "varsIgnorePattern": "^_",
-          "caughtErrorsIgnorePattern": "^_"
-        }
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
       ],
     },
   },
-  // Override default ignores of eslint-config-next.
-  globalIgnores([
-    // Default ignores of eslint-config-next:
-    ".next/**",
-    "out/**",
-    "build/**",
-    "next-env.d.ts",
-  ]),
-]);
+];
 
 export default eslintConfig;
