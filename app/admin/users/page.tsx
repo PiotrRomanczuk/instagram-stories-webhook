@@ -64,6 +64,7 @@ export default function AdminUsersPage() {
 
             toast.success(`Added ${newEmail} as ${newRole}`);
             setNewEmail('');
+            setNewRole('user'); // Reset role selector to default
             fetchUsers();
         } catch (error) {
             toast.error(error instanceof Error ? error.message : 'Failed to add');
