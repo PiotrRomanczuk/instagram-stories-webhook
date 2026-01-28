@@ -25,13 +25,15 @@ const IS_SERVER = typeof window === 'undefined';
 // Initialize fs/path only on server side
 if (IS_SERVER && !IS_VERCEL) {
     try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         fs = require('fs');
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         path = require('path');
-        LOG_DIR = path.resolve(process.cwd(), 'logs');
-        LOG_FILE = path.join(LOG_DIR, 'app.log');
+        LOG_DIR = path!.resolve(process.cwd(), 'logs');
+        LOG_FILE = path!.join(LOG_DIR, 'app.log');
 
-        if (!fs.existsSync(LOG_DIR)) {
-            fs.mkdirSync(LOG_DIR, { recursive: true });
+        if (!fs!.existsSync(LOG_DIR)) {
+            fs!.mkdirSync(LOG_DIR, { recursive: true });
         }
     } catch (error) {
         console.warn('Failed to initialize file logging:', error);

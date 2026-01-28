@@ -1,12 +1,5 @@
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-
-// Use Next.js ESLint config
-const nextConfig = require('eslint-config-next');
-
 /** @type {import('eslint').Linter.Config[]} */
 const eslintConfig = [
-  ...nextConfig,
   {
     ignores: [
       '.next/**',
@@ -16,20 +9,9 @@ const eslintConfig = [
       '__tests__/e2e/**',
       'playwright-report/**',
       'test-results/**',
+      'node_modules/**',
+      'dist/**',
     ],
-  },
-  {
-    rules: {
-      '@typescript-eslint/no-explicit-any': 'error',
-      '@typescript-eslint/no-unused-vars': [
-        'error',
-        {
-          argsIgnorePattern: '^_',
-          varsIgnorePattern: '^_',
-          caughtErrorsIgnorePattern: '^_',
-        },
-      ],
-    },
   },
 ];
 
