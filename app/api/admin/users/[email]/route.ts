@@ -50,6 +50,11 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
             return NextResponse.json({ error: message }, { status: 403 });
         }
 
+        // Handle last-developer protection error
+        if (message.includes('last developer')) {
+            return NextResponse.json({ error: message }, { status: 400 });
+        }
+
         return NextResponse.json({ error: message }, { status: 500 });
     }
 }
@@ -91,6 +96,11 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
         if (message === 'Admin access required') {
             return NextResponse.json({ error: message }, { status: 403 });
+        }
+
+        // Handle last-developer protection error
+        if (message.includes('last developer')) {
+            return NextResponse.json({ error: message }, { status: 400 });
         }
 
         return NextResponse.json({ error: message }, { status: 500 });
