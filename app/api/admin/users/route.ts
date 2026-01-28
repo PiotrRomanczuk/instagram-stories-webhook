@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { getAllowedUsers, addAllowedUser, UserRole } from '@/lib/memes-db';
 import { requireAdmin, requireDeveloper, getUserId } from '@/lib/auth-helpers';
 import { Logger } from '@/lib/utils/logger';
+import { addUserSchema, validateUserInput } from '@/lib/validations/user.schema';
 
 const MODULE = 'api:admin:users';
 
@@ -41,21 +42,17 @@ export async function POST(request: NextRequest) {
 
         const adminId = getUserId(session);
         const body = await request.json();
-        const { email, role = 'user', display_name } = body;
 
-        if (!email || typeof email !== 'string') {
-            return NextResponse.json({ error: 'email is required' }, { status: 400 });
+        // Validate input with Zod schema
+        const validation = await validateUserInput(addUserSchema, body);
+        if (!validation.success) {
+            return NextResponse.json({ error: validation.error }, { status: 400 });
         }
 
-        if (role && !['developer', 'admin', 'user'].includes(role)) {
-            return NextResponse.json(
-                { error: "role must be 'developer', 'admin', or 'user'" },
-                { status: 400 }
-            );
-        }
+        const { email, role, display_name } = validation.data;
 
         const user = await addAllowedUser({
-            email: email.toLowerCase().trim(),
+            email,
             role: role as UserRole,
             display_name,
             added_by: adminId

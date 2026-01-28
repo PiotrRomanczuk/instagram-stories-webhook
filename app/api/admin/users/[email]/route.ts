@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { removeAllowedUser, updateUserRole, UserRole } from '@/lib/memes-db';
 import { requireAdmin, requireDeveloper, getUserId, getUserEmail } from '@/lib/auth-helpers';
 import { Logger } from '@/lib/utils/logger';
+import { updateUserRoleSchema, validateUserInput } from '@/lib/validations/user.schema';
 
 const MODULE = 'api:admin:users:[email]';
 
@@ -24,14 +25,14 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         const decodedEmail = decodeURIComponent(email).toLowerCase();
 
         const body = await request.json();
-        const { role } = body;
 
-        if (!role || !['developer', 'admin', 'user'].includes(role)) {
-            return NextResponse.json(
-                { error: "role must be 'developer', 'admin', or 'user'" },
-                { status: 400 }
-            );
+        // Validate input with Zod schema
+        const validation = await validateUserInput(updateUserRoleSchema, body);
+        if (!validation.success) {
+            return NextResponse.json({ error: validation.error }, { status: 400 });
         }
+
+        const { role } = validation.data;
 
         const success = await updateUserRole(decodedEmail, role as UserRole);
 
@@ -48,6 +49,11 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
         if (message === 'Developer access required') {
             return NextResponse.json({ error: message }, { status: 403 });
+        }
+
+        // Handle last-developer protection error
+        if (message.includes('last developer')) {
+            return NextResponse.json({ error: message }, { status: 400 });
         }
 
         return NextResponse.json({ error: message }, { status: 500 });
@@ -91,6 +97,11 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
         if (message === 'Admin access required') {
             return NextResponse.json({ error: message }, { status: 403 });
+        }
+
+        // Handle last-developer protection error
+        if (message.includes('last developer')) {
+            return NextResponse.json({ error: message }, { status: 400 });
         }
 
         return NextResponse.json({ error: message }, { status: 500 });

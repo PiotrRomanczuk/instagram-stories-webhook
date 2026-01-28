@@ -121,6 +121,31 @@ export async function addAllowedUser(user: Omit<AllowedUser, 'id' | 'created_at'
  */
 export async function removeAllowedUser(email: string): Promise<boolean> {
     try {
+        // Check if this is the last developer (system lockout protection)
+        const { data: targetUser } = await supabaseAdmin
+            .from('allowed_users')
+            .select('role')
+            .eq('email', email.toLowerCase())
+            .single();
+
+        if (targetUser?.role === 'developer') {
+            const { data: developers, error: countError } = await supabaseAdmin
+                .from('allowed_users')
+                .select('id')
+                .eq('role', 'developer');
+
+            if (countError) {
+                Logger.error(MODULE, `Error counting developers: ${countError.message}`, countError);
+                return false;
+            }
+
+            // Prevent removing the last developer
+            if (developers && developers.length === 1) {
+                Logger.error(MODULE, `Cannot remove ${email} - last developer`, { email });
+                throw new Error('Cannot remove the last developer - system lockout protection');
+            }
+        }
+
         const { error } = await supabaseAdmin
             .from('allowed_users')
             .delete()
@@ -135,6 +160,10 @@ export async function removeAllowedUser(email: string): Promise<boolean> {
         return true;
     } catch (error) {
         Logger.error(MODULE, 'Exception in removeAllowedUser', error);
+        // Re-throw if it's our custom error
+        if (error instanceof Error && error.message.includes('last developer')) {
+            throw error;
+        }
         return false;
     }
 }
@@ -144,6 +173,37 @@ export async function removeAllowedUser(email: string): Promise<boolean> {
  */
 export async function updateUserRole(email: string, role: UserRole): Promise<boolean> {
     try {
+        // Prevent demoting the last developer (system lockout protection)
+        if (role !== 'developer') {
+            const { data: currentUser } = await supabaseAdmin
+                .from('allowed_users')
+                .select('role')
+                .eq('email', email.toLowerCase())
+                .single();
+
+            // Only check if the user is currently a developer
+            if (currentUser?.role === 'developer') {
+                const { data: developers, error: countError } = await supabaseAdmin
+                    .from('allowed_users')
+                    .select('id')
+                    .eq('role', 'developer');
+
+                if (countError) {
+                    Logger.error(MODULE, `Error counting developers: ${countError.message}`, countError);
+                    return false;
+                }
+
+                // Prevent demoting the last developer
+                if (developers && developers.length === 1) {
+                    Logger.error(MODULE, `Cannot demote ${email} - last developer`, {
+                        email,
+                        attemptedRole: role
+                    });
+                    throw new Error('Cannot demote the last developer - system lockout protection');
+                }
+            }
+        }
+
         const { error } = await supabaseAdmin
             .from('allowed_users')
             .update({ role })
@@ -158,6 +218,10 @@ export async function updateUserRole(email: string, role: UserRole): Promise<boo
         return true;
     } catch (error) {
         Logger.error(MODULE, 'Exception in updateUserRole', error);
+        // Re-throw if it's our custom error
+        if (error instanceof Error && error.message.includes('last developer')) {
+            throw error;
+        }
         return false;
     }
 }
