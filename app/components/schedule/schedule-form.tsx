@@ -12,6 +12,7 @@ import { DateTimePicker } from '../ui/datetime-picker';
 import { supabase } from '@/lib/config/supabase';
 import { useMediaValidation } from '@/app/hooks/use-media-validation';
 import { AspectRatioIndicator, ProcessingPrompt } from '../media/aspect-ratio-indicator';
+import { InstagramPreview } from '../media/instagram-preview';
 import { createScheduledPostSchema, type CreateScheduledPostInput } from '@/lib/validations/post.schema';
 
 interface ScheduleFormProps {
@@ -45,6 +46,9 @@ export function ScheduleForm({ onScheduled }: ScheduleFormProps) {
 
     // Watch form values
     const mediaUrl = watch('mediaUrl');
+    const caption = watch('caption');
+    const userTags = watch('userTags');
+    const hashtagTags = watch('hashtagTags');
 
     // Local state for UI
     const [type, setType] = useState<'IMAGE' | 'VIDEO'>('IMAGE');
@@ -432,6 +436,17 @@ export function ScheduleForm({ onScheduled }: ScheduleFormProps) {
                         </p>
                     </div>
                 </div>
+
+                {/* Instagram Preview */}
+                {mediaUrl && (
+                    <InstagramPreview
+                        mediaUrl={mediaUrl}
+                        type={type}
+                        caption={caption}
+                        userTags={userTags}
+                        hashtagTags={hashtagTags}
+                    />
+                )}
 
                 <div className="pt-2">
                     <button

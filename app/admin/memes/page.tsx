@@ -2,28 +2,31 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { 
-    ChevronLeft, 
-    Clock, 
-    CheckCircle, 
-    XCircle, 
-    Trash2, 
+import {
+    ChevronLeft,
+    Clock,
+    CheckCircle,
+    XCircle,
+    Trash2,
     Calendar,
     AlertCircle,
     Loader2,
-    ImageIcon
+    ImageIcon,
+    CheckSquare,
+    Square
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { MemeSubmission, MemeStatus, UserRole } from '@/lib/types';
 import { MemeStatusBadge } from '@/app/components/ui/meme-status-badge';
+import { ExpandableCaption } from '@/app/components/ui/expandable-caption';
 import Image from 'next/image';
 
 export default function AdminMemesPage() {
     const { data: session, status } = useSession();
     const router = useRouter();
-    
+
     useEffect(() => {
         if (status === 'unauthenticated') {
             router.push('/auth/signin');
@@ -38,6 +41,7 @@ export default function AdminMemesPage() {
     const [memes, setMemes] = useState<MemeSubmission[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [filter, setFilter] = useState<MemeStatus | 'all'>('all');
+    const [selectedMemes, setSelectedMemes] = useState<Set<string>>(new Set());
     const [stats, setStats] = useState({
         total: 0,
         pending: 0,
@@ -108,10 +112,180 @@ export default function AdminMemesPage() {
             }
             toast.success('Meme deleted');
             setMemes(prev => prev.filter(m => m.id !== id));
+            setSelectedMemes(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(id);
+                return newSet;
+            });
         } catch (error) {
             toast.error(error instanceof Error ? error.message : 'Failed to delete');
         }
     };
+
+    // Bulk action handlers
+    const toggleMemeSelection = (id: string) => {
+        setSelectedMemes(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(id)) {
+                newSet.delete(id);
+            } else {
+                newSet.add(id);
+            }
+            return newSet;
+        });
+    };
+
+    const toggleSelectAll = () => {
+        if (selectedMemes.size === memes.length) {
+            setSelectedMemes(new Set());
+        } else {
+            setSelectedMemes(new Set(memes.map(m => m.id!)));
+        }
+    };
+
+    const clearSelection = () => {
+        setSelectedMemes(new Set());
+    };
+
+    const handleBulkApprove = async () => {
+        if (selectedMemes.size === 0) return;
+
+        const confirmMsg = `Approve ${selectedMemes.size} meme(s)?`;
+        if (!confirm(confirmMsg)) return;
+
+        const promises = Array.from(selectedMemes).map(id =>
+            handleAction(id, 'approve')
+        );
+
+        try {
+            await Promise.all(promises);
+            toast.success(`${selectedMemes.size} meme(s) approved`);
+            clearSelection();
+            fetchMemes();
+        } catch (error) {
+            toast.error('Some memes failed to approve');
+        }
+    };
+
+    const [bulkRejectionModalOpen, setBulkRejectionModalOpen] = useState(false);
+    const [bulkRejectionReason, setBulkRejectionReason] = useState('');
+
+    const handleBulkReject = async () => {
+        if (selectedMemes.size === 0) return;
+        setBulkRejectionModalOpen(true);
+    };
+
+    const confirmBulkReject = async () => {
+        if (!bulkRejectionReason.trim()) {
+            toast.error('Please provide a rejection reason');
+            return;
+        }
+
+        const promises = Array.from(selectedMemes).map(id =>
+            handleAction(id, 'reject', { rejectionReason: bulkRejectionReason })
+        );
+
+        try {
+            await Promise.all(promises);
+            toast.success(`${selectedMemes.size} meme(s) rejected`);
+            clearSelection();
+            setBulkRejectionModalOpen(false);
+            setBulkRejectionReason('');
+            fetchMemes();
+        } catch (error) {
+            toast.error('Some memes failed to reject');
+        }
+    };
+
+    const [bulkScheduleModalOpen, setBulkScheduleModalOpen] = useState(false);
+    const [bulkScheduleDate, setBulkScheduleDate] = useState('');
+
+    // Quick schedule state
+    const [quickScheduleMeme, setQuickScheduleMeme] = useState<MemeSubmission | null>(null);
+    const [quickScheduleDate, setQuickScheduleDate] = useState('');
+
+    const handleBulkSchedule = async () => {
+        if (selectedMemes.size === 0) return;
+        setBulkScheduleModalOpen(true);
+    };
+
+    const confirmBulkSchedule = async () => {
+        if (!bulkScheduleDate) {
+            toast.error('Please select a date and time');
+            return;
+        }
+
+        const promises = Array.from(selectedMemes).map(id =>
+            handleAction(id, 'schedule', { scheduledFor: new Date(bulkScheduleDate).toISOString() })
+        );
+
+        try {
+            await Promise.all(promises);
+            toast.success(`${selectedMemes.size} meme(s) scheduled`);
+            clearSelection();
+            setBulkScheduleModalOpen(false);
+            setBulkScheduleDate('');
+            fetchMemes();
+        } catch (error) {
+            toast.error('Some memes failed to schedule');
+        }
+    };
+
+    // Quick schedule to post scheduler
+    const handleQuickSchedule = async () => {
+        if (!quickScheduleMeme || !quickScheduleDate) {
+            toast.error('Please select a date and time');
+            return;
+        }
+
+        try {
+            // Create scheduled post from meme
+            const res = await fetch('/api/schedule', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    url: quickScheduleMeme.media_url,
+                    type: quickScheduleMeme.media_url.toLowerCase().endsWith('.mp4') ? 'VIDEO' : 'IMAGE',
+                    scheduledTime: new Date(quickScheduleDate).toISOString(),
+                    caption: quickScheduleMeme.caption || quickScheduleMeme.title || '',
+                    userTags: [],
+                    hashtagTags: []
+                }),
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Failed to schedule');
+            }
+
+            toast.success('Meme scheduled successfully!');
+            setQuickScheduleMeme(null);
+            setQuickScheduleDate('');
+
+            // Optionally update meme status to scheduled
+            await handleAction(quickScheduleMeme.id!, 'schedule', {
+                scheduledFor: new Date(quickScheduleDate).toISOString()
+            });
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Failed to schedule');
+        }
+    };
+
+    // Keyboard shortcuts (Ctrl+A, Escape)
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.ctrlKey && e.key === 'a' && memes.length > 0) {
+                e.preventDefault();
+                toggleSelectAll();
+            }
+            if (e.key === 'Escape' && selectedMemes.size > 0) {
+                clearSelection();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [memes, selectedMemes]);
 
     return (
         <main className="min-h-screen bg-[#F8FAFC] p-4 md:p-8 lg:p-12">
@@ -159,6 +333,67 @@ export default function AdminMemesPage() {
                     </div>
                 </div>
 
+                {/* Bulk Actions Toolbar */}
+                {selectedMemes.size > 0 && (
+                    <div className="mb-6 bg-indigo-600 rounded-2xl p-4 shadow-lg shadow-indigo-500/30 flex items-center justify-between gap-4 animate-in slide-in-from-top-2 fade-in duration-300">
+                        <div className="flex items-center gap-3">
+                            <CheckSquare className="w-5 h-5 text-white" />
+                            <span className="text-white font-bold">
+                                {selectedMemes.size} meme{selectedMemes.size > 1 ? 's' : ''} selected
+                            </span>
+                            <button
+                                onClick={clearSelection}
+                                className="text-indigo-200 hover:text-white text-sm font-medium transition"
+                            >
+                                Clear
+                            </button>
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <button
+                                onClick={handleBulkApprove}
+                                className="px-4 py-2 bg-emerald-500 text-white rounded-lg font-bold text-sm hover:bg-emerald-600 transition flex items-center gap-2"
+                            >
+                                <CheckCircle className="w-4 h-4" />
+                                Approve ({selectedMemes.size})
+                            </button>
+                            <button
+                                onClick={handleBulkReject}
+                                className="px-4 py-2 bg-rose-500 text-white rounded-lg font-bold text-sm hover:bg-rose-600 transition flex items-center gap-2"
+                            >
+                                <XCircle className="w-4 h-4" />
+                                Reject
+                            </button>
+                            <button
+                                onClick={handleBulkSchedule}
+                                className="px-4 py-2 bg-purple-500 text-white rounded-lg font-bold text-sm hover:bg-purple-600 transition flex items-center gap-2"
+                            >
+                                <Calendar className="w-4 h-4" />
+                                Schedule
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* Select All Checkbox */}
+                {memes.length > 0 && !isLoading && (
+                    <div className="mb-4 flex items-center gap-3">
+                        <button
+                            onClick={toggleSelectAll}
+                            className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-slate-200 hover:border-indigo-400 transition text-sm font-medium text-slate-700 hover:text-indigo-600"
+                        >
+                            {selectedMemes.size === memes.length ? (
+                                <CheckSquare className="w-4 h-4" />
+                            ) : (
+                                <Square className="w-4 h-4" />
+                            )}
+                            {selectedMemes.size === memes.length ? 'Deselect All' : 'Select All'}
+                        </button>
+                        <span className="text-xs text-slate-400 font-medium">
+                            Keyboard: Ctrl+A to select all, Esc to clear
+                        </span>
+                    </div>
+                )}
+
                 {/* Content Grid */}
                 {isLoading ? (
                     <div className="flex flex-col items-center justify-center py-24 text-slate-500">
@@ -176,13 +411,177 @@ export default function AdminMemesPage() {
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {memes.map((meme) => (
-                            <MemeCard 
-                                key={meme.id} 
-                                meme={meme} 
+                            <MemeCard
+                                key={meme.id}
+                                meme={meme}
                                 onAction={handleAction}
                                 onDelete={handleDelete}
+                                isSelected={selectedMemes.has(meme.id!)}
+                                onToggleSelect={() => toggleMemeSelection(meme.id!)}
+                                onQuickSchedule={(meme) => {
+                                    setQuickScheduleMeme(meme);
+                                    setQuickScheduleDate('');
+                                }}
                             />
                         ))}
+                    </div>
+                )}
+
+                {/* Bulk Rejection Modal */}
+                {bulkRejectionModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                        <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6">
+                            <h3 className="text-2xl font-bold text-slate-900 mb-4">
+                                Reject {selectedMemes.size} Meme{selectedMemes.size > 1 ? 's' : ''}
+                            </h3>
+                            <p className="text-slate-600 mb-4">
+                                Please provide a reason for rejecting these memes.
+                            </p>
+                            <textarea
+                                value={bulkRejectionReason}
+                                onChange={(e) => setBulkRejectionReason(e.target.value)}
+                                placeholder="Enter rejection reason..."
+                                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none resize-none"
+                                rows={4}
+                            />
+                            <div className="flex gap-3 mt-6">
+                                <button
+                                    onClick={() => {
+                                        setBulkRejectionModalOpen(false);
+                                        setBulkRejectionReason('');
+                                    }}
+                                    className="flex-1 px-4 py-3 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmBulkReject}
+                                    disabled={!bulkRejectionReason.trim()}
+                                    className="flex-1 px-4 py-3 bg-rose-500 text-white rounded-xl font-bold hover:bg-rose-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Reject All
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Bulk Schedule Modal */}
+                {bulkScheduleModalOpen && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                        <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6">
+                            <h3 className="text-2xl font-bold text-slate-900 mb-4">
+                                Schedule {selectedMemes.size} Meme{selectedMemes.size > 1 ? 's' : ''}
+                            </h3>
+                            <p className="text-slate-600 mb-4">
+                                All selected memes will be scheduled for the same date and time.
+                            </p>
+                            <input
+                                type="datetime-local"
+                                value={bulkScheduleDate}
+                                onChange={(e) => setBulkScheduleDate(e.target.value)}
+                                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none"
+                                min={new Date().toISOString().slice(0, 16)}
+                            />
+                            <div className="flex gap-3 mt-6">
+                                <button
+                                    onClick={() => {
+                                        setBulkScheduleModalOpen(false);
+                                        setBulkScheduleDate('');
+                                    }}
+                                    className="flex-1 px-4 py-3 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmBulkSchedule}
+                                    disabled={!bulkScheduleDate}
+                                    className="flex-1 px-4 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Schedule All
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Quick Schedule Modal */}
+                {quickScheduleMeme && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                        <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center">
+                                    <Calendar className="w-6 h-6 text-white" />
+                                </div>
+                                <div>
+                                    <h3 className="text-2xl font-bold text-slate-900">Quick Schedule</h3>
+                                    <p className="text-sm text-slate-500">Schedule this meme to Instagram</p>
+                                </div>
+                            </div>
+
+                            {/* Meme Preview */}
+                            <div className="mb-4 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                <div className="flex gap-3">
+                                    <div className="relative w-20 h-20 rounded-lg overflow-hidden bg-slate-200 flex-shrink-0">
+                                        <Image
+                                            src={quickScheduleMeme.media_url}
+                                            alt={quickScheduleMeme.title || 'Meme'}
+                                            fill
+                                            className="object-cover"
+                                        />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <h4 className="font-bold text-slate-900 truncate">
+                                            {quickScheduleMeme.title || 'Untitled'}
+                                        </h4>
+                                        <p className="text-xs text-slate-500 line-clamp-2">
+                                            {quickScheduleMeme.caption || 'No caption'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">
+                                        When should this be published?
+                                    </label>
+                                    <input
+                                        type="datetime-local"
+                                        value={quickScheduleDate}
+                                        onChange={(e) => setQuickScheduleDate(e.target.value)}
+                                        className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none"
+                                        min={new Date().toISOString().slice(0, 16)}
+                                    />
+                                </div>
+
+                                <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-3">
+                                    <p className="text-xs text-indigo-700">
+                                        <strong>💡 Tip:</strong> This will create a scheduled post. You can edit caption, tags, and other details in the Schedule Manager.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-3 mt-6">
+                                <button
+                                    onClick={() => {
+                                        setQuickScheduleMeme(null);
+                                        setQuickScheduleDate('');
+                                    }}
+                                    className="flex-1 px-4 py-3 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleQuickSchedule}
+                                    disabled={!quickScheduleDate}
+                                    className="flex-1 px-4 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-bold hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                >
+                                    <Calendar className="w-4 h-4" />
+                                    Schedule Now
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 )}
             </div>
@@ -190,10 +589,13 @@ export default function AdminMemesPage() {
     );
 }
 
-function MemeCard({ meme, onAction, onDelete }: { 
-    meme: MemeSubmission, 
+function MemeCard({ meme, onAction, onDelete, isSelected, onToggleSelect, onQuickSchedule }: {
+    meme: MemeSubmission,
     onAction: (id: string, action: 'approve' | 'reject' | 'schedule', data?: { rejectionReason?: string, scheduledFor?: string }) => void,
-    onDelete: (id: string) => void
+    onDelete: (id: string) => void,
+    isSelected: boolean,
+    onToggleSelect: () => void,
+    onQuickSchedule?: (meme: MemeSubmission) => void
 }) {
     const [isRejectionModalOpen, setIsRejectionModalOpen] = useState(false);
     const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
@@ -201,7 +603,9 @@ function MemeCard({ meme, onAction, onDelete }: {
     const [scheduledDate, setScheduledDate] = useState('');
 
     return (
-        <div className="group bg-white rounded-3xl border border-slate-200 overflow-hidden transition-all hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-1">
+        <div className={`group bg-white rounded-3xl border-2 overflow-hidden transition-all hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-1 ${
+            isSelected ? 'border-indigo-600 ring-4 ring-indigo-200' : 'border-slate-200'
+        }`}>
             {/* Media Preview */}
             <div className="relative aspect-square bg-slate-100 overflow-hidden">
                 <Image
@@ -210,6 +614,22 @@ function MemeCard({ meme, onAction, onDelete }: {
                     fill
                     className="object-cover transition-transform group-hover:scale-105"
                 />
+
+                {/* Selection Checkbox */}
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleSelect();
+                    }}
+                    className="absolute top-3 left-3 z-10 p-2 bg-white/90 backdrop-blur-sm rounded-lg hover:bg-white transition shadow-lg"
+                >
+                    {isSelected ? (
+                        <CheckSquare className="w-5 h-5 text-indigo-600" />
+                    ) : (
+                        <Square className="w-5 h-5 text-slate-400" />
+                    )}
+                </button>
+
                 <div className="absolute top-3 right-3">
                     <MemeStatusBadge status={meme.status} />
                 </div>
@@ -234,9 +654,13 @@ function MemeCard({ meme, onAction, onDelete }: {
                     </button>
                 </div>
 
-                <p className="text-sm text-slate-600 line-clamp-2 mb-4 h-10">
-                    {meme.caption || <span className="italic opacity-40">No caption</span>}
-                </p>
+                <div className="mb-4 min-h-[2.5rem]">
+                    <ExpandableCaption
+                        caption={meme.caption || ''}
+                        maxLines={2}
+                        showCharCount={true}
+                    />
+                </div>
 
                 {/* Actions */}
                 <div className="space-y-2">
@@ -266,6 +690,17 @@ function MemeCard({ meme, onAction, onDelete }: {
                         >
                             <Calendar className="w-3.5 h-3.5" />
                             Schedule
+                        </button>
+                    )}
+
+                    {/* Quick Schedule Button for Approved Memes */}
+                    {meme.status === 'approved' && onQuickSchedule && (
+                        <button
+                            onClick={() => onQuickSchedule(meme)}
+                            className="w-full flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-black rounded-xl hover:shadow-lg transition uppercase tracking-tight"
+                        >
+                            <Calendar className="w-3.5 h-3.5" />
+                            ⚡ Quick Schedule
                         </button>
                     )}
 
