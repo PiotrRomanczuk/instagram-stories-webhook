@@ -12,6 +12,7 @@ import { MediaModal } from '../ui/media-modal';
 import { InsightsPanel } from './insights-panel';
 import { PostEditModal } from './post-edit-modal';
 import { ImageDimensionsBadge, AspectRatioOverlay } from '../media/image-dimensions-badge';
+import { ExpandableCaption } from '../ui/expandable-caption';
 
 interface PostCardProps {
     post: ScheduledPostWithUser;
@@ -258,12 +259,15 @@ export function PostCard({ post, onCancel, onReschedule, onUpdateTags, onPostImm
                         </div>
                     )}
 
-                    {/* Caption Preview (truncated) */}
-                    {post.caption && (
-                        <p className="text-xs text-slate-500 line-clamp-2 px-1">
-                            {post.caption}
-                        </p>
-                    )}
+                    {/* Caption Preview */}
+                    <div className="px-1">
+                        <ExpandableCaption
+                            caption={post.caption || ''}
+                            maxLines={2}
+                            className="text-xs"
+                        />
+                    </div>
+
                     {/* Tags Preview */}
                     {post.userTags && post.userTags.length > 0 && (
                         <div className="flex flex-wrap gap-1 px-1">

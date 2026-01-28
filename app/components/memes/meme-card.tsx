@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { Clock, CheckCircle2, AlertCircle, Calendar, Info, Edit2, Trash2 } from 'lucide-react';
 import { MemeSubmission } from '@/lib/types';
+import { ExpandableCaption } from '../ui/expandable-caption';
 
 interface MemeCardProps {
     meme: MemeSubmission;
@@ -76,16 +77,11 @@ export function MemeCard({ meme, onEdit, onDelete }: MemeCardProps) {
                         {meme.title}
                     </h3>
                 )}
-                
-                {meme.caption && (
-                    <p className="text-sm text-slate-500 line-clamp-2">
-                        {meme.caption}
-                    </p>
-                )}
 
-                {!meme.title && !meme.caption && (
-                    <p className="text-xs text-slate-400 italic">No description provided</p>
-                )}
+                <ExpandableCaption
+                    caption={meme.caption || ''}
+                    maxLines={2}
+                />
 
                 {/* Meta Info & Actions */}
                 <div className="pt-3 border-t border-slate-50 space-y-3">
