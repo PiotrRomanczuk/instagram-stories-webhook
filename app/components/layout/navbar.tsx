@@ -1,7 +1,6 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { Link, usePathname, useRouter } from '@/i18n/routing';
 import { useSession, signOut } from 'next-auth/react';
 import {
 	Home,
@@ -14,14 +13,25 @@ import {
 	Terminal,
 	Users,
 	Instagram,
+	Languages,
 } from 'lucide-react';
 import { useState } from 'react';
 import { UserRole } from '@/lib/types';
+import { useTranslations, useLocale } from 'next-intl';
+import { NotificationBell } from './notification-bell';
 
 export function Navbar() {
+	const t = useTranslations('Navbar');
+	const locale = useLocale();
+	const router = useRouter();
 	const { data: session } = useSession();
 	const pathname = usePathname();
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+	const toggleLocale = () => {
+		const nextLocale = locale === 'en' ? 'pl' : 'en';
+		router.replace(pathname, { locale: nextLocale });
+	};
 
 	// Don't show navbar on signin page
 	if (pathname === '/auth/signin') return null;
@@ -32,19 +42,23 @@ export function Navbar() {
 	const isAdminOrDev = isAdmin || isDev;
 
 	const navItems = [
-		{ href: '/', label: 'Dashboard', icon: Home },
-		{ href: '/memes', label: 'Memes', icon: ImageIcon },
+		{ href: '/', label: t('dashboard'), icon: Home },
+		{ href: '/memes', label: t('memes'), icon: ImageIcon },
 	];
 
 	if (isAdminOrDev) {
-		navItems.push({ href: '/schedule', label: 'Schedule', icon: Calendar });
-		navItems.push({ href: '/admin/memes', label: 'Memes Admin', icon: Shield });
-		navItems.push({ href: '/admin/users', label: 'Users', icon: Users });
+		navItems.push({ href: '/schedule', label: t('schedule'), icon: Calendar });
+		navItems.push({
+			href: '/admin/memes',
+			label: t('memesAdmin'),
+			icon: Shield,
+		});
+		navItems.push({ href: '/admin/users', label: t('users'), icon: Users });
 	}
 
 	if (isDev) {
 		// We'll add developer sub-items or a single Dev icon
-		navItems.push({ href: '/developer', label: 'Dev Tools', icon: Terminal });
+		navItems.push({ href: '/developer', label: t('devTools'), icon: Terminal });
 	}
 
 	const isActive = (path: string) => pathname === path;
@@ -87,6 +101,19 @@ export function Navbar() {
 
 					{/* Actions */}
 					<div className='hidden md:flex items-center gap-4'>
+						{session?.user && <NotificationBell />}
+
+						<button
+							onClick={toggleLocale}
+							className='p-2 text-slate-500 hover:text-indigo-600 transition-colors rounded-lg bg-slate-50'
+							title={locale === 'en' ? 'Switch to Polish' : 'Switch to English'}
+						>
+							<span className='font-bold text-xs flex items-center gap-1'>
+								<Languages className='w-4 h-4' />
+								{locale.toUpperCase()}
+							</span>
+						</button>
+
 						{session?.user ? (
 							<div className='flex items-center gap-4'>
 								<div className='flex flex-col items-end'>
@@ -115,7 +142,7 @@ export function Navbar() {
 								href='/auth/signin'
 								className='px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 transition-colors'
 							>
-								Sign In
+								{t('signIn')}
 							</Link>
 						)}
 					</div>
@@ -155,6 +182,17 @@ export function Navbar() {
 							</Link>
 						);
 					})}
+					<div className='px-4 py-2'>
+						<button
+							onClick={toggleLocale}
+							className='flex items-center gap-3 w-full text-slate-600 hover:text-indigo-600'
+						>
+							<Languages className='w-5 h-5' />
+							<span className='font-bold'>
+								Language: {locale.toUpperCase()}
+							</span>
+						</button>
+					</div>
 					<div className='pt-4 border-t border-slate-100 flex items-center justify-between px-4'>
 						<div className='flex flex-col gap-1'>
 							<span className='text-sm font-semibold text-slate-700'>

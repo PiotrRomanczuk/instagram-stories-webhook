@@ -167,7 +167,6 @@ This roadmap outlines the planned enhancements and maintenance tasks for the Ins
   - File: `FEATURE-MATRIX.md` → Analytics section
 
 ### 🎨 UI/UX Enhancements
-- [ ] **Dark Mode**: Implement a sleek, glassmorphic dark theme.
 - [ ] **Micro-animations**: Add Framer Motion transitions for state changes.
 - [ ] **Analytics Dashboard**: Add date range, trends, export (see FEATURE-MATRIX.md)
 - [ ] **Pagination UI**: Add pagination to meme/schedule lists

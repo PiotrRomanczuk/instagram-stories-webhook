@@ -1,5 +1,7 @@
 import { supabaseAdmin } from './config/supabase-admin';
 import { Logger } from './utils/logger';
+import { createNotification } from './notifications';
+import { generateImageHash, findDuplicateSubmission } from './media/phash';
 import {
 	MemeStatus,
 	UserRole,
@@ -337,6 +339,22 @@ export async function createMemeSubmission(
 	input: CreateMemeInput,
 ): Promise<MemeSubmission | null> {
 	try {
+		// Generate perceptual hash for images to detect duplicates
+		let phash: string | null = null;
+		if (input.media_url && !input.media_url.toLowerCase().endsWith('.mp4')) {
+			phash = await generateImageHash(input.media_url);
+			if (phash) {
+				const existingId = await findDuplicateSubmission(phash);
+				if (existingId) {
+					Logger.warn(
+						MODULE,
+						`Duplicate meme detected: ${input.media_url} matches existing submission ${existingId}`,
+					);
+					throw new Error('DUPLICATE_MEME');
+				}
+			}
+		}
+
 		const { data, error } = await supabaseAdmin
 			.from('meme_submissions')
 			.insert({
@@ -347,6 +365,7 @@ export async function createMemeSubmission(
 				title: input.title,
 				caption: input.caption,
 				status: 'pending',
+				phash: phash,
 			})
 			.select()
 			.single();
@@ -493,6 +512,20 @@ export async function reviewMemeSubmission(
 		}
 
 		Logger.info(MODULE, `📝 Meme ${id} ${status} by admin`, { adminUserId });
+
+		// Create notification for the user
+		await createNotification({
+			userId: data.user_id,
+			type: action === 'approve' ? 'meme_approved' : 'meme_rejected',
+			title: action === 'approve' ? '🎉 Meme Approved!' : '❌ Meme Rejected',
+			message:
+				action === 'approve'
+					? `Your meme "${data.title || 'Untitled'}" has been approved!`
+					: `Your meme was rejected: ${rejectionReason}`,
+			relatedType: 'meme',
+			relatedId: id,
+		});
+
 		return data as MemeSubmission;
 	} catch (error) {
 		Logger.error(MODULE, 'Exception in reviewMemeSubmission', error);
@@ -529,6 +562,17 @@ export async function scheduleMeme(
 			MODULE,
 			`📅 Meme ${id} scheduled for ${new Date(scheduledTime).toISOString()}`,
 		);
+
+		// Create notification for the user
+		await createNotification({
+			userId: data.user_id,
+			type: 'meme_scheduled',
+			title: '📅 Meme Scheduled',
+			message: `Your meme "${data.title || 'Untitled'}" is scheduled for ${new Date(scheduledTime).toLocaleString()}`,
+			relatedType: 'meme',
+			relatedId: id,
+		});
+
 		return data as MemeSubmission;
 	} catch (error) {
 		Logger.error(MODULE, 'Exception in scheduleMeme', error);
@@ -565,6 +609,17 @@ export async function markMemePublished(
 		}
 
 		Logger.info(MODULE, `✅ Meme ${id} published to Instagram`, { igMediaId });
+
+		// Create notification for the user
+		await createNotification({
+			userId: data.user_id,
+			type: 'meme_published',
+			title: '🚀 Meme Published!',
+			message: `Your meme "${data.title || 'Untitled'}" is now live on Instagram!`,
+			relatedType: 'meme',
+			relatedId: id,
+		});
+
 		return data as MemeSubmission;
 	} catch (error) {
 		Logger.error(MODULE, 'Exception in markMemePublished', error);
@@ -694,5 +749,36 @@ export async function getUserStatsByEmail(email: string) {
 	} catch (error) {
 		Logger.error(MODULE, 'Exception in getUserStatsByEmail', error);
 		return { total: 0, statusCounts: {}, lastUserId: null, lastSubAt: null };
+	}
+}
+
+/**
+ * Count submissions by a user within a specific timeframe
+ */
+export async function countRecentSubmissions(
+	userId: string,
+	sinceMs: number,
+): Promise<number> {
+	try {
+		const since = new Date(Date.now() - sinceMs).toISOString();
+		const { count, error } = await supabaseAdmin
+			.from('meme_submissions')
+			.select('id', { count: 'exact', head: true })
+			.eq('user_id', userId)
+			.gte('created_at', since);
+
+		if (error) {
+			Logger.error(
+				MODULE,
+				`Error counting recent submissions: ${error.message}`,
+				error,
+			);
+			return 0;
+		}
+
+		return count || 0;
+	} catch (error) {
+		Logger.error(MODULE, 'Exception in countRecentSubmissions', error);
+		return 0;
 	}
 }

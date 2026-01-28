@@ -1,0 +1,66 @@
+{
+	"Home": {
+		"title": "Welcome",
+		"memeSubmissions": {
+			"title": "Meme Submissions",
+			"description": "Submit and manage your memes"
+		},
+		"adminDashboard": {
+			"title": "Admin Dashboard",
+			"description": "Review submissions & users"
+		},
+		"developerTools": "Open Developer Tools"
+	},
+	"Navbar": {
+		"dashboard": "Dashboard",
+		"memes": "Memes",
+		"schedule": "Schedule",
+		"memesAdmin": "Memes Admin",
+		"users": "Users",
+		"devTools": "Dev Tools",
+		"signIn": "Sign In"
+	},
+	"AdminUsers": {
+		"title": "User",
+		"whitelist": "Whitelist",
+		"subtitle": "Manage who can access the meme submission system",
+		"backLink": "Meme Review",
+		"addUser": "Add User",
+		"placeholder": "user@gmail.com",
+		"devOnly": "Dev Only",
+		"add": "Add",
+		"search": "Search by email or name...",
+		"email": "Email",
+		"role": "Role",
+		"you": "You",
+		"roles": {
+			"user": "User",
+			"admin": "Admin",
+			"developer": "Developer"
+		},
+		"legend": {
+			"developer": "Developer = Full access (Dev Tools + Admin)",
+			"admin": "Admin = Can review + publish memes",
+			"user": "User = Can submit memes only"
+		},
+		"details": {
+			"title": "User Details",
+			"accountInfo": "Account Information",
+			"role": "Role",
+			"whitelisted": "Whitelisted",
+			"addedBy": "Added By",
+			"linkedAccounts": "Linked Accounts",
+			"connected": "Connected",
+			"noLinked": "No Instagram Linked",
+			"noLinkedDesc": "User hasn't linked their Business account yet.",
+			"activity": "Submission Activity",
+			"total": "Total Submissions",
+			"approved": "Approved",
+			"published": "Published",
+			"pending": "Pending",
+			"rejected": "Rejected",
+			"lastActive": "Last active:",
+			"viewSubmissions": "View Submissions"
+		}
+	}
+}

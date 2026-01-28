@@ -1,244 +1,319 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { addScheduledPost, getScheduledPosts, getAllScheduledPosts, deleteScheduledPost, updateScheduledPost } from '@/lib/database/scheduled-posts';
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
-import { isAdmin } from "@/lib/auth-helpers";
+import {
+	addScheduledPost,
+	getScheduledPosts,
+	getAllScheduledPosts,
+	deleteScheduledPost,
+	updateScheduledPost,
+} from '@/lib/database/scheduled-posts';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
+import { isAdmin } from '@/lib/auth-helpers';
+import { rateLimiter } from '@/lib/middleware/rate-limit';
+
+// Rate limit config: 60 requests per 1 minute
+const API_RATE_LIMIT = { limit: 60, windowMs: 60 * 1000 };
 
 // GET - List all scheduled posts for the current user (or all posts for admins)
 export async function GET(request: NextRequest) {
-    try {
-        const session = await getServerSession(authOptions);
-        if (!session?.user?.id) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+	// Rate check
+	const rateCheck = rateLimiter(request, API_RATE_LIMIT);
+	if (rateCheck.isRateLimited) return rateCheck.response!;
 
-        const searchParams = request.nextUrl.searchParams;
-        const status = searchParams.get('status');
-        const showAll = searchParams.get('all') === 'true';
+	try {
+		const session = await getServerSession(authOptions);
+		if (!session?.user?.id) {
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+		}
 
-        // Admins can see all posts if ?all=true is passed
-        let posts;
-        if (isAdmin(session) && showAll) {
-            posts = await getAllScheduledPosts();
-        } else {
-            posts = await getScheduledPosts(session.user.id);
-        }
+		const searchParams = request.nextUrl.searchParams;
+		const status = searchParams.get('status');
+		const showAll = searchParams.get('all') === 'true';
 
-        // Filter by status if provided
-        if (status) {
-            posts = posts.filter(p => p.status === status);
-        }
+		// Admins can see all posts if ?all=true is passed
+		let posts;
+		if (isAdmin(session) && showAll) {
+			posts = await getAllScheduledPosts();
+		} else {
+			posts = await getScheduledPosts(session.user.id);
+		}
 
-        // Filter to show only:
-        // - All pending posts (regardless of age)
-        // - Published posts from the last 24 hours
-        const twentyFourHoursAgo = Date.now() - (24 * 60 * 60 * 1000);
-        posts = posts.filter(p => {
-            if (p.status === 'pending') {
-                return true; // Show all pending posts
-            }
-            // For published/failed posts, only show if within last 24 hours
-            return p.scheduledTime >= twentyFourHoursAgo;
-        });
+		// Filter by status if provided
+		if (status) {
+			posts = posts.filter((p) => p.status === status);
+		}
 
-        // Sort by scheduled time (earliest first)
-        posts.sort((a, b) => a.scheduledTime - b.scheduledTime);
+		// Filter to show only:
+		// - All pending posts (regardless of age)
+		// - Published posts from the last 24 hours
+		const twentyFourHoursAgo = Date.now() - 24 * 60 * 60 * 1000;
+		posts = posts.filter((p) => {
+			if (p.status === 'pending') {
+				return true; // Show all pending posts
+			}
+			// For published/failed posts, only show if within last 24 hours
+			return p.scheduledTime >= twentyFourHoursAgo;
+		});
 
-        return NextResponse.json({ posts });
-    } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        console.error('Error fetching scheduled posts:', error);
-        return NextResponse.json({ error: errorMessage }, { status: 500 });
-    }
+		// Sort by scheduled time (earliest first)
+		posts.sort((a, b) => a.scheduledTime - b.scheduledTime);
+
+		return NextResponse.json({ posts });
+	} catch (error: unknown) {
+		const errorMessage =
+			error instanceof Error ? error.message : 'Unknown error';
+		console.error('Error fetching scheduled posts:', error);
+		return NextResponse.json({ error: errorMessage }, { status: 500 });
+	}
 }
 
 // POST - Schedule a new post
 export async function POST(request: NextRequest) {
-    try {
-        const session = await getServerSession(authOptions);
-        if (!session?.user?.id) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+	// Rate check
+	const rateCheck = rateLimiter(request, API_RATE_LIMIT);
+	if (rateCheck.isRateLimited) return rateCheck.response!;
 
-        const body = await request.json();
+	try {
+		const session = await getServerSession(authOptions);
+		if (!session?.user?.id) {
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+		}
 
-        // Import Zod schema
-        const { z } = await import('zod');
+		const body = await request.json();
 
-        // Define server-side validation schema
-        const schedulePostSchema = z.object({
-            url: z.string().url('Invalid media URL'),
-            type: z.enum(['IMAGE', 'VIDEO']),
-            postType: z.enum(['STORY']).optional().default('STORY'),
-            caption: z.string().max(2200, 'Caption cannot exceed 2200 characters').optional().default(''),
-            scheduledTime: z.string().or(z.number())
-                .pipe(z.coerce.date())
-                .refine((date) => date.getTime() > Date.now(), {
-                    message: 'scheduledTime must be in the future'
-                })
-                .transform(date => date.getTime()),
-            userTags: z.array(z.object({
-                username: z.string(),
-                x: z.number().min(0).max(1),
-                y: z.number().min(0).max(1)
-            })).max(20, 'Maximum 20 user tags allowed').optional().default([])
-        });
+		// Import Zod schema
+		const { z } = await import('zod');
 
-        // Validate request body
-        const validationResult = schedulePostSchema.safeParse(body);
+		// Define server-side validation schema
+		const schedulePostSchema = z.object({
+			url: z.string().url('Invalid media URL'),
+			type: z.enum(['IMAGE', 'VIDEO']),
+			postType: z.enum(['STORY']).optional().default('STORY'),
+			caption: z
+				.string()
+				.max(2200, 'Caption cannot exceed 2200 characters')
+				.optional()
+				.default(''),
+			scheduledTime: z
+				.string()
+				.or(z.number())
+				.pipe(z.coerce.date())
+				.refine((date) => date.getTime() > Date.now(), {
+					message: 'scheduledTime must be in the future',
+				})
+				.transform((date) => date.getTime()),
+			userTags: z
+				.array(
+					z.object({
+						username: z.string(),
+						x: z.number().min(0).max(1),
+						y: z.number().min(0).max(1),
+					}),
+				)
+				.max(20, 'Maximum 20 user tags allowed')
+				.optional()
+				.default([]),
+		});
 
-        if (!validationResult.success) {
-            const errors = validationResult.error.issues.map((err) => ({
-                field: err.path.join('.'),
-                message: err.message
-            }));
-            return NextResponse.json({
-                error: 'Validation failed',
-                details: errors
-            }, { status: 400 });
-        }
+		// Validate request body
+		const validationResult = schedulePostSchema.safeParse(body);
 
-        const { url, type, postType, caption, scheduledTime, userTags } = validationResult.data;
+		if (!validationResult.success) {
+			const errors = validationResult.error.issues.map((err) => ({
+				field: err.path.join('.'),
+				message: err.message,
+			}));
+			return NextResponse.json(
+				{
+					error: 'Validation failed',
+					details: errors,
+				},
+				{ status: 400 },
+			);
+		}
 
-        const post = await addScheduledPost({
-            url,
-            type,
-            postType,
-            caption,
-            scheduledTime,
-            userTags,
-            userId: session.user.id // Associate with current user
-        });
+		const { url, type, postType, caption, scheduledTime, userTags } =
+			validationResult.data;
 
-        console.log(`📅 Scheduled ${postType} (${type}) post for user ${session.user.id} at ${new Date(scheduledTime).toLocaleString()}`);
+		const post = await addScheduledPost({
+			url,
+			type,
+			postType,
+			caption,
+			scheduledTime,
+			userTags,
+			userId: session.user.id, // Associate with current user
+		});
 
-        return NextResponse.json({
-            success: true,
-            post,
-            message: `Post scheduled for ${new Date(scheduledTime).toLocaleString()}`
-        });
-    } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        console.error('Error scheduling post:', error);
-        return NextResponse.json({ error: errorMessage }, { status: 500 });
-    }
+		console.log(
+			`📅 Scheduled ${postType} (${type}) post for user ${session.user.id} at ${new Date(scheduledTime).toLocaleString()}`,
+		);
+
+		return NextResponse.json({
+			success: true,
+			post,
+			message: `Post scheduled for ${new Date(scheduledTime).toLocaleString()}`,
+		});
+	} catch (error: unknown) {
+		const errorMessage =
+			error instanceof Error ? error.message : 'Unknown error';
+		console.error('Error scheduling post:', error);
+		return NextResponse.json({ error: errorMessage }, { status: 500 });
+	}
 }
 
 // DELETE - Cancel a scheduled post
 export async function DELETE(request: NextRequest) {
-    try {
-        const session = await getServerSession(authOptions);
-        if (!session?.user?.id) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+	// Rate check
+	const rateCheck = rateLimiter(request, API_RATE_LIMIT);
+	if (rateCheck.isRateLimited) return rateCheck.response!;
 
-        const searchParams = request.nextUrl.searchParams;
-        const id = searchParams.get('id');
+	try {
+		const session = await getServerSession(authOptions);
+		if (!session?.user?.id) {
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+		}
 
-        if (!id) {
-            return NextResponse.json({ error: 'Missing "id" parameter' }, { status: 400 });
-        }
+		const searchParams = request.nextUrl.searchParams;
+		const id = searchParams.get('id');
 
-        // Verify ownership
-        const posts = await getScheduledPosts(session.user.id);
-        const postExists = posts.some(p => p.id === id);
+		if (!id) {
+			return NextResponse.json(
+				{ error: 'Missing "id" parameter' },
+				{ status: 400 },
+			);
+		}
 
-        if (!postExists) {
-            return NextResponse.json({ error: 'Post not found or unauthorized' }, { status: 404 });
-        }
+		// Verify ownership
+		const posts = await getScheduledPosts(session.user.id);
+		const postExists = posts.some((p) => p.id === id);
 
-        const deleted = await deleteScheduledPost(id);
+		if (!postExists) {
+			return NextResponse.json(
+				{ error: 'Post not found or unauthorized' },
+				{ status: 404 },
+			);
+		}
 
-        if (!deleted) {
-            return NextResponse.json({ error: 'Failed to delete' }, { status: 500 });
-        }
+		const deleted = await deleteScheduledPost(id);
 
-        console.log(`🗑️ Cancelled scheduled post: ${id} for user ${session.user.id}`);
+		if (!deleted) {
+			return NextResponse.json({ error: 'Failed to delete' }, { status: 500 });
+		}
 
-        return NextResponse.json({ success: true, message: 'Post cancelled' });
-    } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        console.error('Error cancelling post:', error);
-        return NextResponse.json({ error: errorMessage }, { status: 500 });
-    }
+		console.log(
+			`🗑️ Cancelled scheduled post: ${id} for user ${session.user.id}`,
+		);
+
+		return NextResponse.json({ success: true, message: 'Post cancelled' });
+	} catch (error: unknown) {
+		const errorMessage =
+			error instanceof Error ? error.message : 'Unknown error';
+		console.error('Error cancelling post:', error);
+		return NextResponse.json({ error: errorMessage }, { status: 500 });
+	}
 }
 
 // PATCH - Update a scheduled post
 export async function PATCH(request: NextRequest) {
-    try {
-        const session = await getServerSession(authOptions);
-        if (!session?.user?.id) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+	// Rate check
+	const rateCheck = rateLimiter(request, API_RATE_LIMIT);
+	if (rateCheck.isRateLimited) return rateCheck.response!;
 
-        const body = await request.json();
+	try {
+		const session = await getServerSession(authOptions);
+		if (!session?.user?.id) {
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+		}
 
-        // Import Zod for validation
-        const { z } = await import('zod');
+		const body = await request.json();
 
-        // Define validation schema for updates (all fields optional except id)
-        const updatePostSchema = z.object({
-            id: z.string().min(1, 'Post ID is required'),
-            url: z.string().url('Invalid media URL').optional(),
-            caption: z.string().max(2200, 'Caption cannot exceed 2200 characters').optional(),
-            scheduledTime: z.string().or(z.number()).transform((val) => {
-                const timestamp = typeof val === 'string' ? new Date(val).getTime() : val;
-                if (isNaN(timestamp)) {
-                    throw new Error('Invalid scheduledTime format');
-                }
-                if (timestamp <= Date.now()) {
-                    throw new Error('scheduledTime must be in the future');
-                }
-                return timestamp;
-            }).optional(),
-            userTags: z.array(z.object({
-                username: z.string(),
-                x: z.number().min(0).max(1),
-                y: z.number().min(0).max(1)
-            })).max(20, 'Maximum 20 user tags allowed').optional()
-        });
+		// Import Zod for validation
+		const { z } = await import('zod');
 
-        // Validate request body
-        const validationResult = updatePostSchema.safeParse(body);
+		// Define validation schema for updates (all fields optional except id)
+		const updatePostSchema = z.object({
+			id: z.string().min(1, 'Post ID is required'),
+			url: z.string().url('Invalid media URL').optional(),
+			caption: z
+				.string()
+				.max(2200, 'Caption cannot exceed 2200 characters')
+				.optional(),
+			scheduledTime: z
+				.string()
+				.or(z.number())
+				.transform((val) => {
+					const timestamp =
+						typeof val === 'string' ? new Date(val).getTime() : val;
+					if (isNaN(timestamp)) {
+						throw new Error('Invalid scheduledTime format');
+					}
+					if (timestamp <= Date.now()) {
+						throw new Error('scheduledTime must be in the future');
+					}
+					return timestamp;
+				})
+				.optional(),
+			userTags: z
+				.array(
+					z.object({
+						username: z.string(),
+						x: z.number().min(0).max(1),
+						y: z.number().min(0).max(1),
+					}),
+				)
+				.max(20, 'Maximum 20 user tags allowed')
+				.optional(),
+		});
 
-        if (!validationResult.success) {
-            const errors = validationResult.error.issues.map((err) => ({
-                field: err.path.join('.'),
-                message: err.message
-            }));
-            return NextResponse.json({
-                error: 'Validation failed',
-                details: errors
-            }, { status: 400 });
-        }
+		// Validate request body
+		const validationResult = updatePostSchema.safeParse(body);
 
-        const { id, ...updates } = validationResult.data;
+		if (!validationResult.success) {
+			const errors = validationResult.error.issues.map((err) => ({
+				field: err.path.join('.'),
+				message: err.message,
+			}));
+			return NextResponse.json(
+				{
+					error: 'Validation failed',
+					details: errors,
+				},
+				{ status: 400 },
+			);
+		}
 
-        // Verify ownership
-        const posts = await getScheduledPosts(session.user.id);
-        const postExists = posts.some(p => p.id === id);
+		const { id, ...updates } = validationResult.data;
 
-        if (!postExists) {
-            return NextResponse.json({ error: 'Post not found or unauthorized' }, { status: 404 });
-        }
+		// Verify ownership
+		const posts = await getScheduledPosts(session.user.id);
+		const postExists = posts.some((p) => p.id === id);
 
-        // Log updates for debugging
-        if (updates.userTags) {
-            console.log(`🏷️ Updating tags for post ${id}:`, updates.userTags);
-        }
+		if (!postExists) {
+			return NextResponse.json(
+				{ error: 'Post not found or unauthorized' },
+				{ status: 404 },
+			);
+		}
 
-        const post = await updateScheduledPost(id, updates);
+		// Log updates for debugging
+		if (updates.userTags) {
+			console.log(`🏷️ Updating tags for post ${id}:`, updates.userTags);
+		}
 
-        if (!post) {
-            return NextResponse.json({ error: 'Post not found' }, { status: 404 });
-        }
+		const post = await updateScheduledPost(id, updates);
 
-        console.log(`✏️ Updated scheduled post: ${id} for user ${session.user.id}`);
+		if (!post) {
+			return NextResponse.json({ error: 'Post not found' }, { status: 404 });
+		}
 
-        return NextResponse.json({ success: true, post });
-    } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        console.error('Error updating post:', error);
-        return NextResponse.json({ error: errorMessage }, { status: 500 });
-    }
+		console.log(`✏️ Updated scheduled post: ${id} for user ${session.user.id}`);
+
+		return NextResponse.json({ success: true, post });
+	} catch (error: unknown) {
+		const errorMessage =
+			error instanceof Error ? error.message : 'Unknown error';
+		console.error('Error updating post:', error);
+		return NextResponse.json({ error: errorMessage }, { status: 500 });
+	}
 }
