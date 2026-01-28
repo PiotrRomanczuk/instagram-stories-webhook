@@ -30,6 +30,7 @@ export default function AdminUsersPage() {
     const [newEmail, setNewEmail] = useState('');
     const [newRole, setNewRole] = useState<UserRole>('user');
     const [isAdding, setIsAdding] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
 
     const fetchUsers = useCallback(async () => {
         try {
@@ -107,6 +108,13 @@ export default function AdminUsersPage() {
         }
     };
 
+    // Filter users based on search term
+    const filteredUsers = users.filter(user =>
+        user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.display_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        false
+    );
+
     return (
         <main className="min-h-screen bg-slate-50 p-4 md:p-8 lg:p-12">
             <div className="max-w-4xl mx-auto">
@@ -162,15 +170,26 @@ export default function AdminUsersPage() {
                     </div>
                 </form>
 
+                {/* Search Bar */}
+                <div className="mb-4">
+                    <input
+                        type="text"
+                        placeholder="Search by email or name..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    />
+                </div>
+
                 {/* User List */}
                 <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
                     {isLoading ? (
                         <div className="flex items-center justify-center py-12">
                             <Loader className="w-8 h-8 text-indigo-500 animate-spin" />
                         </div>
-                    ) : users.length === 0 ? (
+                    ) : filteredUsers.length === 0 ? (
                         <div className="text-center py-12 text-slate-500">
-                            No users in whitelist
+                            {searchTerm ? 'No users found matching search' : 'No users in whitelist'}
                         </div>
                     ) : (
                         <table className="w-full">
@@ -182,7 +201,7 @@ export default function AdminUsersPage() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {users.map(user => {
+                                {filteredUsers.map(user => {
                                     const isCurrentUser = user.email === session?.user?.email;
                                     return (
                                     <tr
