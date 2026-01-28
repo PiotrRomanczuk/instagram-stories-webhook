@@ -1,5 +1,6 @@
 import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
+import { withSentryConfig } from '@sentry/nextjs';
 
 const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 
@@ -62,4 +63,26 @@ const nextConfig: NextConfig = {
 	},
 };
 
-export default withNextIntl(nextConfig);
+const sentryConfig = withSentryConfig(withNextIntl(nextConfig), {
+	// For all available options, see:
+	// https://github.com/getsentry/sentry-javascript/blob/master/packages/nextjs/src/config/types.ts
+
+	// Suppresses source map uploading logs during bundling
+	silent: true,
+	org: 'your-org-slug',
+	project: 'your-project-slug',
+
+	// For all available options, see:
+	// https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
+
+	// Upload a larger set of source maps for better stack traces (can increase build time)
+	widenClientFileUpload: true,
+
+	// Routes browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers (increases server load)
+	tunnelRoute: '/monitoring',
+
+	// https://docs.sentry.io/product/crons/
+	// https://vercel.com/docs/cron-jobs
+});
+
+export default sentryConfig;
