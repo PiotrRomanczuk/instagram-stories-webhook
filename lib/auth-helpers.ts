@@ -36,7 +36,7 @@ export function isAuthenticated(session: { user?: { id?: string } } | null): boo
  */
 export function requireAdmin(session: { user?: { role?: UserRole } } | null): void {
     if (!isAdmin(session)) {
-        throw new Error('Authorized access required');
+        throw new Error('Admin access required');
     }
 }
 

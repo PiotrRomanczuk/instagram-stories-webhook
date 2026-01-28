@@ -88,7 +88,7 @@ export async function PATCH(
         return NextResponse.json({ meme: result });
     } catch (_error) {
         const message = _error instanceof Error ? _error.message : 'Internal Server Error';
-        if (message === 'Authorized access required') return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+        if (message === 'Admin access required') return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
 
         // Handle Zod validation errors with full details
         if (_error instanceof Error && _error.name === 'ZodError') {
