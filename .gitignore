@@ -52,3 +52,5 @@ data/app-config.json
 
 playwright-report
 test-results
+# Sentry Config File
+.env.sentry-build-plugin

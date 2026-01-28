@@ -63,14 +63,14 @@ const nextConfig: NextConfig = {
 	},
 };
 
-const sentryConfig = withSentryConfig(withNextIntl(nextConfig), {
+export default withSentryConfig(withNextIntl(nextConfig), {
 	// For all available options, see:
 	// https://github.com/getsentry/sentry-javascript/blob/master/packages/nextjs/src/config/types.ts
 
 	// Suppresses source map uploading logs during bundling
-	silent: true,
-	org: 'your-org-slug',
-	project: 'your-project-slug',
+	silent: !process.env.CI,
+	org: 'bmr-p0',
+	project: 'marszal-arts',
 
 	// For all available options, see:
 	// https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
@@ -81,8 +81,9 @@ const sentryConfig = withSentryConfig(withNextIntl(nextConfig), {
 	// Routes browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers (increases server load)
 	tunnelRoute: '/monitoring',
 
+	// Enables automatic instrumentation of Vercel Cron Monitors.
+	// See the following for more information:
 	// https://docs.sentry.io/product/crons/
 	// https://vercel.com/docs/cron-jobs
+	automaticVercelMonitors: true,
 });
-
-export default sentryConfig;
