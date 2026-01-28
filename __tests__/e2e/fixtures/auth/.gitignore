@@ -1,0 +1,3 @@
+# Ignore authentication state files (contain session data)
+*.json
+!.gitignore
