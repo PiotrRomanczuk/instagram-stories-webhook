@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { removeAllowedUser, updateUserRole, UserRole } from '@/lib/memes-db';
 import { requireAdmin, requireDeveloper, getUserId, getUserEmail } from '@/lib/auth-helpers';
 import { Logger } from '@/lib/utils/logger';
+import { updateUserRoleSchema, validateUserInput } from '@/lib/validations/user.schema';
 
 const MODULE = 'api:admin:users:[email]';
 
@@ -24,14 +25,14 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         const decodedEmail = decodeURIComponent(email).toLowerCase();
 
         const body = await request.json();
-        const { role } = body;
 
-        if (!role || !['developer', 'admin', 'user'].includes(role)) {
-            return NextResponse.json(
-                { error: "role must be 'developer', 'admin', or 'user'" },
-                { status: 400 }
-            );
+        // Validate input with Zod schema
+        const validation = await validateUserInput(updateUserRoleSchema, body);
+        if (!validation.success) {
+            return NextResponse.json({ error: validation.error }, { status: 400 });
         }
+
+        const { role } = validation.data;
 
         const success = await updateUserRole(decodedEmail, role as UserRole);
 
