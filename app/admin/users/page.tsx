@@ -182,11 +182,27 @@ export default function AdminUsersPage() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {users.map(user => (
-                                    <tr key={user.id} className="hover:bg-slate-50">
+                                {users.map(user => {
+                                    const isCurrentUser = user.email === session?.user?.email;
+                                    return (
+                                    <tr
+                                        key={user.id}
+                                        className={`hover:bg-slate-50 ${
+                                            isCurrentUser
+                                            ? 'bg-indigo-50 border-l-4 border-indigo-500'
+                                            : ''
+                                        }`}
+                                    >
                                         <td className="px-6 py-4">
-                                            <span className="font-medium text-slate-900">
+                                            <span className={`font-medium ${
+                                                isCurrentUser ? 'text-indigo-900' : 'text-slate-900'
+                                            }`}>
                                                 {user.email}
+                                                {isCurrentUser && (
+                                                    <span className="ml-2 text-xs font-bold text-indigo-600">
+                                                        (You)
+                                                    </span>
+                                                )}
                                             </span>
                                             {user.display_name && (
                                                 <span className="ml-2 text-sm text-slate-500">
@@ -219,7 +235,8 @@ export default function AdminUsersPage() {
                                             </button>
                                         </td>
                                     </tr>
-                                ))}
+                                    );
+                                })}
                             </tbody>
                         </table>
                     )}
