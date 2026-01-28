@@ -172,6 +172,16 @@ export const authOptions: AuthOptions = {
 								id: linkedAccount.ig_user_id,
 								username: username || undefined,
 							};
+
+							// NEW: Update DB if username was found but not stored or changed
+							if (username && username !== linkedAccount.ig_username) {
+								const { saveLinkedFacebookAccount } =
+									await import('@/lib/database/linked-accounts');
+								await saveLinkedFacebookAccount({
+									...linkedAccount,
+									ig_username: username,
+								});
+							}
 						}
 					}
 				} catch (err) {
