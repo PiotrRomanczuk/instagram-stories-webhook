@@ -2,9 +2,9 @@ name: E2E Tests
 
 on:
   push:
-    branches: [main, develop, claude/**]
+    branches: [master, main, develop, claude/**]
   pull_request:
-    branches: [main, develop]
+    branches: [master, main, develop]
   workflow_dispatch: # Allow manual trigger
 
 env:
@@ -50,7 +50,6 @@ jobs:
         run: npm run test:e2e
         env:
           CI: true
-        continue-on-error: true
 
       - name: Upload Playwright report
         if: failure()
