@@ -185,13 +185,17 @@ export function MemeSubmitForm({ onSubmitted }: MemeSubmitFormProps) {
 					);
 				}
 			} else {
-				const errorData = await res.json();
-				if (errorData.error === 'DUPLICATE_MEME') {
-					toast.error(
-						'This meme has already been submitted! Please upload something unique.',
-					);
-				} else {
-					toast.error(errorData.error || 'Failed to submit meme');
+				try {
+					const errorData = await res.json();
+					if (errorData.error === 'DUPLICATE_MEME') {
+						toast.error(
+							'This meme has already been submitted! Please upload something unique.',
+						);
+					} else {
+						toast.error(errorData.error || 'Failed to submit meme');
+					}
+				} catch {
+					toast.error(`Upload failed: ${res.status} ${res.statusText || 'Error'}`);
 				}
 			}
 		} catch (error: unknown) {

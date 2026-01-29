@@ -384,6 +384,10 @@ export async function createMemeSubmission(
 		});
 		return data as MemeSubmission;
 	} catch (error) {
+		// Re-throw DUPLICATE_MEME errors so they can be handled by the API
+		if (error instanceof Error && error.message === 'DUPLICATE_MEME') {
+			throw error;
+		}
 		Logger.error(MODULE, 'Exception in createMemeSubmission', error);
 		return null;
 	}

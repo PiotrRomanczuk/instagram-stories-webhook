@@ -149,10 +149,18 @@ export async function POST(req: NextRequest) {
 
 		return NextResponse.json({ meme });
 	} catch (error) {
+		console.error('POST /api/memes error:', error);
 		if (error instanceof Error && error.name === 'ZodError') {
 			return NextResponse.json(
 				{ error: 'Validation failed', details: error },
 				{ status: 400 },
+			);
+		}
+		// Handle duplicate meme error with 409 Conflict status
+		if (error instanceof Error && error.message === 'DUPLICATE_MEME') {
+			return NextResponse.json(
+				{ error: 'DUPLICATE_MEME' },
+				{ status: 409 },
 			);
 		}
 		return NextResponse.json(
