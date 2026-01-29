@@ -67,8 +67,8 @@ Check out our unified guides for detailed information:
 
 ### 🧪 CI/CD Features
 - **CI**: Automated Linting, TypeScript type checking, and Vitest unit testing on every push.
-- **E2E**: Playwright tests run in CI to catch UI regressions.
-- **CD**: Deployment templates for Vercel and Raspberry Pi webhooks.
+- **CD**: Automatic deployment to Vercel on every push to `master`/`main`.
+- **E2E**: Playwright tests available as separate workflow (manual trigger or on-demand).
 
 ### ⚙️ Application Settings
 
