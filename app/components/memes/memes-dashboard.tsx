@@ -14,6 +14,7 @@ import {
 	CheckCircle,
 	XCircle,
 	Calendar,
+	Clock,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { MemeSubmission, UserRole } from '@/lib/types/posts';
@@ -22,10 +23,12 @@ import { MemeList } from './meme-list';
 import { MemeListView } from './meme-list-view';
 import { MemeSearchFilter } from './meme-search-filter';
 import { MemeEditModal } from './meme-edit-modal';
+import { MemeQueueBuilder } from './meme-queue-builder';
 import { useUserMemes } from './use-user-memes';
 import { logError } from '@/lib/actions/log';
 
 type ViewMode = 'card' | 'list';
+type TabMode = 'memes' | 'queue';
 
 export function MemesDashboard() {
 	const { data: session } = useSession();
@@ -37,6 +40,7 @@ export function MemesDashboard() {
 	const [viewMode, setViewMode] = useState<ViewMode>(
 		(searchParams.get('view') as ViewMode) || 'card',
 	);
+	const [activeTab, setActiveTab] = useState<TabMode>('memes');
 	const [showForm, setShowForm] = useState(false);
 	const [search, setSearch] = useState('');
 	const [status, setStatus] = useState('');
@@ -339,15 +343,58 @@ export function MemesDashboard() {
 				</div>
 			</div>
 
+			{/* Admin Tabs */}
+			{isAdmin && (
+				<div className='flex items-center gap-2 border-b border-slate-200'>
+					<button
+						onClick={() => setActiveTab('memes')}
+						className={`px-6 py-3 font-bold text-sm transition-all relative ${
+							activeTab === 'memes'
+								? 'text-indigo-600'
+								: 'text-slate-500 hover:text-slate-700'
+						}`}
+					>
+						<span className='flex items-center gap-2'>
+							<LayoutGrid className='w-4 h-4' />
+							All Memes
+						</span>
+						{activeTab === 'memes' && (
+							<div className='absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600' />
+						)}
+					</button>
+					<button
+						onClick={() => setActiveTab('queue')}
+						className={`px-6 py-3 font-bold text-sm transition-all relative ${
+							activeTab === 'queue'
+								? 'text-indigo-600'
+								: 'text-slate-500 hover:text-slate-700'
+						}`}
+					>
+						<span className='flex items-center gap-2'>
+							<Clock className='w-4 h-4' />
+							Queue
+						</span>
+						{activeTab === 'queue' && (
+							<div className='absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600' />
+						)}
+					</button>
+				</div>
+			)}
+
 			{/* Form Section */}
-			{showForm && (
+			{showForm && activeTab === 'memes' && (
 				<div className='animate-in fade-in slide-in-from-top-4 duration-500'>
 					<MemeSubmitForm onSubmitted={handleSubmissionSuccess} />
 				</div>
 			)}
 
+			{/* Queue Builder View */}
+			{isAdmin && activeTab === 'queue' && (
+				<MemeQueueBuilder onRefresh={refresh} />
+			)}
+
 			{/* Search & Filter Section */}
-			{!showForm && memes.length > 0 && (
+			{activeTab === 'memes' && !showForm && memes.length > 0 && (
 				<MemeSearchFilter
 					query={search}
 					status={status}
@@ -357,7 +404,7 @@ export function MemesDashboard() {
 			)}
 
 			{/* Admin Bulk Actions Toolbar */}
-			{isAdmin && selectedMemes.size > 0 && (
+			{isAdmin && activeTab === 'memes' && selectedMemes.size > 0 && (
 				<div className='mb-6 bg-indigo-600 rounded-2xl p-4 shadow-lg shadow-indigo-500/30 flex items-center justify-between gap-4 animate-in slide-in-from-top-2 fade-in duration-300'>
 					<div className='flex items-center gap-3'>
 						<CheckSquare className='w-5 h-5 text-white' />
@@ -392,7 +439,7 @@ export function MemesDashboard() {
 			)}
 
 			{/* Select All (Admin only) */}
-			{isAdmin && memes.length > 0 && !isLoading && (
+			{isAdmin && activeTab === 'memes' && memes.length > 0 && !isLoading && (
 				<div className='flex items-center gap-3'>
 					<button
 						onClick={toggleSelectAll}
@@ -414,65 +461,67 @@ export function MemesDashboard() {
 			)}
 
 			{/* Content Area */}
-			<div className='space-y-6'>
-				{!showForm && memes.length > 0 && (
-					<div className='flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl w-fit text-[10px] font-black uppercase tracking-widest border border-indigo-100/50'>
-						<span className='relative flex h-2 w-2'>
-							<span className='animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75'></span>
-							<span className='relative inline-flex rounded-full h-2 w-2 bg-indigo-500'></span>
-						</span>
-						Page {page} - {memes.length} {memes.length === 1 ? 'Meme' : 'Memes'}{' '}
-						Displayed
-					</div>
-				)}
-
-				{viewMode === 'card' ? (
-					<MemeList
-						memes={memes}
-						isLoading={isLoading}
-						onEdit={handleEditMeme}
-						onDelete={handleDeleteMeme}
-					/>
-				) : (
-					<MemeListView
-						memes={memes}
-						isLoading={isLoading}
-						selectedMemes={selectedMemes}
-						onToggleSelect={isAdmin ? toggleMemeSelection : undefined}
-						onEdit={!isAdmin ? handleEditMeme : undefined}
-						onDelete={handleDeleteMeme}
-						onAction={isAdmin ? handleAction : undefined}
-						isAdmin={isAdmin}
-					/>
-				)}
-
-				{/* Pagination Controls */}
-				{!showForm && memes.length > 0 && (
-					<div className='flex items-center justify-center gap-4 mt-8'>
-						<button
-							onClick={() => setPage((p) => Math.max(1, p - 1))}
-							disabled={page === 1 || isLoading}
-							className='inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
-						>
-							<ChevronLeft className='w-4 h-4' />
-							Previous
-						</button>
-
-						<div className='text-sm font-medium text-slate-600'>
-							Page <span className='font-black text-indigo-600'>{page}</span>
+			{activeTab === 'memes' && (
+				<div className='space-y-6'>
+					{!showForm && memes.length > 0 && (
+						<div className='flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl w-fit text-[10px] font-black uppercase tracking-widest border border-indigo-100/50'>
+							<span className='relative flex h-2 w-2'>
+								<span className='animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75'></span>
+								<span className='relative inline-flex rounded-full h-2 w-2 bg-indigo-500'></span>
+							</span>
+							Page {page} - {memes.length}{' '}
+							{memes.length === 1 ? 'Meme' : 'Memes'} Displayed
 						</div>
+					)}
 
-						<button
-							onClick={() => setPage((p) => p + 1)}
-							disabled={!pagination.hasMore || isLoading}
-							className='inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
-						>
-							Next
-							<ChevronRight className='w-4 h-4' />
-						</button>
-					</div>
-				)}
-			</div>
+					{viewMode === 'card' ? (
+						<MemeList
+							memes={memes}
+							isLoading={isLoading}
+							onEdit={handleEditMeme}
+							onDelete={handleDeleteMeme}
+						/>
+					) : (
+						<MemeListView
+							memes={memes}
+							isLoading={isLoading}
+							selectedMemes={selectedMemes}
+							onToggleSelect={isAdmin ? toggleMemeSelection : undefined}
+							onEdit={!isAdmin ? handleEditMeme : undefined}
+							onDelete={handleDeleteMeme}
+							onAction={isAdmin ? handleAction : undefined}
+							isAdmin={isAdmin}
+						/>
+					)}
+
+					{/* Pagination Controls */}
+					{!showForm && memes.length > 0 && (
+						<div className='flex items-center justify-center gap-4 mt-8'>
+							<button
+								onClick={() => setPage((p) => Math.max(1, p - 1))}
+								disabled={page === 1 || isLoading}
+								className='inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
+							>
+								<ChevronLeft className='w-4 h-4' />
+								Previous
+							</button>
+
+							<div className='text-sm font-medium text-slate-600'>
+								Page <span className='font-black text-indigo-600'>{page}</span>
+							</div>
+
+							<button
+								onClick={() => setPage((p) => p + 1)}
+								disabled={!pagination.hasMore || isLoading}
+								className='inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
+							>
+								Next
+								<ChevronRight className='w-4 h-4' />
+							</button>
+						</div>
+					)}
+				</div>
+			)}
 
 			{/* Edit Modal */}
 			{editingMeme && (
