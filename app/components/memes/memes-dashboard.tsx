@@ -21,7 +21,7 @@ import { MemeSubmission, UserRole } from '@/lib/types/posts';
 import { MemeSubmitForm } from './meme-submit-form';
 import { MemeList } from './meme-list';
 import { MemeListView } from './meme-list-view';
-import { MemeSearchFilter } from './meme-search-filter';
+import { MemeAdvancedFilters } from './meme-advanced-filters';
 import { MemeEditModal } from './meme-edit-modal';
 import { MemePreviewModal } from './meme-preview-modal';
 import { MemeQueueBuilder } from './meme-queue-builder';
@@ -45,6 +45,10 @@ export function MemesDashboard() {
 	const [showForm, setShowForm] = useState(false);
 	const [search, setSearch] = useState('');
 	const [status, setStatus] = useState('');
+	const [sort, setSort] = useState('newest');
+	const [dateFrom, setDateFrom] = useState<string | null>(null);
+	const [dateTo, setDateTo] = useState<string | null>(null);
+	const [userFilter, setUserFilter] = useState('');
 	const [page, setPage] = useState(1);
 	const [editingMeme, setEditingMeme] = useState<MemeSubmission | null>(null);
 	const [previewMeme, setPreviewMeme] = useState<MemeSubmission | null>(null);
@@ -60,6 +64,10 @@ export function MemesDashboard() {
 	const { memes, pagination, isLoading, refresh } = useUserMemes({
 		search,
 		status,
+		sort,
+		dateFrom,
+		dateTo,
+		userFilter,
 		page,
 		limit: 12,
 	});
@@ -84,6 +92,22 @@ export function MemesDashboard() {
 
 	const handleStatusChange = (newStatus: string) => {
 		setStatus(newStatus);
+		setPage(1);
+	};
+
+	const handleSortChange = (newSort: string) => {
+		setSort(newSort);
+		setPage(1);
+	};
+
+	const handleDateRangeChange = (from: string | null, to: string | null) => {
+		setDateFrom(from);
+		setDateTo(to);
+		setPage(1);
+	};
+
+	const handleUserFilterChange = (email: string) => {
+		setUserFilter(email);
 		setPage(1);
 	};
 
@@ -421,11 +445,18 @@ export function MemesDashboard() {
 
 			{/* Search & Filter Section */}
 			{activeTab === 'memes' && !showForm && memes.length > 0 && (
-				<MemeSearchFilter
+				<MemeAdvancedFilters
 					query={search}
 					status={status}
 					onSearchChange={handleSearchChange}
 					onStatusChange={handleStatusChange}
+				sort={sort}
+				dateFrom={dateFrom || undefined}
+				dateTo={dateTo || undefined}
+				onSortChange={handleSortChange}
+				onDateRangeChange={handleDateRangeChange}
+				onUserFilterChange={isAdmin ? handleUserFilterChange : undefined}
+				isAdmin={isAdmin}
 				/>
 			)}
 

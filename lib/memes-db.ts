@@ -402,12 +402,20 @@ export async function getMemeSubmissions(options?: {
 	limit?: number;
 	offset?: number;
 	search?: string;
+	sort?: string;
+	dateFrom?: string;
+	dateTo?: string;
+	userEmail?: string;
 }): Promise<MemeSubmission[]> {
 	try {
 		let query = supabaseAdmin.from('meme_submissions').select('*');
 
 		if (options?.userId) {
 			query = query.eq('user_id', options.userId);
+		}
+
+		if (options?.userEmail) {
+			query = query.eq('user_email', options.userEmail.toLowerCase());
 		}
 
 		if (options?.status) {
@@ -421,11 +429,33 @@ export async function getMemeSubmissions(options?: {
 		if (options?.search) {
 			const searchTerm = options.search.toLowerCase();
 			query = query.or(
-				`title.ilike.%${searchTerm}%,caption.ilike.%${searchTerm}%`,
+				`title.ilike.%${searchTerm}%,caption.ilike.%${searchTerm}%,user_email.ilike.%${searchTerm}%`,
 			);
 		}
 
-		query = query.order('created_at', { ascending: false });
+		// Date range filtering
+		if (options?.dateFrom) {
+			query = query.gte('created_at', options.dateFrom);
+		}
+		if (options?.dateTo) {
+			// Add 1 day to dateTo to include the entire day
+			const dateTo = new Date(options.dateTo);
+			dateTo.setDate(dateTo.getDate() + 1);
+			query = query.lt('created_at', dateTo.toISOString());
+		}
+
+		// Sorting
+		const sort = options?.sort || 'newest';
+		if (sort === 'oldest') {
+			query = query.order('created_at', { ascending: true });
+		} else if (sort === 'a-z') {
+			query = query.order('title', { ascending: true });
+		} else if (sort === 'z-a') {
+			query = query.order('title', { ascending: false });
+		} else {
+			// Default to newest
+			query = query.order('created_at', { ascending: false });
+		}
 
 		if (options?.offset) {
 			query = query.range(

@@ -31,6 +31,10 @@ export async function GET(req: NextRequest) {
 		const { searchParams } = new URL(req.url);
 		const status = searchParams.get('status') || undefined;
 		const search = searchParams.get('search') || undefined;
+	const sort = searchParams.get('sort') || 'newest';
+	const dateFrom = searchParams.get('dateFrom') || undefined;
+	const dateTo = searchParams.get('dateTo') || undefined;
+	const userEmail = searchParams.get('userEmail') || undefined;
 		const page = parseInt(searchParams.get('page') || '1', 10);
 		const limit = parseInt(searchParams.get('limit') || '12', 10);
 		const offset = (page - 1) * limit;
