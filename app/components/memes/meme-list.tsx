@@ -9,6 +9,7 @@ interface MemeListProps {
 	isLoading: boolean;
 	onEdit?: (meme: MemeSubmission) => void;
 	onDelete?: (id: string) => void;
+	onPreview?: (meme: MemeSubmission) => void;
 }
 
 export function MemeList({
@@ -16,6 +17,7 @@ export function MemeList({
 	isLoading,
 	onEdit,
 	onDelete,
+	onPreview,
 }: MemeListProps) {
 	if (isLoading) {
 		return (
@@ -61,6 +63,7 @@ export function MemeList({
 					meme={meme}
 					onEdit={onEdit}
 					onDelete={onDelete}
+					onPreview={onPreview}
 				/>
 			))}
 		</div>

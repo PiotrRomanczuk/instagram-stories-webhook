@@ -9,9 +9,10 @@ interface MemeCardProps {
     meme: MemeSubmission;
     onEdit?: (meme: MemeSubmission) => void;
     onDelete?: (id: string) => void;
+    onPreview?: (meme: MemeSubmission) => void;
 }
 
-export function MemeCard({ meme, onEdit, onDelete }: MemeCardProps) {
+export function MemeCard({ meme, onEdit, onDelete, onPreview }: MemeCardProps) {
     const statusConfig = {
         pending: {
             color: 'text-amber-600 bg-amber-50 border-amber-100',
@@ -46,10 +47,13 @@ export function MemeCard({ meme, onEdit, onDelete }: MemeCardProps) {
     return (
         <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden group hover:shadow-md transition-all duration-300">
             {/* Media Preview */}
-            <div className="relative aspect-square bg-slate-100 overflow-hidden">
+            <button
+                onClick={() => onPreview?.(meme)}
+                className="relative w-full aspect-square bg-slate-100 overflow-hidden cursor-pointer border-0 p-0 hover:bg-slate-50 transition-colors"
+            >
                 {isVideo ? (
-                    <video 
-                        src={meme.media_url} 
+                    <video
+                        src={meme.media_url}
                         className="w-full h-full object-cover"
                         controls={false}
                     />
@@ -62,13 +66,13 @@ export function MemeCard({ meme, onEdit, onDelete }: MemeCardProps) {
                         unoptimized
                     />
                 )}
-                
+
                 {/* Status Badge Over Image */}
                 <div className={`absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 border backdrop-blur-md ${config.color.replace('bg-', 'bg-white/80 ')}`}>
                     {config.icon}
                     {config.label}
                 </div>
-            </div>
+            </button>
 
             {/* Content */}
             <div className="p-5 space-y-3">

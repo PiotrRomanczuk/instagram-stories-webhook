@@ -23,6 +23,7 @@ import { MemeList } from './meme-list';
 import { MemeListView } from './meme-list-view';
 import { MemeSearchFilter } from './meme-search-filter';
 import { MemeEditModal } from './meme-edit-modal';
+import { MemePreviewModal } from './meme-preview-modal';
 import { MemeQueueBuilder } from './meme-queue-builder';
 import { useUserMemes } from './use-user-memes';
 import { logError } from '@/lib/actions/log';
@@ -46,6 +47,8 @@ export function MemesDashboard() {
 	const [status, setStatus] = useState('');
 	const [page, setPage] = useState(1);
 	const [editingMeme, setEditingMeme] = useState<MemeSubmission | null>(null);
+	const [previewMeme, setPreviewMeme] = useState<MemeSubmission | null>(null);
+	const [previewIndex, setPreviewIndex] = useState(0);
 
 	// Admin-only features
 	const [selectedMemes, setSelectedMemes] = useState<Set<string>>(new Set());
@@ -86,6 +89,29 @@ export function MemesDashboard() {
 
 	const handleEditMeme = (meme: MemeSubmission) => {
 		setEditingMeme(meme);
+	};
+
+	const handleOpenPreview = useCallback(
+		(meme: MemeSubmission) => {
+			const index = memes.findIndex((m) => m.id === meme.id);
+			setPreviewMeme(meme);
+			setPreviewIndex(Math.max(0, index));
+		},
+		[memes],
+	);
+
+	const handlePreviewNavigate = (index: number) => {
+		if (index >= 0 && index < memes.length) {
+			setPreviewMeme(memes[index]);
+			setPreviewIndex(index);
+		}
+	};
+
+	const handlePreviewAction = async (
+		id: string,
+		action: 'approve' | 'reject' | 'schedule',
+	) => {
+		await handleAction(id, action);
 	};
 
 	const handleSaveEdit = async (updates: {
@@ -480,6 +506,7 @@ export function MemesDashboard() {
 							isLoading={isLoading}
 							onEdit={handleEditMeme}
 							onDelete={handleDeleteMeme}
+							onPreview={handleOpenPreview}
 						/>
 					) : (
 						<MemeListView
@@ -487,6 +514,7 @@ export function MemesDashboard() {
 							isLoading={isLoading}
 							selectedMemes={selectedMemes}
 							onToggleSelect={isAdmin ? toggleMemeSelection : undefined}
+							onPreview={handleOpenPreview}
 							onEdit={!isAdmin ? handleEditMeme : undefined}
 							onDelete={handleDeleteMeme}
 							onAction={isAdmin ? handleAction : undefined}
@@ -522,6 +550,18 @@ export function MemesDashboard() {
 					)}
 				</div>
 			)}
+
+		{/* Preview Modal */}
+		<MemePreviewModal
+			isOpen={!!previewMeme}
+			meme={previewMeme}
+			memes={memes}
+			currentIndex={previewIndex}
+			onClose={() => setPreviewMeme(null)}
+			onNavigate={handlePreviewNavigate}
+			onAction={handlePreviewAction}
+			isAdmin={isAdmin}
+		/>
 
 			{/* Edit Modal */}
 			{editingMeme && (
