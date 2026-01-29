@@ -48,12 +48,13 @@ export async function GET(req: NextRequest) {
 			offset,
 		};
 
-		if (role !== 'admin') {
+		if (role !== 'admin' && role !== 'developer') {
 			options.userId = userId;
 		}
 
 		const memes = await getMemeSubmissions(options);
-		const stats = role === 'admin' ? await getMemeStats() : null;
+		const stats =
+			role === 'admin' || role === 'developer' ? await getMemeStats() : null;
 
 		return NextResponse.json({
 			memes,
