@@ -22,86 +22,125 @@ export function ContentCard({
 	tab,
 }: ContentCardProps) {
 	return (
-		<div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow">
+		<div className='overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow'>
 			{/* Image */}
-			<div className="relative h-40 bg-gray-100">
+			<div className='relative h-40 bg-gray-100'>
 				<img
 					src={item.mediaUrl}
 					alt={item.title || 'content'}
-					className="h-full w-full object-cover"
+					className='h-full w-full object-cover'
 					onError={(e) => {
 						(e.target as HTMLImageElement).src = '/placeholder.svg';
 					}}
 				/>
-				<div className="absolute top-2 right-2">
-					<span className={`inline-block rounded-full px-2 py-1 text-xs font-medium ${
-						item.source === 'submission'
-							? 'bg-purple-100 text-purple-800'
-							: 'bg-blue-100 text-blue-800'
-					}`}>
+				<div className='absolute top-2 right-2'>
+					<span
+						className={`inline-block rounded-full px-2 py-1 text-xs font-medium ${
+							item.source === 'submission'
+								? 'bg-purple-100 text-purple-800'
+								: 'bg-blue-100 text-blue-800'
+						}`}
+					>
 						{item.source === 'submission' ? 'Submission' : 'Direct'}
 					</span>
 				</div>
 			</div>
 
 			{/* Content */}
-			<div className="p-4">
-				{item.title && <h3 className="font-semibold text-gray-900 truncate">{item.title}</h3>}
+			<div className='p-4'>
+				{item.title && (
+					<h3 className='font-semibold text-gray-900 truncate'>{item.title}</h3>
+				)}
 				{item.caption && (
-					<p className="mt-2 text-sm text-gray-600 line-clamp-2">{item.caption}</p>
+					<p className='mt-2 text-sm text-gray-600 line-clamp-2'>
+						{item.caption}
+					</p>
 				)}
 
 				{/* Status badges */}
-				<div className="mt-4 flex flex-wrap gap-2">
-					<span className={`text-xs font-medium px-2 py-1 rounded ${
-						item.publishingStatus === 'published'
-							? 'bg-green-100 text-green-800'
-							: item.publishingStatus === 'scheduled'
-							? 'bg-blue-100 text-blue-800'
-							: item.publishingStatus === 'failed'
-							? 'bg-red-100 text-red-800'
-							: 'bg-gray-100 text-gray-800'
-					}`}>
+				<div className='mt-4 flex flex-wrap gap-2'>
+					<span
+						className={`text-xs font-medium px-2 py-1 rounded ${
+							item.publishingStatus === 'published'
+								? 'bg-green-100 text-green-800'
+								: item.publishingStatus === 'scheduled'
+									? 'bg-blue-100 text-blue-800'
+									: item.publishingStatus === 'failed'
+										? 'bg-red-100 text-red-800'
+										: 'bg-gray-100 text-gray-800'
+						}`}
+					>
 						{item.publishingStatus}
 					</span>
 					{item.submissionStatus && (
-						<span className={`text-xs font-medium px-2 py-1 rounded ${
-							item.submissionStatus === 'approved'
-								? 'bg-green-100 text-green-800'
-								: item.submissionStatus === 'rejected'
-								? 'bg-red-100 text-red-800'
-								: 'bg-yellow-100 text-yellow-800'
-						}`}>
+						<span
+							className={`text-xs font-medium px-2 py-1 rounded ${
+								item.submissionStatus === 'approved'
+									? 'bg-green-100 text-green-800'
+									: item.submissionStatus === 'rejected'
+										? 'bg-red-100 text-red-800'
+										: 'bg-yellow-100 text-yellow-800'
+							}`}
+						>
 							{item.submissionStatus}
 						</span>
 					)}
 				</div>
 
 				{/* Meta */}
-				<div className="mt-4 text-xs text-gray-500">
+				<div className='mt-4 text-xs text-gray-500'>
 					<div>by {item.userEmail}</div>
 					<div>{new Date(item.createdAt).toLocaleDateString()}</div>
 				</div>
 
 				{/* Actions */}
-				<div className="mt-4 flex gap-2">
-					<button
-						onClick={onPreview}
-						className="flex-1 text-sm px-3 py-2 rounded border border-gray-300 hover:bg-gray-50 transition font-medium"
-					>
-						Preview
-					</button>
-					{item.publishingStatus !== 'published' && (
+				<div className='mt-4 flex flex-col gap-2'>
+					<div className='flex gap-2'>
 						<button
-							onClick={onEdit}
-							className="flex-1 text-sm px-3 py-2 rounded border border-gray-300 hover:bg-gray-50 transition font-medium"
+							onClick={onPreview}
+							className='flex-1 text-sm px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition font-medium'
 						>
-							Edit
+							Preview
 						</button>
+						<button className='px-2 py-2 rounded-lg hover:bg-gray-100 transition border border-transparent'>
+							<MoreVertical className='h-4 w-4 text-gray-400' />
+						</button>
+					</div>
+
+					{item.publishingStatus !== 'published' && isAdmin && (
+						<div className='flex gap-2'>
+							<button
+								onClick={onEdit}
+								className='flex-1 text-sm px-3 py-2 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition font-bold border border-indigo-100'
+							>
+								{item.publishingStatus === 'scheduled'
+									? 'Reschedule'
+									: 'Schedule'}
+							</button>
+							<button
+								onClick={async () => {
+									if (confirm('Publish this post immediately?')) {
+										try {
+											const response = await fetch(`/api/content/${item.id}`, {
+												method: 'PATCH',
+												headers: { 'Content-Type': 'application/json' },
+												body: JSON.stringify({
+													scheduledTime: Date.now(),
+													version: item.version,
+												}),
+											});
+											if (response.ok) onRefresh();
+										} catch (err) {
+											console.error('Failed to publish now', err);
+										}
+									}
+								}}
+								className='flex-1 text-sm px-3 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition font-bold shadow-sm'
+							>
+								Publish Now
+							</button>
+						</div>
 					)}
-					<button className="px-2 py-2 rounded hover:bg-gray-100 transition">
-						<MoreVertical className="h-4 w-4" />
-					</button>
 				</div>
 			</div>
 		</div>
