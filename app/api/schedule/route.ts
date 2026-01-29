@@ -98,8 +98,9 @@ export async function POST(request: NextRequest) {
 				.string()
 				.or(z.number())
 				.pipe(z.coerce.date())
-				.refine((date) => date.getTime() > Date.now(), {
-					message: 'scheduledTime must be in the future',
+				.refine((date) => date.getTime() > Date.now() - 1000 * 60 * 2, {
+					// Allow up to 2 mins in past for network latency/immediate schedule
+					message: 'scheduledTime cannot be in the past (more than 2 mins)',
 				})
 				.transform((date) => date.getTime()),
 			userTags: z
@@ -248,8 +249,10 @@ export async function PATCH(request: NextRequest) {
 					if (isNaN(timestamp)) {
 						throw new Error('Invalid scheduledTime format');
 					}
-					if (timestamp <= Date.now()) {
-						throw new Error('scheduledTime must be in the future');
+					if (timestamp <= Date.now() - 1000 * 60 * 2) {
+						throw new Error(
+							'scheduledTime cannot be in the past (more than 2 mins)',
+						);
 					}
 					return timestamp;
 				})

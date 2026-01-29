@@ -1,6 +1,7 @@
 import { AuthOptions, Session, User, Account } from 'next-auth';
 import { JWT } from 'next-auth/jwt';
 import GoogleProvider from 'next-auth/providers/google';
+import CredentialsProvider from 'next-auth/providers/credentials';
 import { SupabaseAdapter } from '@auth/supabase-adapter';
 import * as jwt from 'jsonwebtoken';
 import { Logger } from './utils/logger';
@@ -42,6 +43,27 @@ export const authOptions: AuthOptions = {
 			clientId: process.env.AUTH_GOOGLE_ID || '',
 			clientSecret: process.env.AUTH_GOOGLE_SECRET || '',
 		}),
+		...(process.env.NODE_ENV === 'development' ||
+		process.env.NODE_ENV === 'test'
+			? [
+					CredentialsProvider({
+						id: 'test-credentials',
+						name: 'Test Credentials',
+						credentials: {
+							email: { label: 'Email', type: 'email' },
+						},
+						async authorize(credentials) {
+							if (!credentials?.email) return null;
+							return {
+								id: 'test-' + credentials.email.replace(/[^a-z0-9]/g, '-'),
+								email: credentials.email,
+								name: credentials.email.split('@')[0],
+								image: '',
+							};
+						},
+					}),
+				]
+			: []),
 	],
 	adapter: SupabaseAdapter({
 		url: process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -156,15 +178,13 @@ export const authOptions: AuthOptions = {
 					if (userId) {
 						const linkedAccount = await getLinkedFacebookAccount(userId);
 						// Check if account exists AND token is not expired
-						const isTokenValid = linkedAccount && 
-							linkedAccount.access_token && 
-							(!linkedAccount.expires_at || linkedAccount.expires_at > Date.now());
-						
-						if (
+						const isTokenValid =
 							linkedAccount &&
-							linkedAccount.ig_user_id &&
-							isTokenValid
-						) {
+							linkedAccount.access_token &&
+							(!linkedAccount.expires_at ||
+								linkedAccount.expires_at > Date.now());
+
+						if (linkedAccount && linkedAccount.ig_user_id && isTokenValid) {
 							// If we already have it in token and it matches, skipping might be good, but
 							// for now we'll refresh it to be safe, or check if it's missing
 

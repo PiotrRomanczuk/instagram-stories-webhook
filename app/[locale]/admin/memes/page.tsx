@@ -15,6 +15,7 @@ import {
 	CheckSquare,
 	Square,
 	RotateCcw,
+	Send,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSession } from 'next-auth/react';
@@ -260,11 +261,6 @@ export default function AdminMemesPage() {
 	const [bulkScheduleModalOpen, setBulkScheduleModalOpen] = useState(false);
 	const [bulkScheduleDate, setBulkScheduleDate] = useState('');
 
-	// Quick schedule state
-	const [quickScheduleMeme, setQuickScheduleMeme] =
-		useState<MemeSubmission | null>(null);
-	const [quickScheduleDate, setQuickScheduleDate] = useState('');
-
 	const handleBulkSchedule = async () => {
 		if (selectedMemes.size === 0) return;
 		setBulkScheduleModalOpen(true);
@@ -294,47 +290,61 @@ export default function AdminMemesPage() {
 		}
 	};
 
-	// Quick schedule to post scheduler
-	const handleQuickSchedule = async () => {
-		if (!quickScheduleMeme || !quickScheduleDate) {
-			toast.error('Please select a date and time');
+	// Submit Now (Immediate Publish)
+	const handleSubmitNow = async (meme: MemeSubmission) => {
+		if (!confirm('Are you sure you want to publish this meme immediately?'))
 			return;
-		}
 
 		try {
-			// Create scheduled post from meme
+			// 1. Create the scheduled post (scheduled for "now")
 			const res = await fetch('/api/schedule', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
-					url: quickScheduleMeme.media_url,
-					type: quickScheduleMeme.media_url.toLowerCase().endsWith('.mp4')
+					url: meme.media_url,
+					type: meme.media_url.toLowerCase().endsWith('.mp4')
 						? 'VIDEO'
 						: 'IMAGE',
-					scheduledTime: new Date(quickScheduleDate).toISOString(),
-					caption: quickScheduleMeme.caption || quickScheduleMeme.title || '',
+					scheduledTime: new Date().toISOString(),
+					caption: meme.caption || meme.title || '',
 					userTags: [],
 					hashtagTags: [],
 				}),
 			});
 
+			const data = await res.json();
+
 			if (!res.ok) {
-				const data = await res.json();
-				throw new Error(data.error || 'Failed to schedule');
+				throw new Error(data.error || 'Failed to schedule for publishing');
 			}
 
-			toast.success('Meme scheduled successfully!');
-			setQuickScheduleMeme(null);
-			setQuickScheduleDate('');
+			const scheduledPostId = data.post?.id;
+			if (!scheduledPostId) {
+				throw new Error('Created post ID not found');
+			}
 
-			// Optionally update meme status to scheduled
-			await handleAction(quickScheduleMeme.id!, 'schedule', {
-				scheduledFor: new Date(quickScheduleDate).toISOString(),
+			// 2. Trigger the processor immediately
+			toast.loading('Publishing to Instagram...');
+
+			const processRes = await fetch(
+				`/api/schedule/process?id=${scheduledPostId}`,
+			);
+			const processResult = await processRes.json();
+
+			if (!processRes.ok) {
+				throw new Error(processResult.error || 'Failed to process publication');
+			}
+
+			toast.dismiss();
+			toast.success('Meme published successfully!');
+
+			// Update meme status to scheduled/published
+			await handleAction(meme.id!, 'schedule', {
+				scheduledFor: new Date().toISOString(),
 			});
 		} catch (error) {
-			toast.error(
-				error instanceof Error ? error.message : 'Failed to schedule',
-			);
+			toast.dismiss();
+			toast.error(error instanceof Error ? error.message : 'Failed to publish');
 		}
 	};
 
@@ -507,10 +517,7 @@ export default function AdminMemesPage() {
 								onRevert={handleRevert}
 								isSelected={selectedMemes.has(meme.id!)}
 								onToggleSelect={() => toggleMemeSelection(meme.id!)}
-								onQuickSchedule={(meme) => {
-									setQuickScheduleMeme(meme);
-									setQuickScheduleDate('');
-								}}
+								onSubmitNow={handleSubmitNow}
 							/>
 						))}
 					</div>
@@ -595,92 +602,6 @@ export default function AdminMemesPage() {
 						</div>
 					</div>
 				)}
-
-				{/* Quick Schedule Modal */}
-				{quickScheduleMeme && (
-					<div className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm'>
-						<div className='bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6'>
-							<div className='flex items-center gap-3 mb-4'>
-								<div className='w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center'>
-									<Calendar className='w-6 h-6 text-white' />
-								</div>
-								<div>
-									<h3 className='text-2xl font-bold text-slate-900'>
-										Quick Schedule
-									</h3>
-									<p className='text-sm text-slate-500'>
-										Schedule this meme to Instagram
-									</p>
-								</div>
-							</div>
-
-							{/* Meme Preview */}
-							<div className='mb-4 p-3 bg-slate-50 rounded-xl border border-slate-100'>
-								<div className='flex gap-3'>
-									<div className='relative w-20 h-20 rounded-lg overflow-hidden bg-slate-200 flex-shrink-0'>
-										<Image
-											src={quickScheduleMeme.media_url}
-											alt={quickScheduleMeme.title || 'Meme'}
-											fill
-											className='object-cover'
-										/>
-									</div>
-									<div className='flex-1 min-w-0'>
-										<h4 className='font-bold text-slate-900 truncate'>
-											{quickScheduleMeme.title || 'Untitled'}
-										</h4>
-										<p className='text-xs text-slate-500 line-clamp-2'>
-											{quickScheduleMeme.caption || 'No caption'}
-										</p>
-									</div>
-								</div>
-							</div>
-
-							<div className='space-y-4'>
-								<div>
-									<label className='block text-sm font-bold text-slate-700 mb-2'>
-										When should this be published?
-									</label>
-									<input
-										type='datetime-local'
-										value={quickScheduleDate}
-										onChange={(e) => setQuickScheduleDate(e.target.value)}
-										className='w-full px-4 py-3 border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none'
-										min={new Date().toISOString().slice(0, 16)}
-									/>
-								</div>
-
-								<div className='bg-indigo-50 border border-indigo-100 rounded-xl p-3'>
-									<p className='text-xs text-indigo-700'>
-										<strong>💡 Tip:</strong> This will create a scheduled post.
-										You can edit caption, tags, and other details in the
-										Schedule Manager.
-									</p>
-								</div>
-							</div>
-
-							<div className='flex gap-3 mt-6'>
-								<button
-									onClick={() => {
-										setQuickScheduleMeme(null);
-										setQuickScheduleDate('');
-									}}
-									className='flex-1 px-4 py-3 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition'
-								>
-									Cancel
-								</button>
-								<button
-									onClick={handleQuickSchedule}
-									disabled={!quickScheduleDate}
-									className='flex-1 px-4 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-bold hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2'
-								>
-									<Calendar className='w-4 h-4' />
-									Schedule Now
-								</button>
-							</div>
-						</div>
-					</div>
-				)}
 			</div>
 		</main>
 	);
@@ -693,7 +614,7 @@ function MemeCard({
 	onRevert,
 	isSelected,
 	onToggleSelect,
-	onQuickSchedule,
+	onSubmitNow,
 }: {
 	meme: MemeSubmission;
 	onAction: (
@@ -705,7 +626,7 @@ function MemeCard({
 	onRevert: (id: string) => void;
 	isSelected: boolean;
 	onToggleSelect: () => void;
-	onQuickSchedule?: (meme: MemeSubmission) => void;
+	onSubmitNow?: (meme: MemeSubmission) => void;
 }) {
 	const [isRejectionModalOpen, setIsRejectionModalOpen] = useState(false);
 	const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
@@ -807,13 +728,14 @@ function MemeCard({
 						</button>
 					)}
 
-					{/* Quick Schedule Button for Approved Memes */}
-					{meme.status === 'approved' && onQuickSchedule && (
+					{/* Submit Now Button for Approved Memes */}
+					{meme.status === 'approved' && onSubmitNow && (
 						<button
-							onClick={() => onQuickSchedule(meme)}
-							className='w-full flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-black rounded-xl hover:shadow-lg transition uppercase tracking-tight'
+							onClick={() => onSubmitNow(meme)}
+							className='w-full flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs font-black rounded-xl hover:shadow-lg transition uppercase tracking-tight'
 						>
-							<Calendar className='w-3.5 h-3.5' />⚡ Quick Schedule
+							<Send className='w-3.5 h-3.5' />
+							Submit Now
 						</button>
 					)}
 
