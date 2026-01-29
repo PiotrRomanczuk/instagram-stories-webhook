@@ -9,7 +9,12 @@
 - Navbar updated
 - Configuration synced
 
-❌ **Blocking Issue**: Database schema cache mismatch - Supabase PostgREST not exposing tables
+✅ **RESOLVED**: Database schema cache mismatch fixed via migration-based cache refresh and explicit table creation.
+
+- email_whitelist created and backfilled
+- content_items created and backfilled (46 items migrated)
+- PostgREST cache refreshed (NOTIFY pgrst)
+- lib/memes-db.ts updated to use email_whitelist
 
 ---
 

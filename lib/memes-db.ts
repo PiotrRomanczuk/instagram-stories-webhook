@@ -31,7 +31,7 @@ const MODULE = 'db:memes';
 export async function isEmailAllowed(email: string): Promise<boolean> {
 	try {
 		const { data, error } = await supabaseAdmin
-			.from('allowed_users')
+			.from('email_whitelist')
 			.select('id')
 			.eq('email', email.toLowerCase())
 			.single();
@@ -59,7 +59,7 @@ export async function isEmailAllowed(email: string): Promise<boolean> {
 export async function getUserRole(email: string): Promise<UserRole | null> {
 	try {
 		const { data, error } = await supabaseAdmin
-			.from('allowed_users')
+			.from('email_whitelist')
 			.select('role')
 			.eq('email', email.toLowerCase())
 			.single();
@@ -85,7 +85,7 @@ export async function getAllowedUserByEmail(
 ): Promise<AllowedUser | null> {
 	try {
 		const { data, error } = await supabaseAdmin
-			.from('allowed_users')
+			.from('email_whitelist')
 			.select('*')
 			.eq('email', email.toLowerCase())
 			.single();
@@ -144,7 +144,7 @@ export async function getNextAuthUserIdByEmail(
 export async function getAllowedUsers(): Promise<AllowedUser[]> {
 	try {
 		const { data, error } = await supabaseAdmin
-			.from('allowed_users')
+			.from('email_whitelist')
 			.select('*')
 			.order('created_at', { ascending: false });
 
@@ -172,7 +172,7 @@ export async function addAllowedUser(
 ): Promise<AllowedUser | null> {
 	try {
 		const { data, error } = await supabaseAdmin
-			.from('allowed_users')
+			.from('email_whitelist')
 			.insert({
 				email: user.email.toLowerCase(),
 				role: user.role,
@@ -206,14 +206,14 @@ export async function removeAllowedUser(email: string): Promise<boolean> {
 	try {
 		// Check if this is the last developer (system lockout protection)
 		const { data: targetUser } = await supabaseAdmin
-			.from('allowed_users')
+			.from('email_whitelist')
 			.select('role')
 			.eq('email', email.toLowerCase())
 			.single();
 
 		if (targetUser?.role === 'developer') {
 			const { data: developers, error: countError } = await supabaseAdmin
-				.from('allowed_users')
+				.from('email_whitelist')
 				.select('id')
 				.eq('role', 'developer');
 
@@ -238,7 +238,7 @@ export async function removeAllowedUser(email: string): Promise<boolean> {
 		}
 
 		const { error } = await supabaseAdmin
-			.from('allowed_users')
+			.from('email_whitelist')
 			.delete()
 			.eq('email', email.toLowerCase());
 
@@ -274,7 +274,7 @@ export async function updateUserRole(
 		// Prevent demoting the last developer (system lockout protection)
 		if (role !== 'developer') {
 			const { data: currentUser } = await supabaseAdmin
-				.from('allowed_users')
+				.from('email_whitelist')
 				.select('role')
 				.eq('email', email.toLowerCase())
 				.single();
@@ -282,7 +282,7 @@ export async function updateUserRole(
 			// Only check if the user is currently a developer
 			if (currentUser?.role === 'developer') {
 				const { data: developers, error: countError } = await supabaseAdmin
-					.from('allowed_users')
+					.from('email_whitelist')
 					.select('id')
 					.eq('role', 'developer');
 
@@ -309,7 +309,7 @@ export async function updateUserRole(
 		}
 
 		const { error } = await supabaseAdmin
-			.from('allowed_users')
+			.from('email_whitelist')
 			.update({ role })
 			.eq('email', email.toLowerCase());
 
