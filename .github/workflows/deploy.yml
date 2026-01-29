@@ -3,35 +3,25 @@ name: CD
 on:
   push:
     branches: [ master, main ]
-  workflow_run:
-    workflows: ["CI"]
-    types: [completed]
-    branches: [master, main]
 
 jobs:
   deploy:
-    name: Deploy to Production
-    if: ${{ github.event_name == 'push' || github.event.workflow_run.conclusion == 'success' }}
+    name: Deploy to Vercel
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Deploy Message
-        run: echo "Starting deployment after successful CI..."
 
-      # VERCEL DEPLOYMENT (Placeholder)
-      # 1. Install Vercel CLI: npm install --global vercel
-      # 2. Add VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID to GitHub Secrets
-      # 3. Uncomment below:
-      
-      # - name: Deploy to Vercel
-      #   run: npx vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
-      #   if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
 
-      # RASPBERRY PI / SELF-HOSTED (Placeholder)
-      # If you use a Webhook to trigger your Pi:
-      # - name: Trigger Pi Webhook
-      #   run: |
-      #     curl -X POST ${{ secrets.PI_DEPLOY_WEBHOOK }} \
-      #          -H "Content-Type: application/json" \
-      #          -d '{"ref": "${{ github.ref }}"}'
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Deploy to Vercel
+        run: npx vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
