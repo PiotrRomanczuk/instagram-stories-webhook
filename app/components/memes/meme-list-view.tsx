@@ -11,6 +11,7 @@ import {
 	XCircle,
 	Calendar,
 	Edit2,
+	Eye,
 } from 'lucide-react';
 
 interface MemeListViewProps {
@@ -75,9 +76,6 @@ export function MemeListView({
 							<th className='w-20 px-4 py-3 text-left'>
 								<span className='sr-only'>Preview</span>
 							</th>
-							<th className='px-4 py-3 text-left text-xs font-black text-slate-600 uppercase tracking-wider'>
-								Title
-							</th>
 							{isAdmin && (
 								<th className='px-4 py-3 text-left text-xs font-black text-slate-600 uppercase tracking-wider'>
 									User
@@ -118,7 +116,7 @@ export function MemeListView({
 										</button>
 									</td>
 								)}
-								<td className='px-4 py-3'>
+								<td className='px-4 py-3 group/preview'>
 									<div className='relative w-12 h-12 rounded-lg overflow-hidden bg-slate-100'>
 										<Image
 											src={meme.media_url}
@@ -127,18 +125,18 @@ export function MemeListView({
 											className='object-cover'
 											unoptimized
 										/>
-									</div>
-								</td>
-								<td className='px-4 py-3'>
-									<div className='max-w-xs'>
-										<p className='font-bold text-slate-900 truncate'>
-											{meme.title || 'Untitled'}
-										</p>
-										{meme.caption && (
-											<p className='text-xs text-slate-500 truncate mt-0.5'>
-												{meme.caption}
-											</p>
-										)}
+										{/* Hover Preview Popup */}
+										<div className='absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover/preview:opacity-100 transition-opacity duration-200 pointer-events-none z-30'>
+											<div className='relative w-48 h-48 rounded-lg overflow-hidden shadow-xl border-2 border-white'>
+												<Image
+													src={meme.media_url}
+													alt={meme.title || 'Meme'}
+													fill
+													className='object-cover'
+													unoptimized
+												/>
+											</div>
+										</div>
 									</div>
 								</td>
 								{isAdmin && (
@@ -229,7 +227,7 @@ export function MemeListView({
 										e.stopPropagation();
 										onToggleSelect(meme.id!);
 									}}
-									className='flex-shrink-0 self-start mt-1'
+									className='flex-shrink-0 self-center'
 								>
 									{selectedMemes.has(meme.id!) ? (
 										<CheckSquare className='w-5 h-5 text-indigo-600' />
@@ -238,7 +236,7 @@ export function MemeListView({
 									)}
 								</button>
 							)}
-							<div className='relative w-16 h-16 rounded-lg overflow-hidden bg-slate-100 flex-shrink-0'>
+							<div className='relative w-16 h-16 rounded-lg overflow-hidden bg-slate-100 flex-shrink-0 group/mobile-preview'>
 								<Image
 									src={meme.media_url}
 									alt={meme.title || 'Meme'}
@@ -246,33 +244,63 @@ export function MemeListView({
 									className='object-cover'
 									unoptimized
 								/>
+								{/* Mobile: Preview on tap/click */}
+								<button
+									onClick={(e) => {
+										e.stopPropagation();
+										onPreview?.(meme);
+									}}
+									className='absolute inset-0 bg-black/0 hover:bg-black/40 flex items-center justify-center opacity-0 group-hover/mobile-preview:opacity-100 transition-all duration-200'
+									title='Preview'
+									aria-label='Preview meme'
+								>
+									<Eye className='w-4 h-4 text-white' />
+								</button>
 							</div>
 							<div className='flex-1 min-w-0'>
-								<div className='flex items-start justify-between gap-2 mb-1'>
-									<p className='font-bold text-slate-900 truncate'>
-										{meme.title || 'Untitled'}
-									</p>
+								<div className='flex items-center justify-between gap-2'>
 									<MemeStatusBadge status={meme.status} />
+									{onDelete && (
+										<button
+											onClick={(e) => {
+												e.stopPropagation();
+												onDelete(meme.id!);
+											}}
+											className='p-1 text-red-600 hover:bg-red-50 rounded transition flex-shrink-0'
+											title='Delete'
+										>
+											<Trash2 className='w-4 h-4' />
+										</button>
+									)}
 								</div>
 								{isAdmin && (
-									<p className='text-xs text-slate-500 truncate mb-1'>
+									<p className='text-xs text-slate-600 truncate font-medium mt-1'>
 										{meme.user_email}
 									</p>
 								)}
-								<p className='text-xs text-slate-400'>
+								<p className='text-xs text-slate-400 mt-1'>
 									{meme.created_at
 										? new Date(meme.created_at).toLocaleDateString()
 										: 'Just now'}
 								</p>
+								{/* Actions Row */}
 								<div
-									className='flex items-center gap-1 mt-2'
+									className='flex items-center gap-2 mt-2'
 									onClick={(e) => e.stopPropagation()}
 								>
+									<button
+										onClick={() => onPreview?.(meme)}
+										className='flex-1 px-2 py-1 text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition'
+										title='Preview'
+									>
+										<Eye className='w-3 h-3 inline mr-1' />
+										Preview
+									</button>
 									{isAdmin && meme.status === 'pending' && onAction && (
 										<>
 											<button
 												onClick={() => onAction(meme.id!, 'approve')}
-												className='px-2 py-1 text-xs font-bold text-green-600 bg-green-50 rounded-lg'
+												className='px-2 py-1 text-xs font-bold text-green-600 bg-green-50 hover:bg-green-100 rounded-lg transition'
 											>
 												Approve
 											</button>
@@ -285,7 +313,7 @@ export function MemeListView({
 														});
 													}
 												}}
-												className='px-2 py-1 text-xs font-bold text-red-600 bg-red-50 rounded-lg'
+												className='px-2 py-1 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition'
 											>
 												Reject
 											</button>
@@ -294,17 +322,9 @@ export function MemeListView({
 									{!isAdmin && meme.status === 'pending' && onEdit && (
 										<button
 											onClick={() => onEdit(meme)}
-											className='px-2 py-1 text-xs font-bold text-indigo-600 bg-indigo-50 rounded-lg'
+											className='px-2 py-1 text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition'
 										>
 											Edit
-										</button>
-									)}
-									{onDelete && (
-										<button
-											onClick={() => onDelete(meme.id!)}
-											className='px-2 py-1 text-xs font-bold text-red-600 bg-red-50 rounded-lg ml-auto'
-										>
-											Delete
 										</button>
 									)}
 								</div>
