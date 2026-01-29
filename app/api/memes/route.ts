@@ -88,9 +88,9 @@ export async function POST(req: NextRequest) {
 		const userId = getUserId(session);
 		const userEmail = session.user?.email || '';
 
-		// Rate limiting: 3 per hour, 10 per day
-		const HOURLY_LIMIT = 3;
-		const DAILY_LIMIT = 10;
+		// Rate limiting: 90 per hour, 90 per day
+		const HOURLY_LIMIT = 90;
+		const DAILY_LIMIT = 90;
 
 		const hourlyCount = await countRecentSubmissions(userId, 60 * 60 * 1000);
 		if (hourlyCount >= HOURLY_LIMIT) {

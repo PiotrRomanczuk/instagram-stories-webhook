@@ -155,10 +155,15 @@ export const authOptions: AuthOptions = {
 					const userId = token.id as string;
 					if (userId) {
 						const linkedAccount = await getLinkedFacebookAccount(userId);
+						// Check if account exists AND token is not expired
+						const isTokenValid = linkedAccount && 
+							linkedAccount.access_token && 
+							(!linkedAccount.expires_at || linkedAccount.expires_at > Date.now());
+						
 						if (
 							linkedAccount &&
 							linkedAccount.ig_user_id &&
-							linkedAccount.access_token
+							isTokenValid
 						) {
 							// If we already have it in token and it matches, skipping might be good, but
 							// for now we'll refresh it to be safe, or check if it's missing
