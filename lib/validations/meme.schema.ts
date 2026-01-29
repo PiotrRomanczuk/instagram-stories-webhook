@@ -1,5 +1,12 @@
 import { z } from 'zod';
-import DOMPurify from 'isomorphic-dompurify';
+
+/**
+ * Removes all HTML tags from a string
+ * Lightweight alternative to DOMPurify that doesn't require jsdom
+ */
+function stripHtmlTags(str: string): string {
+	return str.replace(/<[^>]*>/g, '');
+}
 
 /**
  * Schema for meme submission
@@ -8,13 +15,13 @@ export const submitMemeSchema = z.object({
 	caption: z
 		.string()
 		.max(2200, 'Caption cannot exceed 2200 characters')
-		.transform((val) => DOMPurify.sanitize(val, { ALLOWED_TAGS: [] }))
+		.transform((val) => stripHtmlTags(val))
 		.optional(),
 
 	title: z
 		.string()
 		.max(100, 'Title cannot exceed 100 characters')
-		.transform((val) => DOMPurify.sanitize(val, { ALLOWED_TAGS: [] }))
+		.transform((val) => stripHtmlTags(val))
 		.optional(),
 
 	mediaUrl: z.string().url('Must be a valid URL'),
@@ -30,13 +37,13 @@ export const updateMemeSubmissionSchema = z
 		title: z
 			.string()
 			.max(100, 'Title cannot exceed 100 characters')
-			.transform((val) => DOMPurify.sanitize(val, { ALLOWED_TAGS: [] }))
+			.transform((val) => stripHtmlTags(val))
 			.optional(),
 
 		caption: z
 			.string()
 			.max(2200, 'Caption cannot exceed 2200 characters')
-			.transform((val) => DOMPurify.sanitize(val, { ALLOWED_TAGS: [] }))
+			.transform((val) => stripHtmlTags(val))
 			.optional(),
 	})
 	.refine((data) => data.title || data.caption, {
