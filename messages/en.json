@@ -13,12 +13,13 @@
 	},
 	"Navbar": {
 		"dashboard": "Dashboard",
-		"memes": "My Submissions",
-		"schedule": "Schedule",
-		"memesAdmin": "Memes Admin",
+		"contentHub": "Content Hub",
 		"users": "Users",
 		"devTools": "Dev Tools",
-		"signIn": "Sign In"
+		"signIn": "Sign In",
+		"memes": "My Submissions",
+		"schedule": "Schedule",
+		"memesAdmin": "Memes Admin"
 	},
 	"AdminUsers": {
 		"title": "User",

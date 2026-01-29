@@ -4,10 +4,13 @@ import {
 	PostStatus,
 	MemeStatus,
 	UserRole,
+	ContentSource,
+	SubmissionStatus,
+	PublishingStatus,
 } from './common';
 
 // Re-export common types for convenience
-export type { MediaType, PostType, PostStatus, MemeStatus, UserRole };
+export type { MediaType, PostType, PostStatus, MemeStatus, UserRole, ContentSource, SubmissionStatus, PublishingStatus };
 
 // ============== USER & AUTH TYPES ==============
 
@@ -20,13 +23,135 @@ export interface AllowedUser {
 	created_at?: string;
 }
 
-// ============== SCHEDULED POST TYPES ==============
+// ============== UNIFIED CONTENT ITEM TYPES ==============
 
 export interface UserTag {
 	username: string;
 	x: number;
 	y: number;
 }
+
+export interface ContentItemDimensions {
+	width: number;
+	height: number;
+}
+
+/**
+ * Unified content item combining meme submissions and scheduled posts
+ * Supports workflow: submission -> review -> schedule -> publish
+ *                    or direct -> schedule -> publish
+ */
+export interface ContentItem {
+	// Identity
+	id: string;
+	userId: string;
+	userEmail: string;
+
+	// Media
+	mediaUrl: string;
+	mediaType: MediaType;
+	storagePath?: string;
+	dimensions?: ContentItemDimensions;
+
+	// Content
+	title?: string; // Optional, for submissions
+	caption?: string; // Max 2200
+	userTags?: UserTag[];
+	hashtags?: string[];
+
+	// Source & Workflow
+	source: ContentSource;
+	submissionStatus?: SubmissionStatus; // Only for submissions
+	publishingStatus: PublishingStatus;
+
+	// Review (for submissions only)
+	rejectionReason?: string;
+	reviewedAt?: string;
+	reviewedBy?: string;
+
+	// Scheduling
+	scheduledTime?: number;
+	processingStartedAt?: string;
+
+	// Publishing
+	publishedAt?: string;
+	igMediaId?: string;
+	error?: string;
+
+	// Metadata
+	contentHash?: string;
+	idempotencyKey?: string;
+	retryCount?: number;
+	version: number;
+
+	// Timestamps
+	createdAt: string;
+	updatedAt: string;
+}
+
+/**
+ * Input type for creating new content
+ */
+export interface CreateContentInput {
+	source: ContentSource;
+	mediaUrl: string;
+	mediaType: MediaType;
+	title?: string;
+	caption?: string;
+	userTags?: UserTag[];
+	hashtags?: string[];
+	scheduledTime?: number;
+	storagePath?: string;
+	dimensions?: ContentItemDimensions;
+}
+
+/**
+ * Input type for updating content
+ */
+export interface UpdateContentInput {
+	caption?: string;
+	title?: string;
+	userTags?: UserTag[];
+	hashtags?: string[];
+	scheduledTime?: number;
+	version?: number; // For optimistic locking
+}
+
+/**
+ * Database row type for content_items
+ */
+export interface ContentItemRow {
+	id: string;
+	user_id: string;
+	user_email: string;
+	media_url: string;
+	media_type: string;
+	storage_path?: string;
+	dimensions?: string; // JSON stringified
+	title?: string;
+	caption?: string;
+	user_tags?: string; // JSON stringified
+	hashtags?: string[];
+	source: string;
+	submission_status?: string;
+	publishing_status: string;
+	rejection_reason?: string;
+	reviewed_at?: string;
+	reviewed_by?: string;
+	scheduled_time?: number | string;
+	processing_started_at?: string;
+	published_at?: string;
+	ig_media_id?: string;
+	error?: string;
+	content_hash?: string;
+	idempotency_key?: string;
+	retry_count?: number;
+	version: number;
+	created_at: string;
+	updated_at: string;
+}
+
+// ============== SCHEDULED POST TYPES ==============
 
 export interface ScheduledPost {
 	id: string;
@@ -181,5 +306,41 @@ export function mapMemeSubmissionRow(row: MemeSubmissionRow): MemeSubmission {
 		scheduled_post_id: row.scheduled_post_id,
 		published_at: row.published_at,
 		ig_media_id: row.ig_media_id,
+	};
+}
+
+/**
+ * Maps a database row to a ContentItem object
+ */
+export function mapContentItemRow(row: ContentItemRow): ContentItem {
+	return {
+		id: row.id,
+		userId: row.user_id,
+		userEmail: row.user_email,
+		mediaUrl: row.media_url,
+		mediaType: row.media_type as MediaType,
+		storagePath: row.storage_path,
+		dimensions: row.dimensions ? JSON.parse(row.dimensions) : undefined,
+		title: row.title,
+		caption: row.caption,
+		userTags: row.user_tags ? JSON.parse(row.user_tags) : undefined,
+		hashtags: row.hashtags,
+		source: row.source as ContentSource,
+		submissionStatus: row.submission_status as SubmissionStatus | undefined,
+		publishingStatus: row.publishing_status as PublishingStatus,
+		rejectionReason: row.rejection_reason,
+		reviewedAt: row.reviewed_at,
+		reviewedBy: row.reviewed_by,
+		scheduledTime: row.scheduled_time ? Number(row.scheduled_time) : undefined,
+		processingStartedAt: row.processing_started_at,
+		publishedAt: row.published_at,
+		igMediaId: row.ig_media_id,
+		error: row.error,
+		contentHash: row.content_hash,
+		idempotencyKey: row.idempotency_key,
+		retryCount: row.retry_count,
+		version: row.version,
+		createdAt: row.created_at,
+		updatedAt: row.updated_at,
 	};
 }

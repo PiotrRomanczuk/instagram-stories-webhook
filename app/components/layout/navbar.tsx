@@ -43,16 +43,10 @@ export function Navbar() {
 
 	const navItems = [
 		{ href: '/', label: t('dashboard'), icon: Home },
-		{ href: '/memes', label: t('memes'), icon: ImageIcon },
+		{ href: '/content', label: t('contentHub') || 'Content Hub', icon: ImageIcon },
 	];
 
 	if (isAdminOrDev) {
-		navItems.push({ href: '/schedule', label: t('schedule'), icon: Calendar });
-		navItems.push({
-			href: '/admin/memes',
-			label: t('memesAdmin'),
-			icon: Shield,
-		});
 		navItems.push({ href: '/admin/users', label: t('users'), icon: Users });
 	}
 

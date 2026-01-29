@@ -13,12 +13,13 @@
 	},
 	"Navbar": {
 		"dashboard": "Panel",
-		"memes": "Moje Zgłoszenia",
-		"schedule": "Harmonogram",
-		"memesAdmin": "Admin Memów",
+		"contentHub": "Centrum Treści",
 		"users": "Użytkownicy",
 		"devTools": "Narzędzia Dev",
-		"signIn": "Zaloguj"
+		"signIn": "Zaloguj",
+		"memes": "Moje Zgłoszenia",
+		"schedule": "Harmonogram",
+		"memesAdmin": "Admin Memów"
 	},
 	"AdminUsers": {
 		"title": "Biała Lista",
