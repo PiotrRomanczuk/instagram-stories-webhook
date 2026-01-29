@@ -1,12 +1,16 @@
 {
-    "crons": [
-        {
-            "path": "/api/cron/process",
-            "schedule": "* * * * *"
-        },
-        {
-            "path": "/api/cron/identity-audit",
-            "schedule": "*/5 * * * *"
-        }
-    ]
+	"crons": [
+		{
+			"path": "/api/cron/process",
+			"schedule": "* * * * *"
+		},
+		{
+			"path": "/api/cron/identity-audit",
+			"schedule": "*/5 * * * *"
+		},
+		{
+			"path": "/api/cron/check-media-health",
+			"schedule": "0 */6 * * *"
+		}
+	]
 }
