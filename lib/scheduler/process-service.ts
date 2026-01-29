@@ -313,3 +313,69 @@ export async function processScheduledPosts(
 		throw error;
 	}
 }
+
+/**
+ * Force process a specific post, bypassing duplicate detection.
+ * Used by the developer cron-debug interface to manually process overdue posts.
+ */
+export async function forceProcessPost(
+	postId: string,
+	bypassDuplicates: boolean,
+): Promise<{ success: boolean; error?: string }> {
+	try {
+		// Verify post exists and is in valid status
+		const { data: post, error: fetchError } = await supabaseAdmin
+			.from('scheduled_posts')
+			.select('*')
+			.eq('id', postId)
+			.single();
+
+		if (fetchError || !post) {
+			await Logger.warn(
+				MODULE,
+				`Post ${postId} not found for force-process`,
+			);
+			return { success: false, error: 'Post not found' };
+		}
+
+		// Check status
+		if (!['pending', 'processing'].includes(post.status)) {
+			await Logger.warn(
+				MODULE,
+				`Cannot force-process post ${postId}: status is ${post.status}`,
+			);
+			return {
+				success: false,
+				error: `Post status is ${post.status}, cannot process`,
+			};
+		}
+
+		// Process the post with bypass flag
+		const result = await processScheduledPosts(postId, bypassDuplicates);
+
+		if (result.succeeded > 0) {
+			await Logger.info(
+				MODULE,
+				`✅ Force-processed post ${postId} successfully`,
+			);
+			return { success: true };
+		} else {
+			const error =
+				result.results[0]?.error || 'Processing failed for unknown reason';
+			await Logger.warn(
+				MODULE,
+				`Force-process of post ${postId} failed: ${error}`,
+			);
+			return { success: false, error };
+		}
+	} catch (error: unknown) {
+		const errorMessage =
+			error instanceof Error ? error.message : 'Unknown error';
+		await Logger.error(
+			MODULE,
+			`Force-process endpoint error for post ${postId}: ${errorMessage}`,
+			error,
+		);
+		return { success: false, error: errorMessage };
+	}
+}
