@@ -71,7 +71,7 @@ export async function PATCH(
 				postType: 'STORY',
 				caption: meme.caption || '',
 				scheduledTime: validated.scheduledFor!.getTime(),
-				userId: meme.user_id,
+				userId: adminId,
 				memeId: id,
 			});
 
