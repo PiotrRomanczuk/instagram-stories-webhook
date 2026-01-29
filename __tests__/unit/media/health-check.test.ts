@@ -1,13 +1,27 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import {
+	describe,
+	it,
+	expect,
+	vi,
+	beforeEach,
+	afterAll,
+	beforeAll,
+} from 'vitest';
 import {
 	checkMediaHealth,
 	batchCheckMediaHealth,
 } from '@/lib/media/health-check';
 
-// Mock fetch
-global.fetch = vi.fn();
-
 describe('Media Health Check', () => {
+	beforeAll(() => {
+		// Properly stub the global fetch
+		vi.stubGlobal('fetch', vi.fn());
+	});
+
+	afterAll(() => {
+		vi.unstubAllGlobals();
+	});
+
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
@@ -49,7 +63,19 @@ describe('Media Health Check', () => {
 
 		it('should timeout after 5 seconds', async () => {
 			(global.fetch as any).mockImplementationOnce(
-				() => new Promise((resolve) => setTimeout(resolve, 10000)),
+				(url: string, options: any) =>
+					new Promise((resolve, reject) => {
+						const timeoutId = setTimeout(() => {
+							resolve({ ok: true, status: 200 });
+						}, 10000);
+
+						if (options?.signal) {
+							options.signal.addEventListener('abort', () => {
+								clearTimeout(timeoutId);
+								reject(new Error('The operation was aborted'));
+							});
+						}
+					}),
 			);
 
 			const result = await checkMediaHealth(
@@ -58,7 +84,7 @@ describe('Media Health Check', () => {
 
 			expect(result.healthy).toBe(false);
 			expect(result.error).toBeDefined();
-		});
+		}, 10000);
 	});
 
 	describe('batchCheckMediaHealth', () => {
