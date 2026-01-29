@@ -1,6 +1,6 @@
 'use client';
 
-import { MemeManager } from '../../components/memes/meme-manager';
+import { MemesDashboard } from '../../components/memes/memes-dashboard';
 import { Link } from '@/i18n/routing';
 import { ChevronLeft, Sparkles } from 'lucide-react';
 
@@ -39,7 +39,7 @@ export default function MemesPage() {
 
 			{/* Content Container */}
 			<div className='max-w-6xl mx-auto px-4'>
-				<MemeManager />
+				<MemesDashboard />
 
 				<footer className='mt-24 pt-12 border-t border-slate-200 text-center'>
 					<p className='text-xs font-bold text-slate-400 uppercase tracking-widest'>
