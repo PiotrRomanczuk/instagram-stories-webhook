@@ -48,6 +48,7 @@ export function MemeManager() {
 	const handleSaveEdit = async (updates: {
 		title?: string;
 		caption?: string;
+		version?: number;
 	}) => {
 		if (!editingMeme) return;
 
@@ -60,6 +61,18 @@ export function MemeManager() {
 
 			if (!response.ok) {
 				const error = await response.json();
+
+				// Handle conflict (concurrent edit detected)
+				if (response.status === 409 || error.code === 'CONFLICT') {
+					toast.error(
+						'This meme was modified in another tab or session. Please refresh to see the latest version.',
+						{ duration: 5000 },
+					);
+					setEditingMeme(null);
+					refresh(); // Refresh the list to show latest data
+					return;
+				}
+
 				throw new Error(error.error || 'Failed to update meme');
 			}
 
