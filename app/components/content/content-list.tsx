@@ -18,18 +18,18 @@ import { GripVertical, Calendar, Send, Eye, Clock } from 'lucide-react';
 function StoryPreviewHover({ item }: { item: ContentItem }) {
 	return (
 		<div className='absolute left-full ml-4 top-1/2 -translate-y-1/2 z-50 opacity-0 group-hover/media:opacity-100 pointer-events-none transition-opacity duration-200'>
-			<div className='relative w-[180px] aspect-[9/16] rounded-2xl overflow-hidden shadow-2xl border-4 border-white'>
+			<div className='relative w-[180px] aspect-[9/16] rounded-2xl overflow-hidden shadow-2xl border-4 border-white bg-gray-900'>
 				{/* Blurred Background */}
 				<img
 					src={item.mediaUrl}
 					alt=''
-					className='absolute inset-0 h-full w-full object-cover blur-2xl opacity-50 scale-125'
+					className='absolute inset-0 h-full w-full object-cover blur-2xl opacity-60 scale-125'
 				/>
 				{/* Main Media */}
 				<img
 					src={item.mediaUrl}
 					alt='Story Preview'
-					className='relative z-10 h-full w-full object-contain'
+					className='relative z-10 h-full w-full object-contain drop-shadow-lg'
 				/>
 				{/* Story UI Overlay */}
 				<div className='absolute inset-0 z-20 p-3 flex flex-col justify-between pointer-events-none'>
