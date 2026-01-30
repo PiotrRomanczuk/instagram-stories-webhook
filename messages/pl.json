@@ -61,7 +61,12 @@
 			"pending": "Oczekujące",
 			"rejected": "Odrzucone",
 			"lastActive": "Ostatnia aktywność:",
-			"viewSubmissions": "Zobacz Zgłoszenia"
+			"viewSubmissions": "Zobacz Zgłoszenia",
+			"postsActivity": "Zaplanowane Posty",
+			"totalPosts": "Razem Postów",
+			"processing": "W Trakcie",
+			"failed": "Nieudane",
+			"lastPost": "Ostatni post:"
 		}
 	}
 }

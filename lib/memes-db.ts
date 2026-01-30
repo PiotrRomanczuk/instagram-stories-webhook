@@ -787,6 +787,47 @@ export async function getUserStatsByEmail(email: string) {
 }
 
 /**
+ * Get user post stats (scheduled_posts) by email
+ */
+export async function getPostStatsByEmail(email: string) {
+	try {
+		const { data, error } = await supabaseAdmin
+			.from('scheduled_posts')
+			.select('status, user_id, created_at')
+			.eq('user_email', email.toLowerCase())
+			.order('created_at', { ascending: false });
+
+		if (error) {
+			Logger.error(
+				MODULE,
+				`Error fetching post stats: ${error.message}`,
+				error,
+			);
+			return { total: 0, statusCounts: {}, lastPostAt: null };
+		}
+
+		const statusCounts = (data || []).reduce(
+			(acc: Record<string, number>, curr) => {
+				acc[curr.status] = (acc[curr.status] || 0) + 1;
+				return acc;
+			},
+			{},
+		);
+
+		const lastPostAt = data && data.length > 0 ? data[0].created_at : null;
+
+		return {
+			total: data?.length || 0,
+			statusCounts,
+			lastPostAt,
+		};
+	} catch (error) {
+		Logger.error(MODULE, 'Exception in getPostStatsByEmail', error);
+		return { total: 0, statusCounts: {}, lastPostAt: null };
+	}
+}
+
+/**
  * Count submissions by a user within a specific timeframe
  */
 export async function countRecentSubmissions(

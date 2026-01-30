@@ -61,7 +61,12 @@
 			"pending": "Pending",
 			"rejected": "Rejected",
 			"lastActive": "Last active:",
-			"viewSubmissions": "View Submissions"
+			"viewSubmissions": "View Submissions",
+			"postsActivity": "Scheduled Posts",
+			"totalPosts": "Total Posts",
+			"processing": "Processing",
+			"failed": "Failed",
+			"lastPost": "Last post:"
 		}
 	}
 }
