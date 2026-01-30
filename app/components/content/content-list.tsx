@@ -103,20 +103,17 @@ export function ContentList({
 								<th className='w-12 px-2 py-5'></th>
 							)}
 							<th className='px-6 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]'>
-								Content
+								Media
+							</th>
+							<th className='px-6 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]'>
+								Creator
 							</th>
 							<th className='px-6 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]'>
 								Status
 							</th>
-							{isQueueTab ? (
-								<th className='px-6 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]'>
-									Scheduled
-								</th>
-							) : (
-								<th className='px-6 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]'>
-									Created
-								</th>
-							)}
+							<th className='px-6 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]'>
+								Scheduled
+							</th>
 							<th className='px-6 py-5 text-right text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]'>
 								Actions
 							</th>
@@ -136,24 +133,18 @@ export function ContentList({
 									</td>
 								)}
 								<td className='px-6 py-5'>
-									<div className='flex items-center gap-4'>
-										<div className='w-12 h-12 rounded-xl overflow-hidden shadow-sm bg-gray-100 shrink-0'>
-											<img
-												src={item.mediaUrl}
-												alt=''
-												className='w-full h-full object-cover'
-											/>
-										</div>
-										<div className='min-w-0'>
-											<p className='font-bold text-gray-900 truncate max-w-[200px]'>
-												{item.title || 'Untitled Post'}
-											</p>
-											<p className='text-[10px] text-gray-400 font-bold truncate max-w-[200px]'>
-												{item.caption?.substring(0, 40)}
-												{item.caption && item.caption.length > 40 ? '...' : ''}
-											</p>
-										</div>
+									<div className='w-12 h-12 rounded-xl overflow-hidden shadow-sm bg-gray-100 shrink-0'>
+										<img
+											src={item.mediaUrl}
+											alt=''
+											className='w-full h-full object-cover'
+										/>
 									</div>
+								</td>
+								<td className='px-6 py-5'>
+									<p className='text-xs font-bold text-gray-700'>
+										{item.userEmail?.split('@')[0] || 'Unknown'}
+									</p>
 								</td>
 								<td className='px-6 py-5'>
 									<span
@@ -171,7 +162,7 @@ export function ContentList({
 									</span>
 								</td>
 								<td className='px-6 py-5'>
-									{isQueueTab && item.scheduledTime ? (
+									{item.scheduledTime ? (
 										<div className='flex items-center gap-2'>
 											<Calendar className='h-3 w-3 text-amber-500' />
 											<span className='text-xs font-bold text-amber-600'>
@@ -182,9 +173,7 @@ export function ContentList({
 											</span>
 										</div>
 									) : (
-										<p className='text-xs font-bold text-gray-500'>
-											{new Date(item.createdAt).toLocaleDateString()}
-										</p>
+										<span className='text-xs text-gray-400'>Not scheduled</span>
 									)}
 								</td>
 								<td className='px-6 py-5 text-right'>
