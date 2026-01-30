@@ -290,8 +290,6 @@ export function ContentHub({ initialTab = 'all' }: ContentHubProps) {
 						onPublishingStatusChange={setPublishingStatus}
 						onSortChange={setSortBy}
 						onReset={handleFiltersReset}
-						onViewModeChange={handleViewModeChange}
-						viewMode={viewMode}
 						isAdmin={isAdmin}
 						tab={tab}
 					/>

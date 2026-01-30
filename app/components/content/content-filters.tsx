@@ -6,16 +6,8 @@
  */
 
 import React, { useState } from 'react';
-import {
-	Search,
-	ChevronDown,
-	Grid,
-	List,
-	GripHorizontal,
-} from 'lucide-react';
+import { Search, ChevronDown } from 'lucide-react';
 import { ContentSource, SubmissionStatus, PublishingStatus } from '@/lib/types/posts';
-
-type ViewMode = 'grid' | 'list' | 'queue';
 
 interface ContentFiltersProps {
 	onSearchChange: (search: string) => void;
@@ -24,8 +16,6 @@ interface ContentFiltersProps {
 	onPublishingStatusChange: (status: PublishingStatus | 'all') => void;
 	onSortChange: (sort: 'newest' | 'oldest' | 'schedule-asc') => void;
 	onReset: () => void;
-	onViewModeChange: (mode: ViewMode) => void;
-	viewMode: ViewMode;
 	isAdmin: boolean;
 	tab: 'all' | 'review' | 'queue' | 'published';
 }
@@ -37,8 +27,6 @@ export function ContentFilters({
 	onPublishingStatusChange,
 	onSortChange,
 	onReset,
-	onViewModeChange,
-	viewMode,
 	isAdmin,
 	tab,
 }: ContentFiltersProps) {
@@ -47,55 +35,14 @@ export function ContentFilters({
 	return (
 		<div className="space-y-4">
 			{/* Search bar */}
-			<div className="flex gap-4">
-				<div className="relative flex-1">
-					<Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-					<input
-						type="text"
-						placeholder="Search caption, title..."
-						onChange={(e) => onSearchChange(e.target.value)}
-						className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded hover:border-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-					/>
-				</div>
-
-				{/* View mode toggles */}
-				<div className="flex gap-1 rounded-lg border border-gray-300 bg-white p-1">
-					<button
-						onClick={() => onViewModeChange('grid')}
-						className={`p-2 rounded transition ${
-							viewMode === 'grid'
-								? 'bg-indigo-600 text-white'
-								: 'text-gray-600 hover:bg-gray-100'
-						}`}
-						title="Grid view"
-					>
-						<Grid className="h-4 w-4" />
-					</button>
-					<button
-						onClick={() => onViewModeChange('list')}
-						className={`p-2 rounded transition ${
-							viewMode === 'list'
-								? 'bg-indigo-600 text-white'
-								: 'text-gray-600 hover:bg-gray-100'
-						}`}
-						title="List view"
-					>
-						<List className="h-4 w-4" />
-					</button>
-					{tab === 'queue' && (
-						<button
-							onClick={() => onViewModeChange('queue')}
-							className={`p-2 rounded transition ${
-								viewMode === 'queue'
-									? 'bg-indigo-600 text-white'
-									: 'text-gray-600 hover:bg-gray-100'
-							}`}
-							title="Queue view (drag to reorder)"
-						>
-							<GripHorizontal className="h-4 w-4" />
-						</button>
-					)}
-				</div>
+			<div className="relative">
+				<Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+				<input
+					type="text"
+					placeholder="Search caption, title..."
+					onChange={(e) => onSearchChange(e.target.value)}
+					className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded hover:border-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+				/>
 			</div>
 
 			{/* Advanced filters (collapsible) */}
