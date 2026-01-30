@@ -30,6 +30,9 @@ import {
 	RefreshCw,
 	BarChart3,
 	Users,
+	ArrowUpDown,
+	ArrowUp,
+	ArrowDown,
 } from 'lucide-react';
 import { MediaInsight } from '@/lib/types/instagram';
 
@@ -378,6 +381,56 @@ function QuickRejectPopover({
 
 type ViewMode = 'grid' | 'list';
 
+type SortColumn = 'creator' | 'status' | 'scheduled';
+type SortDirection = 'asc' | 'desc';
+
+interface SortConfig {
+	column: SortColumn | null;
+	direction: SortDirection;
+}
+
+/**
+ * Sortable Column Header Component
+ */
+function SortableHeader({
+	label,
+	column,
+	currentSort,
+	onSort,
+	children,
+}: {
+	label: string;
+	column: SortColumn;
+	currentSort: SortConfig;
+	onSort: (column: SortColumn) => void;
+	children?: React.ReactNode;
+}) {
+	const isActive = currentSort.column === column;
+
+	return (
+		<th className='px-6 py-5 text-left'>
+			<button
+				onClick={() => onSort(column)}
+				className='flex items-center gap-1.5 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] hover:text-gray-600 transition-colors group'
+			>
+				{children}
+				{label}
+				<span className='ml-0.5'>
+					{isActive ? (
+						currentSort.direction === 'asc' ? (
+							<ArrowUp className='h-3 w-3 text-indigo-500' />
+						) : (
+							<ArrowDown className='h-3 w-3 text-indigo-500' />
+						)
+					) : (
+						<ArrowUpDown className='h-3 w-3 opacity-0 group-hover:opacity-50 transition-opacity' />
+					)}
+				</span>
+			</button>
+		</th>
+	);
+}
+
 interface ContentListProps {
 	items: ContentItem[];
 	viewMode: ViewMode;
@@ -409,6 +462,54 @@ export function ContentList({
 	const [isBulkProcessing, setIsBulkProcessing] = useState(false);
 	const [showBulkRejectDialog, setShowBulkRejectDialog] = useState(false);
 	const [bulkRejectReason, setBulkRejectReason] = useState('');
+
+	// Sorting state
+	const [sortConfig, setSortConfig] = useState<SortConfig>({
+		column: null,
+		direction: 'asc',
+	});
+
+	const handleSort = (column: SortColumn) => {
+		setSortConfig((prev) => ({
+			column,
+			direction: prev.column === column && prev.direction === 'asc' ? 'desc' : 'asc',
+		}));
+	};
+
+	// Sorted items
+	const sortedItems = useMemo(() => {
+		if (!sortConfig.column) return items;
+
+		const sorted = [...items].sort((a, b) => {
+			let comparison = 0;
+
+			switch (sortConfig.column) {
+				case 'creator': {
+					const creatorA = formatCreatorName(a.userEmail).toLowerCase();
+					const creatorB = formatCreatorName(b.userEmail).toLowerCase();
+					comparison = creatorA.localeCompare(creatorB);
+					break;
+				}
+				case 'status': {
+					const statusOrder = ['published', 'scheduled', 'processing', 'draft', 'failed'];
+					const indexA = statusOrder.indexOf(a.publishingStatus);
+					const indexB = statusOrder.indexOf(b.publishingStatus);
+					comparison = indexA - indexB;
+					break;
+				}
+				case 'scheduled': {
+					const timeA = a.scheduledTime ?? 0;
+					const timeB = b.scheduledTime ?? 0;
+					comparison = timeA - timeB;
+					break;
+				}
+			}
+
+			return sortConfig.direction === 'asc' ? comparison : -comparison;
+		});
+
+		return sorted;
+	}, [items, sortConfig]);
 
 	// Get selectable items (pending submissions for bulk approve/reject)
 	const selectableItems = useMemo(
@@ -655,15 +756,24 @@ export function ContentList({
 							<th className='px-6 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]'>
 								Media
 							</th>
-							<th className='px-6 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]'>
-								Creator
-							</th>
-							<th className='px-6 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]'>
-								Status
-							</th>
-							<th className='px-6 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]'>
-								Scheduled
-							</th>
+							<SortableHeader
+								label='Creator'
+								column='creator'
+								currentSort={sortConfig}
+								onSort={handleSort}
+							/>
+							<SortableHeader
+								label='Status'
+								column='status'
+								currentSort={sortConfig}
+								onSort={handleSort}
+							/>
+							<SortableHeader
+								label='Scheduled'
+								column='scheduled'
+								currentSort={sortConfig}
+								onSort={handleSort}
+							/>
 							{tab === 'published' && (
 								<th className='px-6 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]'>
 									<div className='flex items-center gap-1'>
@@ -678,7 +788,7 @@ export function ContentList({
 						</tr>
 					</thead>
 					<tbody className='divide-y divide-gray-50'>
-						{items.map((item) => (
+						{sortedItems.map((item) => (
 							<tr
 								key={item.id}
 								className={`group hover:bg-indigo-50/30 transition-colors ${
