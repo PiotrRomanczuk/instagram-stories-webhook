@@ -90,8 +90,8 @@ test.describe('Authentication & Authorization', () => {
     // Sign in as regular user
     await signInAsUser(page);
 
-    // Attempt to access admin route
-    const response = await page.goto('/admin/memes');
+    // Attempt to access admin route (users page is admin-only)
+    const response = await page.goto('/users');
 
     // Should get 403 Forbidden or be redirected
     if (response) {
@@ -99,10 +99,10 @@ test.describe('Authentication & Authorization', () => {
       expect([403, 302, 307, 308]).toContain(status);
     }
 
-    // Verify not on admin page
+    // Verify not on admin page or access denied
     const url = page.url();
-    if (url.includes('/admin')) {
-      // If still on admin route, check for "Access Denied" or "Unauthorized" message
+    if (url.includes('/users')) {
+      // If still on users route, check for "Access Denied" or "Unauthorized" message
       const bodyText = await page.innerText('body');
       expect(bodyText).toMatch(/access denied|unauthorized|forbidden|not authorized/i);
     }
@@ -162,15 +162,19 @@ test.describe('Authentication & Authorization', () => {
     // Sign in as admin
     await signInAsAdmin(page);
 
-    // Access admin route
-    await page.goto('/admin/memes');
+    // Access admin routes
+    await page.goto('/content');
 
-    // Should successfully load admin page
-    await expect(page).toHaveURL(/\/admin\/memes/);
+    // Should successfully load content hub
+    await expect(page).toHaveURL(/\/content/);
 
     // Check for admin content
     const bodyText = await page.innerText('body');
-    expect(bodyText).toMatch(/admin|meme|review|pending/i);
+    expect(bodyText).toMatch(/content|meme|review|pending/i);
+
+    // Access users page
+    await page.goto('/users');
+    await expect(page).toHaveURL(/\/users/);
   });
 
   /**

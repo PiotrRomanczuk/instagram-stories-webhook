@@ -81,11 +81,11 @@ export default function AnalyticsPage() {
                 {/* Header */}
                 <div className="mb-8">
                     <Link
-                        href="/admin/memes"
+                        href="/content"
                         className="inline-flex items-center gap-1 text-sm font-bold text-indigo-600 hover:text-indigo-700 transition-colors uppercase tracking-widest mb-4 group"
                     >
                         <ChevronLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-                        Back to Meme Review
+                        Back to Content Hub
                     </Link>
                     <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
                         <div>

@@ -7,6 +7,7 @@ import {
 	UserRole,
 	getAllowedUserByEmail,
 	getUserStatsByEmail,
+	getPostStatsByEmail,
 	getNextAuthUserIdByEmail,
 } from '@/lib/memes-db';
 import {
@@ -22,14 +23,14 @@ import {
 	validateUserInput,
 } from '@/lib/validations/user.schema';
 
-const MODULE = 'api:admin:users:[email]';
+const MODULE = 'api:users:[email]';
 
 interface RouteParams {
 	params: Promise<{ email: string }>;
 }
 
 /**
- * GET /api/admin/users/[email] - Get detailed user info
+ * GET /api/users/[email] - Get detailed user info
  */
 export async function GET(request: NextRequest, { params }: RouteParams) {
 	try {
@@ -48,8 +49,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 			);
 		}
 
-		// 2. Get submission stats
+		// 2. Get submission stats and post stats
 		const stats = await getUserStatsByEmail(decodedEmail);
+		const postStats = await getPostStatsByEmail(decodedEmail);
 
 		// 3. Find User ID (Try NextAuth first, then fallback to stats)
 		let userId = await getNextAuthUserIdByEmail(decodedEmail);
@@ -67,6 +69,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 		return NextResponse.json({
 			user,
 			stats,
+			postStats,
 			linkedAccount: linkedAccount
 				? {
 						provider: linkedAccount.provider,
@@ -90,7 +93,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 }
 
 /**
- * PATCH /api/admin/users/[email] - Update user role
+ * PATCH /api/users/[email] - Update user role
  * Body: { role: 'developer' | 'admin' | 'user' }
  */
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
@@ -117,7 +120,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 			return NextResponse.json({ error: 'User not found' }, { status: 404 });
 		}
 
-		await Logger.info(MODULE, `🔄 Updated ${decodedEmail} role to ${role}`);
+		await Logger.info(MODULE, `Updated ${decodedEmail} role to ${role}`);
 
 		return NextResponse.json({ success: true, email: decodedEmail, role });
 	} catch (error) {
@@ -139,7 +142,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 }
 
 /**
- * DELETE /api/admin/users/[email] - Remove user from whitelist
+ * DELETE /api/users/[email] - Remove user from whitelist
  */
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
 	try {
@@ -164,7 +167,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 			return NextResponse.json({ error: 'User not found' }, { status: 404 });
 		}
 
-		await Logger.info(MODULE, `🗑️ Removed ${decodedEmail} from whitelist`, {
+		await Logger.info(MODULE, `Removed ${decodedEmail} from whitelist`, {
 			removedBy: getUserId(session),
 		});
 

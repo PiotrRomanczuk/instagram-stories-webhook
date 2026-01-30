@@ -33,7 +33,7 @@ export interface TestScheduledPost {
  * Create test user via API
  */
 export async function createTestUser(page: Page, user: TestUser): Promise<string> {
-  const response = await page.request.post('/api/admin/users', {
+  const response = await page.request.post('/api/users', {
     data: user,
   });
 

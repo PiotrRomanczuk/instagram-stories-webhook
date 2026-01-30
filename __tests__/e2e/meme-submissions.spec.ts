@@ -372,7 +372,7 @@ test.describe('Meme Submissions (Section 2)', () => {
     await page.context().clearCookies();
     await signInAsAdmin(page);
 
-    await page.goto('/admin/memes');
+    await page.goto('/content');
 
     // Find and approve the submission
     const approveButton = page.locator('button:has-text("Approve")').first();

@@ -16,6 +16,7 @@ import {
 	Calendar,
 	Instagram,
 	X,
+	Send,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSession } from 'next-auth/react';
@@ -24,7 +25,7 @@ import { AllowedUser, UserRole } from '@/lib/memes-db';
 
 import { useTranslations } from 'next-intl';
 
-export default function AdminUsersPage() {
+export default function UsersPage() {
 	const t = useTranslations('AdminUsers');
 	const { data: session, status } = useSession();
 	const router = useRouter();
@@ -43,6 +44,11 @@ export default function AdminUsersPage() {
 			total: number;
 			statusCounts: Record<string, number>;
 			lastSubAt: string | null;
+		};
+		postStats: {
+			total: number;
+			statusCounts: Record<string, number>;
+			lastPostAt: string | null;
 		};
 		linkedAccount: {
 			provider: string;
@@ -65,7 +71,7 @@ export default function AdminUsersPage() {
 
 	const fetchUsers = useCallback(async () => {
 		try {
-			const res = await fetch('/api/admin/users');
+			const res = await fetch('/api/users');
 			const data = await res.json();
 			if (!res.ok) throw new Error(data.error);
 			setUsers(data.users || []);
@@ -86,7 +92,7 @@ export default function AdminUsersPage() {
 
 		setIsAdding(true);
 		try {
-			const res = await fetch('/api/admin/users', {
+			const res = await fetch('/api/users', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ email: newEmail.trim(), role: newRole }),
@@ -107,7 +113,7 @@ export default function AdminUsersPage() {
 
 	const handleRoleChange = async (email: string, role: UserRole) => {
 		try {
-			const res = await fetch(`/api/admin/users/${encodeURIComponent(email)}`, {
+			const res = await fetch(`/api/users/${encodeURIComponent(email)}`, {
 				method: 'PATCH',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ role }),
@@ -126,7 +132,7 @@ export default function AdminUsersPage() {
 		if (!confirm(`Remove ${email} from whitelist?`)) return;
 
 		try {
-			const res = await fetch(`/api/admin/users/${encodeURIComponent(email)}`, {
+			const res = await fetch(`/api/users/${encodeURIComponent(email)}`, {
 				method: 'DELETE',
 			});
 			const data = await res.json();
@@ -141,7 +147,7 @@ export default function AdminUsersPage() {
 
 	const handleViewDetails = async (email: string) => {
 		try {
-			const res = await fetch(`/api/admin/users/${encodeURIComponent(email)}`);
+			const res = await fetch(`/api/users/${encodeURIComponent(email)}`);
 			const data = await res.json();
 			if (!res.ok) throw new Error(data.error);
 			setSelectedUserDetails(data);
@@ -166,7 +172,7 @@ export default function AdminUsersPage() {
 				{/* Header */}
 				<div className='mb-8'>
 					<Link
-						href='/admin/memes'
+						href='/content'
 						className='inline-flex items-center gap-1 text-sm font-bold text-indigo-600 hover:text-indigo-700 transition-colors uppercase tracking-widest mb-4 group'
 					>
 						<ChevronLeft className='w-4 h-4 transition-transform group-hover:-translate-x-1' />
@@ -534,12 +540,84 @@ export default function AdminUsersPage() {
 										</div>
 									</div>
 								</section>
+
+								{/* Scheduled Posts Stats */}
+								<section>
+									<h4 className='text-xs font-bold text-slate-400 uppercase tracking-widest mb-4'>
+										{t('details.postsActivity')}
+									</h4>
+									<div className='bg-indigo-900 rounded-3xl p-6 text-white overflow-hidden relative'>
+										<div className='absolute top-0 right-0 p-4 opacity-10'>
+											<Send className='w-24 h-24' />
+										</div>
+
+										<div className='relative z-10'>
+											<div className='mb-6'>
+												<span className='text-xs font-bold text-indigo-300 uppercase tracking-widest'>
+													{t('details.totalPosts')}
+												</span>
+												<p className='text-5xl font-black'>
+													{selectedUserDetails.postStats.total}
+												</p>
+											</div>
+
+											<div className='grid grid-cols-2 gap-4'>
+												<div className='bg-white/10 rounded-2xl p-3'>
+													<span className='text-[10px] font-bold text-indigo-300 uppercase'>
+														{t('details.published')}
+													</span>
+													<p className='text-xl font-bold text-green-400'>
+														{selectedUserDetails.postStats.statusCounts
+															.published || 0}
+													</p>
+												</div>
+												<div className='bg-white/10 rounded-2xl p-3'>
+													<span className='text-[10px] font-bold text-indigo-300 uppercase'>
+														{t('details.pending')}
+													</span>
+													<p className='text-xl font-bold text-yellow-400'>
+														{selectedUserDetails.postStats.statusCounts
+															.pending || 0}
+													</p>
+												</div>
+												<div className='bg-white/10 rounded-2xl p-3'>
+													<span className='text-[10px] font-bold text-indigo-300 uppercase'>
+														{t('details.processing')}
+													</span>
+													<p className='text-xl font-bold text-blue-400'>
+														{selectedUserDetails.postStats.statusCounts
+															.processing || 0}
+													</p>
+												</div>
+												<div className='bg-white/10 rounded-2xl p-3'>
+													<span className='text-[10px] font-bold text-indigo-300 uppercase'>
+														{t('details.failed')}
+													</span>
+													<p className='text-xl font-bold text-red-400'>
+														{selectedUserDetails.postStats.statusCounts
+															.failed || 0}
+													</p>
+												</div>
+											</div>
+
+											{selectedUserDetails.postStats.lastPostAt && (
+												<div className='mt-6 flex items-center gap-2 text-xs text-indigo-300'>
+													<Clock className='w-3 h-3' />
+													{t('details.lastPost')}{' '}
+													{new Date(
+														selectedUserDetails.postStats.lastPostAt,
+													).toLocaleDateString()}
+												</div>
+											)}
+										</div>
+									</div>
+								</section>
 							</div>
 
 							{/* Panel Footer */}
 							<div className='p-6 border-t border-slate-100'>
 								<Link
-									href={`/admin/memes?search=${encodeURIComponent(selectedUserDetails.user.email)}`}
+									href={`/content?search=${encodeURIComponent(selectedUserDetails.user.email)}`}
 									className='w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200'
 								>
 									{t('details.viewSubmissions')}

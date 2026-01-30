@@ -28,6 +28,7 @@ import {
 	ArrowLeft,
 	LogOut,
 	MessageCircle,
+	Trash2,
 } from 'lucide-react';
 import { ConfirmationDialog } from '../ui/confirmation-dialog';
 
@@ -234,7 +235,9 @@ export function ContentPreviewModal({
 }: ContentPreviewModalProps) {
 	const [showStoryFrame, setShowStoryFrame] = useState(false);
 	const [showConfirmPublish, setShowConfirmPublish] = useState(false);
+	const [showConfirmDelete, setShowConfirmDelete] = useState(false);
 	const [isPublishing, setIsPublishing] = useState(false);
+	const [isDeleting, setIsDeleting] = useState(false);
 	const [isReviewing, setIsReviewing] = useState(false);
 	const [showRejectDialog, setShowRejectDialog] = useState(false);
 	const [rejectionReason, setRejectionReason] = useState('');
@@ -343,6 +346,24 @@ export function ContentPreviewModal({
 		} finally {
 			setIsReviewing(false);
 			setShowRejectDialog(false);
+		}
+	};
+
+	const handleDelete = async () => {
+		try {
+			setIsDeleting(true);
+			const response = await fetch(`/api/memes/${item.id}`, {
+				method: 'DELETE',
+			});
+			if (response.ok) {
+				onRefresh();
+				onClose();
+			}
+		} catch (err) {
+			console.error('Failed to delete', err);
+		} finally {
+			setIsDeleting(false);
+			setShowConfirmDelete(false);
 		}
 	};
 
@@ -685,12 +706,23 @@ export function ContentPreviewModal({
 									</button>
 								</div>
 							)}
-							<button
-								onClick={onClose}
-								className='w-full h-14 bg-gray-50 text-gray-400 rounded-2xl hover:bg-gray-100 hover:text-gray-900 transition-all font-bold text-xs uppercase tracking-widest'
-							>
-								Dismiss
-							</button>
+							<div className='flex gap-2'>
+								<button
+									onClick={onClose}
+									className='flex-1 h-14 bg-gray-50 text-gray-400 rounded-2xl hover:bg-gray-100 hover:text-gray-900 transition-all font-bold text-xs uppercase tracking-widest'
+								>
+									Dismiss
+								</button>
+								{isAdmin && (
+									<button
+										onClick={() => setShowConfirmDelete(true)}
+										className='h-14 px-6 bg-rose-50 text-rose-500 rounded-2xl hover:bg-rose-100 hover:text-rose-600 transition-all font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2'
+										title='Delete this content'
+									>
+										<Trash2 className='h-4 w-4' />
+									</button>
+								)}
+							</div>
 						</div>
 					</div>
 				</div>
@@ -705,6 +737,17 @@ export function ContentPreviewModal({
 				confirmLabel='Go Live Now'
 				type='success'
 				isLoading={isPublishing}
+			/>
+
+			<ConfirmationDialog
+				isOpen={showConfirmDelete}
+				onClose={() => setShowConfirmDelete(false)}
+				onConfirm={handleDelete}
+				title='Delete Content?'
+				message='This will permanently delete this content. This action cannot be undone.'
+				confirmLabel='Delete'
+				type='danger'
+				isLoading={isDeleting}
 			/>
 
 			{/* Rejection Dialog */}

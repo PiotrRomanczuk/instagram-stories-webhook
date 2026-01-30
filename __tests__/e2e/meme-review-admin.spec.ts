@@ -40,7 +40,7 @@ test.describe('Meme Review & Admin (Section 3)', () => {
 
     // Sign in as admin
     await signInAsAdmin(page);
-    await page.goto('/admin/memes');
+    await page.goto('/content');
 
     // Should see admin memes page
     await expect(page).toHaveURL(/\/admin\/memes/);
@@ -83,7 +83,7 @@ test.describe('Meme Review & Admin (Section 3)', () => {
 
     // Sign in as admin
     await signInAsAdmin(page);
-    await page.goto('/admin/memes');
+    await page.goto('/content');
 
     // Find approve button
     const approveButton = page.locator('button:has-text("Approve")').first();
@@ -136,7 +136,7 @@ test.describe('Meme Review & Admin (Section 3)', () => {
 
     // Sign in as admin
     await signInAsAdmin(page);
-    await page.goto('/admin/memes');
+    await page.goto('/content');
 
     // Find reject button
     const rejectButton = page.locator('button:has-text("Reject")').first();
@@ -183,7 +183,7 @@ test.describe('Meme Review & Admin (Section 3)', () => {
     await signInAsUser(page);
 
     // Try to access admin panel
-    const response = await page.goto('/admin/memes');
+    const response = await page.goto('/content');
 
     // Should be forbidden or redirected
     if (response) {
@@ -193,13 +193,13 @@ test.describe('Meme Review & Admin (Section 3)', () => {
 
     // Check if redirected or showing error
     const url = page.url();
-    if (url.includes('/admin/memes')) {
+    if (url.includes('/content')) {
       // Still on admin route - should show error
       const bodyText = await page.innerText('body');
       expect(bodyText).toMatch(/access denied|unauthorized|forbidden|not authorized/i);
     } else {
       // Redirected away - verify not on admin route
-      expect(url).not.toContain('/admin/memes');
+      expect(url).not.toContain('/content');
     }
   });
 
@@ -233,7 +233,7 @@ test.describe('Meme Review & Admin (Section 3)', () => {
 
     // Sign in as admin
     await signInAsAdmin(page);
-    await page.goto('/admin/memes');
+    await page.goto('/content');
 
     // Look for checkboxes to select multiple memes
     const checkboxes = page.locator('input[type="checkbox"]');
@@ -300,7 +300,7 @@ test.describe('Meme Review & Admin (Section 3)', () => {
 
     // Sign in as admin
     await signInAsAdmin(page);
-    await page.goto('/admin/memes');
+    await page.goto('/content');
 
     // Select memes for bulk rejection
     const checkboxes = page.locator('input[type="checkbox"]');
@@ -347,7 +347,7 @@ test.describe('Meme Review & Admin (Section 3)', () => {
    */
   test('MR-07: admin should search memes by title', async ({ page }) => {
     await signInAsAdmin(page);
-    await page.goto('/admin/memes');
+    await page.goto('/content');
 
     // Look for search input
     const searchInput = page.locator('input[type="search"], input[placeholder*="Search"], input[name="search"]');
@@ -398,7 +398,7 @@ test.describe('Meme Review & Admin (Section 3)', () => {
 
     // Admin approves
     await signInAsAdmin(page);
-    await page.goto('/admin/memes');
+    await page.goto('/content');
 
     const approveButton = page.locator('button:has-text("Approve")').first();
     if (await approveButton.count() > 0) {

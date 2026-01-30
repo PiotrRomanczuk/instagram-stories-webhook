@@ -47,7 +47,7 @@ export function Navbar() {
 	];
 
 	if (isAdminOrDev) {
-		navItems.push({ href: '/admin/users', label: t('users'), icon: Users });
+		navItems.push({ href: '/users', label: t('users'), icon: Users });
 	}
 
 	if (isDev) {

@@ -21,11 +21,11 @@ test.describe('Role-Based Access Control (RBAC)', () => {
     await signInAsAdmin(page);
 
     // Test admin routes
-    await page.goto('/admin/memes');
-    await expect(page).toHaveURL(/\/admin\/memes/);
+    await page.goto('/content');
+    await expect(page).toHaveURL(/\/content/);
 
-    await page.goto('/admin/users');
-    await expect(page).toHaveURL(/\/admin\/users/);
+    await page.goto('/users');
+    await expect(page).toHaveURL(/\/users/);
 
     // Test user routes (admin should also access these)
     await page.goto('/schedule');
@@ -49,38 +49,22 @@ test.describe('Role-Based Access Control (RBAC)', () => {
   test('RBAC-02: regular user should be denied access to admin routes', async ({ page }) => {
     await signInAsUser(page);
 
-    // Attempt to access admin memes route
-    const memesResponse = await page.goto('/admin/memes');
-    if (memesResponse) {
-      const status = memesResponse.status();
+    // Attempt to access users route (admin-only)
+    const usersResponse = await page.goto('/users');
+    if (usersResponse) {
+      const status = usersResponse.status();
       // Should get forbidden or redirect
       expect([403, 302, 307, 308]).toContain(status);
     }
 
     // Check if redirected or shows error
-    const memesUrl = page.url();
-    if (memesUrl.includes('/admin/memes')) {
+    const usersUrl = page.url();
+    if (usersUrl.includes('/users')) {
       const bodyText = await page.innerText('body');
       expect(bodyText).toMatch(/access denied|unauthorized|forbidden|not authorized/i);
     } else {
       // Should be redirected away from admin route
-      expect(memesUrl).not.toContain('/admin/memes');
-    }
-
-    // Attempt to access admin users route
-    const usersResponse = await page.goto('/admin/users');
-    if (usersResponse) {
-      const status = usersResponse.status();
-      expect([403, 302, 307, 308]).toContain(status);
-    }
-
-    // Verify cannot access admin routes
-    const usersUrl = page.url();
-    if (usersUrl.includes('/admin/users')) {
-      const bodyText = await page.innerText('body');
-      expect(bodyText).toMatch(/access denied|unauthorized|forbidden|not authorized/i);
-    } else {
-      expect(usersUrl).not.toContain('/admin/users');
+      expect(usersUrl).not.toContain('/users');
     }
   });
 
@@ -124,17 +108,17 @@ test.describe('Role-Based Access Control (RBAC)', () => {
 
     // Sign in as admin
     await signInAsAdmin(page);
-    await page.goto('/admin/memes');
+    await page.goto('/content');
 
     // Admin should see all submissions
     const bodyText = await page.innerText('body');
 
     // Check that admin panel is visible
-    expect(bodyText).toMatch(/admin|meme|review|pending|approve|reject/i);
+    expect(bodyText).toMatch(/content|meme|review|pending|approve|reject/i);
 
     // In a full implementation, we'd verify both submissions are visible
     // For now, verify admin page loads correctly
-    await expect(page).toHaveURL(/\/admin\/memes/);
+    await expect(page).toHaveURL(/\/content/);
   });
 
   /**
@@ -197,7 +181,7 @@ test.describe('Role-Based Access Control (RBAC)', () => {
     await signInAsUser(page);
 
     // Verify user role does not grant admin access
-    const response = await page.goto('/admin/memes');
+    const response = await page.goto('/users');
 
     // Should be denied
     if (response) {
@@ -207,7 +191,7 @@ test.describe('Role-Based Access Control (RBAC)', () => {
 
     // Check current URL or body for denial
     const url = page.url();
-    if (url.includes('/admin')) {
+    if (url.includes('/users')) {
       const bodyText = await page.innerText('body');
       expect(bodyText).toMatch(/access denied|unauthorized|forbidden/i);
     }
@@ -223,12 +207,12 @@ test.describe('Role-Based Access Control (RBAC)', () => {
     await signInAsAdmin(page);
 
     // Should have admin access
-    await page.goto('/admin/memes');
-    await expect(page).toHaveURL(/\/admin\/memes/);
+    await page.goto('/content');
+    await expect(page).toHaveURL(/\/content/);
 
     // Verify admin functionality is available
     const bodyText = await page.innerText('body');
-    expect(bodyText).toMatch(/admin|meme|review|approve|reject/i);
+    expect(bodyText).toMatch(/content|meme|review|approve|reject/i);
   });
 
   /**
@@ -266,7 +250,7 @@ test.describe('Role-Based Access Control (RBAC)', () => {
     await signInAsUser(page);
 
     // Try to access admin API endpoint
-    const response = await page.request.get('/api/admin/users');
+    const response = await page.request.get('/api/users');
 
     // Should be forbidden
     expect([401, 403]).toContain(response.status());

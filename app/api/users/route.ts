@@ -6,10 +6,10 @@ import { requireAdmin, requireDeveloper, getUserId } from '@/lib/auth-helpers';
 import { Logger } from '@/lib/utils/logger';
 import { addUserSchema, validateUserInput } from '@/lib/validations/user.schema';
 
-const MODULE = 'api:admin:users';
+const MODULE = 'api:users';
 
 /**
- * GET /api/admin/users - List all whitelisted users
+ * GET /api/users - List all whitelisted users
  */
 export async function GET() {
     try {
@@ -32,7 +32,7 @@ export async function GET() {
 }
 
 /**
- * POST /api/admin/users - Add user to whitelist
+ * POST /api/users - Add user to whitelist
  * Body: { email: string, role?: 'developer' | 'admin' | 'user', display_name?: string }
  */
 export async function POST(request: NextRequest) {
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        await Logger.info(MODULE, `✅ Added ${email} to whitelist as ${role}`, { addedBy: adminId });
+        await Logger.info(MODULE, `Added ${email} to whitelist as ${role}`, { addedBy: adminId });
 
         return NextResponse.json({ user }, { status: 201 });
     } catch (error) {

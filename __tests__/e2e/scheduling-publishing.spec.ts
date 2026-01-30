@@ -43,7 +43,7 @@ test.describe('Scheduling & Publishing (Section 4)', () => {
 
     // Admin approves
     await signInAsAdmin(page);
-    await page.goto('/admin/memes');
+    await page.goto('/content');
 
     const approveButton = page.locator('button:has-text("Approve")').first();
     if (await approveButton.count() > 0) {

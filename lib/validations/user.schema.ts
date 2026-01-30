@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 /**
  * Validation schemas for user management operations
- * Used by /api/admin/users endpoints
+ * Used by /api/users endpoints
  */
 
 // User role enum
@@ -10,7 +10,7 @@ export const userRoleSchema = z.enum(['developer', 'admin', 'user']);
 
 /**
  * Schema for adding a new user to the whitelist
- * POST /api/admin/users
+ * POST /api/users
  */
 export const addUserSchema = z.object({
     email: z
@@ -36,7 +36,7 @@ export type AddUserInput = z.infer<typeof addUserSchema>;
 
 /**
  * Schema for updating a user's role
- * PATCH /api/admin/users/[email]
+ * PATCH /api/users/[email]
  */
 export const updateUserRoleSchema = z.object({
     role: userRoleSchema

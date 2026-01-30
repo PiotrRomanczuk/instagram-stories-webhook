@@ -88,7 +88,7 @@ export default async function Home() {
 								(session!.user as { role?: UserRole }).role || '',
 							) && (
 								<Link
-									href='/admin/memes'
+									href='/content'
 									className='group relative overflow-hidden p-6 rounded-3xl bg-white border border-slate-100 shadow-lg shadow-purple-500/5 hover:shadow-purple-500/10 transition-all duration-300'
 								>
 									<div className='absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity'>
