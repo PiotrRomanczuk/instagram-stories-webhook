@@ -5,9 +5,10 @@
  * Displays content in grid or list view modes
  * List view includes drag handles when on queue tab
  * Quick actions for approve/reject directly in row
+ * Bulk selection with floating action bar
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ContentItem } from '@/lib/types/posts';
 import { ContentCard } from './content-card';
 import { ConfirmationDialog } from '../ui/confirmation-dialog';
@@ -21,6 +22,9 @@ import {
 	ThumbsDown,
 	Loader2,
 	X,
+	CheckSquare,
+	Square,
+	MinusSquare,
 } from 'lucide-react';
 
 /**
@@ -144,6 +148,93 @@ export function ContentList({
 	const [rejectingId, setRejectingId] = useState<string | null>(null);
 	const [showRejectPopover, setShowRejectPopover] = useState<string | null>(null);
 
+	// Bulk selection state
+	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+	const [isBulkProcessing, setIsBulkProcessing] = useState(false);
+	const [showBulkRejectDialog, setShowBulkRejectDialog] = useState(false);
+	const [bulkRejectReason, setBulkRejectReason] = useState('');
+
+	// Get selectable items (pending submissions for bulk approve/reject)
+	const selectableItems = useMemo(
+		() => items.filter((item) => item.source === 'submission' && item.submissionStatus === 'pending'),
+		[items]
+	);
+
+	const allSelectableSelected =
+		selectableItems.length > 0 && selectableItems.every((item) => selectedIds.has(item.id));
+	const someSelectableSelected =
+		selectableItems.some((item) => selectedIds.has(item.id)) && !allSelectableSelected;
+
+	const toggleSelect = (id: string) => {
+		setSelectedIds((prev) => {
+			const next = new Set(prev);
+			if (next.has(id)) {
+				next.delete(id);
+			} else {
+				next.add(id);
+			}
+			return next;
+		});
+	};
+
+	const toggleSelectAll = () => {
+		if (allSelectableSelected) {
+			setSelectedIds(new Set());
+		} else {
+			setSelectedIds(new Set(selectableItems.map((item) => item.id)));
+		}
+	};
+
+	const clearSelection = () => {
+		setSelectedIds(new Set());
+	};
+
+	// Bulk approve handler
+	const handleBulkApprove = async () => {
+		if (selectedIds.size === 0) return;
+		setIsBulkProcessing(true);
+		try {
+			const promises = Array.from(selectedIds).map((id) =>
+				fetch(`/api/content/${id}/review`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ action: 'approve' }),
+				})
+			);
+			await Promise.all(promises);
+			clearSelection();
+			onRefresh();
+		} catch (err) {
+			console.error('Bulk approve failed', err);
+		} finally {
+			setIsBulkProcessing(false);
+		}
+	};
+
+	// Bulk reject handler
+	const handleBulkReject = async () => {
+		if (selectedIds.size === 0 || !bulkRejectReason.trim()) return;
+		setIsBulkProcessing(true);
+		try {
+			const promises = Array.from(selectedIds).map((id) =>
+				fetch(`/api/content/${id}/review`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ action: 'reject', rejectionReason: bulkRejectReason }),
+				})
+			);
+			await Promise.all(promises);
+			clearSelection();
+			setShowBulkRejectDialog(false);
+			setBulkRejectReason('');
+			onRefresh();
+		} catch (err) {
+			console.error('Bulk reject failed', err);
+		} finally {
+			setIsBulkProcessing(false);
+		}
+	};
+
 	const handlePublishNow = async () => {
 		if (!selectedItemForPublish) return;
 		try {
@@ -227,9 +318,51 @@ export function ContentList({
 		);
 	}
 
+	const showBulkSelection = isAdmin && selectableItems.length > 0;
+
 	// List view (with drag handles when on queue tab)
 	return (
-		<div className='bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden'>
+		<div className='bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden relative'>
+			{/* Floating Bulk Actions Bar */}
+			{selectedIds.size > 0 && (
+				<div className='sticky top-0 z-20 bg-indigo-600 text-white px-6 py-4 flex items-center justify-between shadow-lg animate-in slide-in-from-top-2 duration-200'>
+					<div className='flex items-center gap-4'>
+						<button
+							onClick={clearSelection}
+							className='p-1.5 hover:bg-white/20 rounded-lg transition-colors'
+							title='Clear selection'
+						>
+							<X className='h-4 w-4' />
+						</button>
+						<span className='text-sm font-bold'>
+							{selectedIds.size} item{selectedIds.size !== 1 ? 's' : ''} selected
+						</span>
+					</div>
+					<div className='flex items-center gap-3'>
+						<button
+							onClick={handleBulkApprove}
+							disabled={isBulkProcessing}
+							className='px-4 py-2 bg-emerald-500 hover:bg-emerald-400 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-colors disabled:opacity-50'
+						>
+							{isBulkProcessing ? (
+								<Loader2 className='h-4 w-4 animate-spin' />
+							) : (
+								<ThumbsUp className='h-4 w-4' />
+							)}
+							Approve All
+						</button>
+						<button
+							onClick={() => setShowBulkRejectDialog(true)}
+							disabled={isBulkProcessing}
+							className='px-4 py-2 bg-rose-500 hover:bg-rose-400 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-colors disabled:opacity-50'
+						>
+							<ThumbsDown className='h-4 w-4' />
+							Reject All
+						</button>
+					</div>
+				</div>
+			)}
+
 			{isQueueTab && (
 				<div className='p-4 bg-indigo-50 border-b border-indigo-100 flex items-center gap-3'>
 					<Clock className='h-5 w-5 text-indigo-600' />
@@ -245,6 +378,23 @@ export function ContentList({
 				<table className='w-full text-sm'>
 					<thead>
 						<tr className='bg-gray-50/50 border-b border-gray-100'>
+							{showBulkSelection && (
+								<th className='w-12 px-4 py-5'>
+									<button
+										onClick={toggleSelectAll}
+										className='p-1 hover:bg-gray-100 rounded transition-colors'
+										title={allSelectableSelected ? 'Deselect all' : 'Select all pending'}
+									>
+										{allSelectableSelected ? (
+											<CheckSquare className='h-5 w-5 text-indigo-600' />
+										) : someSelectableSelected ? (
+											<MinusSquare className='h-5 w-5 text-indigo-400' />
+										) : (
+											<Square className='h-5 w-5 text-gray-300' />
+										)}
+									</button>
+								</th>
+							)}
 							{isQueueTab && <th className='w-12 px-2 py-5'></th>}
 							<th className='px-6 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]'>
 								Media
@@ -269,8 +419,26 @@ export function ContentList({
 								key={item.id}
 								className={`group hover:bg-indigo-50/30 transition-colors ${
 									isPendingSubmission(item) ? 'bg-amber-50/30' : ''
-								}`}
+								} ${selectedIds.has(item.id) ? 'bg-indigo-50' : ''}`}
 							>
+								{showBulkSelection && (
+									<td className='px-4 py-5'>
+										{isPendingSubmission(item) ? (
+											<button
+												onClick={() => toggleSelect(item.id)}
+												className='p-1 hover:bg-gray-100 rounded transition-colors'
+											>
+												{selectedIds.has(item.id) ? (
+													<CheckSquare className='h-5 w-5 text-indigo-600' />
+												) : (
+													<Square className='h-5 w-5 text-gray-300 group-hover:text-gray-400' />
+												)}
+											</button>
+										) : (
+											<div className='w-7' /> // Spacer for non-selectable items
+										)}
+									</td>
+								)}
 								{isQueueTab && (
 									<td className='px-2 py-5'>
 										<div className='cursor-grab active:cursor-grabbing p-2 text-gray-300 group-hover:text-indigo-400'>
@@ -420,6 +588,46 @@ export function ContentList({
 				type='success'
 				isLoading={isPublishing}
 			/>
+
+			{/* Bulk Reject Dialog */}
+			{showBulkRejectDialog && (
+				<div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-in fade-in duration-200'>
+					<div className='bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md mx-4 animate-in zoom-in-95 duration-200'>
+						<h3 className='text-xl font-black text-gray-900 mb-2'>
+							Reject {selectedIds.size} Item{selectedIds.size !== 1 ? 's' : ''}?
+						</h3>
+						<p className='text-sm text-gray-500 mb-6'>
+							Please provide a reason for rejecting these submissions.
+						</p>
+						<textarea
+							value={bulkRejectReason}
+							onChange={(e) => setBulkRejectReason(e.target.value)}
+							placeholder='Rejection reason...'
+							className='w-full p-4 border border-gray-200 rounded-2xl resize-none h-32 focus:outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 text-sm'
+							autoFocus
+						/>
+						<div className='flex gap-3 mt-6'>
+							<button
+								onClick={() => {
+									setShowBulkRejectDialog(false);
+									setBulkRejectReason('');
+								}}
+								className='flex-1 px-6 py-3 bg-gray-100 text-gray-700 rounded-2xl font-bold text-sm hover:bg-gray-200 transition-colors'
+							>
+								Cancel
+							</button>
+							<button
+								onClick={handleBulkReject}
+								disabled={!bulkRejectReason.trim() || isBulkProcessing}
+								className='flex-1 px-6 py-3 bg-rose-500 text-white rounded-2xl font-bold text-sm hover:bg-rose-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2'
+							>
+								{isBulkProcessing && <Loader2 className='h-4 w-4 animate-spin' />}
+								Reject All
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }
