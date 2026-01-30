@@ -288,6 +288,11 @@ export function ContentHub({ initialTab = 'all' }: ContentHubProps) {
 						onReset={handleFiltersReset}
 						isAdmin={isAdmin}
 						tab={tab}
+						currentSearch={search}
+						currentSource={source}
+						currentSubmissionStatus={submissionStatus}
+						currentPublishingStatus={publishingStatus}
+						currentSortBy={sortBy}
 					/>
 				</div>
 
