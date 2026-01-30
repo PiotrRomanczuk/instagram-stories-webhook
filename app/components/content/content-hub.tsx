@@ -32,7 +32,10 @@ import {
 	AlertTriangle,
 	X,
 	CalendarClock,
+	Gauge,
+	Loader2,
 } from 'lucide-react';
+import { ContentPublishingLimit } from '@/lib/types/instagram';
 import {
 	ContentItem,
 	ContentSource,
@@ -42,6 +45,92 @@ import {
 import type { UserRole } from '@/lib/types/posts';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
+
+/**
+ * Publishing Quota Indicator Component
+ * Shows Instagram API rate limit usage (100 posts per 24h)
+ */
+function PublishingQuotaIndicator() {
+	const { data, error, isLoading } = useSWR<{ limit: ContentPublishingLimit }>(
+		'/api/schedule/quota',
+		fetcher,
+		{
+			revalidateOnFocus: false,
+			refreshInterval: 60000, // Refresh every minute
+			dedupingInterval: 30000,
+		}
+	);
+
+	if (isLoading) {
+		return (
+			<div className="flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-2xl">
+				<Loader2 className="h-4 w-4 text-gray-400 animate-spin" />
+				<span className="text-xs font-bold text-gray-400">Loading quota...</span>
+			</div>
+		);
+	}
+
+	if (error || !data?.limit) {
+		return (
+			<div className="flex items-center gap-2 px-4 py-2 bg-amber-50 rounded-2xl" title="Unable to fetch quota">
+				<Gauge className="h-4 w-4 text-amber-500" />
+				<span className="text-xs font-bold text-amber-600">Quota unavailable</span>
+			</div>
+		);
+	}
+
+	const { limit } = data;
+	const total = limit.config?.quota_total || 100;
+	const used = limit.quota_usage || 0;
+	const remaining = total - used;
+	const usagePercent = (used / total) * 100;
+
+	// Determine status color
+	let statusColor = 'emerald';
+	let bgColor = 'bg-emerald-50';
+	let textColor = 'text-emerald-600';
+	let barColor = 'bg-emerald-500';
+
+	if (usagePercent >= 90) {
+		statusColor = 'rose';
+		bgColor = 'bg-rose-50';
+		textColor = 'text-rose-600';
+		barColor = 'bg-rose-500';
+	} else if (usagePercent >= 70) {
+		statusColor = 'amber';
+		bgColor = 'bg-amber-50';
+		textColor = 'text-amber-600';
+		barColor = 'bg-amber-500';
+	}
+
+	return (
+		<div
+			className={`flex items-center gap-3 px-4 py-2 ${bgColor} rounded-2xl border border-${statusColor}-100`}
+			title={`Instagram API Rate Limit: ${used}/${total} posts used in the last 24 hours`}
+		>
+			<Gauge className={`h-4 w-4 ${textColor}`} />
+			<div className="flex flex-col gap-1">
+				<div className="flex items-center gap-2">
+					<span className={`text-xs font-black ${textColor} uppercase tracking-wider`}>
+						API Quota
+					</span>
+					<span className="text-[10px] font-bold text-gray-400">
+						{remaining} left
+					</span>
+				</div>
+				<div className="w-24 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+					<div
+						className={`h-full ${barColor} rounded-full transition-all duration-500`}
+						style={{ width: `${usagePercent}%` }}
+					/>
+				</div>
+			</div>
+			<span className={`text-sm font-black ${textColor}`}>
+				{used}/{total}
+			</span>
+		</div>
+	);
+}
 
 type TabType = 'all' | 'review' | 'queue' | 'published' | 'rejected';
 
@@ -58,7 +147,7 @@ export function ContentHub({ initialTab = 'all' }: ContentHubProps) {
 
 	// State
 	const [tab, setTab] = useState<TabType>(initialTab);
-	const [viewMode, setViewMode] = useState<ViewMode>('grid');
+	const [viewMode, setViewMode] = useState<ViewMode>('list');
 	const [search, setSearch] = useState('');
 	const [source, setSource] = useState<ContentSource | 'all'>('all');
 	const [submissionStatus, setSubmissionStatus] = useState<
@@ -189,6 +278,9 @@ export function ContentHub({ initialTab = 'all' }: ContentHubProps) {
 						</div>
 
 						<div className='flex items-center gap-3'>
+							{/* Publishing Quota - Always visible for admins */}
+							{isAdmin && <PublishingQuotaIndicator />}
+
 							<button
 								onClick={handleRefresh}
 								className={`p-4 bg-gray-50 text-gray-400 hover:text-indigo-600 hover:bg-white border border-transparent hover:border-indigo-100 rounded-2xl transition-all active:rotate-180 duration-500 shadow-sm ${isLoading ? 'animate-spin' : ''}`}
