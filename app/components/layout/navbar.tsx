@@ -1,215 +1,269 @@
 'use client';
 
 import { Link, usePathname, useRouter } from '@/i18n/routing';
-import { useSession, signOut } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import {
 	Home,
 	Image as ImageIcon,
-	Shield,
+	Send,
+	ClipboardCheck,
 	Calendar,
-	LogOut,
-	Menu,
-	X,
-	Terminal,
 	Users,
-	Instagram,
+	Terminal,
+	Menu,
 	Languages,
+	Inbox,
+	BarChart3,
+	LineChart,
 } from 'lucide-react';
 import { useState } from 'react';
 import { UserRole } from '@/lib/types';
 import { useTranslations, useLocale } from 'next-intl';
+import { Button } from '@/app/components/ui/button';
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from '@/app/components/ui/dropdown-menu';
+import { Separator } from '@/app/components/ui/separator';
+import { cn } from '@/lib/utils';
+import { UserMenu } from './user-menu';
 import { NotificationBell } from './notification-bell';
+
+interface NavItem {
+	href: string;
+	label: string;
+	icon: React.ComponentType<{ className?: string }>;
+	roles?: UserRole[];
+}
 
 export function Navbar() {
 	const t = useTranslations('Navbar');
 	const locale = useLocale();
 	const router = useRouter();
-	const { data: session } = useSession();
+	const { data: session, status } = useSession();
 	const pathname = usePathname();
-	const [isMenuOpen, setIsMenuOpen] = useState(false);
+	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+	// Don't show navbar on signin page
+	if (pathname === '/auth/signin') return null;
+
+	const user = session?.user;
+	const userRole = (user as { role?: UserRole })?.role;
+	const isDev = userRole === 'developer';
+	const isAdmin = userRole === 'admin';
+	const isAdminOrDev = isAdmin || isDev;
 
 	const toggleLocale = () => {
 		const nextLocale = locale === 'en' ? 'pl' : 'en';
 		router.replace(pathname, { locale: nextLocale });
 	};
 
-	// Don't show navbar on signin page
-	if (pathname === '/auth/signin') return null;
-
-	const user = session?.user;
-	const isDev = (user as { role?: UserRole })?.role === 'developer';
-	const isAdmin = (user as { role?: UserRole })?.role === 'admin';
-	const isAdminOrDev = isAdmin || isDev;
-
-	const navItems = [
+	// Navigation items with role-based visibility
+	const navItems: NavItem[] = [
 		{ href: '/', label: t('dashboard'), icon: Home },
-		{ href: '/content', label: t('contentHub') || 'Content Hub', icon: ImageIcon },
+		{ href: '/submit', label: t('submit') || 'Submit', icon: Send },
+		{
+			href: '/submissions',
+			label: t('submissions') || 'My Submissions',
+			icon: ImageIcon,
+		},
+		{
+			href: '/review',
+			label: t('review') || 'Review',
+			icon: ClipboardCheck,
+			roles: ['admin', 'developer'],
+		},
+		{
+			href: '/schedule',
+			label: t('schedule') || 'Schedule',
+			icon: Calendar,
+			roles: ['admin', 'developer'],
+		},
+		{
+			href: '/inbox',
+			label: t('inbox') || 'Inbox',
+			icon: Inbox,
+			roles: ['admin', 'developer'],
+		},
+		{
+			href: '/insights',
+			label: t('insights') || 'Insights',
+			icon: BarChart3,
+			roles: ['admin', 'developer'],
+		},
+		{
+			href: '/analytics',
+			label: t('analytics') || 'Analytics',
+			icon: LineChart,
+			roles: ['admin', 'developer'],
+		},
+		{
+			href: '/users',
+			label: t('users'),
+			icon: Users,
+			roles: ['admin', 'developer'],
+		},
+		{
+			href: '/developer',
+			label: t('devTools'),
+			icon: Terminal,
+			roles: ['developer'],
+		},
 	];
 
-	if (isAdminOrDev) {
-		navItems.push({ href: '/users', label: t('users'), icon: Users });
-	}
-
-	if (isDev) {
-		// We'll add developer sub-items or a single Dev icon
-		navItems.push({ href: '/developer', label: t('devTools'), icon: Terminal });
-	}
+	// Filter items based on user role
+	const visibleNavItems = navItems.filter((item) => {
+		if (!item.roles) return true;
+		return item.roles.includes(userRole as UserRole);
+	});
 
 	const isActive = (path: string) => pathname === path;
 
+	// Split nav items for desktop layout
+	const primaryNavItems = visibleNavItems.slice(0, 5);
+	const secondaryNavItems = visibleNavItems.slice(5);
+
 	return (
-		<nav className='sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200'>
-			<div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-				<div className='flex items-center justify-between h-16'>
+		<nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+			<div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+				<div className="flex h-16 items-center justify-between">
 					{/* Logo */}
-					<Link
-						href='/'
-						className='flex items-center gap-2 font-black text-xl tracking-tighter'
-					>
-						<span className='bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent'>
+					<Link href="/" className="flex items-center gap-2">
+						<span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-xl font-black tracking-tighter text-transparent">
 							MARSZAL
 						</span>
-						<span className='text-slate-900'>ARTS</span>
+						<span className="text-xl font-black tracking-tighter text-foreground">
+							ARTS
+						</span>
 					</Link>
 
-					{/* Desktop Nav */}
-					<div className='hidden md:flex items-center gap-6'>
-						{navItems.map((item) => {
+					{/* Desktop Navigation */}
+					<div className="hidden items-center gap-1 md:flex">
+						{primaryNavItems.map((item) => {
 							const Icon = item.icon;
 							return (
-								<Link
+								<Button
 									key={item.href}
-									href={item.href}
-									className={`flex items-center gap-2 text-sm font-bold transition-colors ${
-										isActive(item.href)
-											? 'text-indigo-600'
-											: 'text-slate-600 hover:text-slate-900'
-									}`}
+									variant={isActive(item.href) ? 'secondary' : 'ghost'}
+									size="sm"
+									asChild
 								>
-									<Icon className='w-4 h-4' />
-									{item.label}
-								</Link>
+									<Link href={item.href} className="gap-2">
+										<Icon className="h-4 w-4" />
+										<span className="hidden lg:inline">{item.label}</span>
+									</Link>
+								</Button>
 							);
 						})}
+
+						{secondaryNavItems.length > 0 && (
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<Button variant="ghost" size="sm">
+										<span className="hidden lg:inline">More</span>
+										<Menu className="h-4 w-4 lg:ml-2" />
+									</Button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent align="end">
+									{secondaryNavItems.map((item) => {
+										const Icon = item.icon;
+										return (
+											<DropdownMenuItem key={item.href} asChild>
+												<Link href={item.href} className="cursor-pointer gap-2">
+													<Icon className="h-4 w-4" />
+													{item.label}
+												</Link>
+											</DropdownMenuItem>
+										);
+									})}
+								</DropdownMenuContent>
+							</DropdownMenu>
+						)}
 					</div>
 
 					{/* Actions */}
-					<div className='hidden md:flex items-center gap-4'>
-						{session?.user && <NotificationBell />}
-
-						<button
+					<div className="flex items-center gap-2">
+						{/* Language Toggle */}
+						<Button
+							variant="ghost"
+							size="icon"
 							onClick={toggleLocale}
-							className='p-2 text-slate-500 hover:text-indigo-600 transition-colors rounded-lg bg-slate-50'
+							className="hidden sm:flex"
 							title={locale === 'en' ? 'Switch to Polish' : 'Switch to English'}
 						>
-							<span className='font-bold text-xs flex items-center gap-1'>
-								<Languages className='w-4 h-4' />
-								{locale.toUpperCase()}
-							</span>
-						</button>
+							<Languages className="h-4 w-4" />
+							<span className="sr-only">Toggle language</span>
+						</Button>
 
-						{session?.user ? (
-							<div className='flex items-center gap-4'>
-								<div className='flex flex-col items-end'>
-									<span className='text-sm font-bold text-slate-700'>
-										{session.user.name || session.user.email?.split('@')[0]}
-									</span>
-									{isAdminOrDev && session.user.instagramAccount && (
-										<div className='flex items-center gap-1 text-xs text-indigo-600 font-medium bg-indigo-50 px-2 py-0.5 rounded-full'>
-											<Instagram className='w-3 h-3' />
-											<span>
-												{session.user.instagramAccount.username || 'Connected'}
-											</span>
-										</div>
-									)}
-								</div>
-								<button
-									onClick={() => signOut({ callbackUrl: '/auth/signin' })}
-									className='p-2 text-slate-500 hover:text-red-500 transition-colors bg-slate-100 rounded-lg'
-									title='Sign Out'
-								>
-									<LogOut className='w-4 h-4' />
-								</button>
-							</div>
+						{/* Notifications */}
+						{session?.user && <NotificationBell />}
+
+						{/* User Menu or Sign In */}
+						{status === 'loading' ? (
+							<div className="h-10 w-10 animate-pulse rounded-full bg-muted" />
+						) : session?.user ? (
+							<UserMenu
+								user={{
+									...session.user,
+									role: userRole,
+									instagramAccount: session.user.instagramAccount,
+								}}
+							/>
 						) : (
-							<Link
-								href='/auth/signin'
-								className='px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-bold hover:bg-indigo-700 transition-colors'
-							>
-								{t('signIn')}
-							</Link>
+							<Button asChild size="sm">
+								<Link href="/auth/signin">{t('signIn')}</Link>
+							</Button>
 						)}
+
+						{/* Mobile Menu Button */}
+						<Button
+							variant="ghost"
+							size="icon"
+							className="md:hidden"
+							onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+						>
+							<Menu className="h-5 w-5" />
+							<span className="sr-only">Toggle menu</span>
+						</Button>
 					</div>
-
-					{/* Mobile Menu Button */}
-					<button
-						className='md:hidden p-2 text-slate-600'
-						onClick={() => setIsMenuOpen(!isMenuOpen)}
-					>
-						{isMenuOpen ? (
-							<X className='w-6 h-6' />
-						) : (
-							<Menu className='w-6 h-6' />
-						)}
-					</button>
 				</div>
 			</div>
 
 			{/* Mobile Menu */}
-			{isMenuOpen && (
-				<div className='md:hidden border-t border-slate-200 bg-white px-4 py-4 space-y-4'>
-					{navItems.map((item) => {
-						const Icon = item.icon;
-						return (
-							<Link
-								key={item.href}
-								href={item.href}
-								onClick={() => setIsMenuOpen(false)}
-								className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
-									isActive(item.href)
-										? 'bg-indigo-50 text-indigo-600'
-										: 'text-slate-600 hover:bg-slate-50'
-								}`}
-							>
-								<Icon className='w-5 h-5' />
-								<span className='font-bold'>{item.label}</span>
-							</Link>
-						);
-					})}
-					<div className='px-4 py-2'>
-						<button
-							onClick={toggleLocale}
-							className='flex items-center gap-3 w-full text-slate-600 hover:text-indigo-600'
+			{isMobileMenuOpen && (
+				<div className="border-t bg-background md:hidden">
+					<div className="space-y-1 px-4 py-4">
+						{visibleNavItems.map((item) => {
+							const Icon = item.icon;
+							return (
+								<Button
+									key={item.href}
+									variant={isActive(item.href) ? 'secondary' : 'ghost'}
+									className="w-full justify-start gap-3"
+									asChild
+									onClick={() => setIsMobileMenuOpen(false)}
+								>
+									<Link href={item.href}>
+										<Icon className="h-5 w-5" />
+										{item.label}
+									</Link>
+								</Button>
+							);
+						})}
+						<Separator className="my-2" />
+						<Button
+							variant="ghost"
+							className="w-full justify-start gap-3"
+							onClick={() => {
+								toggleLocale();
+								setIsMobileMenuOpen(false);
+							}}
 						>
-							<Languages className='w-5 h-5' />
-							<span className='font-bold'>
-								Language: {locale.toUpperCase()}
-							</span>
-						</button>
-					</div>
-					<div className='pt-4 border-t border-slate-100 flex items-center justify-between px-4'>
-						<div className='flex flex-col gap-1'>
-							<span className='text-sm font-semibold text-slate-700'>
-								{session?.user?.email}
-							</span>
-							{isAdminOrDev && session?.user?.instagramAccount && (
-								<div className='flex items-center gap-1 text-xs text-indigo-600 font-medium'>
-									<Instagram className='w-3 h-3' />
-									<span>
-										{session.user.instagramAccount.username ||
-											session.user.instagramAccount.id}
-									</span>
-								</div>
-							)}
-						</div>
-						<div className='flex items-center gap-4'>
-							<button
-								onClick={() => signOut({ callbackUrl: '/auth/signin' })}
-								className='text-red-500 p-2 hover:bg-red-50 rounded-lg transition-colors'
-							>
-								<LogOut className='w-5 h-5' />
-							</button>
-						</div>
+							<Languages className="h-5 w-5" />
+							Language: {locale.toUpperCase()}
+						</Button>
 					</div>
 				</div>
 			)}

@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import '../globals.css';
-import { Providers } from '../components/providers';
-import { ToastProvider } from '../components/providers/toast-provider';
+import { Providers } from '../components/providers/providers';
 import { Navbar } from '../components/layout/navbar';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
@@ -50,7 +49,6 @@ export default async function RootLayout({
 					<Providers>
 						<Navbar />
 						{children}
-						<ToastProvider />
 					</Providers>
 				</NextIntlClientProvider>
 			</body>
