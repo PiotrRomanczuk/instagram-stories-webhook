@@ -12,6 +12,49 @@ import { ContentCard } from './content-card';
 import { ConfirmationDialog } from '../ui/confirmation-dialog';
 import { GripVertical, Calendar, Send, Eye, Clock } from 'lucide-react';
 
+/**
+ * Story Preview on Hover Component
+ */
+function StoryPreviewHover({ item }: { item: ContentItem }) {
+	return (
+		<div className='absolute left-full ml-4 top-1/2 -translate-y-1/2 z-50 opacity-0 group-hover/media:opacity-100 pointer-events-none transition-opacity duration-200'>
+			<div className='relative w-[180px] aspect-[9/16] rounded-2xl overflow-hidden shadow-2xl border-4 border-white'>
+				{/* Blurred Background */}
+				<img
+					src={item.mediaUrl}
+					alt=''
+					className='absolute inset-0 h-full w-full object-cover blur-2xl opacity-50 scale-125'
+				/>
+				{/* Main Media */}
+				<img
+					src={item.mediaUrl}
+					alt='Story Preview'
+					className='relative z-10 h-full w-full object-contain'
+				/>
+				{/* Story UI Overlay */}
+				<div className='absolute inset-0 z-20 p-3 flex flex-col justify-between pointer-events-none'>
+					<div className='space-y-2'>
+						<div className='flex gap-1 h-0.5'>
+							<div className='flex-1 bg-white/60 rounded-full' />
+							<div className='flex-1 bg-white/20 rounded-full' />
+						</div>
+						<div className='flex items-center gap-2'>
+							<div className='w-6 h-6 rounded-full bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600 p-0.5'>
+								<div className='w-full h-full rounded-full bg-black flex items-center justify-center text-[6px] font-black text-white'>
+									IG
+								</div>
+							</div>
+							<span className='text-[8px] font-bold text-white drop-shadow'>
+								Story Preview
+							</span>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	);
+}
+
 type ViewMode = 'grid' | 'list';
 
 interface ContentListProps {
@@ -133,12 +176,15 @@ export function ContentList({
 									</td>
 								)}
 								<td className='px-6 py-5'>
-									<div className='w-12 h-12 rounded-xl overflow-hidden shadow-sm bg-gray-100 shrink-0'>
-										<img
-											src={item.mediaUrl}
-											alt=''
-											className='w-full h-full object-cover'
-										/>
+									<div className='relative group/media'>
+										<div className='w-12 h-12 rounded-xl overflow-hidden shadow-sm bg-gray-100 shrink-0 cursor-pointer ring-2 ring-transparent group-hover/media:ring-indigo-400 transition-all'>
+											<img
+												src={item.mediaUrl}
+												alt=''
+												className='w-full h-full object-cover'
+											/>
+										</div>
+										<StoryPreviewHover item={item} />
 									</div>
 								</td>
 								<td className='px-6 py-5'>
