@@ -19,7 +19,7 @@ interface ContentCardProps {
 	onEdit: () => void;
 	onRefresh: () => void;
 	isAdmin: boolean;
-	tab: 'all' | 'review' | 'queue' | 'published';
+	tab: 'all' | 'review' | 'queue' | 'published' | 'rejected';
 }
 
 export function ContentCard({

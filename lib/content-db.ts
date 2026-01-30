@@ -27,6 +27,8 @@ interface GetContentOptions {
 	publishingStatus?: PublishingStatus;
 	search?: string; // Search in caption/title
 	sortBy?: 'newest' | 'oldest' | 'schedule-asc'; // Sort direction
+	scheduledTimeAfter?: number; // Filter scheduled_time >= value
+	scheduledTimeBefore?: number; // Filter scheduled_time < value
 	limit?: number;
 	offset?: number;
 }
@@ -44,6 +46,8 @@ export async function getContentItems(
 		publishingStatus,
 		search,
 		sortBy = 'newest',
+		scheduledTimeAfter,
+		scheduledTimeBefore,
 		limit = 20,
 		offset = 0,
 	} = options;
@@ -58,6 +62,10 @@ export async function getContentItems(
 		if (source) query = query.eq('source', source);
 		if (submissionStatus) query = query.eq('submission_status', submissionStatus);
 		if (publishingStatus) query = query.eq('publishing_status', publishingStatus);
+
+		// Time-based filters for scheduling
+		if (scheduledTimeAfter) query = query.gte('scheduled_time', scheduledTimeAfter);
+		if (scheduledTimeBefore) query = query.lt('scheduled_time', scheduledTimeBefore);
 
 		// Search filter
 		if (search) {

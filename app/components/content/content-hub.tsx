@@ -25,6 +25,9 @@ import {
 	Inbox,
 	CheckCircle2,
 	AlertCircle,
+	XCircle,
+	Layers,
+	CalendarDays,
 } from 'lucide-react';
 import {
 	ContentItem,
@@ -36,20 +39,21 @@ import type { UserRole } from '@/lib/types/posts';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
+type TabType = 'all' | 'review' | 'queue' | 'published' | 'rejected';
+
 interface ContentHubProps {
-	initialTab?: 'all' | 'review' | 'queue' | 'published';
+	initialTab?: TabType;
 }
 
 type ViewMode = 'grid' | 'list';
+type ScheduleFilter = 'all' | 'today' | 'week';
 
 export function ContentHub({ initialTab = 'all' }: ContentHubProps) {
 	const { data: session } = useSession();
 	const searchParams = useSearchParams();
 
 	// State
-	const [tab, setTab] = useState<'all' | 'review' | 'queue' | 'published'>(
-		initialTab,
-	);
+	const [tab, setTab] = useState<TabType>(initialTab);
 	const [viewMode, setViewMode] = useState<ViewMode>('grid');
 	const [search, setSearch] = useState('');
 	const [source, setSource] = useState<ContentSource | 'all'>('all');
@@ -62,6 +66,7 @@ export function ContentHub({ initialTab = 'all' }: ContentHubProps) {
 	const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'schedule-asc'>(
 		'newest',
 	);
+	const [scheduleFilter, setScheduleFilter] = useState<ScheduleFilter>('all');
 	const [page, setPage] = useState(1);
 	const [showPreviewModal, setShowPreviewModal] = useState(false);
 	const [showEditModal, setShowEditModal] = useState(false);
@@ -69,16 +74,20 @@ export function ContentHub({ initialTab = 'all' }: ContentHubProps) {
 	const [selectedItem, setSelectedItem] = useState<ContentItem | null>(null);
 	const [selectedIndex, setSelectedIndex] = useState<number>(0);
 
+	// Default sort by schedule time for queue tab
+	const effectiveSortBy = tab === 'queue' && sortBy === 'newest' ? 'schedule-asc' : sortBy;
+
 	// Build API URL with filters
 	const apiParams = new URLSearchParams({
 		tab,
 		page: String(page),
 		limit: viewMode === 'list' ? '12' : '24',
-		sortBy,
+		sortBy: effectiveSortBy,
 		...(search && { search }),
 		...(source !== 'all' && { source }),
 		...(submissionStatus !== 'all' && { submissionStatus }),
 		...(publishingStatus !== 'all' && { publishingStatus }),
+		...(tab === 'queue' && scheduleFilter !== 'all' && { scheduleFilter }),
 	});
 
 	// Fetch content items
@@ -138,9 +147,9 @@ export function ContentHub({ initialTab = 'all' }: ContentHubProps) {
 
 	// Tab configuration
 	const tabs = [
-		{ id: 'all', label: 'Discovery', icon: <Sparkles className='h-4 w-4' /> },
+		{ id: 'all', label: 'All Content', icon: <Layers className='h-4 w-4' /> },
 		...(isAdmin
-			? [{ id: 'review', label: 'Inbox', icon: <Inbox className='h-4 w-4' /> }]
+			? [{ id: 'review', label: 'Inbox', icon: <Inbox className='h-4 w-4' />, badge: stats?.pendingReview }]
 			: []),
 		{ id: 'queue', label: 'Schedule', icon: <Clock className='h-4 w-4' /> },
 		{
@@ -148,6 +157,9 @@ export function ContentHub({ initialTab = 'all' }: ContentHubProps) {
 			label: 'Catalog',
 			icon: <CheckCircle2 className='h-4 w-4' />,
 		},
+		...(isAdmin
+			? [{ id: 'rejected', label: 'Rejected', icon: <XCircle className='h-4 w-4' /> }]
+			: []),
 	];
 
 	return (
@@ -244,13 +256,13 @@ export function ContentHub({ initialTab = 'all' }: ContentHubProps) {
 			{/* Main Content Area */}
 			<div className='mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 bg-transparent'>
 				{/* Modern Tab Switcher */}
-				<div className='flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12'>
-					<div className='flex items-center p-1 bg-gray-100 rounded-[2rem] w-fit shadow-inner'>
+				<div className='flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8'>
+					<div className='flex items-center p-1 bg-gray-100 rounded-[2rem] w-fit shadow-inner flex-wrap'>
 						{tabs.map((t) => (
 							<button
 								key={t.id}
-								onClick={() => setTab(t.id as any)}
-								className={`px-8 py-3 rounded-[1.8rem] flex items-center gap-2 text-xs font-black uppercase tracking-widest transition-all ${
+								onClick={() => setTab(t.id as TabType)}
+								className={`px-6 py-3 rounded-[1.8rem] flex items-center gap-2 text-xs font-black uppercase tracking-widest transition-all ${
 									tab === t.id
 										? 'bg-white text-gray-900 shadow-xl'
 										: 'text-gray-400 hover:text-gray-600'
@@ -258,9 +270,9 @@ export function ContentHub({ initialTab = 'all' }: ContentHubProps) {
 							>
 								{t.icon}
 								{t.label}
-								{t.id === 'review' && stats?.pendingReview ? (
-									<span className='ml-2 px-2 py-0.5 rounded-full bg-indigo-600 text-[10px] text-white'>
-										{stats.pendingReview}
+								{'badge' in t && t.badge ? (
+									<span className='ml-1 px-2 py-0.5 rounded-full bg-rose-500 text-[10px] text-white font-black animate-pulse'>
+										{t.badge}
 									</span>
 								) : null}
 							</button>
@@ -284,6 +296,31 @@ export function ContentHub({ initialTab = 'all' }: ContentHubProps) {
 						</button>
 					</div>
 				</div>
+
+				{/* Schedule Quick Filters */}
+				{tab === 'queue' && (
+					<div className='flex items-center gap-2 mb-8'>
+						<CalendarDays className='h-4 w-4 text-gray-400' />
+						<span className='text-xs font-bold text-gray-400 uppercase tracking-wider mr-2'>Show:</span>
+						{[
+							{ id: 'all', label: 'All Scheduled' },
+							{ id: 'today', label: 'Today' },
+							{ id: 'week', label: 'This Week' },
+						].map((filter) => (
+							<button
+								key={filter.id}
+								onClick={() => setScheduleFilter(filter.id as ScheduleFilter)}
+								className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+									scheduleFilter === filter.id
+										? 'bg-indigo-600 text-white shadow-lg'
+										: 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+								}`}
+							>
+								{filter.label}
+							</button>
+						))}
+					</div>
+				)}
 
 				{/* Advanced Filters */}
 				<div className='mb-12'>

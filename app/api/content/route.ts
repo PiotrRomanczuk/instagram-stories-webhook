@@ -37,7 +37,8 @@ const API_RATE_LIMIT = { limit: 100, windowMs: 60 * 1000 };
  * - sortBy: 'newest' | 'oldest' | 'schedule-asc'
  * - page: pagination page (default 1)
  * - limit: items per page (default 20)
- * - tab: 'all' | 'review' | 'queue' | 'published' (convenience grouping)
+ * - tab: 'all' | 'review' | 'queue' | 'published' | 'rejected' (convenience grouping)
+ * - scheduleFilter: 'today' | 'week' (for queue tab only)
  */
 export async function GET(req: NextRequest) {
 	const rateCheck = rateLimiter(req, API_RATE_LIMIT);
@@ -60,6 +61,7 @@ export async function GET(req: NextRequest) {
 		const search = searchParams.get('search') || undefined;
 		const sortBy = searchParams.get('sortBy') as 'newest' | 'oldest' | 'schedule-asc' | null;
 		const tab = searchParams.get('tab') || 'all';
+		const scheduleFilter = searchParams.get('scheduleFilter') as 'today' | 'week' | null;
 		const page = parseInt(searchParams.get('page') || '1', 10);
 		const limit = parseInt(searchParams.get('limit') || '20', 10);
 		const offset = (page - 1) * limit;
@@ -93,6 +95,20 @@ export async function GET(req: NextRequest) {
 				if (role !== 'admin' && role !== 'developer') {
 					filterOptions.userId = userId;
 				}
+				// Apply schedule time filter
+				if (scheduleFilter === 'today') {
+					const now = new Date();
+					const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+					const endOfDay = startOfDay + 24 * 60 * 60 * 1000;
+					filterOptions.scheduledTimeAfter = startOfDay;
+					filterOptions.scheduledTimeBefore = endOfDay;
+				} else if (scheduleFilter === 'week') {
+					const now = new Date();
+					const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+					const endOfWeek = startOfDay + 7 * 24 * 60 * 60 * 1000;
+					filterOptions.scheduledTimeAfter = startOfDay;
+					filterOptions.scheduledTimeBefore = endOfWeek;
+				}
 				break;
 
 			case 'published':
@@ -102,6 +118,18 @@ export async function GET(req: NextRequest) {
 				if (role !== 'admin' && role !== 'developer') {
 					filterOptions.userId = userId;
 				}
+				break;
+
+			case 'rejected':
+				// Admins only: rejected submissions
+				if (role !== 'admin' && role !== 'developer') {
+					return NextResponse.json(
+						{ error: 'Only admins can access rejected items' },
+						{ status: 403 },
+					);
+				}
+				filterOptions.source = 'submission';
+				filterOptions.submissionStatus = 'rejected';
 				break;
 
 			case 'all':

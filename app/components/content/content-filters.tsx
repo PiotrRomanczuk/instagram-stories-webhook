@@ -18,7 +18,7 @@ interface ContentFiltersProps {
 	onSortChange: (sort: 'newest' | 'oldest' | 'schedule-asc') => void;
 	onReset: () => void;
 	isAdmin: boolean;
-	tab: 'all' | 'review' | 'queue' | 'published';
+	tab: 'all' | 'review' | 'queue' | 'published' | 'rejected';
 	// Current filter values for chips
 	currentSearch?: string;
 	currentSource?: ContentSource | 'all';
