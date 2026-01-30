@@ -58,10 +58,10 @@ describe('Memes Database Layer', () => {
 
 	describe('isEmailAllowed', () => {
 		it('should return true if email is in whitelist', async () => {
-			setupSupabaseMock({ id: '1' });
+			setupSupabaseMock({ email: 'test@example.com' });
 			const result = await isEmailAllowed('test@example.com');
 			expect(result).toBe(true);
-			expect(supabaseAdmin.from).toHaveBeenCalledWith('allowed_users');
+			expect(supabaseAdmin.from).toHaveBeenCalledWith('email_whitelist');
 		});
 
 		it('should return false if email is not in whitelist', async () => {

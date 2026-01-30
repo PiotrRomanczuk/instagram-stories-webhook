@@ -32,7 +32,7 @@ export async function isEmailAllowed(email: string): Promise<boolean> {
 	try {
 		const { data, error } = await supabaseAdmin
 			.from('email_whitelist')
-			.select('id')
+			.select('email')
 			.eq('email', email.toLowerCase())
 			.single();
 
