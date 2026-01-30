@@ -19,7 +19,7 @@ import {
 	RotateCcw,
 	LayoutGrid,
 	List,
-	Layers,
+	Clock,
 	Sparkles,
 	TrendingUp,
 	Inbox,
@@ -40,7 +40,7 @@ interface ContentHubProps {
 	initialTab?: 'all' | 'review' | 'queue' | 'published';
 }
 
-type ViewMode = 'grid' | 'list' | 'queue';
+type ViewMode = 'grid' | 'list';
 
 export function ContentHub({ initialTab = 'all' }: ContentHubProps) {
 	const { data: session } = useSession();
@@ -129,7 +129,7 @@ export function ContentHub({ initialTab = 'all' }: ContentHubProps) {
 		...(isAdmin
 			? [{ id: 'review', label: 'Inbox', icon: <Inbox className='h-4 w-4' /> }]
 			: []),
-		{ id: 'queue', label: 'Schedule', icon: <Layers className='h-4 w-4' /> },
+		{ id: 'queue', label: 'Schedule', icon: <Clock className='h-4 w-4' /> },
 		{
 			id: 'published',
 			label: 'Catalog',
@@ -263,20 +263,16 @@ export function ContentHub({ initialTab = 'all' }: ContentHubProps) {
 						<button
 							onClick={() => setViewMode('grid')}
 							className={`p-3 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-white text-indigo-600 shadow-lg' : 'text-gray-400 hover:text-gray-600'}`}
+							title='Grid view'
 						>
 							<LayoutGrid className='h-4 w-4' />
 						</button>
 						<button
 							onClick={() => setViewMode('list')}
 							className={`p-3 rounded-xl transition-all ${viewMode === 'list' ? 'bg-white text-indigo-600 shadow-lg' : 'text-gray-400 hover:text-gray-600'}`}
+							title='List view'
 						>
 							<List className='h-4 w-4' />
-						</button>
-						<button
-							onClick={() => setViewMode('queue')}
-							className={`p-3 rounded-xl transition-all ${viewMode === 'queue' ? 'bg-white text-indigo-600 shadow-lg' : 'text-gray-400 hover:text-gray-600'}`}
-						>
-							<Layers className='h-4 w-4' />
 						</button>
 					</div>
 				</div>
