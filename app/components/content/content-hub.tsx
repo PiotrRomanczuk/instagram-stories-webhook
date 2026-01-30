@@ -67,6 +67,7 @@ export function ContentHub({ initialTab = 'all' }: ContentHubProps) {
 	const [showEditModal, setShowEditModal] = useState(false);
 	const [showSubmitForm, setShowSubmitForm] = useState(false);
 	const [selectedItem, setSelectedItem] = useState<ContentItem | null>(null);
+	const [selectedIndex, setSelectedIndex] = useState<number>(0);
 
 	// Build API URL with filters
 	const apiParams = new URLSearchParams({
@@ -94,10 +95,22 @@ export function ContentHub({ initialTab = 'all' }: ContentHubProps) {
 	const userRole = (session?.user as any)?.role as UserRole | undefined;
 	const isAdmin = userRole === 'admin' || userRole === 'developer';
 
+	// Get items from response (moved up for use in handlers)
+	const items: ContentItem[] = data?.data || [];
+	const stats = data?.stats;
+	const pagination = data?.pagination;
+
 	// Handlers
 	const handlePreview = useCallback((item: ContentItem) => {
+		const index = items.findIndex((i: ContentItem) => i.id === item.id);
 		setSelectedItem(item);
+		setSelectedIndex(index >= 0 ? index : 0);
 		setShowPreviewModal(true);
+	}, [items]);
+
+	const handleNavigate = useCallback((item: ContentItem, index: number) => {
+		setSelectedItem(item);
+		setSelectedIndex(index);
 	}, []);
 
 	const handleEdit = useCallback((item: ContentItem) => {
@@ -136,11 +149,6 @@ export function ContentHub({ initialTab = 'all' }: ContentHubProps) {
 			icon: <CheckCircle2 className='h-4 w-4' />,
 		},
 	];
-
-	// Get items from response
-	const items = data?.data || [];
-	const stats = data?.stats;
-	const pagination = data?.pagination;
 
 	return (
 		<div className='min-h-screen bg-[#FDFCFD]'>
@@ -375,6 +383,9 @@ export function ContentHub({ initialTab = 'all' }: ContentHubProps) {
 					onEdit={handleEdit}
 					onRefresh={mutate}
 					isAdmin={isAdmin}
+					items={items}
+					currentIndex={selectedIndex}
+					onNavigate={handleNavigate}
 				/>
 			)}
 

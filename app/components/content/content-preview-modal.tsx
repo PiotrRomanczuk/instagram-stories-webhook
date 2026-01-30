@@ -1,10 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ContentItem } from '@/lib/types/posts';
 import {
 	X,
-	Calendar,
 	Share2,
 	Eye,
 	Info,
@@ -17,6 +16,8 @@ import {
 	ThumbsUp,
 	ThumbsDown,
 	Loader2,
+	ChevronLeft,
+	ChevronRight,
 } from 'lucide-react';
 import { ConfirmationDialog } from '../ui/confirmation-dialog';
 
@@ -26,6 +27,10 @@ interface ContentPreviewModalProps {
 	onEdit: (item: ContentItem) => void;
 	onRefresh: () => void;
 	isAdmin?: boolean;
+	// Navigation props for streamlined review
+	items?: ContentItem[];
+	currentIndex?: number;
+	onNavigate?: (item: ContentItem, index: number) => void;
 }
 
 export function ContentPreviewModal({
@@ -34,6 +39,9 @@ export function ContentPreviewModal({
 	onEdit,
 	onRefresh,
 	isAdmin = false,
+	items,
+	currentIndex,
+	onNavigate,
 }: ContentPreviewModalProps) {
 	const [showStoryFrame, setShowStoryFrame] = useState(false);
 	const [showConfirmPublish, setShowConfirmPublish] = useState(false);
@@ -41,6 +49,56 @@ export function ContentPreviewModal({
 	const [isReviewing, setIsReviewing] = useState(false);
 	const [showRejectDialog, setShowRejectDialog] = useState(false);
 	const [rejectionReason, setRejectionReason] = useState('');
+
+	// Navigation helpers
+	const hasNavigation = items && items.length > 1 && currentIndex !== undefined && onNavigate;
+	const canGoPrevious = hasNavigation && currentIndex > 0;
+	const canGoNext = hasNavigation && currentIndex < items.length - 1;
+
+	const goToPrevious = useCallback(() => {
+		if (canGoPrevious && items && onNavigate) {
+			onNavigate(items[currentIndex - 1], currentIndex - 1);
+		}
+	}, [canGoPrevious, items, currentIndex, onNavigate]);
+
+	const goToNext = useCallback(() => {
+		if (canGoNext && items && onNavigate) {
+			onNavigate(items[currentIndex + 1], currentIndex + 1);
+		}
+	}, [canGoNext, items, currentIndex, onNavigate]);
+
+	// Keyboard navigation
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			// Don't handle if typing in an input
+			if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+				return;
+			}
+
+			switch (e.key) {
+				case 'Escape':
+					if (showRejectDialog) {
+						setShowRejectDialog(false);
+					} else if (showConfirmPublish) {
+						setShowConfirmPublish(false);
+					} else {
+						onClose();
+					}
+					break;
+				case 'ArrowLeft':
+					e.preventDefault();
+					goToPrevious();
+					break;
+				case 'ArrowRight':
+					e.preventDefault();
+					goToNext();
+					break;
+			}
+		};
+
+		window.addEventListener('keydown', handleKeyDown);
+		return () => window.removeEventListener('keydown', handleKeyDown);
+	}, [onClose, goToPrevious, goToNext, showRejectDialog, showConfirmPublish]);
 
 	const handlePublishNow = async () => {
 		try {
@@ -109,6 +167,44 @@ export function ContentPreviewModal({
 				onClick={onClose}
 			/>
 			<div className='fixed inset-0 z-[90] flex items-center justify-center p-4 sm:p-6'>
+				{/* Navigation Arrows */}
+				{hasNavigation && (
+					<>
+						{/* Previous Button */}
+						<button
+							onClick={goToPrevious}
+							disabled={!canGoPrevious}
+							className={`fixed left-4 md:left-8 top-1/2 -translate-y-1/2 z-[95] p-4 rounded-full bg-white/90 backdrop-blur shadow-2xl transition-all ${
+								canGoPrevious
+									? 'hover:bg-white hover:scale-110 text-gray-700'
+									: 'opacity-30 cursor-not-allowed text-gray-400'
+							}`}
+							title='Previous (←)'
+						>
+							<ChevronLeft className='h-6 w-6' />
+						</button>
+
+						{/* Next Button */}
+						<button
+							onClick={goToNext}
+							disabled={!canGoNext}
+							className={`fixed right-4 md:right-8 top-1/2 -translate-y-1/2 z-[95] p-4 rounded-full bg-white/90 backdrop-blur shadow-2xl transition-all ${
+								canGoNext
+									? 'hover:bg-white hover:scale-110 text-gray-700'
+									: 'opacity-30 cursor-not-allowed text-gray-400'
+							}`}
+							title='Next (→)'
+						>
+							<ChevronRight className='h-6 w-6' />
+						</button>
+
+						{/* Position Indicator */}
+						<div className='fixed bottom-4 left-1/2 -translate-x-1/2 z-[95] bg-black/60 backdrop-blur-md text-white px-4 py-2 rounded-full text-xs font-bold tracking-wider'>
+							{currentIndex + 1} / {items.length}
+						</div>
+					</>
+				)}
+
 				<div className='relative max-h-[92vh] w-full max-w-6xl overflow-hidden rounded-[2.5rem] bg-white shadow-2xl ring-1 ring-black/5 flex flex-col md:flex-row animate-in fade-in zoom-in duration-300'>
 					{/* Left Side: Media Deep Dive */}
 					<div className='flex-1 bg-gray-950 relative flex items-center justify-center overflow-hidden min-h-[400px] md:min-h-0'>
