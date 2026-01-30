@@ -7,10 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { getUserRole, getUserId } from '@/lib/auth-helpers';
-import {
-	getContentItemById,
-	updateSubmissionStatus,
-} from '@/lib/content-db';
+import { getContentItemById, updateSubmissionStatus } from '@/lib/content-db';
 import { rateLimiter } from '@/lib/middleware/rate-limit';
 
 const API_RATE_LIMIT = { limit: 100, windowMs: 60 * 1000 };
@@ -27,12 +24,13 @@ const API_RATE_LIMIT = { limit: 100, windowMs: 60 * 1000 };
  */
 export async function POST(
 	req: NextRequest,
-	{ params }: { params: { id: string } },
+	{ params }: { params: Promise<{ id: string }> },
 ) {
 	const rateCheck = rateLimiter(req, API_RATE_LIMIT);
 	if (rateCheck.isRateLimited) return rateCheck.response!;
 
 	try {
+		const { id } = await params;
 		const session = await getServerSession(authOptions);
 		if (!session) {
 			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -49,8 +47,6 @@ export async function POST(
 				{ status: 403 },
 			);
 		}
-
-		const { id } = params;
 
 		// Fetch content item
 		const item = await getContentItemById(id);
@@ -124,7 +120,10 @@ export async function POST(
 		console.error('Error in POST /api/content/[id]/review:', error);
 		return NextResponse.json(
 			{
-				error: error instanceof Error ? error.message : 'Failed to review submission',
+				error:
+					error instanceof Error
+						? error.message
+						: 'Failed to review submission',
 			},
 			{ status: 500 },
 		);

@@ -7,10 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { getUserRole, getUserId } from '@/lib/auth-helpers';
-import {
-	getContentItemById,
-	updateScheduledTime,
-} from '@/lib/content-db';
+import { getContentItemById, updateScheduledTime } from '@/lib/content-db';
 import { rateLimiter } from '@/lib/middleware/rate-limit';
 
 const API_RATE_LIMIT = { limit: 100, windowMs: 60 * 1000 };
@@ -31,12 +28,13 @@ const API_RATE_LIMIT = { limit: 100, windowMs: 60 * 1000 };
  */
 export async function POST(
 	req: NextRequest,
-	{ params }: { params: { id: string } },
+	{ params }: { params: Promise<{ id: string }> },
 ) {
 	const rateCheck = rateLimiter(req, API_RATE_LIMIT);
 	if (rateCheck.isRateLimited) return rateCheck.response!;
 
 	try {
+		const { id } = await params;
 		const session = await getServerSession(authOptions);
 		if (!session) {
 			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -44,7 +42,6 @@ export async function POST(
 
 		const userId = getUserId(session);
 		const role = getUserRole(session);
-		const { id } = params;
 
 		// Fetch content item
 		const item = await getContentItemById(id);
@@ -82,7 +79,10 @@ export async function POST(
 		// Validate scheduled time
 		if (!scheduledTime || typeof scheduledTime !== 'number') {
 			return NextResponse.json(
-				{ error: 'scheduledTime must be a number (Unix timestamp in milliseconds)' },
+				{
+					error:
+						'scheduledTime must be a number (Unix timestamp in milliseconds)',
+				},
 				{ status: 400 },
 			);
 		}
@@ -118,7 +118,8 @@ export async function POST(
 		console.error('Error in POST /api/content/[id]/schedule:', error);
 		return NextResponse.json(
 			{
-				error: error instanceof Error ? error.message : 'Failed to schedule content',
+				error:
+					error instanceof Error ? error.message : 'Failed to schedule content',
 			},
 			{ status: 500 },
 		);

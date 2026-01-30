@@ -24,12 +24,13 @@ const API_RATE_LIMIT = { limit: 100, windowMs: 60 * 1000 };
  */
 export async function GET(
 	req: NextRequest,
-	{ params }: { params: { id: string } },
+	{ params }: { params: Promise<{ id: string }> },
 ) {
 	const rateCheck = rateLimiter(req, API_RATE_LIMIT);
 	if (rateCheck.isRateLimited) return rateCheck.response!;
 
 	try {
+		const { id } = await params;
 		const session = await getServerSession(authOptions);
 		if (!session) {
 			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -37,7 +38,6 @@ export async function GET(
 
 		const userId = getUserId(session);
 		const role = getUserRole(session);
-		const { id } = params;
 
 		// Fetch content item
 		const item = await getContentItemById(id);
@@ -61,7 +61,10 @@ export async function GET(
 	} catch (error) {
 		console.error('Error in GET /api/content/[id]:', error);
 		return NextResponse.json(
-			{ error: error instanceof Error ? error.message : 'Failed to fetch content' },
+			{
+				error:
+					error instanceof Error ? error.message : 'Failed to fetch content',
+			},
 			{ status: 500 },
 		);
 	}
@@ -83,12 +86,13 @@ export async function GET(
  */
 export async function PATCH(
 	req: NextRequest,
-	{ params }: { params: { id: string } },
+	{ params }: { params: Promise<{ id: string }> },
 ) {
 	const rateCheck = rateLimiter(req, API_RATE_LIMIT);
 	if (rateCheck.isRateLimited) return rateCheck.response!;
 
 	try {
+		const { id } = await params;
 		const session = await getServerSession(authOptions);
 		if (!session) {
 			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -96,7 +100,6 @@ export async function PATCH(
 
 		const userId = getUserId(session);
 		const role = getUserRole(session);
-		const { id } = params;
 
 		// Fetch current content item
 		const item = await getContentItemById(id);
@@ -152,13 +155,17 @@ export async function PATCH(
 		}
 
 		// Update content item
-		const updatedItem = await updateContentItem(id, {
-			caption,
-			title,
-			userTags,
-			hashtags,
-			scheduledTime,
-		}, version);
+		const updatedItem = await updateContentItem(
+			id,
+			{
+				caption,
+				title,
+				userTags,
+				hashtags,
+				scheduledTime,
+			},
+			version,
+		);
 
 		if (!updatedItem) {
 			// Check if it was a version conflict
@@ -192,7 +199,10 @@ export async function PATCH(
 		}
 
 		return NextResponse.json(
-			{ error: error instanceof Error ? error.message : 'Failed to update content' },
+			{
+				error:
+					error instanceof Error ? error.message : 'Failed to update content',
+			},
 			{ status: 500 },
 		);
 	}
@@ -204,12 +214,13 @@ export async function PATCH(
  */
 export async function DELETE(
 	req: NextRequest,
-	{ params }: { params: { id: string } },
+	{ params }: { params: Promise<{ id: string }> },
 ) {
 	const rateCheck = rateLimiter(req, API_RATE_LIMIT);
 	if (rateCheck.isRateLimited) return rateCheck.response!;
 
 	try {
+		const { id } = await params;
 		const session = await getServerSession(authOptions);
 		if (!session) {
 			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -217,7 +228,6 @@ export async function DELETE(
 
 		const userId = getUserId(session);
 		const role = getUserRole(session);
-		const { id } = params;
 
 		// Fetch content item
 		const item = await getContentItemById(id);
@@ -269,7 +279,10 @@ export async function DELETE(
 	} catch (error) {
 		console.error('Error in DELETE /api/content/[id]:', error);
 		return NextResponse.json(
-			{ error: error instanceof Error ? error.message : 'Failed to delete content' },
+			{
+				error:
+					error instanceof Error ? error.message : 'Failed to delete content',
+			},
 			{ status: 500 },
 		);
 	}
