@@ -421,18 +421,26 @@ export async function updateScheduledTime(
 // ============== CONTENT DELETION ==============
 
 /**
- * Delete content item (only draft/pending)
+ * Delete content item (only draft/pending, or scheduled if force=true)
  */
-export async function deleteContentItem(id: string): Promise<boolean> {
+export async function deleteContentItem(id: string, force: boolean = false): Promise<boolean> {
 	try {
-		const { error } = await supabaseAdmin
+		let query = supabaseAdmin
 			.from('content_items')
 			.delete()
-			.eq('id', id)
-			.in('publishing_status', ['draft'])
-			.or(
-				`and(source.eq.submission,submission_status.eq.pending)`,
-			);
+			.eq('id', id);
+
+		if (force) {
+			// Force delete: allow deleting scheduled posts (for admins rejecting overdue)
+			query = query.in('publishing_status', ['draft', 'scheduled']);
+		} else {
+			// Normal delete: only draft or pending submissions
+			query = query
+				.in('publishing_status', ['draft'])
+				.or(`and(source.eq.submission,submission_status.eq.pending)`);
+		}
+
+		const { error } = await query;
 
 		if (error) {
 			console.error('Error deleting content item:', error);
@@ -520,6 +528,30 @@ export async function reorderScheduledItems(
 // ============== ADMIN STATISTICS ==============
 
 /**
+ * Get count of overdue posts (scheduled but past due time)
+ */
+export async function getOverdueCount(): Promise<number> {
+	try {
+		const now = Date.now();
+		const { count, error } = await supabaseAdmin
+			.from('content_items')
+			.select('*', { count: 'exact', head: true })
+			.eq('publishing_status', 'scheduled')
+			.lt('scheduled_time', now);
+
+		if (error) {
+			console.error('Error fetching overdue count:', error);
+			return 0;
+		}
+
+		return count || 0;
+	} catch (error) {
+		console.error('Error in getOverdueCount:', error);
+		return 0;
+	}
+}
+
+/**
  * Get admin dashboard statistics
  */
 export async function getContentStats(): Promise<{
@@ -530,8 +562,10 @@ export async function getContentStats(): Promise<{
 	scheduled: number;
 	published: number;
 	failed: number;
+	overdueCount: number;
 }> {
 	try {
+		const now = Date.now();
 		const queries = [
 			supabaseAdmin
 				.from('content_items')
@@ -564,6 +598,12 @@ export async function getContentStats(): Promise<{
 				.from('content_items')
 				.select('*', { count: 'exact', head: true })
 				.eq('publishing_status', 'failed'),
+			// Overdue count: scheduled but past due time
+			supabaseAdmin
+				.from('content_items')
+				.select('*', { count: 'exact', head: true })
+				.eq('publishing_status', 'scheduled')
+				.lt('scheduled_time', now),
 		];
 
 		const results = await Promise.all(queries);
@@ -576,6 +616,7 @@ export async function getContentStats(): Promise<{
 			scheduled: results[4].count || 0,
 			published: results[5].count || 0,
 			failed: results[6].count || 0,
+			overdueCount: results[7].count || 0,
 		};
 	} catch (error) {
 		console.error('Error fetching content stats:', error);
@@ -587,6 +628,7 @@ export async function getContentStats(): Promise<{
 			scheduled: 0,
 			published: 0,
 			failed: 0,
+			overdueCount: 0,
 		};
 	}
 }

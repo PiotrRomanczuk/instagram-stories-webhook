@@ -14,6 +14,7 @@ import { ContentList } from './content-list';
 import { ContentPreviewModal } from './content-preview-modal';
 import { ContentEditModal } from './content-edit-modal';
 import { ContentSubmitForm } from './content-submit-form';
+import { RescheduleOverdueModal } from './reschedule-overdue-modal';
 import {
 	Plus,
 	RotateCcw,
@@ -28,6 +29,9 @@ import {
 	XCircle,
 	Layers,
 	CalendarDays,
+	AlertTriangle,
+	X,
+	CalendarClock,
 } from 'lucide-react';
 import {
 	ContentItem,
@@ -46,7 +50,7 @@ interface ContentHubProps {
 }
 
 type ViewMode = 'grid' | 'list';
-type ScheduleFilter = 'all' | 'today' | 'week';
+type ScheduleFilter = 'all' | 'today' | 'week' | 'overdue';
 
 export function ContentHub({ initialTab = 'all' }: ContentHubProps) {
 	const { data: session } = useSession();
@@ -73,6 +77,8 @@ export function ContentHub({ initialTab = 'all' }: ContentHubProps) {
 	const [showSubmitForm, setShowSubmitForm] = useState(false);
 	const [selectedItem, setSelectedItem] = useState<ContentItem | null>(null);
 	const [selectedIndex, setSelectedIndex] = useState<number>(0);
+	const [dismissedOverdueWarning, setDismissedOverdueWarning] = useState(false);
+	const [showRescheduleModal, setShowRescheduleModal] = useState(false);
 
 	// Default sort by schedule time for queue tab
 	const effectiveSortBy = tab === 'queue' && sortBy === 'newest' ? 'schedule-asc' : sortBy;
@@ -253,6 +259,47 @@ export function ContentHub({ initialTab = 'all' }: ContentHubProps) {
 				</div>
 			</div>
 
+			{/* Overdue Warning Banner */}
+			{isAdmin && stats?.overdueCount > 0 && !dismissedOverdueWarning && (
+				<div className='bg-rose-50 border-b border-rose-100'>
+					<div className='mx-auto max-w-7xl px-4 sm:px-6 lg:px-8'>
+						<div className='flex items-center justify-between py-4'>
+							<div className='flex items-center gap-3'>
+								<div className='p-2 bg-rose-100 rounded-xl'>
+									<AlertTriangle className='h-5 w-5 text-rose-600' />
+								</div>
+								<div>
+									<p className='text-sm font-bold text-rose-800'>
+										{stats.overdueCount} post{stats.overdueCount !== 1 ? 's are' : ' is'} overdue
+									</p>
+									<p className='text-xs text-rose-600'>
+										These posts missed their scheduled publish time and are waiting to be published.
+									</p>
+								</div>
+							</div>
+							<div className='flex items-center gap-3'>
+								<button
+									onClick={() => {
+										setTab('queue');
+										setScheduleFilter('overdue');
+									}}
+									className='px-4 py-2 bg-rose-600 text-white text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-rose-700 transition-colors'
+								>
+									View Overdue
+								</button>
+								<button
+									onClick={() => setDismissedOverdueWarning(true)}
+									className='p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-100 rounded-lg transition-colors'
+									title='Dismiss'
+								>
+									<X className='h-4 w-4' />
+								</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			)}
+
 			{/* Main Content Area */}
 			<div className='mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 bg-transparent'>
 				{/* Modern Tab Switcher */}
@@ -299,26 +346,49 @@ export function ContentHub({ initialTab = 'all' }: ContentHubProps) {
 
 				{/* Schedule Quick Filters */}
 				{tab === 'queue' && (
-					<div className='flex items-center gap-2 mb-8'>
-						<CalendarDays className='h-4 w-4 text-gray-400' />
-						<span className='text-xs font-bold text-gray-400 uppercase tracking-wider mr-2'>Show:</span>
-						{[
-							{ id: 'all', label: 'All Scheduled' },
-							{ id: 'today', label: 'Today' },
-							{ id: 'week', label: 'This Week' },
-						].map((filter) => (
+					<div className='flex items-center justify-between gap-4 mb-8'>
+						<div className='flex items-center gap-2'>
+							<CalendarDays className='h-4 w-4 text-gray-400' />
+							<span className='text-xs font-bold text-gray-400 uppercase tracking-wider mr-2'>Show:</span>
+							{[
+								{ id: 'all', label: 'All Scheduled' },
+								{ id: 'today', label: 'Today' },
+								{ id: 'week', label: 'This Week' },
+								{ id: 'overdue', label: 'Overdue', color: 'rose' },
+							].map((filter) => (
+								<button
+									key={filter.id}
+									onClick={() => setScheduleFilter(filter.id as ScheduleFilter)}
+									className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+										scheduleFilter === filter.id
+											? filter.id === 'overdue'
+												? 'bg-rose-500 text-white shadow-lg'
+												: 'bg-indigo-600 text-white shadow-lg'
+											: filter.id === 'overdue' && stats?.overdueCount
+												? 'bg-rose-100 text-rose-600 hover:bg-rose-200'
+												: 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+									}`}
+								>
+									{filter.label}
+									{filter.id === 'overdue' && stats?.overdueCount ? (
+										<span className='ml-1.5 px-1.5 py-0.5 rounded-full bg-white/20 text-[10px] font-black'>
+											{stats.overdueCount}
+										</span>
+									) : null}
+								</button>
+							))}
+						</div>
+
+						{/* Reschedule All Overdue Button */}
+						{isAdmin && scheduleFilter === 'overdue' && stats?.overdueCount > 0 && (
 							<button
-								key={filter.id}
-								onClick={() => setScheduleFilter(filter.id as ScheduleFilter)}
-								className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-									scheduleFilter === filter.id
-										? 'bg-indigo-600 text-white shadow-lg'
-										: 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-								}`}
+								onClick={() => setShowRescheduleModal(true)}
+								className='px-4 py-2 bg-amber-500 text-white text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-amber-600 transition-colors flex items-center gap-2 shadow-lg'
 							>
-								{filter.label}
+								<CalendarClock className='h-4 w-4' />
+								Reschedule All
 							</button>
-						))}
+						)}
 					</div>
 				)}
 
@@ -441,6 +511,15 @@ export function ContentHub({ initialTab = 'all' }: ContentHubProps) {
 				<ContentSubmitForm
 					onClose={() => setShowSubmitForm(false)}
 					onSubmit={mutate}
+				/>
+			)}
+
+			{/* Reschedule Overdue Modal */}
+			{showRescheduleModal && (
+				<RescheduleOverdueModal
+					onClose={() => setShowRescheduleModal(false)}
+					onSuccess={mutate}
+					overdueCount={stats?.overdueCount || 0}
 				/>
 			)}
 		</div>

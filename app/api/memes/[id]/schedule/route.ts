@@ -60,7 +60,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             postType: 'STORY',
             caption: meme.caption,
             scheduledTime: scheduled_time,
-            userId: adminId
+            userId: meme.user_id,
+            userEmail: meme.user_email,
         });
 
         const updated = await scheduleMeme(id, scheduled_time, scheduledPost.id);

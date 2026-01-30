@@ -13,6 +13,16 @@ import {
 } from 'lucide-react';
 import { ConfirmationDialog } from '../ui/confirmation-dialog';
 
+/**
+ * Format creator name - handles UUID fallback gracefully
+ */
+function formatCreatorName(userEmail?: string): string {
+	if (!userEmail) return 'Unknown';
+	const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+	if (uuidPattern.test(userEmail)) return 'Unknown';
+	return userEmail.split('@')[0] || 'Unknown';
+}
+
 interface ContentCardProps {
 	item: ContentItem;
 	onPreview: () => void;
@@ -138,7 +148,7 @@ export function ContentCard({
 					<div className='flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100'>
 						<User className='h-3 w-3 text-indigo-400' />
 						<span className='text-[10px] font-bold text-gray-500'>
-							{item.userEmail.split('@')[0]}
+							{formatCreatorName(item.userEmail)}
 						</span>
 					</div>
 					<div className='flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100'>

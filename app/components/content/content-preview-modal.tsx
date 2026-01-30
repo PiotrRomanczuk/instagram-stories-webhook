@@ -21,6 +21,16 @@ import {
 } from 'lucide-react';
 import { ConfirmationDialog } from '../ui/confirmation-dialog';
 
+/**
+ * Format creator name - handles UUID fallback gracefully
+ */
+function formatCreatorName(userEmail?: string): string {
+	if (!userEmail) return 'Unknown';
+	const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+	if (uuidPattern.test(userEmail)) return 'Unknown';
+	return userEmail.split('@')[0] || 'Unknown';
+}
+
 interface ContentPreviewModalProps {
 	item: ContentItem;
 	onClose: () => void;
@@ -421,7 +431,7 @@ export function ContentPreviewModal({
 											Owner
 										</p>
 										<p className='text-xs font-bold text-gray-900 truncate'>
-											{item.userEmail.split('@')[0]}
+											{formatCreatorName(item.userEmail)}
 										</p>
 									</div>
 									<div className='space-y-1'>

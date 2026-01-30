@@ -71,12 +71,12 @@ export async function getAllScheduledPosts(): Promise<ScheduledPost[]> {
 }
 
 export async function addScheduledPost(
-	post: Omit<ScheduledPost, 'id' | 'status' | 'createdAt'> & { userId: string },
+	post: Omit<ScheduledPost, 'id' | 'status' | 'createdAt'> & { userId: string; userEmail?: string },
 ): Promise<ScheduledPostWithUser> {
 	const id = `post_${crypto.randomUUID()}`;
 	const createdAt = Date.now();
 
-	const newRecord = {
+	const newRecord: Record<string, unknown> = {
 		id,
 		url: post.url,
 		type: post.type,
@@ -85,9 +85,14 @@ export async function addScheduledPost(
 		scheduled_time: post.scheduledTime,
 		status: 'pending',
 		created_at: createdAt,
-		user_id: post.userId, // Set the user_id
+		user_id: post.userId,
 		user_tags: post.userTags || [],
 	};
+
+	// Include user_email if provided (column added in migration 20260130_add_user_email_to_scheduled_posts)
+	if (post.userEmail) {
+		newRecord.user_email = post.userEmail;
+	}
 
 	const { error } = await supabaseAdmin
 		.from('scheduled_posts')

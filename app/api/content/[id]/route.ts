@@ -255,15 +255,21 @@ export async function DELETE(
 			);
 		}
 
-		if (item.source === 'submission' && item.submissionStatus !== 'pending') {
+		// Admins can delete scheduled posts (including overdue)
+		const isAdminRole = role === 'admin' || role === 'developer';
+		const isScheduled = item.publishingStatus === 'scheduled';
+		const isDraft = item.publishingStatus === 'draft';
+		const isPendingSubmission = item.source === 'submission' && item.submissionStatus === 'pending';
+
+		if (!isDraft && !isPendingSubmission && !(isAdminRole && isScheduled)) {
 			return NextResponse.json(
-				{ error: 'Can only delete pending submissions' },
+				{ error: 'Cannot delete this content item' },
 				{ status: 400 },
 			);
 		}
 
-		// Delete content item
-		const success = await deleteContentItem(id);
+		// Delete content item (use force delete for scheduled posts)
+		const success = await deleteContentItem(id, isAdminRole && isScheduled);
 
 		if (!success) {
 			return NextResponse.json(

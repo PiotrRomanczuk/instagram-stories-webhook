@@ -31,6 +31,22 @@ import {
 } from 'lucide-react';
 
 /**
+ * Format creator name - handles UUID fallback gracefully
+ */
+function formatCreatorName(userEmail?: string): string {
+	if (!userEmail) return 'Unknown';
+
+	// Check if it looks like a UUID (incorrectly stored user_id)
+	const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+	if (uuidPattern.test(userEmail)) {
+		return 'Unknown';
+	}
+
+	// Extract username from email or return as-is if no @
+	return userEmail.split('@')[0] || 'Unknown';
+}
+
+/**
  * Story Preview on Hover Component
  */
 function StoryPreviewHover({ item }: { item: ContentItem }) {
@@ -74,6 +90,25 @@ function StoryPreviewHover({ item }: { item: ContentItem }) {
 }
 
 /**
+ * Format overdue duration in human-readable form
+ */
+function formatOverdueDuration(scheduledTime: number): string {
+	const now = Date.now();
+	const diffMs = now - scheduledTime;
+	const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+	const diffDays = Math.floor(diffHours / 24);
+
+	if (diffDays > 0) {
+		return `${diffDays}d`;
+	}
+	if (diffHours > 0) {
+		return `${diffHours}h`;
+	}
+	const diffMinutes = Math.floor(diffMs / (1000 * 60));
+	return `${diffMinutes}m`;
+}
+
+/**
  * Enhanced Status Badge with Error Details
  */
 function StatusBadge({ item }: { item: ContentItem }) {
@@ -82,6 +117,12 @@ function StatusBadge({ item }: { item: ContentItem }) {
 	const hasError = item.publishingStatus === 'failed' || item.error;
 	const hasRejection = item.submissionStatus === 'rejected' && item.rejectionReason;
 	const hasRetries = item.retryCount && item.retryCount > 0;
+
+	// Check if post is overdue (scheduled but past due time)
+	const isOverdue =
+		item.publishingStatus === 'scheduled' &&
+		item.scheduledTime &&
+		item.scheduledTime < Date.now();
 
 	const statusColors: Record<string, string> = {
 		published: 'bg-emerald-100 text-emerald-700',
@@ -108,6 +149,14 @@ function StatusBadge({ item }: { item: ContentItem }) {
 				>
 					{item.publishingStatus}
 				</span>
+
+				{/* Overdue badge */}
+				{isOverdue && (
+					<span className='inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider bg-rose-500 text-white animate-pulse'>
+						<Clock className='h-3 w-3' />
+						OVERDUE {formatOverdueDuration(item.scheduledTime!)}
+					</span>
+				)}
 
 				{/* Error/Info indicator */}
 				{(hasError || hasRejection) && (
@@ -592,7 +641,7 @@ export function ContentList({
 								</td>
 								<td className='px-6 py-5'>
 									<p className='text-xs font-bold text-gray-700'>
-										{item.userEmail?.split('@')[0] || 'Unknown'}
+										{formatCreatorName(item.userEmail)}
 									</p>
 								</td>
 								<td className='px-6 py-5'>

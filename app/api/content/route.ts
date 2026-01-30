@@ -108,6 +108,10 @@ export async function GET(req: NextRequest) {
 					const endOfWeek = startOfDay + 7 * 24 * 60 * 60 * 1000;
 					filterOptions.scheduledTimeAfter = startOfDay;
 					filterOptions.scheduledTimeBefore = endOfWeek;
+				} else if (scheduleFilter === 'overdue') {
+					// Overdue: scheduled but past due time
+					const now = Date.now();
+					filterOptions.scheduledTimeBefore = now;
 				}
 				break;
 
