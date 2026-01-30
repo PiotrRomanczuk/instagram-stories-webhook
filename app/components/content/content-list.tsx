@@ -4,13 +4,24 @@
  * Unified Content List Component
  * Displays content in grid or list view modes
  * List view includes drag handles when on queue tab
+ * Quick actions for approve/reject directly in row
  */
 
 import React, { useState } from 'react';
 import { ContentItem } from '@/lib/types/posts';
 import { ContentCard } from './content-card';
 import { ConfirmationDialog } from '../ui/confirmation-dialog';
-import { GripVertical, Calendar, Send, Eye, Clock } from 'lucide-react';
+import {
+	GripVertical,
+	Calendar,
+	Send,
+	Eye,
+	Clock,
+	ThumbsUp,
+	ThumbsDown,
+	Loader2,
+	X,
+} from 'lucide-react';
 
 /**
  * Story Preview on Hover Component
@@ -55,6 +66,56 @@ function StoryPreviewHover({ item }: { item: ContentItem }) {
 	);
 }
 
+/**
+ * Quick Reject Popover Component
+ */
+function QuickRejectPopover({
+	isOpen,
+	onClose,
+	onReject,
+	isLoading,
+}: {
+	isOpen: boolean;
+	onClose: () => void;
+	onReject: (reason: string) => void;
+	isLoading: boolean;
+}) {
+	const [reason, setReason] = useState('');
+
+	if (!isOpen) return null;
+
+	return (
+		<div className='absolute right-0 top-full mt-2 z-50 bg-white rounded-xl shadow-2xl border border-gray-200 p-3 w-64'>
+			<div className='flex items-center justify-between mb-2'>
+				<span className='text-xs font-bold text-gray-700'>Rejection Reason</span>
+				<button onClick={onClose} className='text-gray-400 hover:text-gray-600'>
+					<X className='h-4 w-4' />
+				</button>
+			</div>
+			<textarea
+				value={reason}
+				onChange={(e) => setReason(e.target.value)}
+				placeholder='Why reject this?'
+				className='w-full p-2 text-xs border border-gray-200 rounded-lg resize-none h-16 focus:outline-none focus:ring-2 focus:ring-rose-200'
+				autoFocus
+			/>
+			<button
+				onClick={() => {
+					if (reason.trim()) {
+						onReject(reason);
+						setReason('');
+					}
+				}}
+				disabled={!reason.trim() || isLoading}
+				className='mt-2 w-full px-3 py-2 bg-rose-500 text-white text-xs font-bold rounded-lg hover:bg-rose-600 disabled:opacity-50 flex items-center justify-center gap-2'
+			>
+				{isLoading && <Loader2 className='h-3 w-3 animate-spin' />}
+				Reject
+			</button>
+		</div>
+	);
+}
+
 type ViewMode = 'grid' | 'list';
 
 interface ContentListProps {
@@ -79,6 +140,9 @@ export function ContentList({
 	const [selectedItemForPublish, setSelectedItemForPublish] =
 		useState<ContentItem | null>(null);
 	const [isPublishing, setIsPublishing] = useState(false);
+	const [approvingId, setApprovingId] = useState<string | null>(null);
+	const [rejectingId, setRejectingId] = useState<string | null>(null);
+	const [showRejectPopover, setShowRejectPopover] = useState<string | null>(null);
 
 	const handlePublishNow = async () => {
 		if (!selectedItemForPublish) return;
@@ -104,7 +168,46 @@ export function ContentList({
 		}
 	};
 
+	const handleQuickApprove = async (itemId: string) => {
+		try {
+			setApprovingId(itemId);
+			const response = await fetch(`/api/content/${itemId}/review`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ action: 'approve' }),
+			});
+			if (response.ok) {
+				onRefresh();
+			}
+		} catch (err) {
+			console.error('Failed to approve', err);
+		} finally {
+			setApprovingId(null);
+		}
+	};
+
+	const handleQuickReject = async (itemId: string, reason: string) => {
+		try {
+			setRejectingId(itemId);
+			const response = await fetch(`/api/content/${itemId}/review`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ action: 'reject', rejectionReason: reason }),
+			});
+			if (response.ok) {
+				onRefresh();
+				setShowRejectPopover(null);
+			}
+		} catch (err) {
+			console.error('Failed to reject', err);
+		} finally {
+			setRejectingId(null);
+		}
+	};
+
 	const isQueueTab = tab === 'queue';
+	const isPendingSubmission = (item: ContentItem) =>
+		item.source === 'submission' && item.submissionStatus === 'pending';
 
 	if (viewMode === 'grid') {
 		return (
@@ -142,9 +245,7 @@ export function ContentList({
 				<table className='w-full text-sm'>
 					<thead>
 						<tr className='bg-gray-50/50 border-b border-gray-100'>
-							{isQueueTab && (
-								<th className='w-12 px-2 py-5'></th>
-							)}
+							{isQueueTab && <th className='w-12 px-2 py-5'></th>}
 							<th className='px-6 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]'>
 								Media
 							</th>
@@ -166,7 +267,9 @@ export function ContentList({
 						{items.map((item) => (
 							<tr
 								key={item.id}
-								className='group hover:bg-indigo-50/30 transition-colors'
+								className={`group hover:bg-indigo-50/30 transition-colors ${
+									isPendingSubmission(item) ? 'bg-amber-50/30' : ''
+								}`}
 							>
 								{isQueueTab && (
 									<td className='px-2 py-5'>
@@ -193,19 +296,34 @@ export function ContentList({
 									</p>
 								</td>
 								<td className='px-6 py-5'>
-									<span
-										className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest ${
-											item.publishingStatus === 'published'
-												? 'bg-emerald-100 text-emerald-700'
-												: item.publishingStatus === 'scheduled'
-													? 'bg-amber-100 text-amber-700'
-													: item.publishingStatus === 'failed'
-														? 'bg-rose-100 text-rose-700'
-														: 'bg-gray-100 text-gray-600'
-										}`}
-									>
-										{item.publishingStatus}
-									</span>
+									<div className='flex flex-col gap-1'>
+										<span
+											className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest w-fit ${
+												item.publishingStatus === 'published'
+													? 'bg-emerald-100 text-emerald-700'
+													: item.publishingStatus === 'scheduled'
+														? 'bg-amber-100 text-amber-700'
+														: item.publishingStatus === 'failed'
+															? 'bg-rose-100 text-rose-700'
+															: 'bg-gray-100 text-gray-600'
+											}`}
+										>
+											{item.publishingStatus}
+										</span>
+										{item.source === 'submission' && (
+											<span
+												className={`inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-bold uppercase w-fit ${
+													item.submissionStatus === 'pending'
+														? 'bg-orange-100 text-orange-600'
+														: item.submissionStatus === 'approved'
+															? 'bg-emerald-50 text-emerald-600'
+															: 'bg-rose-50 text-rose-600'
+												}`}
+											>
+												{item.submissionStatus}
+											</span>
+										)}
+									</div>
 								</td>
 								<td className='px-6 py-5'>
 									{item.scheduledTime ? (
@@ -223,10 +341,43 @@ export function ContentList({
 									)}
 								</td>
 								<td className='px-6 py-5 text-right'>
-									<div className='flex justify-end gap-2'>
+									<div className='flex justify-end gap-1 relative'>
+										{/* Quick Approve/Reject for pending submissions */}
+										{isAdmin && isPendingSubmission(item) && (
+											<>
+												<button
+													onClick={() => handleQuickApprove(item.id)}
+													disabled={approvingId === item.id}
+													className='p-2 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors text-emerald-600 hover:text-emerald-700 border border-emerald-200'
+													title='Approve'
+												>
+													{approvingId === item.id ? (
+														<Loader2 className='h-4 w-4 animate-spin' />
+													) : (
+														<ThumbsUp className='h-4 w-4' />
+													)}
+												</button>
+												<button
+													onClick={() => setShowRejectPopover(item.id)}
+													className='p-2 bg-rose-50 hover:bg-rose-100 rounded-lg transition-colors text-rose-600 hover:text-rose-700 border border-rose-200'
+													title='Reject'
+												>
+													<ThumbsDown className='h-4 w-4' />
+												</button>
+												<QuickRejectPopover
+													isOpen={showRejectPopover === item.id}
+													onClose={() => setShowRejectPopover(null)}
+													onReject={(reason) => handleQuickReject(item.id, reason)}
+													isLoading={rejectingId === item.id}
+												/>
+											</>
+										)}
+
+										{/* Standard actions */}
 										<button
 											onClick={() => onPreview(item)}
 											className='p-2 hover:bg-white rounded-lg transition-colors text-gray-400 hover:text-indigo-600 shadow-sm border border-transparent hover:border-indigo-100'
+											title='Preview'
 										>
 											<Eye className='h-4 w-4' />
 										</button>
@@ -235,6 +386,7 @@ export function ContentList({
 												<button
 													onClick={() => onEdit(item)}
 													className='p-2 hover:bg-white rounded-lg transition-colors text-gray-400 hover:text-amber-600 shadow-sm border border-transparent hover:border-amber-100'
+													title='Schedule'
 												>
 													<Calendar className='h-4 w-4' />
 												</button>
@@ -243,6 +395,7 @@ export function ContentList({
 													<button
 														onClick={() => setSelectedItemForPublish(item)}
 														className='p-2 hover:bg-white rounded-lg transition-colors text-gray-400 hover:text-emerald-600 shadow-sm border border-transparent hover:border-emerald-100'
+														title='Publish Now'
 													>
 														<Send className='h-4 w-4' />
 													</button>
