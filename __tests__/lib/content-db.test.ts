@@ -17,7 +17,7 @@ import {
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
 
 // Mock Supabase
-vi.mock('@/lib/supabase-admin', () => ({
+vi.mock('@/lib/config/supabase-admin', () => ({
 	supabaseAdmin: {
 		from: vi.fn(),
 	},
