@@ -5,6 +5,7 @@ import {
 	releaseProcessingLock,
 } from '@/lib/database/scheduled-posts';
 import { publishMedia } from '@/lib/instagram';
+import { processAndUploadStoryImage } from '@/lib/media/story-processor';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
 import { Logger } from '@/lib/utils/logger';
 import {
@@ -169,17 +170,31 @@ export async function processScheduledPosts(
 					`📤 Publishing scheduled post ${post.id} for user ${post.userId}...`,
 				);
 
-				// 4. Publish the media using the associated user's tokens
+				// 4. Process image for story format if needed (9:16 with blurred background)
+				let publishUrl = post.url;
+				const postType = post.postType || 'STORY';
+				if (post.type === 'IMAGE' && postType === 'STORY') {
+					try {
+						await Logger.info(MODULE, `Processing image for story format...`, { postId: post.id });
+						publishUrl = await processAndUploadStoryImage(post.url, post.id);
+						await Logger.info(MODULE, `Image processed successfully`, { postId: post.id });
+					} catch (processError) {
+						await Logger.warn(MODULE, `Image processing failed, using original: ${processError}`, { postId: post.id });
+						// Fall back to original URL if processing fails
+					}
+				}
+
+				// 5. Publish the media using the associated user's tokens
 				const result = await publishMedia(
-					post.url,
+					publishUrl,
 					post.type,
-					post.postType || 'STORY',
+					postType,
 					post.caption,
 					post.userId,
 					post.userTags,
 				);
 
-				// 5. Update status to published with content hash
+				// 6. Update status to published with content hash
 				await updateScheduledPost(post.id, {
 					status: 'published',
 					publishedAt: Date.now(),
@@ -192,7 +207,7 @@ export async function processScheduledPosts(
 					`✅ Successfully published scheduled post ${post.id}`,
 				);
 
-				// 6. Save meme to AI analysis bucket (Pro plan feature)
+				// 7. Save meme to AI analysis bucket (Pro plan feature)
 				// Extract filename from URL for storage naming
 				const urlParts = post.url.split('/');
 				const fileName = urlParts[urlParts.length - 1] || `media-${Date.now()}`;

@@ -2,7 +2,16 @@
 
 import React, { useState } from 'react';
 import { ContentItem } from '@/lib/types/posts';
-import { X, Loader2, ChevronDown } from 'lucide-react';
+import {
+	X,
+	Loader2,
+	Calendar,
+	Type,
+	AlignLeft,
+	Send,
+	Sparkles,
+} from 'lucide-react';
+import { DateTimePicker } from '../ui/datetime-picker';
 
 interface ContentEditModalProps {
 	item: ContentItem;
@@ -17,45 +26,82 @@ export function ContentEditModal({
 }: ContentEditModalProps) {
 	const [caption, setCaption] = useState(item.caption || '');
 	const [title, setTitle] = useState(item.title || '');
-	const [scheduledTime, setScheduledTime] = useState<string>(
+	const [scheduledDate, setScheduledDate] = useState<Date>(
 		item.scheduledTime
-			? new Date(item.scheduledTime).toISOString().slice(0, 16)
-			: '',
+			? new Date(item.scheduledTime)
+			: new Date(Date.now() + 3600000),
 	);
 	const [isSaving, setIsSaving] = useState(false);
 	const [error, setError] = useState('');
 
-	const handleSave = async (publishNow = false) => {
+	const handleSchedule = async () => {
 		try {
 			setIsSaving(true);
 			setError('');
 
-			const timeToSchedule = publishNow
-				? Date.now()
-				: scheduledTime
-					? new Date(scheduledTime).getTime()
-					: item.scheduledTime;
-
-			const response = await fetch(`/api/content/${item.id}`, {
+			// First update caption/title if changed
+			const updateResponse = await fetch(`/api/content/${item.id}`, {
 				method: 'PATCH',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					caption,
 					title,
-					scheduledTime: timeToSchedule,
+					scheduledTime: scheduledDate.getTime(),
 					version: item.version,
 				}),
 			});
 
-			if (!response.ok) {
-				const data = await response.json();
-				throw new Error(data.error || 'Failed to save');
+			if (!updateResponse.ok) {
+				const data = await updateResponse.json();
+				throw new Error(data.error || 'Failed to schedule');
 			}
 
 			onSave();
 			onClose();
 		} catch (err) {
-			setError(err instanceof Error ? err.message : 'Failed to save');
+			setError(err instanceof Error ? err.message : 'Failed to schedule');
+		} finally {
+			setIsSaving(false);
+		}
+	};
+
+	const handlePublishNow = async () => {
+		try {
+			setIsSaving(true);
+			setError('');
+
+			// First update caption/title if changed
+			if (caption !== item.caption || title !== item.title) {
+				const updateResponse = await fetch(`/api/content/${item.id}`, {
+					method: 'PATCH',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						caption,
+						title,
+						version: item.version,
+					}),
+				});
+
+				if (!updateResponse.ok) {
+					const data = await updateResponse.json();
+					throw new Error(data.error || 'Failed to update content');
+				}
+			}
+
+			// Then publish directly to Instagram
+			const publishResponse = await fetch(`/api/content/${item.id}/publish`, {
+				method: 'POST',
+			});
+
+			if (!publishResponse.ok) {
+				const data = await publishResponse.json();
+				throw new Error(data.error || 'Failed to publish');
+			}
+
+			onSave();
+			onClose();
+		} catch (err) {
+			setError(err instanceof Error ? err.message : 'Failed to publish');
 		} finally {
 			setIsSaving(false);
 		}
@@ -64,119 +110,170 @@ export function ContentEditModal({
 	return (
 		<>
 			<div
-				className='fixed inset-0 z-40 bg-black/50 backdrop-blur-sm'
+				className='fixed inset-0 z-[60] bg-black/60 backdrop-blur-md transition-all'
 				onClick={onClose}
 			/>
-			<div className='fixed inset-0 z-50 flex items-center justify-center p-4'>
-				<div className='relative w-full max-w-2xl rounded-lg bg-white overflow-hidden shadow-2xl'>
-					{/* Header */}
-					<div className='flex items-center justify-between border-b p-6'>
-						<div>
-							<h2 className='text-xl font-bold text-gray-900'>
-								Configure Post
-							</h2>
-							<p className='text-sm text-gray-500'>
-								Set schedule and optional details
-							</p>
+			<div className='fixed inset-0 z-[70] flex items-center justify-center p-4 sm:p-6'>
+				<div className='relative w-full max-w-4xl rounded-3xl bg-white overflow-hidden shadow-2xl ring-1 ring-black/5 flex flex-col md:flex-row max-h-[90vh] animate-in fade-in zoom-in duration-300'>
+					{/* Left Side: Preview */}
+					<div className='hidden md:flex md:w-2/5 bg-gray-50 flex-col border-r border-gray-100'>
+						<div className='p-6 border-b border-gray-100 flex items-center gap-2'>
+							<Sparkles className='h-5 w-5 text-indigo-600' />
+							<span className='font-bold text-gray-900'>Post Preview</span>
 						</div>
-						<button
-							onClick={onClose}
-							className='text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100'
-						>
-							<X className='h-6 w-6' />
-						</button>
+						<div className='flex-1 p-8 flex items-center justify-center bg-gray-100/50'>
+							<div className='relative w-full aspect-[4/5] rounded-2xl overflow-hidden shadow-2xl border-4 border-white transform hover:scale-[1.02] transition-transform duration-500'>
+								<img
+									src={item.mediaUrl}
+									alt='Preview'
+									className='h-full w-full object-cover'
+								/>
+								<div className='absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-6'>
+									{title && (
+										<h4 className='text-white font-bold text-lg mb-1 truncate'>
+											{title}
+										</h4>
+									)}
+									{caption && (
+										<p className='text-white/80 text-xs line-clamp-2 leading-relaxed'>
+											{caption}
+										</p>
+									)}
+								</div>
+							</div>
+						</div>
 					</div>
 
-					{/* Content */}
-					<div className='space-y-6 p-6 max-h-[80vh] overflow-y-auto'>
-						{/* Scheduling */}
-						<div className='space-y-2 p-4 bg-indigo-50 rounded-xl border border-indigo-100'>
-							<label className='block text-sm font-bold text-indigo-900'>
-								Scheduled Time
-							</label>
-							<input
-								type='datetime-local'
-								value={scheduledTime}
-								onChange={(e) => setScheduledTime(e.target.value)}
-								disabled={item.publishingStatus === 'published'}
-								className='w-full px-4 py-3 border border-indigo-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-indigo-50/50'
-							/>
-							<p className='text-xs text-indigo-700'>
-								Leave empty to keep as draft, or set a time to schedule.
-							</p>
+					{/* Right Side: Configuration */}
+					<div className='flex-1 flex flex-col overflow-hidden'>
+						{/* Header */}
+						<div className='flex items-center justify-between border-b p-6 bg-white'>
+							<div>
+								<h2 className='text-2xl font-black text-gray-900 tracking-tight'>
+									Configure Post
+								</h2>
+								<p className='text-sm text-gray-500 font-medium'>
+									Finalize details and set publishing time
+								</p>
+							</div>
+							<button
+								onClick={onClose}
+								className='text-gray-400 hover:text-gray-900 p-2 rounded-full hover:bg-gray-100 transition-colors'
+							>
+								<X className='h-6 w-6' />
+							</button>
 						</div>
 
-						{/* Title & Caption - simplified/demoted as per user feedback */}
-						<details className='group'>
-							<summary className='flex items-center justify-between cursor-pointer list-none p-4 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors'>
-								<span className='text-sm font-semibold text-gray-700'>
-									Edit Title & Caption (Optional)
-								</span>
-								<ChevronDown className='h-4 w-4 text-gray-500 group-open:rotate-180 transition-transform' />
-							</summary>
-							<div className='space-y-4 pt-4 px-1'>
-								<div className='space-y-2'>
-									<label className='block text-xs font-medium text-gray-500 uppercase tracking-wider'>
-										Title
-									</label>
-									<input
-										type='text'
-										value={title}
-										onChange={(e) => setTitle(e.target.value)}
-										placeholder='Enter title (optional)'
-										disabled={item.publishingStatus === 'published'}
-										className='w-full px-3 py-2 border border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:bg-gray-100'
-									/>
+						{/* Scrollable Content */}
+						<div className='flex-1 overflow-y-auto p-8 space-y-8 bg-white'>
+							{/* Scheduling Section */}
+							<section className='space-y-4'>
+								<div className='flex items-center gap-2 mb-2'>
+									<div className='p-2 bg-indigo-50 rounded-lg text-indigo-600'>
+										<Calendar className='h-4 w-4' />
+									</div>
+									<h3 className='font-bold text-gray-900'>
+										Publishing Schedule
+									</h3>
 								</div>
 
-								<div className='space-y-2'>
-									<label className='block text-xs font-medium text-gray-500 uppercase tracking-wider'>
-										Caption ({caption.length}/2200)
-									</label>
-									<textarea
-										value={caption}
-										onChange={(e) => setCaption(e.target.value)}
-										placeholder='Enter caption...'
-										maxLength={2200}
-										disabled={item.publishingStatus === 'published'}
-										className='w-full min-h-24 px-3 py-2 border border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:bg-gray-100 font-mono text-sm'
+								<div className='p-1 bg-gray-50 rounded-2xl border border-gray-100'>
+									<DateTimePicker
+										value={scheduledDate}
+										onChange={setScheduledDate}
+										minDate={new Date()}
 									/>
 								</div>
-							</div>
-						</details>
+								<p className='text-xs text-gray-400 pl-2 font-medium'>
+									Select a future date and time for automatic publishing.
+								</p>
+							</section>
 
-						{/* Error */}
-						{error && (
-							<div className='rounded-lg bg-red-50 p-4 text-sm text-red-800 border border-red-100'>
-								{error}
-							</div>
-						)}
+							{/* Post Content Section */}
+							<section className='space-y-6'>
+								<div className='flex items-center gap-2 mb-2'>
+									<div className='p-2 bg-pink-50 rounded-lg text-pink-600'>
+										<AlignLeft className='h-4 w-4' />
+									</div>
+									<h3 className='font-bold text-gray-900'>Post Metadata</h3>
+								</div>
 
-						{/* Actions */}
-						<div className='flex flex-col sm:flex-row gap-3 border-t pt-6'>
+								<div className='space-y-4'>
+									<div className='group'>
+										<label className='block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1 transition-colors group-focus-within:text-pink-600'>
+											Internal Title
+										</label>
+										<div className='relative'>
+											<Type className='absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-300 group-focus-within:text-pink-600 transition-colors' />
+											<input
+												type='text'
+												value={title}
+												onChange={(e) => setTitle(e.target.value)}
+												placeholder='Give this post a title...'
+												className='w-full pl-11 pr-4 py-3 bg-gray-50 border border-transparent rounded-xl focus:bg-white focus:border-pink-200 focus:ring-4 focus:ring-pink-50/50 outline-none transition-all font-medium text-gray-900'
+											/>
+										</div>
+									</div>
+
+									<div className='group'>
+										<label className='block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1 transition-colors group-focus-within:text-pink-600'>
+											Instagram Caption
+										</label>
+										<div className='relative'>
+											<textarea
+												value={caption}
+												onChange={(e) => setCaption(e.target.value)}
+												placeholder='Write a catchy caption...'
+												maxLength={2200}
+												className='w-full p-4 bg-gray-50 border border-transparent rounded-2xl focus:bg-white focus:border-pink-200 focus:ring-4 focus:ring-pink-50/50 outline-none transition-all font-mono text-sm min-h-[120px] text-gray-900 leading-relaxed'
+											/>
+											<div className='absolute bottom-3 right-4 text-[10px] font-bold text-gray-400'>
+												{caption.length} / 2200
+											</div>
+										</div>
+									</div>
+								</div>
+							</section>
+
+							{/* Error Message */}
+							{error && (
+								<div className='p-4 bg-red-50 rounded-xl border border-red-100 flex gap-3 animate-in slide-in-from-top-2'>
+									<X className='h-5 w-5 text-red-500 shrink-0' />
+									<p className='text-sm text-red-700 font-medium'>{error}</p>
+								</div>
+							)}
+						</div>
+
+						{/* Sticky Footer */}
+						<div className='p-6 border-t bg-gray-50 flex flex-col sm:flex-row gap-4'>
 							<button
 								onClick={onClose}
 								disabled={isSaving}
-								className='order-3 sm:order-1 px-4 py-2 text-gray-600 hover:bg-gray-50 rounded-lg transition font-medium text-sm'
+								className='px-6 py-3 text-gray-500 font-bold hover:text-gray-900 transition-colors'
 							>
 								Cancel
 							</button>
-							<div className='order-1 sm:order-2 flex-1 flex gap-2'>
+							<div className='flex-1 flex flex-col sm:flex-row gap-3'>
+								{(item.source !== 'submission' ||
+									item.submissionStatus === 'approved') && (
+									<button
+										onClick={handlePublishNow}
+										disabled={isSaving}
+										className='flex-1 px-6 py-4 bg-emerald-500 text-white rounded-2xl hover:bg-emerald-600 active:scale-[0.98] transition-all font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-200/50'
+									>
+										{isSaving && <Loader2 className='h-4 w-4 animate-spin' />}
+										<Send className='h-4 w-4' />
+										Publish Now
+									</button>
+								)}
 								<button
-									onClick={() => handleSave(true)}
-									disabled={isSaving || item.publishingStatus === 'published'}
-									className='flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition font-bold text-sm flex items-center justify-center gap-2 shadow-sm'
+									onClick={handleSchedule}
+									disabled={isSaving}
+									className='flex-1 px-6 py-4 bg-indigo-600 text-white rounded-2xl hover:bg-indigo-700 active:scale-[0.98] transition-all font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-indigo-200/50'
 								>
 									{isSaving && <Loader2 className='h-4 w-4 animate-spin' />}
-									Publish Now
-								</button>
-								<button
-									onClick={() => handleSave(false)}
-									disabled={isSaving || item.publishingStatus === 'published'}
-									className='flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition font-bold text-sm flex items-center justify-center gap-2 shadow-sm'
-								>
-									{isSaving && <Loader2 className='h-4 w-4 animate-spin' />}
-									{scheduledTime ? 'Schedule Post' : 'Save Changes'}
+									<Calendar className='h-4 w-4' />
+									Schedule Post
 								</button>
 							</div>
 						</div>

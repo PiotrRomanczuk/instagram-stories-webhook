@@ -184,8 +184,8 @@ describe('Content Hub API', () => {
 			expect(res.status).toBe(200);
 
 			// Verify userId filter was applied
-			const callArgs = vi.mocked(getContentItems).mock.calls[0][0];
-			expect(callArgs.userId).toBe('user-1');
+			const callArgs = vi.mocked(getContentItems).mock.calls[0]?.[0];
+			expect(callArgs?.userId).toBe('user-1');
 		});
 
 		it('should return 401 for unauthenticated requests', async () => {

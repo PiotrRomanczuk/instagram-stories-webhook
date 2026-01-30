@@ -14,11 +14,27 @@ import { ContentList } from './content-list';
 import { ContentPreviewModal } from './content-preview-modal';
 import { ContentEditModal } from './content-edit-modal';
 import { ContentSubmitForm } from './content-submit-form';
-import { Plus, RotateCcw } from 'lucide-react';
-import { ContentItem, ContentSource, SubmissionStatus, PublishingStatus } from '@/lib/types/posts';
+import {
+	Plus,
+	RotateCcw,
+	LayoutGrid,
+	List,
+	Layers,
+	Sparkles,
+	TrendingUp,
+	Inbox,
+	CheckCircle2,
+	AlertCircle,
+} from 'lucide-react';
+import {
+	ContentItem,
+	ContentSource,
+	SubmissionStatus,
+	PublishingStatus,
+} from '@/lib/types/posts';
 import type { UserRole } from '@/lib/types/posts';
 
-const fetcher = (url: string) => fetch(url).then(r => r.json());
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 interface ContentHubProps {
 	initialTab?: 'all' | 'review' | 'queue' | 'published';
@@ -31,13 +47,21 @@ export function ContentHub({ initialTab = 'all' }: ContentHubProps) {
 	const searchParams = useSearchParams();
 
 	// State
-	const [tab, setTab] = useState<'all' | 'review' | 'queue' | 'published'>(initialTab);
+	const [tab, setTab] = useState<'all' | 'review' | 'queue' | 'published'>(
+		initialTab,
+	);
 	const [viewMode, setViewMode] = useState<ViewMode>('grid');
 	const [search, setSearch] = useState('');
 	const [source, setSource] = useState<ContentSource | 'all'>('all');
-	const [submissionStatus, setSubmissionStatus] = useState<SubmissionStatus | 'all'>('all');
-	const [publishingStatus, setPublishingStatus] = useState<PublishingStatus | 'all'>('all');
-	const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'schedule-asc'>('newest');
+	const [submissionStatus, setSubmissionStatus] = useState<
+		SubmissionStatus | 'all'
+	>('all');
+	const [publishingStatus, setPublishingStatus] = useState<
+		PublishingStatus | 'all'
+	>('all');
+	const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'schedule-asc'>(
+		'newest',
+	);
 	const [page, setPage] = useState(1);
 	const [showPreviewModal, setShowPreviewModal] = useState(false);
 	const [showEditModal, setShowEditModal] = useState(false);
@@ -48,7 +72,7 @@ export function ContentHub({ initialTab = 'all' }: ContentHubProps) {
 	const apiParams = new URLSearchParams({
 		tab,
 		page: String(page),
-		limit: viewMode === 'list' ? '10' : '20',
+		limit: viewMode === 'list' ? '12' : '24',
 		sortBy,
 		...(search && { search }),
 		...(source !== 'all' && { source }),
@@ -99,125 +123,166 @@ export function ContentHub({ initialTab = 'all' }: ContentHubProps) {
 		setPage(1);
 	}, []);
 
-	// Tab-specific labels
-	const tabLabels = {
-		all: 'All Content',
-		review: 'Pending Review',
-		queue: 'Queue',
-		published: 'Published',
-	};
+	// Tab configuration
+	const tabs = [
+		{ id: 'all', label: 'Discovery', icon: <Sparkles className='h-4 w-4' /> },
+		...(isAdmin
+			? [{ id: 'review', label: 'Inbox', icon: <Inbox className='h-4 w-4' /> }]
+			: []),
+		{ id: 'queue', label: 'Schedule', icon: <Layers className='h-4 w-4' /> },
+		{
+			id: 'published',
+			label: 'Catalog',
+			icon: <CheckCircle2 className='h-4 w-4' />,
+		},
+	];
 
 	// Get items from response
 	const items = data?.data || [];
 	const stats = data?.stats;
 	const pagination = data?.pagination;
 
-	// Show loading state
-	if (isLoading && !data) {
-		return (
-			<div className="flex items-center justify-center min-h-screen">
-				<div className="text-center">
-					<div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent" />
-					<p className="mt-4 text-gray-600">Loading content...</p>
-				</div>
-			</div>
-		);
-	}
-
 	return (
-		<div className="min-h-screen bg-gray-50">
-			{/* Header */}
-			<div className="border-b bg-white">
-				<div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-					<div className="flex items-center justify-between">
+		<div className='min-h-screen bg-[#FDFCFD]'>
+			{/* Aesthetic Header */}
+			<div className='bg-white border-b border-gray-100 sticky top-0 z-30 shadow-sm'>
+				<div className='mx-auto max-w-7xl px-4 sm:px-6 lg:px-8'>
+					<div className='flex items-center justify-between py-8'>
 						<div>
-							<h1 className="text-3xl font-bold text-gray-900">Content Hub</h1>
-							<p className="mt-1 text-sm text-gray-500">
-								Manage submissions, schedule posts, and publish to Instagram
+							<div className='flex items-center gap-3 mb-1'>
+								<div className='p-2 bg-indigo-600 rounded-2xl shadow-lg shadow-indigo-200'>
+									<Sparkles className='h-6 w-6 text-white' />
+								</div>
+								<h1 className='text-4xl font-black text-gray-900 tracking-tighter'>
+									Content Hub
+								</h1>
+							</div>
+							<p className='text-sm text-gray-400 font-bold uppercase tracking-[0.2em] ml-11'>
+								Piotr Romanczuk Executive Suite
 							</p>
 						</div>
-						<div className="flex gap-2">
+
+						<div className='flex items-center gap-3'>
 							<button
 								onClick={handleRefresh}
-								className="px-3 py-2 border border-gray-300 rounded hover:bg-gray-50 transition"
-								title="Refresh content"
+								className={`p-4 bg-gray-50 text-gray-400 hover:text-indigo-600 hover:bg-white border border-transparent hover:border-indigo-100 rounded-2xl transition-all active:rotate-180 duration-500 shadow-sm ${isLoading ? 'animate-spin' : ''}`}
+								title='Synchronize'
 							>
-								<RotateCcw className="h-4 w-4" />
+								<RotateCcw className='h-5 w-5' />
 							</button>
 							<button
 								onClick={() => setShowSubmitForm(true)}
-								className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition flex items-center gap-2 font-medium text-sm"
+								className='px-8 py-4 bg-gray-900 text-white rounded-3xl hover:bg-indigo-600 hover:shadow-2xl hover:shadow-indigo-200 transition-all active:scale-[0.98] flex items-center gap-3 font-black text-sm uppercase tracking-widest'
 							>
-								<Plus className="h-4 w-4" />
-								New Post
+								<Plus className='h-5 w-5' />
+								Create Post
 							</button>
 						</div>
 					</div>
 
-					{/* Stats */}
+					{/* Stats Dashboard */}
 					{stats && isAdmin && (
-						<div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-							<div className="bg-blue-50 rounded-lg p-4">
-								<div className="text-xs font-medium text-blue-900">Submissions</div>
-								<div className="text-2xl font-bold text-blue-600">
-									{stats.totalSubmissions}
+						<div className='pb-10 grid grid-cols-2 lg:grid-cols-4 gap-6 animate-in slide-in-from-bottom-4 duration-500'>
+							{[
+								{
+									label: 'Submissions',
+									val: stats.totalSubmissions,
+									icon: <TrendingUp className='h-4 w-4' />,
+									color: 'blue',
+								},
+								{
+									label: 'Pending Review',
+									val: stats.pendingReview,
+									icon: <Inbox className='h-4 w-4' />,
+									color: 'amber',
+								},
+								{
+									label: 'Published',
+									val: stats.published,
+									icon: <CheckCircle2 className='h-4 w-4' />,
+									color: 'emerald',
+								},
+								{
+									label: 'Failure Rate',
+									val: stats.failed,
+									icon: <AlertCircle className='h-4 w-4' />,
+									color: 'rose',
+								},
+							].map((s) => (
+								<div
+									key={s.label}
+									className={`group bg-white rounded-3xl p-6 border border-gray-100 hover:border-${s.color}-200 hover:shadow-xl hover:shadow-${s.color}-500/5 transition-all duration-300`}
+								>
+									<div className='flex items-center justify-between mb-2'>
+										<div
+											className={`p-2 rounded-xl bg-gray-50 text-gray-400 group-hover:bg-${s.color}-50 group-hover:text-${s.color}-600 transition-colors`}
+										>
+											{s.icon}
+										</div>
+										<span className='text-[10px] font-black text-gray-300 uppercase tracking-widest'>
+											{s.label}
+										</span>
+									</div>
+									<div className='text-3xl font-black text-gray-900'>
+										{s.val}
+									</div>
 								</div>
-							</div>
-							<div className="bg-yellow-50 rounded-lg p-4">
-								<div className="text-xs font-medium text-yellow-900">Pending</div>
-								<div className="text-2xl font-bold text-yellow-600">
-									{stats.pendingReview}
-								</div>
-							</div>
-							<div className="bg-green-50 rounded-lg p-4">
-								<div className="text-xs font-medium text-green-900">Published</div>
-								<div className="text-2xl font-bold text-green-600">
-									{stats.published}
-								</div>
-							</div>
-							<div className="bg-red-50 rounded-lg p-4">
-								<div className="text-xs font-medium text-red-900">Failed</div>
-								<div className="text-2xl font-bold text-red-600">
-									{stats.failed}
-								</div>
-							</div>
+							))}
 						</div>
 					)}
 				</div>
 			</div>
 
-			{/* Content */}
-			<div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-				{/* Tabs */}
-				<div className="mb-6 border-b">
-					<div className="flex gap-8">
-						{['all', 'review', 'queue', 'published'].map((tabName) => {
-							const label = tabLabels[tabName as keyof typeof tabLabels];
-							if (tabName === 'review' && !isAdmin) return null;
-							return (
-								<button
-									key={tabName}
-									onClick={() => setTab(tabName as typeof tab)}
-									className={`pb-3 font-medium border-b-2 transition ${
-										tab === tabName
-											? 'border-indigo-600 text-indigo-600'
-											: 'border-transparent text-gray-600 hover:text-gray-900'
-									}`}
-								>
-									{label}
-									{tabName === 'review' && stats?.pendingReview ? (
-										<span className="ml-2 inline-block h-5 w-5 rounded-full bg-yellow-500 text-xs text-white font-bold">
-											{Math.min(stats.pendingReview, 9)}
-										</span>
-									) : null}
-								</button>
-							);
-						})}
+			{/* Main Content Area */}
+			<div className='mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 bg-transparent'>
+				{/* Modern Tab Switcher */}
+				<div className='flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12'>
+					<div className='flex items-center p-1 bg-gray-100 rounded-[2rem] w-fit shadow-inner'>
+						{tabs.map((t) => (
+							<button
+								key={t.id}
+								onClick={() => setTab(t.id as any)}
+								className={`px-8 py-3 rounded-[1.8rem] flex items-center gap-2 text-xs font-black uppercase tracking-widest transition-all ${
+									tab === t.id
+										? 'bg-white text-gray-900 shadow-xl'
+										: 'text-gray-400 hover:text-gray-600'
+								}`}
+							>
+								{t.icon}
+								{t.label}
+								{t.id === 'review' && stats?.pendingReview ? (
+									<span className='ml-2 px-2 py-0.5 rounded-full bg-indigo-600 text-[10px] text-white'>
+										{stats.pendingReview}
+									</span>
+								) : null}
+							</button>
+						))}
+					</div>
+
+					<div className='flex items-center gap-2 bg-gray-100 p-1 rounded-2xl w-fit shadow-inner'>
+						<button
+							onClick={() => setViewMode('grid')}
+							className={`p-3 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-white text-indigo-600 shadow-lg' : 'text-gray-400 hover:text-gray-600'}`}
+						>
+							<LayoutGrid className='h-4 w-4' />
+						</button>
+						<button
+							onClick={() => setViewMode('list')}
+							className={`p-3 rounded-xl transition-all ${viewMode === 'list' ? 'bg-white text-indigo-600 shadow-lg' : 'text-gray-400 hover:text-gray-600'}`}
+						>
+							<List className='h-4 w-4' />
+						</button>
+						<button
+							onClick={() => setViewMode('queue')}
+							className={`p-3 rounded-xl transition-all ${viewMode === 'queue' ? 'bg-white text-indigo-600 shadow-lg' : 'text-gray-400 hover:text-gray-600'}`}
+						>
+							<Layers className='h-4 w-4' />
+						</button>
 					</div>
 				</div>
 
-				{/* Filters */}
-				<div className="mb-6">
+				{/* Advanced Filters */}
+				<div className='mb-12'>
 					<ContentFilters
 						onSearchChange={setSearch}
 						onSourceChange={setSource}
@@ -232,58 +297,67 @@ export function ContentHub({ initialTab = 'all' }: ContentHubProps) {
 					/>
 				</div>
 
-				{/* Content */}
-				<div className="space-y-6">
-					{/* Empty State */}
-					{!isLoading && items.length === 0 && (
-						<div className="rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-12 text-center">
-							<p className="text-gray-500">
-								No {tab === 'review' ? 'pending submissions' : 'content'} found
+				{/* Animated Content Grid */}
+				<div className='min-h-[60vh]'>
+					{!isLoading && items.length === 0 ? (
+						<div className='h-[40vh] flex flex-col items-center justify-center bg-white rounded-[3rem] border border-gray-100 shadow-sm p-12 text-center animate-in fade-in zoom-in duration-500'>
+							<div className='p-6 bg-gray-50 rounded-full mb-6'>
+								<Inbox className='h-12 w-12 text-gray-200' />
+							</div>
+							<h3 className='text-2xl font-black text-gray-900 mb-2'>
+								Tumbleweeds here...
+							</h3>
+							<p className='text-gray-400 font-medium mb-8 max-w-sm'>
+								No content matches your current filters. Try adjusting them or
+								create something new.
 							</p>
 							<button
 								onClick={() => setShowSubmitForm(true)}
-								className="mt-4 px-4 py-2 border border-gray-300 rounded hover:bg-gray-100 transition font-medium text-sm"
+								className='px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-200 hover:scale-110 active:scale-95 transition-all'
 							>
-								Create New Post
+								Create First Post
 							</button>
+						</div>
+					) : (
+						<div className='animate-in fade-in slide-in-from-bottom-8 duration-700'>
+							<ContentList
+								items={items}
+								viewMode={viewMode}
+								onPreview={handlePreview}
+								onEdit={handleEdit}
+								onRefresh={mutate}
+								isAdmin={isAdmin}
+								tab={tab}
+							/>
 						</div>
 					)}
 
-					{/* Content List */}
-					{items.length > 0 && (
-						<ContentList
-							items={items}
-							viewMode={viewMode}
-							onPreview={handlePreview}
-							onEdit={handleEdit}
-							onRefresh={mutate}
-							isAdmin={isAdmin}
-							tab={tab}
-						/>
-					)}
-
-					{/* Pagination */}
+					{/* Luxury Pagination */}
 					{pagination && pagination.total > 0 && (
-						<div className="flex items-center justify-between border-t pt-6">
-							<div className="text-sm text-gray-500">
-								Showing {(page - 1) * (viewMode === 'list' ? 10 : 20) + 1} to{' '}
-								{Math.min(page * (viewMode === 'list' ? 10 : 20), pagination.total)} of{' '}
-								{pagination.total} results
-							</div>
-							<div className="flex gap-2">
+						<div className='mt-20 flex flex-col sm:flex-row items-center justify-between gap-6 px-4'>
+							<p className='text-[10px] font-black text-gray-300 uppercase tracking-[0.2em]'>
+								Master Catalog: Item{' '}
+								{(page - 1) * (viewMode === 'list' ? 12 : 24) + 1} —{' '}
+								{Math.min(
+									page * (viewMode === 'list' ? 12 : 24),
+									pagination.total,
+								)}{' '}
+								of {pagination.total}
+							</p>
+							<div className='flex gap-3'>
 								<button
 									onClick={() => setPage(Math.max(1, page - 1))}
 									disabled={page === 1}
-									className="px-3 py-2 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition text-sm font-medium"
+									className='h-12 px-8 bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-lg disabled:opacity-30 disabled:grayscale transition-all font-black text-[10px] uppercase tracking-widest text-gray-600'
 								>
 									Previous
 								</button>
 								<button
 									onClick={() => setPage(page + 1)}
 									disabled={!pagination.hasMore}
-									className="px-3 py-2 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition text-sm font-medium"
+									className='h-12 px-8 bg-gray-950 text-white rounded-2xl shadow-xl hover:bg-indigo-600 disabled:opacity-30 transition-all font-black text-[10px] uppercase tracking-widest'
 								>
-									Next
+									Next Page
 								</button>
 							</div>
 						</div>
@@ -291,7 +365,7 @@ export function ContentHub({ initialTab = 'all' }: ContentHubProps) {
 				</div>
 			</div>
 
-			{/* Modals */}
+			{/* Modals with Higher Z-depth */}
 			{showPreviewModal && selectedItem && (
 				<ContentPreviewModal
 					item={selectedItem}
@@ -300,6 +374,8 @@ export function ContentHub({ initialTab = 'all' }: ContentHubProps) {
 						setSelectedItem(null);
 					}}
 					onEdit={handleEdit}
+					onRefresh={mutate}
+					isAdmin={isAdmin}
 				/>
 			)}
 
