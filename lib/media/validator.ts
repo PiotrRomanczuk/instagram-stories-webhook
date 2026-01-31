@@ -128,16 +128,31 @@ export function getImageDimensionsFromUrl(url: string): Promise<MediaDimensions>
  */
 export function getImageDimensionsFromFile(file: File): Promise<MediaDimensions> {
     return new Promise((resolve, reject) => {
+        // Validate file type first
+        if (!file.type.startsWith('image/')) {
+            reject(new Error(`Invalid file type: ${file.type}. Expected an image file.`));
+            return;
+        }
+
         const url = URL.createObjectURL(file);
         const img = new Image();
+
         img.onload = () => {
             URL.revokeObjectURL(url);
+            if (img.naturalWidth === 0 || img.naturalHeight === 0) {
+                reject(new Error(`Invalid image dimensions: ${img.naturalWidth}x${img.naturalHeight}`));
+                return;
+            }
             resolve({ width: img.naturalWidth, height: img.naturalHeight });
         };
-        img.onerror = () => {
+
+        img.onerror = (event) => {
             URL.revokeObjectURL(url);
-            reject(new Error('Failed to load image from file'));
+            const errorDetails = `File: ${file.name}, Type: ${file.type}, Size: ${file.size} bytes`;
+            console.error('Image load error:', errorDetails, event);
+            reject(new Error(`Failed to load image from file. ${errorDetails}`));
         };
+
         img.src = url;
     });
 }
