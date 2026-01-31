@@ -8,9 +8,8 @@ import { cleanupTestData } from './helpers/seed';
  */
 
 test.describe('Pagination Edge Cases', () => {
-	test.afterAll(async ({ page }) => {
-		await cleanupTestData(page);
-	});
+	// Note: Cleanup is handled per-test or by test data isolation
+	// afterAll cannot use page/context fixtures in Playwright
 
 	/**
 	 * PG-01: Handle Exact Page Boundary
@@ -22,7 +21,7 @@ test.describe('Pagination Edge Cases', () => {
 		await signInAsUser(page);
 
 		await page.goto('/memes');
-		await expect(page).toHaveURL(/\/memes/);
+		await expect(page).toHaveURL(/\/(en\/)?memes/);
 
 		// Check if pagination controls exist
 		const nextButton = page.locator('button:has-text("Next")');
@@ -116,7 +115,7 @@ test.describe('Pagination Edge Cases', () => {
 			if (!isNextDisabled) {
 				// Can go to next page
 				await nextButton.click();
-				await page.waitForTimeout(1000);
+				await page.waitForLoadState('domcontentloaded');
 
 				// Should be on page 2
 				const bodyText = await page.innerText('body');
@@ -131,7 +130,7 @@ test.describe('Pagination Edge Cases', () => {
 
 						// Go back to page 1
 						await prevButton.click();
-						await page.waitForTimeout(1000);
+						await page.waitForLoadState('domcontentloaded');
 
 						const bodyText2 = await page.innerText('body');
 						const isBackOnPage1 = bodyText2.includes('Page 1');
@@ -161,11 +160,11 @@ test.describe('Pagination Edge Cases', () => {
 
 			if (!isDisabled) {
 				await nextButton.click();
-				await page.waitForTimeout(1000);
+				await page.waitForLoadState('domcontentloaded');
 
 				// Refresh the page
 				await page.reload();
-				await page.waitForTimeout(1000);
+				await page.waitForLoadState('domcontentloaded');
 
 				// Should still be on page 2 (if URL-based pagination)
 				const url = page.url();
@@ -208,7 +207,7 @@ test.describe('Pagination Edge Cases', () => {
 
 				// Go to next page
 				await nextButton.click();
-				await page.waitForTimeout(1000);
+				await page.waitForLoadState('domcontentloaded');
 
 				// Should have different content
 				const bodyText2 = await page.innerText('body');

@@ -80,6 +80,16 @@ export const authOptions: AuthOptions = {
 
 			// Allow test credentials in development/test mode
 			if (account?.provider === 'test-credentials') {
+				// Allow known test emails without whitelist check in dev/test
+				const testEmails = ['user@test.com', 'admin@test.com', 'user2@test.com'];
+				if (testEmails.includes(userEmail)) {
+					await Logger.info(
+						MODULE,
+						`✅ TEST ACCESS GRANTED (dev mode): ${userEmail}`,
+					);
+					return true;
+				}
+				// For other emails, check whitelist
 				const isWhitelisted = await isEmailAllowed(userEmail);
 				if (isWhitelisted) {
 					await Logger.info(
@@ -157,19 +167,30 @@ export const authOptions: AuthOptions = {
 
 				// Get role from database
 				const email = user.email?.toLowerCase() || '';
-				const role = await getUserRole(email);
 
-				// If in DB whitelist, use that role. Otherwise check if in ADMIN_EMAIL (treat as admin)
-				if (role) {
-					token.role = role as UserRole;
+				// Handle known test emails in dev/test mode
+				const testUserRoles: Record<string, UserRole> = {
+					'user@test.com': 'user',
+					'admin@test.com': 'admin',
+					'user2@test.com': 'user',
+				};
+				if (process.env.NODE_ENV !== 'production' && testUserRoles[email]) {
+					token.role = testUserRoles[email];
 				} else {
-					// Fallback for ADMIN_EMAIL users not yet in whitelist
-					const adminEmail = process.env.ADMIN_EMAIL || '';
-					const envAdmins = adminEmail
-						.split(',')
-						.map((e) => e.trim().toLowerCase())
-						.filter((e) => e);
-					token.role = envAdmins.includes(email) ? 'admin' : 'user';
+					const role = await getUserRole(email);
+
+					// If in DB whitelist, use that role. Otherwise check if in ADMIN_EMAIL (treat as admin)
+					if (role) {
+						token.role = role as UserRole;
+					} else {
+						// Fallback for ADMIN_EMAIL users not yet in whitelist
+						const adminEmail = process.env.ADMIN_EMAIL || '';
+						const envAdmins = adminEmail
+							.split(',')
+							.map((e) => e.trim().toLowerCase())
+							.filter((e) => e);
+						token.role = envAdmins.includes(email) ? 'admin' : 'user';
+					}
 				}
 
 				await Logger.info(MODULE, `👤 User JWT Created: ${user.email}`, {

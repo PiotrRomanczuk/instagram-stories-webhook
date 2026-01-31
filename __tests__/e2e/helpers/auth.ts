@@ -33,16 +33,33 @@ export const TEST_USERS = {
  * Sign in as admin user
  */
 export async function signInAsAdmin(page: Page) {
-	await page.goto('/auth/signin');
+	await page.goto('/auth/signin', { waitUntil: 'domcontentloaded' });
 
+	// Wait for React hydration - the "Development Only" text only appears after useEffect runs
+	const devOnlyText = page.locator('text=Development Only');
 	const testBtn = page.getByRole('button', { name: 'Test Admin' });
-	if (await testBtn.isVisible()) {
-		await testBtn.click();
-		await page.waitForURL(
-			(url) => url.pathname === '/' || url.pathname === '/en',
-			{ timeout: 10000 },
-		);
+
+	try {
+		// Wait for hydration indicator first (5s), then button (2s)
+		await devOnlyText.waitFor({ state: 'visible', timeout: 5000 });
+		await testBtn.waitFor({ state: 'visible', timeout: 2000 });
+		// Small delay to ensure React event handlers are attached
+		await page.waitForTimeout(500);
+		// Click and wait for navigation to start
+		await Promise.all([
+			page.waitForURL(
+				(url) =>
+					url.pathname === '/' ||
+					url.pathname === '/en' ||
+					url.pathname === '/en/',
+				{ timeout: 15000, waitUntil: 'domcontentloaded' },
+			),
+			testBtn.click(),
+		]);
 		return;
+	} catch (error) {
+		// Log the actual error for debugging
+		console.warn('Test Admin sign-in failed:', error instanceof Error ? error.message : error);
 	}
 
 	// Fallback: Mock Google OAuth callback
@@ -59,22 +76,40 @@ export async function signInAsAdmin(page: Page) {
 	}, TEST_USERS.admin.email);
 
 	await page.goto('/');
+	await page.waitForLoadState('domcontentloaded');
 }
 
 /**
  * Sign in as regular user
  */
 export async function signInAsUser(page: Page) {
-	await page.goto('/auth/signin');
+	await page.goto('/auth/signin', { waitUntil: 'domcontentloaded' });
 
+	// Wait for React hydration - the "Development Only" text only appears after useEffect runs
+	const devOnlyText = page.locator('text=Development Only');
 	const testBtn = page.getByRole('button', { name: 'Test User' });
-	if (await testBtn.isVisible()) {
-		await testBtn.click();
-		await page.waitForURL(
-			(url) => url.pathname === '/' || url.pathname === '/en',
-			{ timeout: 10000 },
-		);
+
+	try {
+		// Wait for hydration indicator first (5s), then button (2s)
+		await devOnlyText.waitFor({ state: 'visible', timeout: 5000 });
+		await testBtn.waitFor({ state: 'visible', timeout: 2000 });
+		// Small delay to ensure React event handlers are attached
+		await page.waitForTimeout(500);
+		// Click and wait for navigation to start
+		await Promise.all([
+			page.waitForURL(
+				(url) =>
+					url.pathname === '/' ||
+					url.pathname === '/en' ||
+					url.pathname === '/en/',
+				{ timeout: 15000, waitUntil: 'domcontentloaded' },
+			),
+			testBtn.click(),
+		]);
 		return;
+	} catch (error) {
+		// Log the actual error for debugging
+		console.warn('Test User sign-in failed:', error instanceof Error ? error.message : error);
 	}
 
 	// Fallback check for dev mode failure
@@ -95,14 +130,18 @@ export async function signInAsUser(page: Page) {
 	}, TEST_USERS.user.email);
 
 	await page.goto('/');
+	await page.waitForLoadState('domcontentloaded');
 }
 
 /**
  * Sign in as second user (for testing data isolation)
  */
 export async function signInAsUser2(page: Page) {
-	await page.goto('/auth/signin');
+	await page.goto('/auth/signin', { waitUntil: 'domcontentloaded' });
 
+	// For user2, we need to use a different test button or the API
+	// Since the UI only has "Test User" and "Test Admin" buttons,
+	// we use the credentials provider directly via evaluate
 	await page.evaluate((email) => {
 		localStorage.setItem(
 			'test-auth-user',
@@ -115,27 +154,47 @@ export async function signInAsUser2(page: Page) {
 	}, TEST_USERS.user2.email);
 
 	await page.goto('/');
+	await page.waitForLoadState('domcontentloaded');
 }
 
 /**
  * Sign out current user
  */
 export async function signOut(page: Page) {
-	// Look for sign out button/link
-	const signOutButton = page.getByRole('button', { name: /sign out|logout/i });
-
-	if (await signOutButton.isVisible()) {
-		await signOutButton.click();
-	} else {
-		// Alternative: navigate to sign out API endpoint
-		await page.goto('/api/auth/signout');
-	}
-
-	// Clear local storage
+	// Clear local storage first
 	await page.evaluate(() => {
 		localStorage.clear();
 		sessionStorage.clear();
 	});
+
+	// Clear cookies to fully sign out
+	await page.context().clearCookies();
+
+	// Look for sign out button/link on the page
+	const signOutButton = page.getByRole('button', { name: /sign out|logout/i });
+	const signOutLink = page.getByRole('link', { name: /sign out|logout/i });
+
+	if (await signOutButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+		await signOutButton.click();
+		await page.waitForLoadState('domcontentloaded');
+	} else if (await signOutLink.isVisible({ timeout: 2000 }).catch(() => false)) {
+		await signOutLink.click();
+		await page.waitForLoadState('domcontentloaded');
+	} else {
+		// Alternative: navigate to sign out API endpoint with CSRF handling
+		// This uses the NextAuth signout flow
+		await page.goto('/api/auth/signout', { waitUntil: 'domcontentloaded' });
+
+		// If we get a form, submit it
+		const signOutForm = page.locator('form');
+		if (await signOutForm.count() > 0) {
+			const submitBtn = page.locator('button[type="submit"]');
+			if (await submitBtn.count() > 0) {
+				await submitBtn.click();
+				await page.waitForLoadState('domcontentloaded');
+			}
+		}
+	}
 }
 
 /**
