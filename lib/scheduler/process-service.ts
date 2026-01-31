@@ -6,7 +6,8 @@ import {
 	generateContentHash,
 	checkForRecentPublish,
 } from '@/lib/utils/duplicate-detection';
-import { saveMemeForAnalysis } from '@/lib/ai-analysis/meme-archiver';
+// TODO: Re-enable when AI analysis is set up
+// import { saveMemeForAnalysis } from '@/lib/ai-analysis/meme-archiver';
 import {
 	ProcessResult,
 	BatchResult,
@@ -200,8 +201,13 @@ export async function processScheduledPosts(
 					`✅ Successfully published scheduled post ${item.id}`,
 				);
 
-				// 7. Save meme to AI analysis bucket (Pro plan feature)
-				// Extract filename from URL for storage naming
+				// TODO: Re-enable AI analysis archiving once ai_meme_analysis table is created
+				// This feature saves published memes to a storage bucket for future AI analysis
+				// Requirements:
+				// 1. Create 'ai_meme_analysis' table in Supabase
+				// 2. Create 'ai-analysis' storage bucket in Supabase
+				// See lib/ai-analysis/meme-archiver.ts for implementation
+				/*
 				const urlParts = item.mediaUrl.split('/');
 				const fileName = urlParts[urlParts.length - 1] || `media-${Date.now()}`;
 
@@ -225,6 +231,7 @@ export async function processScheduledPosts(
 						{ igMediaId: result.id },
 					);
 				}
+				*/
 
 				results.push({
 					id: item.id,
