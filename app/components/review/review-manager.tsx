@@ -21,12 +21,12 @@ export function ReviewManager() {
 	const [isBulkProcessing, setIsBulkProcessing] = useState(false);
 
 	// Fetch pending submissions
-	const { data, isLoading, error } = useSWR<{ data: ContentItem[] }>(
+	const { data, isLoading, error } = useSWR<{ items: ContentItem[] }>(
 		'/api/content?source=submission&submissionStatus=pending',
 		fetcher
 	);
 
-	const items = data?.data || [];
+	const items = data?.items || [];
 	const rejectingItem = items.find((item) => item.id === rejectingId);
 	const schedulingItem = items.find((item) => item.id === schedulingId);
 

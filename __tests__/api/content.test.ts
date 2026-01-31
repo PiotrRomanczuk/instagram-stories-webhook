@@ -61,8 +61,8 @@ describe('Content Hub API', () => {
 			const data = await res.json();
 
 			expect(res.status).toBe(201);
-			expect(data.data).toBeDefined();
-			expect(data.data.source).toBe('submission');
+			expect(data.item).toBeDefined();
+			expect(data.item.source).toBe('submission');
 		});
 
 		it('should validate required fields', async () => {
@@ -134,9 +134,9 @@ describe('Content Hub API', () => {
 			const data = await res.json();
 
 			expect(res.status).toBe(200);
-			expect(data.data).toBeDefined();
+			expect(data.items).toBeDefined();
 			expect(data.pagination).toBeDefined();
-			expect(data.data.length).toBe(1);
+			expect(data.items.length).toBe(1);
 		});
 
 		it('should filter by submission status for admin', async () => {

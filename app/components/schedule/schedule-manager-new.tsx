@@ -49,12 +49,12 @@ export function ScheduleManagerNew() {
 		return url;
 	}, [filter]);
 
-	const { data, isLoading, error } = useSWR<{ data: ContentItem[] }>(
+	const { data, isLoading, error } = useSWR<{ items: ContentItem[] }>(
 		getApiUrl(),
 		fetcher
 	);
 
-	const items = data?.data || [];
+	const items = data?.items || [];
 	const editingItem = items.find((item) => item.id === editingId);
 
 	// Calculate counts for badges
