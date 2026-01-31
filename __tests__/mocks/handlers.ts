@@ -22,4 +22,18 @@ export const handlers = [
       ],
     });
   }),
+
+  // Mock token status endpoint
+  http.get('/api/auth/token-status', () => {
+    return HttpResponse.json({
+      connected: true,
+      token: {
+        expires_at: Date.now() + 30 * 24 * 60 * 60 * 1000, // 30 days from now
+        ig_username: 'test_user',
+        ig_user_id: '17841400000000000',
+        provider_account_id: '123456789',
+        is_expired: false,
+      },
+    });
+  }),
 ];

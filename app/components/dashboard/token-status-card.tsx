@@ -10,10 +10,18 @@ import { cn } from '@/lib/utils';
 interface TokenData {
 	expires_at?: number;
 	ig_username?: string;
+	ig_user_id?: string;
 	provider_account_id?: string;
+	is_expired?: boolean;
+}
+
+interface TokenStatusResponse {
+	connected: boolean;
+	token: TokenData | null;
 }
 
 export function TokenStatusCard() {
+	const [connected, setConnected] = useState(false);
 	const [tokenData, setTokenData] = useState<TokenData | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [refreshing, setRefreshing] = useState(false);
@@ -23,7 +31,8 @@ export function TokenStatusCard() {
 		try {
 			const res = await fetch('/api/auth/token-status');
 			if (res.ok) {
-				const data = await res.json();
+				const data: TokenStatusResponse = await res.json();
+				setConnected(data.connected);
 				setTokenData(data.token);
 			}
 		} catch (error) {
@@ -66,7 +75,7 @@ export function TokenStatusCard() {
 		);
 	}
 
-	if (!tokenData?.expires_at) {
+	if (!connected || !tokenData) {
 		return (
 			<Card>
 				<CardHeader className="pb-3">
@@ -85,19 +94,22 @@ export function TokenStatusCard() {
 		);
 	}
 
+	// Handle case where account is connected but expires_at is unknown
+	const hasExpiryInfo = typeof tokenData.expires_at === 'number';
 	const now = Date.now();
-	const expiresAt = tokenData.expires_at;
-	const msRemaining = expiresAt - now;
-	const daysRemaining = Math.floor(msRemaining / (1000 * 60 * 60 * 24));
-	const hoursRemaining = Math.floor((msRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+	const expiresAt = tokenData.expires_at || 0;
+	const msRemaining = hasExpiryInfo ? expiresAt - now : 0;
+	const daysRemaining = hasExpiryInfo ? Math.floor(msRemaining / (1000 * 60 * 60 * 24)) : -1;
+	const hoursRemaining = hasExpiryInfo
+		? Math.floor((msRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+		: 0;
 
-	const isExpired = msRemaining <= 0;
-	const isExpiringSoon = daysRemaining <= 7 && !isExpired;
-	const isHealthy = daysRemaining > 7;
+	const isExpired = hasExpiryInfo && msRemaining <= 0;
+	const isExpiringSoon = hasExpiryInfo && daysRemaining <= 7 && !isExpired;
 
-	// Progress: 60 days max, show remaining
+	// Progress: 60 days max, show remaining (only meaningful if we have expiry info)
 	const maxDays = 60;
-	const progressPercent = isExpired ? 0 : Math.min((daysRemaining / maxDays) * 100, 100);
+	const progressPercent = hasExpiryInfo && !isExpired ? Math.min((daysRemaining / maxDays) * 100, 100) : 0;
 
 	let statusColor = 'text-green-600';
 	let statusBg = 'bg-green-100 dark:bg-green-900/30';
@@ -153,13 +165,15 @@ export function TokenStatusCard() {
 						<p className="text-sm text-muted-foreground">
 							{isExpired
 								? 'Please reconnect your Instagram account'
-								: `${daysRemaining} days, ${hoursRemaining} hours remaining`}
+								: hasExpiryInfo
+									? `${daysRemaining} days, ${hoursRemaining} hours remaining`
+									: 'Connected (expiry unknown)'}
 						</p>
 					</div>
 				</div>
 
-				{/* Progress Bar */}
-				{!isExpired && (
+				{/* Progress Bar - only show if we have expiry info */}
+				{hasExpiryInfo && !isExpired && (
 					<div className="space-y-2">
 						<div className="flex justify-between text-xs text-muted-foreground">
 							<span>Token Validity</span>
@@ -176,14 +190,16 @@ export function TokenStatusCard() {
 				)}
 
 				{/* Expiry Date */}
-				<div className="text-xs text-muted-foreground">
-					Expires: {new Date(expiresAt).toLocaleDateString(undefined, {
-						weekday: 'long',
-						year: 'numeric',
-						month: 'long',
-						day: 'numeric',
-					})}
-				</div>
+				{hasExpiryInfo && (
+					<div className="text-xs text-muted-foreground">
+						Expires: {new Date(expiresAt).toLocaleDateString(undefined, {
+							weekday: 'long',
+							year: 'numeric',
+							month: 'long',
+							day: 'numeric',
+						})}
+					</div>
+				)}
 
 				{/* Message */}
 				{message && (

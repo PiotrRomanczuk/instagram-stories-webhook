@@ -14,14 +14,22 @@ export async function GET() {
 		const linkedAccount = await getLinkedFacebookAccount(session.user.id);
 
 		if (!linkedAccount) {
-			return NextResponse.json({ token: null });
+			return NextResponse.json({ token: null, connected: false });
 		}
 
+		// Check if token is expired
+		const isExpired = linkedAccount.expires_at
+			? linkedAccount.expires_at < Date.now()
+			: false;
+
 		return NextResponse.json({
+			connected: true,
 			token: {
 				expires_at: linkedAccount.expires_at,
 				ig_username: linkedAccount.ig_username,
+				ig_user_id: linkedAccount.ig_user_id,
 				provider_account_id: linkedAccount.provider_account_id,
+				is_expired: isExpired,
 			},
 		});
 	} catch (error) {
