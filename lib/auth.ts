@@ -78,6 +78,23 @@ export const authOptions: AuthOptions = {
 
 			const userEmail = user.email?.toLowerCase() || '';
 
+			// Allow test credentials in development/test mode
+			if (account?.provider === 'test-credentials') {
+				const isWhitelisted = await isEmailAllowed(userEmail);
+				if (isWhitelisted) {
+					await Logger.info(
+						MODULE,
+						`✅ TEST ACCESS GRANTED: ${userEmail}`,
+					);
+					return true;
+				}
+				await Logger.warn(
+					MODULE,
+					`❌ TEST ACCESS DENIED: ${userEmail} not in whitelist`,
+				);
+				return false;
+			}
+
 			if (account?.provider === 'google') {
 				// Check database whitelist first
 				const isWhitelisted = await isEmailAllowed(userEmail);
