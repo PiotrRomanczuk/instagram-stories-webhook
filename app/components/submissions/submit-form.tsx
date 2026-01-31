@@ -19,13 +19,15 @@ export function SubmitForm() {
 	const router = useRouter();
 	const [imageUrl, setImageUrl] = useState<string | null>(null);
 	const [dimensions, setDimensions] = useState<MediaDimensions | null>(null);
+	const [storagePath, setStoragePath] = useState<string | null>(null);
 	const [aspectInfo, setAspectInfo] = useState<AspectRatioInfo | null>(null);
 	const [caption, setCaption] = useState('');
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
-	const handleImageChange = (url: string | null, dims?: MediaDimensions) => {
+	const handleImageChange = (url: string | null, dims?: MediaDimensions, path?: string) => {
 		setImageUrl(url);
 		setDimensions(dims || null);
+		setStoragePath(path || null);
 	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
@@ -48,6 +50,7 @@ export function SubmitForm() {
 					mediaType: 'IMAGE',
 					caption: caption.trim() || undefined,
 					dimensions,
+					storagePath: storagePath || undefined,
 				}),
 			});
 

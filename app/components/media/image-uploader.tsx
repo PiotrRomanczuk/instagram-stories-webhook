@@ -4,7 +4,6 @@ import { useState, useCallback, useRef } from 'react';
 import { Upload, X, Link as LinkIcon, Loader2 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
-import { Label } from '@/app/components/ui/label';
 import { cn } from '@/lib/utils';
 import {
 	analyzeAspectRatio,
@@ -13,10 +12,11 @@ import {
 } from '@/lib/media/validator';
 import { AspectRatioInfo, MediaDimensions } from '@/lib/types';
 import { AspectRatioBadge } from './aspect-ratio-badge';
+import { supabase } from '@/lib/config/supabase';
 
 interface ImageUploaderProps {
 	value: string | null;
-	onChange: (url: string | null, dimensions?: MediaDimensions) => void;
+	onChange: (url: string | null, dimensions?: MediaDimensions, storagePath?: string) => void;
 	onAspectRatioChange?: (info: AspectRatioInfo | null) => void;
 	className?: string;
 	disabled?: boolean;
@@ -61,12 +61,33 @@ export function ImageUploader({
 			setError(null);
 
 			try {
+				// Get dimensions first
 				const dimensions = await getImageDimensionsFromFile(file);
-				const url = URL.createObjectURL(file);
-				onChange(url, dimensions);
 				updateAspectInfo(dimensions);
+
+				// Upload to Supabase storage
+				const fileExt = file.name.split('.').pop();
+				const fileName = `uploads/memes/${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+
+				const { error: uploadError } = await supabase.storage
+					.from('stories')
+					.upload(fileName, file, {
+						cacheControl: '3600',
+						upsert: false,
+					});
+
+				if (uploadError) {
+					throw new Error(uploadError.message);
+				}
+
+				// Get public URL
+				const { data: { publicUrl } } = supabase.storage
+					.from('stories')
+					.getPublicUrl(fileName);
+
+				onChange(publicUrl, dimensions, fileName);
 			} catch (err) {
-				setError('Failed to load image');
+				setError(err instanceof Error ? err.message : 'Failed to upload image');
 				console.error(err);
 			} finally {
 				setIsLoading(false);
