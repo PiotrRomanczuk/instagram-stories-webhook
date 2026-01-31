@@ -15,6 +15,10 @@ const nextConfig: NextConfig = {
 				port: '',
 				pathname: '/storage/v1/object/public/**',
 			},
+			{
+				protocol: 'https',
+				hostname: 'picsum.photos',
+			},
 		],
 	},
 	async headers() {
@@ -52,7 +56,7 @@ const nextConfig: NextConfig = {
 							"default-src 'self'",
 							"script-src 'self' 'unsafe-inline' 'unsafe-eval'",
 							"style-src 'self' 'unsafe-inline'",
-							"img-src 'self' data: https://*.supabase.co https://*.googleusercontent.com",
+							"img-src 'self' data: https://*.supabase.co https://*.googleusercontent.com https://picsum.photos",
 							"connect-src 'self' https://*.supabase.co https://graph.facebook.com https://graph.instagram.com",
 							"frame-ancestors 'none'",
 						].join('; '),
