@@ -13,13 +13,16 @@
 	},
 	"Navbar": {
 		"dashboard": "Dashboard",
-		"contentHub": "Content Hub",
+		"submit": "Submit",
+		"submissions": "Submissions",
+		"review": "Review",
+		"schedule": "Schedule",
+		"inbox": "Inbox",
+		"insights": "Insights",
+		"analytics": "Analytics",
 		"users": "Users",
 		"devTools": "Dev Tools",
-		"signIn": "Sign In",
-		"memes": "My Submissions",
-		"schedule": "Schedule",
-		"memesAdmin": "Memes Admin"
+		"signIn": "Sign In"
 	},
 	"AdminUsers": {
 		"title": "User",

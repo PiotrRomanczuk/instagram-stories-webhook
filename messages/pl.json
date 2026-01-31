@@ -13,13 +13,16 @@
 	},
 	"Navbar": {
 		"dashboard": "Panel",
-		"contentHub": "Centrum Treści",
+		"submit": "Zgłoś",
+		"submissions": "Zgłoszenia",
+		"review": "Recenzja",
+		"schedule": "Harmonogram",
+		"inbox": "Skrzynka",
+		"insights": "Statystyki",
+		"analytics": "Analityka",
 		"users": "Użytkownicy",
 		"devTools": "Narzędzia Dev",
-		"signIn": "Zaloguj",
-		"memes": "Moje Zgłoszenia",
-		"schedule": "Harmonogram",
-		"memesAdmin": "Admin Memów"
+		"signIn": "Zaloguj"
 	},
 	"AdminUsers": {
 		"title": "Biała Lista",
