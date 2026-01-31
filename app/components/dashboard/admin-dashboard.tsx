@@ -17,6 +17,7 @@ import { Button } from '@/app/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Badge } from '@/app/components/ui/badge';
 import { StatsCard, StatsCardSkeleton } from './stats-card';
+import { TokenStatusCard } from './token-status-card';
 import { ContentItem } from '@/lib/types';
 
 interface AdminDashboardProps {
@@ -169,41 +170,46 @@ export function AdminDashboard({ userName, isDeveloper }: AdminDashboardProps) {
 				</div>
 			)}
 
-			{/* Quick Actions */}
-			<Card>
-				<CardHeader>
-					<CardTitle>Quick Actions</CardTitle>
-				</CardHeader>
-				<CardContent>
-					<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-						{quickActions.map((action) => {
-							const Icon = action.icon;
-							return (
-								<Link
-									key={action.href}
-									href={action.href}
-									className={`group flex items-center justify-between rounded-lg border p-4 transition-colors ${action.bgColor}`}
-								>
-									<div className="flex items-center gap-3">
-										<div className={`rounded-lg bg-white p-2 shadow-sm`}>
-											<Icon className={`h-5 w-5 ${action.color}`} />
+			{/* Quick Actions + Token Status */}
+			<div className="grid gap-6 lg:grid-cols-3">
+				<Card className="lg:col-span-2">
+					<CardHeader>
+						<CardTitle>Quick Actions</CardTitle>
+					</CardHeader>
+					<CardContent>
+						<div className="grid gap-4 sm:grid-cols-2">
+							{quickActions.map((action) => {
+								const Icon = action.icon;
+								return (
+									<Link
+										key={action.href}
+										href={action.href}
+										className={`group flex items-center justify-between rounded-lg border p-4 transition-colors ${action.bgColor}`}
+									>
+										<div className="flex items-center gap-3">
+											<div className={`rounded-lg bg-white p-2 shadow-sm`}>
+												<Icon className={`h-5 w-5 ${action.color}`} />
+											</div>
+											<div>
+												<p className="font-medium">{action.label}</p>
+												{action.badge && (
+													<Badge variant="secondary" className="mt-1">
+														{action.badge}
+													</Badge>
+												)}
+											</div>
 										</div>
-										<div>
-											<p className="font-medium">{action.label}</p>
-											{action.badge && (
-												<Badge variant="secondary" className="mt-1">
-													{action.badge}
-												</Badge>
-											)}
-										</div>
-									</div>
-									<ArrowRight className="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1" />
-								</Link>
-							);
-						})}
-					</div>
-				</CardContent>
-			</Card>
+										<ArrowRight className="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1" />
+									</Link>
+								);
+							})}
+						</div>
+					</CardContent>
+				</Card>
+
+				{/* Token Status */}
+				<TokenStatusCard />
+			</div>
 
 			{/* Failed Posts Alert */}
 			{stats.failed > 0 && (

@@ -7,6 +7,7 @@ import { Button } from '@/app/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Skeleton } from '@/app/components/ui/skeleton';
 import { StatsCard, StatsCardSkeleton } from './stats-card';
+import { TokenStatusCard } from './token-status-card';
 import { SubmissionCard } from '@/app/components/submissions/submission-card';
 import { ContentItem } from '@/lib/types';
 
@@ -96,6 +97,9 @@ export function UserDashboard({ userName }: UserDashboardProps) {
 					/>
 				</div>
 			)}
+
+			{/* Token Status */}
+			<TokenStatusCard />
 
 			{/* Recent Submissions */}
 			<Card>
