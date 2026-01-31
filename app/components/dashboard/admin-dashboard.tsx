@@ -29,7 +29,7 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export function AdminDashboard({ userName, isDeveloper }: AdminDashboardProps) {
 	// Fetch content items for stats
-	const { data: contentData, isLoading: contentLoading } = useSWR<{ items: ContentItem[] }>(
+	const { data: contentData, isLoading: contentLoading } = useSWR<{ data: ContentItem[]; items?: ContentItem[] }>(
 		'/api/content?limit=100',
 		fetcher
 	);
@@ -40,7 +40,7 @@ export function AdminDashboard({ userName, isDeveloper }: AdminDashboardProps) {
 		fetcher
 	);
 
-	const items = contentData?.items || [];
+	const items = contentData?.data || contentData?.items || [];
 	const users = usersData?.users || [];
 
 	// Calculate stats

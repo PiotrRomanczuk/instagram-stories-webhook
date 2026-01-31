@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { format, addHours, setHours, setMinutes, startOfDay } from 'date-fns';
+import { format, addMinutes, setHours, setMinutes, startOfDay } from 'date-fns';
 import { CalendarIcon, Clock, Loader2 } from 'lucide-react';
 import {
 	Dialog,
@@ -37,7 +37,7 @@ interface ScheduleDialogProps {
 	itemTitle?: string;
 }
 
-type ScheduleMode = 'specific' | 'queue';
+type ScheduleMode = 'specific' | 'soon';
 
 export function ScheduleDialog({
 	open,
@@ -48,27 +48,26 @@ export function ScheduleDialog({
 }: ScheduleDialogProps) {
 	const [mode, setMode] = useState<ScheduleMode>('specific');
 	const [date, setDate] = useState<Date | undefined>(undefined);
-	const [hour, setHour] = useState('12');
-	const [minute, setMinute] = useState('00');
-	const [queueInterval, setQueueInterval] = useState('4');
+	const [time, setTime] = useState('12:00');
+	const [soonMinutes, setSoonMinutes] = useState('0');
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
 	const getScheduledTime = (): number => {
-		if (mode === 'queue') {
-			// Queue mode: schedule X hours from now
-			return addHours(new Date(), parseInt(queueInterval)).getTime();
+		if (mode === 'soon') {
+			// Soon mode: schedule X minutes from now (or now + 1 min for "now")
+			const mins = parseInt(soonMinutes);
+			// Add at least 1 minute to ensure it's in the future
+			return addMinutes(new Date(), mins === 0 ? 1 : mins).getTime();
 		}
 
 		if (!date) {
 			throw new Error('Please select a date');
 		}
 
-		// Specific mode: use selected date and time
-		const scheduledDate = setMinutes(
-			setHours(startOfDay(date), parseInt(hour)),
-			parseInt(minute)
-		);
+		// Specific mode: parse time string "HH:MM"
+		const [hours, mins] = time.split(':').map(Number);
+		const scheduledDate = setMinutes(setHours(startOfDay(date), hours), mins);
 		return scheduledDate.getTime();
 	};
 
@@ -97,9 +96,8 @@ export function ScheduleDialog({
 	const resetForm = () => {
 		setMode('specific');
 		setDate(undefined);
-		setHour('12');
-		setMinute('00');
-		setQueueInterval('4');
+		setTime('12:00');
+		setSoonMinutes('0');
 		setError(null);
 	};
 
@@ -108,16 +106,15 @@ export function ScheduleDialog({
 		onOpenChange(false);
 	};
 
-	const hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
-	const minutes = ['00', '15', '30', '45'];
-	const queueIntervals = [
-		{ value: '1', label: '1 hour' },
-		{ value: '2', label: '2 hours' },
-		{ value: '4', label: '4 hours' },
-		{ value: '6', label: '6 hours' },
-		{ value: '8', label: '8 hours' },
-		{ value: '12', label: '12 hours' },
-		{ value: '24', label: '24 hours' },
+	const soonIntervals = [
+		{ value: '0', label: 'Now' },
+		{ value: '3', label: 'In 3 minutes' },
+		{ value: '5', label: 'In 5 minutes' },
+		{ value: '10', label: 'In 10 minutes' },
+		{ value: '15', label: 'In 15 minutes' },
+		{ value: '20', label: 'In 20 minutes' },
+		{ value: '30', label: 'In 30 minutes' },
+		{ value: '60', label: 'In 1 hour' },
 	];
 
 	return (
@@ -156,16 +153,16 @@ export function ScheduleDialog({
 						</div>
 						<div>
 							<RadioGroupItem
-								value="queue"
-								id="queue"
+								value="soon"
+								id="soon"
 								className="peer sr-only"
 							/>
 							<Label
-								htmlFor="queue"
+								htmlFor="soon"
 								className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
 							>
 								<Clock className="mb-3 h-6 w-6" />
-								<span className="text-sm font-medium">Add to Queue</span>
+								<span className="text-sm font-medium text-center">Post Now or Soon</span>
 							</Label>
 						</div>
 					</RadioGroup>
@@ -199,37 +196,14 @@ export function ScheduleDialog({
 								</Popover>
 							</div>
 
-							<div className="grid grid-cols-2 gap-4">
-								<div className="space-y-2">
-									<Label>Hour</Label>
-									<Select value={hour} onValueChange={setHour}>
-										<SelectTrigger>
-											<SelectValue placeholder="Hour" />
-										</SelectTrigger>
-										<SelectContent>
-											{hours.map((h) => (
-												<SelectItem key={h} value={h}>
-													{h}:00
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</div>
-								<div className="space-y-2">
-									<Label>Minute</Label>
-									<Select value={minute} onValueChange={setMinute}>
-										<SelectTrigger>
-											<SelectValue placeholder="Minute" />
-										</SelectTrigger>
-										<SelectContent>
-											{minutes.map((m) => (
-												<SelectItem key={m} value={m}>
-													:{m}
-												</SelectItem>
-											))}
-										</SelectContent>
-									</Select>
-								</div>
+							<div className="space-y-2">
+								<Label>Time</Label>
+								<input
+									type="time"
+									value={time}
+									onChange={(e) => setTime(e.target.value)}
+									className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+								/>
 							</div>
 
 							{date && (
@@ -238,8 +212,8 @@ export function ScheduleDialog({
 									<span className="font-medium text-foreground">
 										{format(
 											setMinutes(
-												setHours(startOfDay(date), parseInt(hour)),
-												parseInt(minute)
+												setHours(startOfDay(date), parseInt(time.split(':')[0])),
+												parseInt(time.split(':')[1])
 											),
 											'PPP p'
 										)}
@@ -250,13 +224,13 @@ export function ScheduleDialog({
 					) : (
 						<div className="space-y-4">
 							<div className="space-y-2">
-								<Label>Publish in</Label>
-								<Select value={queueInterval} onValueChange={setQueueInterval}>
+								<Label>When to publish</Label>
+								<Select value={soonMinutes} onValueChange={setSoonMinutes}>
 									<SelectTrigger>
-										<SelectValue placeholder="Select interval" />
+										<SelectValue placeholder="Select when" />
 									</SelectTrigger>
 									<SelectContent>
-										{queueIntervals.map((interval) => (
+										{soonIntervals.map((interval) => (
 											<SelectItem key={interval.value} value={interval.value}>
 												{interval.label}
 											</SelectItem>
@@ -269,7 +243,7 @@ export function ScheduleDialog({
 								Will be published at:{' '}
 								<span className="font-medium text-foreground">
 									{format(
-										addHours(new Date(), parseInt(queueInterval)),
+										addMinutes(new Date(), parseInt(soonMinutes) === 0 ? 1 : parseInt(soonMinutes)),
 										'PPP p'
 									)}
 								</span>
