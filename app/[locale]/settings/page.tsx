@@ -1,116 +1,95 @@
 import { redirect } from 'next/navigation';
-import { Link } from '@/i18n/routing';
-import {
-	ChevronLeft,
-	Settings,
-	Settings as SettingsIcon,
-	Shield,
-	Key,
-	Database,
-	Globe,
-} from 'lucide-react';
-import { SettingsForm } from '../../components/settings/settings-form';
-import { requireDeveloper, getSession } from '@/lib/auth-helpers';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
+import { getUserRole } from '@/lib/auth-helpers';
+import { Shield, Globe, Key, Database } from 'lucide-react';
+import { PageHeader } from '@/app/components/layout/page-header';
+import { Badge } from '@/app/components/ui/badge';
+import { Card, CardContent } from '@/app/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/app/components/ui/alert';
+import { SettingsFormNew } from '@/app/components/settings/settings-form-new';
 
 export default async function SettingsPage() {
-	const session = await getSession();
-	try {
-		requireDeveloper(session);
-	} catch (_) {
-		redirect('/');
-	}
+	const session = await getServerSession(authOptions);
 
 	if (!session?.user?.id) {
 		redirect('/auth/signin');
 	}
 
-	return (
-		<main className='min-h-screen bg-[#F8FAFC] p-4 md:p-12 lg:p-16 transition-colors duration-300'>
-			<div className='max-w-5xl mx-auto space-y-8'>
-				{/* Header */}
-				<div className='flex flex-col md:flex-row md:items-end justify-between gap-4'>
-					<div>
-						<Link
-							href='/'
-							className='inline-flex items-center gap-1 text-sm font-bold text-indigo-600 hover:text-indigo-700 transition-colors uppercase tracking-widest mb-4 group'
-						>
-							<ChevronLeft className='w-4 h-4 transition-transform group-hover:-translate-x-1' />
-							Back to Dashboard
-						</Link>
-						<h1 className='text-4xl md:text-5xl font-black text-slate-900 tracking-tight'>
-							Application{' '}
-							<span className='text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-600'>
-								Settings
-							</span>
-						</h1>
-						<p className='mt-2 text-slate-500 font-medium max-w-xl'>
-							Configure your application credentials and API keys. These
-							settings are stored locally and used to connect to external
-							services.
-						</p>
-					</div>
+	const role = getUserRole(session);
 
-					<div className='flex items-center gap-3 bg-white px-4 py-2 rounded-2xl shadow-sm border border-slate-100'>
-						<Settings className='w-4 h-4 text-amber-500 animate-spin-slow' />
-						<span className='text-xs font-black text-slate-600 uppercase tracking-widest'>
+	// Only developers can access this page
+	if (role !== 'developer') {
+		redirect('/');
+	}
+
+	return (
+		<main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+			<div className="space-y-6">
+				<PageHeader
+					title="Application Settings"
+					description="Configure your application credentials and API keys. These settings are stored locally and used to connect to external services."
+					backLink="/"
+					backLinkText="Back to Dashboard"
+					badge={
+						<Badge variant="secondary" className="gap-1">
+							<Shield className="h-3 w-3" />
 							Local Config
-						</span>
-					</div>
-				</div>
+						</Badge>
+					}
+				/>
 
 				{/* Security Notice */}
-				<div className='bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-100 rounded-2xl p-5 flex items-start gap-4'>
-					<div className='flex-shrink-0 w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center'>
-						<Shield className='w-5 h-5 text-amber-600' />
-					</div>
-					<div>
-						<h3 className='font-bold text-amber-900'>Security Notice</h3>
-						<p className='text-sm text-amber-700 mt-1'>
-							These credentials are stored in a local JSON file on this device.
-							They are <strong>not</strong> uploaded to any server. Keep this
-							device secure and do not share access.
-						</p>
-					</div>
-				</div>
+				<Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/20">
+					<Shield className="h-4 w-4 text-amber-600" />
+					<AlertTitle className="text-amber-800 dark:text-amber-100">
+						Security Notice
+					</AlertTitle>
+					<AlertDescription className="text-amber-700 dark:text-amber-300">
+						These credentials are stored in a local JSON file on this device.
+						They are <strong>not</strong> uploaded to any server. Keep this
+						device secure and do not share access.
+					</AlertDescription>
+				</Alert>
 
 				{/* Configuration Cards Legend */}
-				<div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
-					<div className='bg-white rounded-2xl p-4 border border-slate-100 flex items-center gap-3'>
-						<div className='w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center'>
-							<Globe className='w-4 h-4 text-blue-600' />
-						</div>
-						<span className='text-sm font-semibold text-slate-700'>
-							App Settings
-						</span>
-					</div>
-					<div className='bg-white rounded-2xl p-4 border border-slate-100 flex items-center gap-3'>
-						<div className='w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center'>
-							<Key className='w-4 h-4 text-red-600' />
-						</div>
-						<span className='text-sm font-semibold text-slate-700'>
-							Google Auth
-						</span>
-					</div>
-					<div className='bg-white rounded-2xl p-4 border border-slate-100 flex items-center gap-3'>
-						<div className='w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center'>
-							<Key className='w-4 h-4 text-indigo-600' />
-						</div>
-						<span className='text-sm font-semibold text-slate-700'>
-							Meta/Facebook
-						</span>
-					</div>
-					<div className='bg-white rounded-2xl p-4 border border-slate-100 flex items-center gap-3'>
-						<div className='w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center'>
-							<Database className='w-4 h-4 text-emerald-600' />
-						</div>
-						<span className='text-sm font-semibold text-slate-700'>
-							Supabase
-						</span>
-					</div>
+				<div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+					<Card>
+						<CardContent className="flex items-center gap-3 p-4">
+							<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30">
+								<Globe className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+							</div>
+							<span className="text-sm font-medium">App Settings</span>
+						</CardContent>
+					</Card>
+					<Card>
+						<CardContent className="flex items-center gap-3 p-4">
+							<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900/30">
+								<Key className="h-4 w-4 text-red-600 dark:text-red-400" />
+							</div>
+							<span className="text-sm font-medium">Google Auth</span>
+						</CardContent>
+					</Card>
+					<Card>
+						<CardContent className="flex items-center gap-3 p-4">
+							<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-900/30">
+								<Key className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+							</div>
+							<span className="text-sm font-medium">Meta/Facebook</span>
+						</CardContent>
+					</Card>
+					<Card>
+						<CardContent className="flex items-center gap-3 p-4">
+							<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
+								<Database className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+							</div>
+							<span className="text-sm font-medium">Supabase</span>
+						</CardContent>
+					</Card>
 				</div>
 
 				{/* Settings Form */}
-				<SettingsForm />
+				<SettingsFormNew />
 			</div>
 		</main>
 	);
