@@ -200,7 +200,7 @@ export function ContentHub({ initialTab = 'all' }: ContentHubProps) {
 	const isAdmin = userRole === 'admin' || userRole === 'developer';
 
 	// Get items from response (moved up for use in handlers)
-	const items: ContentItem[] = data?.data || [];
+	const items: ContentItem[] = data?.items || [];
 	const stats = data?.stats;
 	const pagination = data?.pagination;
 

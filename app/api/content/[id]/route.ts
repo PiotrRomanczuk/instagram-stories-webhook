@@ -57,7 +57,7 @@ export async function GET(
 			);
 		}
 
-		return NextResponse.json({ data: item });
+		return NextResponse.json({ item });
 	} catch (error) {
 		console.error('Error in GET /api/content/[id]:', error);
 		return NextResponse.json(
@@ -186,7 +186,7 @@ export async function PATCH(
 			);
 		}
 
-		return NextResponse.json({ data: updatedItem });
+		return NextResponse.json({ item: updatedItem });
 	} catch (error) {
 		console.error('Error in PATCH /api/content/[id]:', error);
 

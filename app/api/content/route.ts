@@ -156,7 +156,7 @@ export async function GET(req: NextRequest) {
 			role === 'admin' || role === 'developer' ? await getContentStats() : null;
 
 		return NextResponse.json({
-			data: items,
+			items,
 			pagination: {
 				page,
 				limit,
@@ -164,7 +164,6 @@ export async function GET(req: NextRequest) {
 				hasMore: offset + limit < total,
 			},
 			stats,
-			_deprecation: 'This endpoint consolidates /api/memes and /api/schedule. Old endpoints will be deprecated in 3 months.',
 		});
 	} catch (error) {
 		console.error('Error in GET /api/content:', error);
@@ -280,7 +279,7 @@ export async function POST(req: NextRequest) {
 		}
 
 		return NextResponse.json(
-			{ data: item },
+			{ item },
 			{ status: 201 },
 		);
 	} catch (error) {

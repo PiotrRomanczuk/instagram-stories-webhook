@@ -40,7 +40,7 @@ export function AdminDashboard({ userName, isDeveloper }: AdminDashboardProps) {
 		fetcher
 	);
 
-	const items = contentData?.data || contentData?.items || [];
+	const items = contentData?.items || [];
 	const users = usersData?.users || [];
 
 	// Calculate stats

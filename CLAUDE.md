@@ -55,6 +55,7 @@ npm run lint && npx tsc && npm run test
 ### Request/Response
 - Validation: Zod schemas + early returns
 - Error responses: JSON with status (400 client, 500 server)
+- **API response naming**: NEVER use `data` as response field name. Use descriptive names like `items`, `user`, `submission`. This avoids `data.data.data` chains when using SWR/React Query (which wrap responses in their own `data` property).
 
 ### Database Queries
 - Use `supabaseAdmin` client (server-side only)

@@ -194,7 +194,7 @@ export function RescheduleOverdueModal({
 				);
 				if (response.ok) {
 					const data = await response.json();
-					const fetchedPosts = data.data.map((item: ContentItem) => ({
+					const fetchedPosts = data.items.map((item: ContentItem) => ({
 						id: item.id,
 						mediaUrl: item.mediaUrl,
 						title: item.title,
