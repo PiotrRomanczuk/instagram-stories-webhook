@@ -5,25 +5,11 @@ import { MessageCircle, Clock } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/app/components/ui/avatar';
 import { Badge } from '@/app/components/ui/badge';
 import { ScrollArea } from '@/app/components/ui/scroll-area';
+import { formatRelativeTime } from '@/lib/utils';
 
 interface ConversationListProps {
 	conversations: InstagramConversation[];
 	onSelectConversation: (conversation: InstagramConversation) => void;
-}
-
-function formatTimestamp(date: Date | null) {
-	if (!date) return 'No messages';
-	const now = new Date();
-	const diff = now.getTime() - new Date(date).getTime();
-	const minutes = Math.floor(diff / 60000);
-	const hours = Math.floor(diff / 3600000);
-	const days = Math.floor(diff / 86400000);
-
-	if (minutes < 1) return 'Just now';
-	if (minutes < 60) return `${minutes}m ago`;
-	if (hours < 24) return `${hours}h ago`;
-	if (days < 7) return `${days}d ago`;
-	return new Date(date).toLocaleDateString();
 }
 
 export function ConversationListNew({
@@ -71,7 +57,7 @@ export function ConversationListNew({
 								</h3>
 								<div className="flex items-center gap-1 text-xs text-muted-foreground flex-shrink-0">
 									<Clock className="h-3 w-3" />
-									<span>{formatTimestamp(conversation.lastMessageAt)}</span>
+									<span>{formatRelativeTime(conversation.lastMessageAt)}</span>
 								</div>
 							</div>
 							<p className="text-sm text-muted-foreground truncate">

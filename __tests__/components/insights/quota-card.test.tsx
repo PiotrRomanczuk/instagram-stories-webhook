@@ -42,24 +42,22 @@ describe('QuotaCardNew', () => {
 		});
 	});
 
-	it('should not render when error occurs', async () => {
+	it('should show error state when API fails', async () => {
 		(global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
 			ok: false,
 			status: 500,
 			json: () => Promise.resolve({ error: 'Server error' }),
 		});
 
-		const { container } = render(<QuotaCardNew />);
+		render(<QuotaCardNew />);
 
-		// Wait for loading to complete
+		// Wait for error message to appear
 		await waitFor(() => {
-			expect(document.querySelector('.animate-spin')).not.toBeInTheDocument();
+			expect(screen.getByText('Server error')).toBeInTheDocument();
 		});
 
-		// Component returns null on error, so container should be empty
-		// But we need to wait a bit for it to finish
-		await new Promise((resolve) => setTimeout(resolve, 100));
-		expect(container.children.length).toBe(0);
+		// Should still have a retry button
+		expect(screen.getByRole('button', { name: /retry/i })).toBeInTheDocument();
 	});
 
 	it('should have refresh button', async () => {

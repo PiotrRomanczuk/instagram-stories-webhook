@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { RefreshCw, Battery, BatteryWarning, Loader2 } from 'lucide-react';
+import { RefreshCw, Battery, BatteryWarning, Loader2, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Progress } from '@/app/components/ui/progress';
+import { Alert, AlertDescription } from '@/app/components/ui/alert';
 import { cn } from '@/lib/utils';
 
 interface QuotaData {
@@ -45,7 +46,31 @@ export function QuotaCardNew() {
 		fetchQuota();
 	}, [fetchQuota]);
 
-	if (error) return null;
+	if (error) {
+		return (
+			<Card>
+				<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+					<CardTitle className="text-sm font-medium">API Usage Quota</CardTitle>
+					<Button
+						variant="ghost"
+						size="icon"
+						onClick={fetchQuota}
+						disabled={loading}
+						className="h-8 w-8"
+						aria-label="Retry loading quota data"
+					>
+						<RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
+					</Button>
+				</CardHeader>
+				<CardContent>
+					<Alert variant="destructive">
+						<AlertTriangle className="h-4 w-4" />
+						<AlertDescription>{error}</AlertDescription>
+					</Alert>
+				</CardContent>
+			</Card>
+		);
+	}
 
 	const total = quota?.config?.quota_total || 0;
 	const used = quota?.quota_usage || 0;
@@ -73,6 +98,7 @@ export function QuotaCardNew() {
 					onClick={fetchQuota}
 					disabled={loading}
 					className="h-8 w-8"
+					aria-label="Refresh quota data"
 				>
 					<RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
 				</Button>

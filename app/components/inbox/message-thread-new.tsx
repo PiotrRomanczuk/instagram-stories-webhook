@@ -83,7 +83,7 @@ export function MessageThreadNew({ conversation, onBack }: MessageThreadProps) {
 			{/* Header */}
 			<div className="px-4 py-3 border-b flex items-center justify-between">
 				<div className="flex items-center gap-3">
-					<Button variant="ghost" size="icon" onClick={onBack}>
+					<Button variant="ghost" size="icon" onClick={onBack} aria-label="Go back to conversations">
 						<ChevronLeft className="h-5 w-5" />
 					</Button>
 					<Avatar className="h-9 w-9">
@@ -102,7 +102,13 @@ export function MessageThreadNew({ conversation, onBack }: MessageThreadProps) {
 						<p className="text-xs text-muted-foreground">Instagram User</p>
 					</div>
 				</div>
-				<Button variant="outline" size="sm" onClick={handleSync} disabled={isSyncing}>
+				<Button
+					variant="outline"
+					size="sm"
+					onClick={handleSync}
+					disabled={isSyncing}
+					aria-label={isSyncing ? 'Syncing messages' : 'Sync messages'}
+				>
 					<RefreshCw className={cn('mr-2 h-4 w-4', isSyncing && 'animate-spin')} />
 					{isSyncing ? 'Syncing...' : 'Sync'}
 				</Button>

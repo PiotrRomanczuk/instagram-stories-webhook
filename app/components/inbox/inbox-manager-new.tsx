@@ -98,7 +98,13 @@ export function InboxManagerNew() {
 				<CardTitle className="text-lg">
 					{selectedConversation ? 'Conversation' : 'Conversations'}
 				</CardTitle>
-				<Button variant="outline" size="sm" onClick={handleSync} disabled={isSyncing}>
+				<Button
+					variant="outline"
+					size="sm"
+					onClick={handleSync}
+					disabled={isSyncing}
+					aria-label={isSyncing ? 'Syncing conversations' : 'Sync conversations'}
+				>
 					<RefreshCw className={`mr-2 h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
 					{isSyncing ? 'Syncing...' : 'Sync'}
 				</Button>

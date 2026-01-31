@@ -137,9 +137,10 @@ export function DebugPublisherNew() {
 			<CardContent className="space-y-4">
 				{/* Image Upload Section */}
 				<div className="space-y-2">
-					<Label>Image</Label>
+					<Label htmlFor="debug-image-url">Image</Label>
 					<div className="flex gap-2">
 						<Input
+							id="debug-image-url"
 							type="text"
 							value={imageUrl}
 							onChange={(e) => setImageUrl(e.target.value)}
@@ -150,6 +151,7 @@ export function DebugPublisherNew() {
 							variant="outline"
 							onClick={() => fileInputRef.current?.click()}
 							disabled={isUploading}
+							aria-label={isUploading ? 'Uploading image' : 'Upload an image'}
 						>
 							{isUploading ? (
 								<Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -164,6 +166,7 @@ export function DebugPublisherNew() {
 							accept="image/*"
 							onChange={handleFileUpload}
 							className="hidden"
+							aria-hidden="true"
 						/>
 					</div>
 
@@ -224,7 +227,7 @@ export function DebugPublisherNew() {
 							<Terminal className="h-4 w-4" />
 							Debug Logs
 						</Label>
-						<Button variant="ghost" size="sm" onClick={clearLogs}>
+						<Button variant="ghost" size="sm" onClick={clearLogs} aria-label="Clear debug logs">
 							Clear
 						</Button>
 					</div>

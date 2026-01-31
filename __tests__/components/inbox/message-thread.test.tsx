@@ -94,7 +94,7 @@ describe('MessageThreadNew', () => {
 			expect(screen.queryByText('Loading inbox...')).not.toBeInTheDocument();
 		});
 
-		const backButton = screen.getByRole('button', { name: '' }); // Button with just icon
+		const backButton = screen.getByRole('button', { name: /go back/i });
 		await user.click(backButton);
 
 		expect(mockOnBack).toHaveBeenCalled();
