@@ -15,11 +15,11 @@ export async function GET(req: NextRequest) {
 		const { searchParams } = new URL(req.url);
 		const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100);
 
-		// Get failed posts
+		// Get failed posts from content_items
 		const { data: failedPosts, error } = await supabaseAdmin
-			.from('scheduled_posts')
-			.select('id, url, caption, scheduled_time, error, retry_count, updated_at, status')
-			.eq('status', 'failed')
+			.from('content_items')
+			.select('id, media_url, caption, scheduled_time, error, retry_count, updated_at, publishing_status')
+			.eq('publishing_status', 'failed')
 			.order('updated_at', { ascending: false })
 			.limit(limit);
 
@@ -31,9 +31,21 @@ export async function GET(req: NextRequest) {
 			);
 		}
 
+		// Map to consistent format
+		const posts = (failedPosts || []).map(post => ({
+			id: post.id,
+			url: post.media_url,
+			caption: post.caption,
+			scheduled_time: post.scheduled_time,
+			error: post.error,
+			retry_count: post.retry_count,
+			updated_at: post.updated_at,
+			status: post.publishing_status,
+		}));
+
 		return NextResponse.json({
-			posts: failedPosts || [],
-			count: failedPosts?.length || 0,
+			posts,
+			count: posts.length,
 		});
 	} catch (error) {
 		console.error('Error fetching failed posts:', error);
@@ -61,10 +73,10 @@ export async function POST(req: NextRequest) {
 			);
 		}
 
-		// Verify post exists and is failed
+		// Verify post exists and is failed in content_items
 		const { data: post, error: fetchError } = await supabaseAdmin
-			.from('scheduled_posts')
-			.select('id, status')
+			.from('content_items')
+			.select('id, publishing_status')
 			.eq('id', postId)
 			.single();
 
@@ -75,14 +87,15 @@ export async function POST(req: NextRequest) {
 			);
 		}
 
-		// Reset post to pending for retry
+		// Reset post to scheduled for retry
 		const { error: updateError } = await supabaseAdmin
-			.from('scheduled_posts')
+			.from('content_items')
 			.update({
-				status: 'pending',
+				publishing_status: 'scheduled',
 				error: null,
 				retry_count: 0,
 				processing_started_at: null,
+				updated_at: new Date().toISOString(),
 			})
 			.eq('id', postId);
 
@@ -103,7 +116,7 @@ export async function POST(req: NextRequest) {
 
 		return NextResponse.json({
 			success: true,
-			message: `Post ${postId} reset to pending for retry`,
+			message: `Post ${postId} reset to scheduled for retry`,
 		});
 	} catch (error) {
 		console.error('Error retrying post:', error);

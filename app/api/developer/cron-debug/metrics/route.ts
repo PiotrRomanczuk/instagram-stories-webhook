@@ -13,50 +13,50 @@ export async function GET(req: NextRequest) {
 		const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 		const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
 
-		// Get posts in queue (pending and scheduled_time <= now)
+		// Get posts in queue (scheduled and scheduled_time <= now) from content_items
 		const { count: postsInQueue } = await supabaseAdmin
-			.from('scheduled_posts')
+			.from('content_items')
 			.select('id', { count: 'exact' })
-			.eq('status', 'pending')
-			.lte('scheduled_time', Math.floor(now.getTime() / 1000) * 1000);
+			.eq('publishing_status', 'scheduled')
+			.lte('scheduled_time', now.getTime());
 
 		// Get posts currently processing
 		const { count: postsProcessing } = await supabaseAdmin
-			.from('scheduled_posts')
+			.from('content_items')
 			.select('id', { count: 'exact' })
-			.eq('status', 'processing');
+			.eq('publishing_status', 'processing');
 
 		// Get posts stuck (processing > 5 minutes)
 		const { count: postsStuck } = await supabaseAdmin
-			.from('scheduled_posts')
+			.from('content_items')
 			.select('id', { count: 'exact' })
-			.eq('status', 'processing')
+			.eq('publishing_status', 'processing')
 			.lt('processing_started_at', fiveMinutesAgo.toISOString());
 
 		// Get failed posts in last 24h
 		const { count: failedLast24h } = await supabaseAdmin
-			.from('scheduled_posts')
+			.from('content_items')
 			.select('id', { count: 'exact' })
-			.eq('status', 'failed')
+			.eq('publishing_status', 'failed')
 			.gte('updated_at', twentyFourHoursAgo.toISOString());
 
 		// Get published posts in last 24h
 		const { data: publishedLast24h } = await supabaseAdmin
-			.from('scheduled_posts')
+			.from('content_items')
 			.select('id, published_at', { count: 'exact' })
-			.eq('status', 'published')
-			.gte('published_at', twentyFourHoursAgo.getTime());
+			.eq('publishing_status', 'published')
+			.gte('published_at', twentyFourHoursAgo.toISOString());
 
 		// Get failed and published posts for error rate calculation
 		const { data: recentPosts } = await supabaseAdmin
-			.from('scheduled_posts')
-			.select('status')
-			.in('status', ['published', 'failed', 'cancelled'])
+			.from('content_items')
+			.select('publishing_status')
+			.in('publishing_status', ['published', 'failed'])
 			.gte('updated_at', twentyFourHoursAgo.toISOString());
 
-		const failedCount = recentPosts?.filter((p) => p.status === 'failed').length || 0;
+		const failedCount = recentPosts?.filter((p) => p.publishing_status === 'failed').length || 0;
 		const successCount =
-			recentPosts?.filter((p) => p.status === 'published').length || 0;
+			recentPosts?.filter((p) => p.publishing_status === 'published').length || 0;
 		const errorRate =
 			successCount + failedCount > 0
 				? Math.round((failedCount / (successCount + failedCount)) * 100)

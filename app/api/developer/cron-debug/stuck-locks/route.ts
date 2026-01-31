@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { requireDeveloper, getUserEmail } from '@/lib/auth-helpers';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
 import { Logger } from '@/lib/utils/logger';
-import { releaseProcessingLock } from '@/lib/database/scheduled-posts';
+import { releaseContentProcessingLock } from '@/lib/content-db';
 
 const MODULE = 'cron-debug:stuck-locks';
 
@@ -15,11 +15,11 @@ export async function GET(req: NextRequest) {
 
 		const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
 
-		// Find posts stuck in processing for > 5 minutes
+		// Find posts stuck in processing for > 5 minutes from content_items
 		const { data: stuckPosts, error } = await supabaseAdmin
-			.from('scheduled_posts')
-			.select('id, url, caption, scheduled_time, processing_started_at, error, retry_count')
-			.eq('status', 'processing')
+			.from('content_items')
+			.select('id, media_url, caption, scheduled_time, processing_started_at, error, retry_count')
+			.eq('publishing_status', 'processing')
 			.lt('processing_started_at', fiveMinutesAgo)
 			.order('processing_started_at', { ascending: true });
 
@@ -33,7 +33,13 @@ export async function GET(req: NextRequest) {
 
 		// Calculate duration stuck for each post
 		const postsWithDuration = stuckPosts?.map((post) => ({
-			...post,
+			id: post.id,
+			url: post.media_url,
+			caption: post.caption,
+			scheduled_time: post.scheduled_time,
+			processing_started_at: post.processing_started_at,
+			error: post.error,
+			retry_count: post.retry_count,
 			stuckForMinutes: Math.floor(
 				(Date.now() - new Date(post.processing_started_at).getTime()) /
 					(1000 * 60),
@@ -70,10 +76,10 @@ export async function POST(req: NextRequest) {
 			);
 		}
 
-		// Verify post exists
+		// Verify post exists in content_items
 		const { data: post, error: fetchError } = await supabaseAdmin
-			.from('scheduled_posts')
-			.select('id, status')
+			.from('content_items')
+			.select('id, publishing_status')
 			.eq('id', postId)
 			.single();
 
@@ -84,14 +90,14 @@ export async function POST(req: NextRequest) {
 			);
 		}
 
-		// Release the lock
-		const released = await releaseProcessingLock(postId);
+		// Release the lock using content_items function
+		const released = await releaseContentProcessingLock(postId);
 
 		if (!released) {
 			Logger.warn(
 				MODULE,
 				`Failed to release lock for post ${postId}`,
-				{ status: post.status },
+				{ status: post.publishing_status },
 			);
 			return NextResponse.json(
 				{ error: 'Failed to release lock' },

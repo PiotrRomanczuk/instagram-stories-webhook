@@ -15,15 +15,15 @@ export async function GET(req: NextRequest) {
 		const { searchParams } = new URL(req.url);
 		const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100);
 
-		const now = Math.floor(Date.now() / 1000) * 1000;
+		const now = Date.now();
 
-		// Get pending posts that should have been processed (scheduled_time <= now)
+		// Get pending posts from content_items that should have been processed (scheduled_time <= now)
 		const { data: overduePosts, error } = await supabaseAdmin
-			.from('scheduled_posts')
+			.from('content_items')
 			.select(
-				'id, url, caption, scheduled_time, created_at, status, meme_id',
+				'id, media_url, caption, scheduled_time, created_at, publishing_status, title',
 			)
-			.eq('status', 'pending')
+			.eq('publishing_status', 'scheduled')
 			.lte('scheduled_time', now)
 			.order('scheduled_time', { ascending: true })
 			.limit(limit);
@@ -38,10 +38,16 @@ export async function GET(req: NextRequest) {
 
 		// Calculate overdue duration for each post
 		const postsWithOverdue = overduePosts?.map((post) => {
-			const scheduledTime = post.scheduled_time;
+			const scheduledTime = Number(post.scheduled_time);
 			const minutesOverdue = Math.floor((now - scheduledTime) / (1000 * 60));
 			return {
-				...post,
+				id: post.id,
+				url: post.media_url,
+				caption: post.caption,
+				title: post.title,
+				scheduled_time: scheduledTime,
+				created_at: post.created_at,
+				status: post.publishing_status,
 				minutesOverdue,
 			};
 		}) || [];

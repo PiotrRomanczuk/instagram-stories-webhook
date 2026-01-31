@@ -525,6 +525,258 @@ export async function reorderScheduledItems(
 	}
 }
 
+// ============== CRON PROCESSING ==============
+
+/**
+ * Get pending content items that are due for publishing
+ * Used by the cron job to process scheduled posts
+ */
+export async function getPendingContentItems(): Promise<ContentItem[]> {
+	try {
+		const now = Date.now();
+		const { data, error } = await supabaseAdmin
+			.from('content_items')
+			.select('*')
+			.eq('publishing_status', 'scheduled')
+			.lte('scheduled_time', now);
+
+		if (error) {
+			console.error('Error fetching pending content items:', error);
+			return [];
+		}
+
+		return (data || []).map(mapContentItemRow);
+	} catch (error) {
+		console.error('Error in getPendingContentItems:', error);
+		return [];
+	}
+}
+
+/**
+ * Acquire a processing lock on a content item
+ * Returns true if lock was acquired, false if already being processed
+ */
+export async function acquireContentProcessingLock(
+	id: string,
+): Promise<boolean> {
+	const now = new Date();
+	const lockTimeout = 5 * 60 * 1000; // 5 minutes
+	const timeoutThreshold = new Date(Date.now() - lockTimeout);
+
+	try {
+		// Step 1: Fetch current state
+		const { data: item, error: fetchError } = await supabaseAdmin
+			.from('content_items')
+			.select('publishing_status, processing_started_at')
+			.eq('id', id)
+			.single();
+
+		if (fetchError || !item) {
+			console.log(`[Lock] Content item ${id} not found`);
+			return false;
+		}
+
+		const status = item.publishing_status;
+		const processingStartedAt = item.processing_started_at
+			? new Date(item.processing_started_at)
+			: null;
+
+		// Step 2: Determine if we can acquire the lock
+		const canAcquire =
+			status === 'scheduled' ||
+			(status === 'processing' &&
+				processingStartedAt &&
+				processingStartedAt < timeoutThreshold);
+
+		if (!canAcquire) {
+			console.log(
+				`[Lock] Cannot acquire lock for content ${id}: status=${status}`,
+			);
+			return false;
+		}
+
+		// Step 3: Acquire the lock
+		const { error: updateError } = await supabaseAdmin
+			.from('content_items')
+			.update({
+				publishing_status: 'processing',
+				processing_started_at: now.toISOString(),
+				updated_at: now.toISOString(),
+			})
+			.eq('id', id);
+
+		if (updateError) {
+			console.error(`[Lock] Failed to acquire lock for content ${id}:`, updateError);
+			return false;
+		}
+
+		console.log(`[Lock] ✅ Acquired lock for content ${id}`);
+		return true;
+	} catch (error) {
+		console.error(`[Lock] Error acquiring lock for content ${id}:`, error);
+		return false;
+	}
+}
+
+/**
+ * Release a processing lock on a content item
+ * Used when processing fails and we want to allow retry
+ */
+export async function releaseContentProcessingLock(id: string): Promise<boolean> {
+	try {
+		const { error } = await supabaseAdmin
+			.from('content_items')
+			.update({
+				publishing_status: 'scheduled',
+				processing_started_at: null,
+				updated_at: new Date().toISOString(),
+			})
+			.eq('id', id);
+
+		if (error) {
+			console.error('Error releasing content processing lock:', error);
+			return false;
+		}
+
+		return true;
+	} catch (error) {
+		console.error('Error in releaseContentProcessingLock:', error);
+		return false;
+	}
+}
+
+/**
+ * Mark content item as published
+ */
+export async function markContentPublished(
+	id: string,
+	igMediaId: string,
+	contentHash?: string,
+): Promise<boolean> {
+	try {
+		const { error } = await supabaseAdmin
+			.from('content_items')
+			.update({
+				publishing_status: 'published',
+				published_at: new Date().toISOString(),
+				ig_media_id: igMediaId,
+				content_hash: contentHash,
+				error: null,
+				updated_at: new Date().toISOString(),
+			})
+			.eq('id', id);
+
+		if (error) {
+			console.error('Error marking content as published:', error);
+			return false;
+		}
+
+		return true;
+	} catch (error) {
+		console.error('Error in markContentPublished:', error);
+		return false;
+	}
+}
+
+/**
+ * Mark content item as failed
+ */
+export async function markContentFailed(
+	id: string,
+	errorMessage: string,
+	retryCount?: number,
+): Promise<boolean> {
+	try {
+		const updates: Record<string, any> = {
+			error: errorMessage,
+			updated_at: new Date().toISOString(),
+		};
+
+		// If max retries reached, mark as failed; otherwise keep as scheduled for retry
+		if (retryCount !== undefined && retryCount >= 3) {
+			updates.publishing_status = 'failed';
+		} else {
+			updates.publishing_status = 'scheduled';
+			updates.processing_started_at = null;
+		}
+
+		if (retryCount !== undefined) {
+			updates.retry_count = retryCount;
+		}
+
+		const { error } = await supabaseAdmin
+			.from('content_items')
+			.update(updates)
+			.eq('id', id);
+
+		if (error) {
+			console.error('Error marking content as failed:', error);
+			return false;
+		}
+
+		return true;
+	} catch (error) {
+		console.error('Error in markContentFailed:', error);
+		return false;
+	}
+}
+
+/**
+ * Mark content item as cancelled (e.g., duplicate detected)
+ */
+export async function markContentCancelled(
+	id: string,
+	reason: string,
+): Promise<boolean> {
+	try {
+		const { error } = await supabaseAdmin
+			.from('content_items')
+			.update({
+				publishing_status: 'failed',
+				error: reason,
+				updated_at: new Date().toISOString(),
+			})
+			.eq('id', id);
+
+		if (error) {
+			console.error('Error marking content as cancelled:', error);
+			return false;
+		}
+
+		return true;
+	} catch (error) {
+		console.error('Error in markContentCancelled:', error);
+		return false;
+	}
+}
+
+/**
+ * Get a single content item by ID for processing
+ */
+export async function getContentItemForProcessing(
+	id: string,
+): Promise<ContentItem | null> {
+	try {
+		const { data, error } = await supabaseAdmin
+			.from('content_items')
+			.select('*')
+			.eq('id', id)
+			.or('publishing_status.eq.scheduled,publishing_status.eq.processing')
+			.single();
+
+		if (error) {
+			if (error.code === 'PGRST116') return null; // Not found
+			console.error('Error fetching content item for processing:', error);
+			return null;
+		}
+
+		return data ? mapContentItemRow(data) : null;
+	} catch (error) {
+		console.error('Error in getContentItemForProcessing:', error);
+		return null;
+	}
+}
+
 // ============== ADMIN STATISTICS ==============
 
 /**
