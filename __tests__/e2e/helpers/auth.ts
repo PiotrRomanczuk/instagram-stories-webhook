@@ -30,107 +30,107 @@ export const TEST_USERS = {
 };
 
 /**
- * Sign in as admin user
+ * Sign in as admin user with retry logic
  */
-export async function signInAsAdmin(page: Page) {
-	await page.goto('/auth/signin', { waitUntil: 'domcontentloaded' });
+export async function signInAsAdmin(page: Page, maxRetries = 3) {
+	for (let attempt = 1; attempt <= maxRetries; attempt++) {
+		try {
+			await page.goto('/auth/signin', { waitUntil: 'domcontentloaded' });
 
-	// Wait for React hydration - the "Development Only" text only appears after useEffect runs
-	const devOnlyText = page.locator('text=Development Only');
-	const testBtn = page.getByRole('button', { name: 'Test Admin' });
+			// Wait for React hydration - the "Development Only" text only appears after useEffect runs
+			const devOnlyText = page.locator('text=Development Only');
+			const testBtn = page.getByRole('button', { name: 'Test Admin' });
 
-	try {
-		// Wait for hydration indicator first (5s), then button (2s)
-		await devOnlyText.waitFor({ state: 'visible', timeout: 5000 });
-		await testBtn.waitFor({ state: 'visible', timeout: 2000 });
-		// Small delay to ensure React event handlers are attached
-		await page.waitForTimeout(500);
-		// Click and wait for navigation to start
-		await Promise.all([
-			page.waitForURL(
-				(url) =>
-					url.pathname === '/' ||
-					url.pathname === '/en' ||
-					url.pathname === '/en/',
-				{ timeout: 15000, waitUntil: 'domcontentloaded' },
-			),
-			testBtn.click(),
-		]);
-		return;
-	} catch (error) {
-		// Log the actual error for debugging
-		console.warn('Test Admin sign-in failed:', error instanceof Error ? error.message : error);
+			// Wait for hydration indicator first, then button
+			await devOnlyText.waitFor({ state: 'visible', timeout: 8000 });
+			await testBtn.waitFor({ state: 'visible', timeout: 3000 });
+
+			// Ensure button is clickable (not disabled, visible, stable)
+			await testBtn.waitFor({ state: 'visible', timeout: 2000 });
+			await page.waitForTimeout(300);
+
+			// Click and wait for navigation
+			await Promise.all([
+				page.waitForURL(
+					(url) =>
+						url.pathname === '/' ||
+						url.pathname === '/en' ||
+						url.pathname === '/en/',
+					{ timeout: 20000, waitUntil: 'domcontentloaded' },
+				),
+				testBtn.click(),
+			]);
+
+			// Verify we're actually signed in
+			const currentUrl = page.url();
+			if (!currentUrl.includes('/auth/signin')) {
+				return; // Success
+			}
+		} catch (error) {
+			const errorMsg = error instanceof Error ? error.message : String(error);
+			console.warn(`Test Admin sign-in attempt ${attempt}/${maxRetries} failed:`, errorMsg);
+
+			if (attempt < maxRetries) {
+				// Wait before retry with exponential backoff
+				await page.waitForTimeout(1000 * attempt);
+			}
+		}
 	}
 
-	// Fallback: Mock Google OAuth callback
-	await page.evaluate((email) => {
-		// This is a simplified mock - in real tests, you'd need to properly mock the OAuth flow
-		localStorage.setItem(
-			'test-auth-user',
-			JSON.stringify({
-				email,
-				name: 'Test Admin',
-				role: 'admin',
-			}),
-		);
-	}, TEST_USERS.admin.email);
-
-	await page.goto('/');
-	await page.waitForLoadState('domcontentloaded');
+	// All retries failed - throw error instead of silent fallback
+	throw new Error(`Failed to sign in as admin after ${maxRetries} attempts`);
 }
 
 /**
- * Sign in as regular user
+ * Sign in as regular user with retry logic
  */
-export async function signInAsUser(page: Page) {
-	await page.goto('/auth/signin', { waitUntil: 'domcontentloaded' });
+export async function signInAsUser(page: Page, maxRetries = 3) {
+	for (let attempt = 1; attempt <= maxRetries; attempt++) {
+		try {
+			await page.goto('/auth/signin', { waitUntil: 'domcontentloaded' });
 
-	// Wait for React hydration - the "Development Only" text only appears after useEffect runs
-	const devOnlyText = page.locator('text=Development Only');
-	const testBtn = page.getByRole('button', { name: 'Test User' });
+			// Wait for React hydration - the "Development Only" text only appears after useEffect runs
+			const devOnlyText = page.locator('text=Development Only');
+			const testBtn = page.getByRole('button', { name: 'Test User' });
 
-	try {
-		// Wait for hydration indicator first (5s), then button (2s)
-		await devOnlyText.waitFor({ state: 'visible', timeout: 5000 });
-		await testBtn.waitFor({ state: 'visible', timeout: 2000 });
-		// Small delay to ensure React event handlers are attached
-		await page.waitForTimeout(500);
-		// Click and wait for navigation to start
-		await Promise.all([
-			page.waitForURL(
-				(url) =>
-					url.pathname === '/' ||
-					url.pathname === '/en' ||
-					url.pathname === '/en/',
-				{ timeout: 15000, waitUntil: 'domcontentloaded' },
-			),
-			testBtn.click(),
-		]);
-		return;
-	} catch (error) {
-		// Log the actual error for debugging
-		console.warn('Test User sign-in failed:', error instanceof Error ? error.message : error);
+			// Wait for hydration indicator first, then button
+			await devOnlyText.waitFor({ state: 'visible', timeout: 8000 });
+			await testBtn.waitFor({ state: 'visible', timeout: 3000 });
+
+			// Ensure button is clickable (not disabled, visible, stable)
+			await testBtn.waitFor({ state: 'visible', timeout: 2000 });
+			await page.waitForTimeout(300);
+
+			// Click and wait for navigation
+			await Promise.all([
+				page.waitForURL(
+					(url) =>
+						url.pathname === '/' ||
+						url.pathname === '/en' ||
+						url.pathname === '/en/',
+					{ timeout: 20000, waitUntil: 'domcontentloaded' },
+				),
+				testBtn.click(),
+			]);
+
+			// Verify we're actually signed in
+			const currentUrl = page.url();
+			if (!currentUrl.includes('/auth/signin')) {
+				return; // Success
+			}
+		} catch (error) {
+			const errorMsg = error instanceof Error ? error.message : String(error);
+			console.warn(`Test User sign-in attempt ${attempt}/${maxRetries} failed:`, errorMsg);
+
+			if (attempt < maxRetries) {
+				// Wait before retry with exponential backoff
+				await page.waitForTimeout(1000 * attempt);
+			}
+		}
 	}
 
-	// Fallback check for dev mode failure
-	console.warn(
-		'Test User button not found, falling back to localStorage mock (API calls may fail)',
-	);
-
-	// Mock Google OAuth callback
-	await page.evaluate((email) => {
-		localStorage.setItem(
-			'test-auth-user',
-			JSON.stringify({
-				email,
-				name: 'Test User',
-				role: 'user',
-			}),
-		);
-	}, TEST_USERS.user.email);
-
-	await page.goto('/');
-	await page.waitForLoadState('domcontentloaded');
+	// All retries failed - throw error instead of silent fallback
+	throw new Error(`Failed to sign in as user after ${maxRetries} attempts`);
 }
 
 /**
