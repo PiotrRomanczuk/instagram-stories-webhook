@@ -45,7 +45,7 @@ export function SfStatsCard({
 		<SfCard className={cn('', className)}>
 			<div className="flex items-start justify-between">
 				<div className="space-y-2">
-					<p className="text-sm font-medium text-[var(--sf-text-secondary)]">
+					<p className="text-sm font-medium text-gray-500 dark:text-[var(--sf-text-secondary)]">
 						{label}
 					</p>
 					<div className="flex items-baseline gap-2">
@@ -62,7 +62,7 @@ export function SfStatsCard({
 								{trend.isPositive ? '+' : ''}
 								{trend.value}%
 								{trend.label && (
-									<span className="ml-1 text-[var(--sf-text-secondary)]">
+									<span className="ml-1 text-gray-500 dark:text-[var(--sf-text-secondary)]">
 										{trend.label}
 									</span>
 								)}
@@ -70,7 +70,7 @@ export function SfStatsCard({
 						)}
 					</div>
 					{description && (
-						<p className="text-xs text-[var(--sf-text-secondary)]">
+						<p className="text-xs text-gray-500 dark:text-[var(--sf-text-secondary)]">
 							{description}
 						</p>
 					)}

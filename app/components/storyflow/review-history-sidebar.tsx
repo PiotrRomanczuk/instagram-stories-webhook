@@ -28,13 +28,13 @@ export function ReviewHistorySidebar({ history, className }: ReviewHistorySideba
 	return (
 		<aside
 			className={cn(
-				'w-80 border-r border-[#23482f] bg-[#112217] flex-col hidden xl:flex',
+				'w-80 border-r border-slate-200 dark:border-[#2a3649] bg-slate-50 dark:bg-[#111722] flex-col hidden xl:flex',
 				className
 			)}
 		>
 			{/* Header */}
-			<div className="p-4 border-b border-[#23482f]">
-				<h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest">
+			<div className="p-4 border-b border-slate-200 dark:border-[#2a3649]">
+				<h3 className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
 					Review History
 				</h3>
 			</div>
@@ -59,8 +59,8 @@ export function ReviewHistorySidebar({ history, className }: ReviewHistorySideba
 			</div>
 
 			{/* Keyboard Shortcuts */}
-			<div className="p-4 bg-[#1a3323] mt-auto">
-				<div className="flex items-center gap-2 text-slate-400 text-xs mb-3">
+			<div className="p-4 bg-blue-50 dark:bg-[#232f48] mt-auto">
+				<div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs mb-3">
 					<Keyboard className="h-4 w-4" />
 					<span>Power User Shortcuts</span>
 				</div>
@@ -85,16 +85,16 @@ function HistoryItem({ item, hasImageError, onImageError }: HistoryItemProps) {
 	const isApproved = item.status === 'approved';
 
 	return (
-		<div className="group flex gap-3 p-2 rounded-lg hover:bg-[#23482f] transition-all cursor-pointer">
+		<div className="group flex gap-3 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-[#232f48] transition-all cursor-pointer">
 			{/* Thumbnail */}
 			<div
 				className={cn(
-					'w-16 h-24 rounded bg-slate-800 flex-shrink-0 overflow-hidden relative',
+					'w-16 h-24 rounded bg-slate-200 dark:bg-slate-800 flex-shrink-0 overflow-hidden relative',
 					!isApproved && 'border-2 border-red-500/50'
 				)}
 			>
 				{hasImageError ? (
-					<div className="w-full h-full flex items-center justify-center bg-slate-700">
+					<div className="w-full h-full flex items-center justify-center bg-slate-300 dark:bg-slate-700">
 						<span className="text-xs text-slate-500">No image</span>
 					</div>
 				) : (
@@ -109,7 +109,7 @@ function HistoryItem({ item, hasImageError, onImageError }: HistoryItemProps) {
 				<div
 					className={cn(
 						'absolute top-1 right-1 rounded-full p-0.5',
-						isApproved ? 'bg-[#13ec5b]' : 'bg-red-500'
+						isApproved ? 'bg-[#2b6cee]' : 'bg-red-500'
 					)}
 				>
 					{isApproved ? (
@@ -122,8 +122,8 @@ function HistoryItem({ item, hasImageError, onImageError }: HistoryItemProps) {
 
 			{/* Details */}
 			<div className="flex flex-col justify-center min-w-0">
-				<p className="text-sm font-semibold text-white truncate w-40">{item.title}</p>
-				<p className="text-xs text-slate-400">
+				<p className="text-sm font-semibold text-slate-900 dark:text-white truncate w-40">{item.title}</p>
+				<p className="text-xs text-slate-500 dark:text-slate-400">
 					{isApproved ? 'Approved' : 'Rejected'} {formatRelativeTime(item.timestamp)}
 				</p>
 			</div>
@@ -138,11 +138,11 @@ interface ShortcutKeyProps {
 
 function ShortcutKey({ keyLabel, action }: ShortcutKeyProps) {
 	return (
-		<div className="flex items-center gap-2 bg-black/20 p-2 rounded border border-white/10">
-			<kbd className="bg-slate-700 px-1.5 py-0.5 rounded text-[10px] font-bold text-white">
+		<div className="flex items-center gap-2 bg-white dark:bg-black/20 p-2 rounded border border-slate-200 dark:border-white/10">
+			<kbd className="bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded text-[10px] font-bold text-slate-700 dark:text-white">
 				{keyLabel}
 			</kbd>
-			<span className="text-[11px] text-slate-400">{action}</span>
+			<span className="text-[11px] text-slate-500 dark:text-slate-400">{action}</span>
 		</div>
 	);
 }

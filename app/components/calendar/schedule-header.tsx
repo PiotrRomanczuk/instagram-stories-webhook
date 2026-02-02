@@ -83,7 +83,7 @@ export function ScheduleHeader({
 	};
 
 	return (
-		<header className="flex h-16 shrink-0 items-center justify-between border-b border-slate-800 bg-[#101622] px-6">
+		<header className="flex h-16 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-6 dark:border-slate-800 dark:bg-[#101622]">
 			{/* Left side: Date navigation */}
 			<div className="flex items-center gap-6">
 				<div className="flex items-center gap-2">
@@ -91,33 +91,33 @@ export function ScheduleHeader({
 						variant="ghost"
 						size="icon"
 						onClick={handlePrevious}
-						className="h-8 w-8 text-slate-400 hover:bg-slate-800 hover:text-white"
+						className="h-8 w-8 text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
 					>
 						<ChevronLeft className="h-5 w-5" />
 					</Button>
-					<h2 className="min-w-[180px] text-center text-lg font-bold text-white">
+					<h2 className="min-w-[180px] text-center text-lg font-bold text-gray-900 dark:text-white">
 						{getDateRangeText()}
 					</h2>
 					<Button
 						variant="ghost"
 						size="icon"
 						onClick={handleNext}
-						className="h-8 w-8 text-slate-400 hover:bg-slate-800 hover:text-white"
+						className="h-8 w-8 text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
 					>
 						<ChevronRight className="h-5 w-5" />
 					</Button>
 				</div>
 
 				{/* View mode toggle */}
-				<div className="flex rounded-lg bg-slate-800 p-1">
+				<div className="flex rounded-lg bg-gray-100 p-1 dark:bg-slate-800">
 					{(['day', 'week', 'month'] as ViewMode[]).map((mode) => (
 						<button
 							key={mode}
 							onClick={() => onViewModeChange(mode)}
 							className={`rounded-md px-3 py-1 text-xs font-medium capitalize transition-colors ${
 								viewMode === mode
-									? 'bg-slate-700 text-white shadow-sm'
-									: 'text-slate-400 hover:text-white'
+									? 'bg-white text-gray-900 shadow-sm dark:bg-slate-700 dark:text-white'
+									: 'text-gray-500 hover:text-gray-900 dark:text-slate-400 dark:hover:text-white'
 							}`}
 						>
 							{mode}
@@ -129,7 +129,7 @@ export function ScheduleHeader({
 					variant="ghost"
 					size="sm"
 					onClick={handleToday}
-					className="text-xs text-slate-400 hover:bg-slate-800 hover:text-white"
+					className="text-xs text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
 				>
 					Today
 				</Button>
@@ -139,12 +139,12 @@ export function ScheduleHeader({
 			<div className="flex items-center gap-4">
 				{onSearchChange && (
 					<div className="relative">
-						<Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+						<Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-slate-400" />
 						<Input
 							placeholder="Search events..."
 							value={searchQuery}
 							onChange={(e) => onSearchChange(e.target.value)}
-							className="w-64 border-none bg-slate-800 pl-10 text-sm text-white placeholder:text-slate-400 focus-visible:ring-[#2b6cee]"
+							className="w-64 border-gray-200 bg-gray-50 pl-10 text-sm text-gray-900 placeholder:text-gray-400 focus-visible:ring-[#2b6cee] dark:border-none dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-400"
 						/>
 					</div>
 				)}
@@ -163,7 +163,7 @@ export function ScheduleHeader({
 					<Button
 						onClick={onNewSchedule}
 						variant="outline"
-						className="gap-2 border-slate-700 bg-slate-800 text-white hover:bg-slate-700"
+						className="gap-2 border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700"
 					>
 						<Plus className="h-4 w-4" />
 						New Schedule

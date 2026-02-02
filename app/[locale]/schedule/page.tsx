@@ -18,5 +18,9 @@ export default async function SchedulePage() {
 		redirect('/');
 	}
 
-	return <ScheduleCalendarLayout />;
+	return (
+		<main className="min-h-screen bg-white dark:bg-[#101622]">
+			<ScheduleCalendarLayout />
+		</main>
+	);
 }

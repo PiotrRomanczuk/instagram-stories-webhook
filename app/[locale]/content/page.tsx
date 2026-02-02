@@ -23,7 +23,7 @@ export default function ContentPage() {
 	// If list view is requested, use the original ContentQueueLayout
 	if (view === 'list') {
 		return (
-			<main className="min-h-screen bg-[#101622]">
+			<main className="min-h-screen bg-gray-50 dark:bg-[#101622]">
 				<ContentQueueLayout initialTab={tab === 'review' ? 'review' : 'all'} />
 			</main>
 		);

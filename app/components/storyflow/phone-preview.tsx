@@ -58,7 +58,7 @@ export function PhonePreview({ item, onImageError, className }: PhonePreviewProp
 								<>
 									{!imageLoaded && (
 										<div className="absolute inset-0 flex items-center justify-center bg-slate-800">
-											<div className="h-8 w-8 border-2 border-[#13ec5b] border-t-transparent rounded-full animate-spin" />
+											<div className="h-8 w-8 border-2 border-[#2b6cee] border-t-transparent rounded-full animate-spin" />
 										</div>
 									)}
 									<img

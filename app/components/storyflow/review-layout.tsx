@@ -160,8 +160,8 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 		return (
 			<div className={cn('flex h-[calc(100vh-120px)] items-center justify-center', className)}>
 				<div className="text-center space-y-4">
-					<Loader2 className="h-12 w-12 animate-spin text-[#13ec5b] mx-auto" />
-					<p className="text-slate-400 font-medium">Loading stories...</p>
+					<Loader2 className="h-12 w-12 animate-spin text-[#2b6cee] mx-auto" />
+					<p className="text-slate-500 dark:text-slate-400 font-medium">Loading stories...</p>
 				</div>
 			</div>
 		);
@@ -172,11 +172,11 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 		return (
 			<div className={cn('flex flex-col items-center justify-center h-[calc(100vh-120px)]', className)}>
 				<AlertTriangle className="h-12 w-12 text-red-400 mb-4" />
-				<h3 className="text-lg font-semibold text-white">Failed to load stories</h3>
-				<p className="text-sm text-slate-400 mt-2 mb-4">
+				<h3 className="text-lg font-semibold text-slate-900 dark:text-white">Failed to load stories</h3>
+				<p className="text-sm text-slate-500 dark:text-slate-400 mt-2 mb-4">
 					{error.message || 'An error occurred'}
 				</p>
-				<Button onClick={refreshList} variant="outline" className="border-[#23482f] hover:bg-[#23482f]">
+				<Button onClick={refreshList} variant="outline" className="border-slate-300 dark:border-[#2a3649] hover:bg-slate-100 dark:hover:bg-[#232f48]">
 					Try Again
 				</Button>
 			</div>
@@ -187,11 +187,11 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 	if (items.length === 0) {
 		return (
 			<div className={cn('flex flex-col items-center justify-center h-[calc(100vh-120px)]', className)}>
-				<div className="h-20 w-20 rounded-full bg-[#1a3323] flex items-center justify-center mb-4">
-					<Inbox className="h-10 w-10 text-[#13ec5b]" />
+				<div className="h-20 w-20 rounded-full bg-blue-100 dark:bg-[#232f48] flex items-center justify-center mb-4">
+					<Inbox className="h-10 w-10 text-[#2b6cee]" />
 				</div>
-				<h3 className="text-lg font-semibold text-white">All caught up!</h3>
-				<p className="text-sm text-slate-400 mt-2">
+				<h3 className="text-lg font-semibold text-slate-900 dark:text-white">All caught up!</h3>
+				<p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
 					No stories pending review
 				</p>
 			</div>
@@ -199,17 +199,17 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 	}
 
 	return (
-		<div className={cn('flex h-[calc(100vh-120px)] bg-[#102216]', className)}>
+		<div className={cn('flex h-[calc(100vh-120px)] bg-white dark:bg-[#101622]', className)}>
 			{/* Left Sidebar: Review History */}
 			<ReviewHistorySidebar history={reviewHistory} />
 
 			{/* Main Content */}
-			<main className="flex-1 flex flex-col bg-black/20 overflow-y-auto">
+			<main className="flex-1 flex flex-col bg-slate-50 dark:bg-black/20 overflow-y-auto">
 				<div className="max-w-4xl mx-auto w-full p-8 flex flex-col items-center">
 					{/* Header */}
 					<div className="mb-6 text-center">
-						<h1 className="text-2xl font-bold text-white mb-1">Story Review Queue</h1>
-						<p className="text-slate-400 text-sm">
+						<h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">Story Review Queue</h1>
+						<p className="text-slate-500 dark:text-slate-400 text-sm">
 							{remainingCount} {remainingCount === 1 ? 'story' : 'stories'} pending review
 						</p>
 					</div>

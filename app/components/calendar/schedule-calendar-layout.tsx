@@ -2,7 +2,7 @@
 
 /**
  * Schedule Calendar Layout - Main layout for the redesigned schedule page
- * Combines left sidebar, calendar grid, and ready-to-schedule panel
+ * Uses the standard app navbar and integrates with the main layout
  */
 
 import { useState, useCallback, useMemo } from 'react';
@@ -11,9 +11,8 @@ import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent } from '@dnd-kit/core';
 import { toast } from 'sonner';
-import { setHours, getHours, format, startOfWeek, addDays } from 'date-fns';
+import { setHours, format } from 'date-fns';
 
-import { ScheduleSidebar } from './schedule-sidebar';
 import { ScheduleHeader, ViewMode } from './schedule-header';
 import { ScheduleCalendarGrid } from './schedule-calendar-grid';
 import { ReadyToScheduleSidebar } from './ready-to-schedule-sidebar';
@@ -79,22 +78,6 @@ export function ScheduleCalendarLayout() {
 			return isApproved;
 		});
 	}, [allItems]);
-
-	// Calculate week dates for display
-	const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
-	const weekDates = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
-
-	// Count items per day
-	const itemCounts = useMemo(() => {
-		const counts: Record<string, number> = {};
-		scheduledItems.forEach((item) => {
-			if (item.scheduledTime) {
-				const dateKey = format(new Date(item.scheduledTime), 'yyyy-MM-dd');
-				counts[dateKey] = (counts[dateKey] || 0) + 1;
-			}
-		});
-		return counts;
-	}, [scheduledItems]);
 
 	const totalScheduled = scheduledItems.filter(
 		(item) => item.publishingStatus === 'scheduled'
@@ -187,10 +170,7 @@ export function ScheduleCalendarLayout() {
 
 	return (
 		<DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-			<div className="flex h-screen w-full overflow-hidden bg-[#101622] text-slate-100">
-				{/* Left Sidebar - Navigation */}
-				<ScheduleSidebar />
-
+			<div className="flex h-[calc(100vh-4rem)] w-full overflow-hidden bg-gray-50 text-gray-900 dark:bg-[#101622] dark:text-slate-100">
 				{/* Main Content Area */}
 				<main className="flex flex-1 flex-col overflow-hidden">
 					{/* Top Header */}
@@ -222,7 +202,7 @@ export function ScheduleCalendarLayout() {
 					</div>
 
 					{/* Footer Legend */}
-					<footer className="flex items-center justify-between border-t border-slate-800 bg-[#0d1421] px-6 py-2 text-[10px] text-slate-500">
+					<footer className="flex items-center justify-between border-t border-gray-200 bg-gray-100 px-6 py-2 text-[10px] text-gray-500 dark:border-slate-800 dark:bg-[#0d1421] dark:text-slate-500">
 						<div className="flex gap-6">
 							<div className="flex items-center gap-2">
 								<span className="h-2 w-2 rounded-full bg-[#2b6cee]" />
@@ -243,7 +223,7 @@ export function ScheduleCalendarLayout() {
 						</div>
 						<div className="font-medium">
 							Total Scheduled:{' '}
-							<span className="text-white">{totalScheduled}</span>
+							<span className="text-gray-900 dark:text-white">{totalScheduled}</span>
 						</div>
 					</footer>
 				</main>

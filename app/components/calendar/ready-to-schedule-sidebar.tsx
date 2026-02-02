@@ -61,7 +61,7 @@ function ReadyAssetCard({ item, isScheduled, onClick }: ReadyAssetCardProps) {
 			{/* Background */}
 			{!imageError ? (
 				<div
-					className="absolute inset-0 bg-cover bg-center bg-slate-800"
+					className="absolute inset-0 bg-cover bg-center bg-gray-200 dark:bg-slate-800"
 					style={{ backgroundImage: `url(${item.mediaUrl})` }}
 				>
 					<img
@@ -72,8 +72,8 @@ function ReadyAssetCard({ item, isScheduled, onClick }: ReadyAssetCardProps) {
 					/>
 				</div>
 			) : (
-				<div className="absolute inset-0 flex items-center justify-center bg-slate-800">
-					<span className="text-xs text-slate-500">No preview</span>
+				<div className="absolute inset-0 flex items-center justify-center bg-gray-200 dark:bg-slate-800">
+					<span className="text-xs text-gray-500 dark:text-slate-500">No preview</span>
 				</div>
 			)}
 
@@ -155,12 +155,12 @@ export function ReadyToScheduleSidebar({
 	];
 
 	return (
-		<aside className="flex h-full w-80 flex-col border-l border-slate-800 bg-[#101622]">
+		<aside className="flex h-full w-80 flex-col border-l border-gray-200 bg-white dark:border-slate-800 dark:bg-[#101622]">
 			{/* Header */}
-			<div className="border-b border-slate-800 p-4">
-				<h3 className="flex items-center justify-between text-sm font-bold text-white">
+			<div className="border-b border-gray-200 p-4 dark:border-slate-800">
+				<h3 className="flex items-center justify-between text-sm font-bold text-gray-900 dark:text-white">
 					Ready to Schedule
-					<span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] text-slate-400">
+					<span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] text-gray-500 dark:bg-slate-800 dark:text-slate-400">
 						{readyItems.length} assets
 					</span>
 				</h3>
@@ -175,7 +175,7 @@ export function ReadyToScheduleSidebar({
 								'flex-1 border-b-2 py-1.5 text-[10px] font-bold transition-colors',
 								activeTab === tab.key
 									? 'border-[#2b6cee] text-[#2b6cee]'
-									: 'border-transparent text-slate-500 hover:text-slate-300'
+									: 'border-transparent text-gray-500 hover:text-gray-700 dark:text-slate-500 dark:hover:text-slate-300'
 							)}
 						>
 							{tab.label}
@@ -188,11 +188,11 @@ export function ReadyToScheduleSidebar({
 			<div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
 				{filteredItems.length === 0 ? (
 					<div className="flex flex-col items-center justify-center py-12 text-center">
-						<Clock className="h-10 w-10 text-slate-600 mb-3" />
-						<p className="text-sm font-medium text-slate-400">
+						<Clock className="h-10 w-10 text-gray-400 mb-3 dark:text-slate-600" />
+						<p className="text-sm font-medium text-gray-500 dark:text-slate-400">
 							No content ready
 						</p>
-						<p className="mt-1 text-xs text-slate-500">
+						<p className="mt-1 text-xs text-gray-400 dark:text-slate-500">
 							Approved submissions will appear here
 						</p>
 					</div>
@@ -216,9 +216,9 @@ export function ReadyToScheduleSidebar({
 			</div>
 
 			{/* Footer - Density controls */}
-			<div className="border-t border-slate-800 bg-[#0d1421] p-4">
+			<div className="border-t border-gray-200 bg-gray-50 p-4 dark:border-slate-800 dark:bg-[#0d1421]">
 				<div className="flex items-center justify-between">
-					<span className="text-[10px] font-bold uppercase text-slate-500">
+					<span className="text-[10px] font-bold uppercase text-gray-500 dark:text-slate-500">
 						View Density
 					</span>
 					<div className="flex gap-2">
@@ -227,8 +227,8 @@ export function ReadyToScheduleSidebar({
 							className={cn(
 								'rounded-md p-1.5 transition-colors',
 								viewDensity === 'comfortable'
-									? 'bg-slate-800 text-[#2b6cee]'
-									: 'text-slate-400 hover:bg-slate-800'
+									? 'bg-gray-200 text-[#2b6cee] dark:bg-slate-800'
+									: 'text-gray-400 hover:bg-gray-200 dark:text-slate-400 dark:hover:bg-slate-800'
 							)}
 							title="Comfortable view"
 						>
@@ -239,8 +239,8 @@ export function ReadyToScheduleSidebar({
 							className={cn(
 								'rounded-md p-1.5 transition-colors',
 								viewDensity === 'compact'
-									? 'bg-slate-800 text-[#2b6cee]'
-									: 'text-slate-400 hover:bg-slate-800'
+									? 'bg-gray-200 text-[#2b6cee] dark:bg-slate-800'
+									: 'text-gray-400 hover:bg-gray-200 dark:text-slate-400 dark:hover:bg-slate-800'
 							)}
 							title="Compact view"
 						>

@@ -30,7 +30,7 @@ function getCountBadgeStyle(status: PublishingStatus): string {
 		case 'failed':
 			return 'bg-red-500/20 text-red-500';
 		default:
-			return 'bg-[#1a2234] text-[#92a4c9]';
+			return 'bg-gray-100 dark:bg-[#1a2234] text-gray-500 dark:text-[#92a4c9]';
 	}
 }
 
@@ -48,7 +48,7 @@ export function KanbanColumn({
 			{/* Column Header */}
 			<div className="flex items-center justify-between px-1">
 				<div className="flex items-center gap-2">
-					<h3 className="text-white text-sm font-bold uppercase tracking-wider">
+					<h3 className="text-gray-900 dark:text-white text-sm font-bold uppercase tracking-wider">
 						{title}
 					</h3>
 					<span
@@ -63,7 +63,7 @@ export function KanbanColumn({
 				{showAddButton && onAddNew && (
 					<button
 						onClick={onAddNew}
-						className="text-[#92a4c9] hover:text-white transition-colors"
+						className="text-gray-400 dark:text-[#92a4c9] hover:text-gray-900 dark:hover:text-white transition-colors"
 					>
 						<Plus className="h-5 w-5" />
 					</button>
@@ -84,8 +84,8 @@ export function KanbanColumn({
 					))
 				) : (
 					/* Empty state placeholder */
-					<div className="border-2 border-dashed border-[#2d3a54] rounded-xl p-6 flex flex-col items-center justify-center text-center min-h-[200px] opacity-50">
-						<span className="text-[#92a4c9] text-xs">
+					<div className="border-2 border-dashed border-gray-200 dark:border-[#2d3a54] rounded-xl p-6 flex flex-col items-center justify-center text-center min-h-[200px] opacity-50">
+						<span className="text-gray-400 dark:text-[#92a4c9] text-xs">
 							No {title.toLowerCase()} items
 						</span>
 					</div>
@@ -93,8 +93,8 @@ export function KanbanColumn({
 
 				{/* Drop zone placeholder for drag-and-drop */}
 				{items.length > 0 && (
-					<div className="border-2 border-dashed border-[#2d3a54]/30 rounded-xl p-4 opacity-0 hover:opacity-100 transition-opacity">
-						<span className="text-[#92a4c9] text-xs text-center block">
+					<div className="border-2 border-dashed border-gray-200/30 dark:border-[#2d3a54]/30 rounded-xl p-4 opacity-0 hover:opacity-100 transition-opacity">
+						<span className="text-gray-400 dark:text-[#92a4c9] text-xs text-center block">
 							Drop here
 						</span>
 					</div>

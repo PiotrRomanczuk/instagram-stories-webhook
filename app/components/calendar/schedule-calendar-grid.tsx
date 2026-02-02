@@ -14,7 +14,6 @@ import {
 	setHours,
 	getHours,
 	getMinutes,
-	isSameHour,
 } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { ContentItem } from '@/lib/types/posts';
@@ -55,9 +54,9 @@ function TimeSlot({ day, hour, items, onItemClick }: TimeSlotProps) {
 		<div
 			ref={setNodeRef}
 			className={cn(
-				'relative h-24 border-b border-r border-slate-800/50 transition-colors',
+				'relative h-24 border-b border-r border-gray-200/50 transition-colors dark:border-slate-800/50',
 				isOver && 'bg-[#2b6cee]/10 ring-2 ring-inset ring-[#2b6cee]/50',
-				'hover:bg-slate-800/30'
+				'hover:bg-gray-100/50 dark:hover:bg-slate-800/30'
 			)}
 		>
 			{isOver && slotItems.length === 0 && (
@@ -130,10 +129,10 @@ export function ScheduleCalendarGrid({
 	const todayIndex = days.findIndex((d) => isToday(d));
 
 	return (
-		<div className="flex-1 overflow-auto bg-[#070b13] custom-scrollbar">
+		<div className="flex-1 overflow-auto bg-gray-50 custom-scrollbar dark:bg-[#070b13]">
 			<div className="grid min-w-[900px]" style={{ gridTemplateColumns: '64px repeat(7, 1fr)' }}>
 				{/* Header row - Timezone label */}
-				<div className="sticky top-0 z-30 flex h-12 items-center justify-center border-b border-r border-slate-800 bg-[#101622]/95 backdrop-blur text-[10px] font-bold text-slate-400">
+				<div className="sticky top-0 z-30 flex h-12 items-center justify-center border-b border-r border-gray-200 bg-white/95 backdrop-blur text-[10px] font-bold text-gray-500 dark:border-slate-800 dark:bg-[#101622]/95 dark:text-slate-400">
 					{Intl.DateTimeFormat().resolvedOptions().timeZone.split('/')[1] || 'Local'}
 				</div>
 
@@ -144,16 +143,16 @@ export function ScheduleCalendarGrid({
 						<div
 							key={index}
 							className={cn(
-								'sticky top-0 z-30 flex h-12 flex-col items-center justify-center border-b border-r border-slate-800 backdrop-blur',
+								'sticky top-0 z-30 flex h-12 flex-col items-center justify-center border-b border-r border-gray-200 backdrop-blur dark:border-slate-800',
 								today
 									? 'bg-[#2b6cee]/5 border-b-2 border-b-[#2b6cee]'
-									: 'bg-[#101622]/95'
+									: 'bg-white/95 dark:bg-[#101622]/95'
 							)}
 						>
 							<span
 								className={cn(
 									'text-[10px] font-bold uppercase',
-									today ? 'text-[#2b6cee]' : 'text-slate-500'
+									today ? 'text-[#2b6cee]' : 'text-gray-500 dark:text-slate-500'
 								)}
 							>
 								{DAYS_OF_WEEK[index]}
@@ -161,7 +160,7 @@ export function ScheduleCalendarGrid({
 							<span
 								className={cn(
 									'text-sm font-bold',
-									today ? 'text-[#2b6cee]' : 'text-white'
+									today ? 'text-[#2b6cee]' : 'text-gray-900 dark:text-white'
 								)}
 							>
 								{format(day, 'd')}
@@ -190,7 +189,7 @@ export function ScheduleCalendarGrid({
 							{/* Time column */}
 							<div
 								key={`time-${hour}`}
-								className="flex h-24 items-start justify-center border-b border-r border-slate-800 pt-2 text-[11px] font-medium text-slate-400"
+								className="flex h-24 items-start justify-center border-b border-r border-gray-200 bg-white pt-2 text-[11px] font-medium text-gray-500 dark:border-slate-800 dark:bg-transparent dark:text-slate-400"
 							>
 								{hour === 12 ? '12 PM' : hour < 12 ? `${hour} AM` : `${hour - 12} PM`}
 							</div>

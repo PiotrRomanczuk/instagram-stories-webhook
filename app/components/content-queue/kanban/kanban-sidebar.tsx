@@ -115,19 +115,19 @@ function MiniCalendar({
 	};
 
 	return (
-		<div className="bg-[#1a2234]/50 border border-[#2d3a54] rounded-xl p-3">
+		<div className="bg-gray-100/50 dark:bg-[#1a2234]/50 border border-gray-200 dark:border-[#2d3a54] rounded-xl p-3">
 			{/* Month navigation */}
 			<div className="flex items-center justify-between mb-3">
 				<button
 					onClick={goToPrevMonth}
-					className="text-[#92a4c9] hover:text-white transition-colors p-1"
+					className="text-gray-400 dark:text-[#92a4c9] hover:text-gray-900 dark:hover:text-white transition-colors p-1"
 				>
 					<ChevronLeft className="h-4 w-4" />
 				</button>
-				<span className="text-white text-xs font-bold uppercase">{monthLabel}</span>
+				<span className="text-gray-900 dark:text-white text-xs font-bold uppercase">{monthLabel}</span>
 				<button
 					onClick={goToNextMonth}
-					className="text-[#92a4c9] hover:text-white transition-colors p-1"
+					className="text-gray-400 dark:text-[#92a4c9] hover:text-gray-900 dark:hover:text-white transition-colors p-1"
 				>
 					<ChevronRight className="h-4 w-4" />
 				</button>
@@ -136,7 +136,7 @@ function MiniCalendar({
 			{/* Day headers */}
 			<div className="grid grid-cols-7 gap-1 text-center mb-1">
 				{['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
-					<span key={i} className="text-[10px] text-[#92a4c9] font-bold">
+					<span key={i} className="text-[10px] text-gray-400 dark:text-[#92a4c9] font-bold">
 						{day}
 					</span>
 				))}
@@ -148,7 +148,7 @@ function MiniCalendar({
 				{prevMonthDays.map((day, i) => (
 					<div
 						key={`prev-${i}`}
-						className="h-6 flex items-center justify-center text-[10px] text-[#556b91]"
+						className="h-6 flex items-center justify-center text-[10px] text-gray-300 dark:text-[#556b91]"
 					>
 						{day}
 					</div>
@@ -163,7 +163,7 @@ function MiniCalendar({
 							'h-6 flex items-center justify-center text-[10px] relative rounded-full transition-colors',
 							isToday(day)
 								? 'bg-[#2b6cee] text-white font-bold'
-								: 'text-white hover:bg-[#2d3a54]'
+								: 'text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-[#2d3a54]'
 						)}
 					>
 						{day}
@@ -177,7 +177,7 @@ function MiniCalendar({
 				{nextMonthDays.map((day, i) => (
 					<div
 						key={`next-${i}`}
-						className="h-6 flex items-center justify-center text-[10px] text-[#556b91]"
+						className="h-6 flex items-center justify-center text-[10px] text-gray-300 dark:text-[#556b91]"
 					>
 						{day}
 					</div>
@@ -200,11 +200,11 @@ export function KanbanSidebar({
 	];
 
 	return (
-		<aside className="w-64 border-r border-[#2d3a54] bg-[#101622] flex flex-col justify-between p-4 shrink-0">
+		<aside className="w-64 border-r border-gray-200 dark:border-[#2d3a54] bg-white dark:bg-[#101622] flex flex-col justify-between p-4 shrink-0">
 			<div className="flex flex-col gap-6">
 				{/* Views Section */}
 				<div className="flex flex-col gap-2">
-					<p className="text-[#92a4c9] text-xs font-bold uppercase tracking-wider px-3">
+					<p className="text-gray-500 dark:text-[#92a4c9] text-xs font-bold uppercase tracking-wider px-3">
 						Views
 					</p>
 					{views.map((view) => {
@@ -218,7 +218,7 @@ export function KanbanSidebar({
 									'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-left',
 									isActive
 										? 'bg-[#2b6cee]/10 text-[#2b6cee]'
-										: 'text-[#92a4c9] hover:bg-[#1a2234] hover:text-white'
+										: 'text-gray-500 dark:text-[#92a4c9] hover:bg-gray-100 dark:hover:bg-[#1a2234] hover:text-gray-900 dark:hover:text-white'
 								)}
 							>
 								<Icon className={cn('h-5 w-5', isActive && 'fill-current')} />
@@ -232,7 +232,7 @@ export function KanbanSidebar({
 
 				{/* Quick Schedule Calendar */}
 				<div className="flex flex-col gap-3">
-					<p className="text-[#92a4c9] text-xs font-bold uppercase tracking-wider px-3">
+					<p className="text-gray-500 dark:text-[#92a4c9] text-xs font-bold uppercase tracking-wider px-3">
 						Quick Schedule
 					</p>
 					<MiniCalendar onSelectDate={onQuickSchedule} scheduledDates={scheduledDates} />
@@ -240,12 +240,12 @@ export function KanbanSidebar({
 			</div>
 
 			{/* Bottom Links */}
-			<div className="flex flex-col gap-2 border-t border-[#2d3a54] pt-4">
-				<button className="flex items-center gap-3 px-3 py-2 text-[#92a4c9] hover:text-white transition-colors">
+			<div className="flex flex-col gap-2 border-t border-gray-200 dark:border-[#2d3a54] pt-4">
+				<button className="flex items-center gap-3 px-3 py-2 text-gray-500 dark:text-[#92a4c9] hover:text-gray-900 dark:hover:text-white transition-colors">
 					<Settings className="h-5 w-5" />
 					<p className="text-sm font-medium">Settings</p>
 				</button>
-				<button className="flex items-center gap-3 px-3 py-2 text-[#92a4c9] hover:text-white transition-colors">
+				<button className="flex items-center gap-3 px-3 py-2 text-gray-500 dark:text-[#92a4c9] hover:text-gray-900 dark:hover:text-white transition-colors">
 					<HelpCircle className="h-5 w-5" />
 					<p className="text-sm font-medium">Support</p>
 				</button>

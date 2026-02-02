@@ -135,7 +135,7 @@ export function KanbanLayout() {
 	}, []);
 
 	return (
-		<div className="h-screen flex flex-col overflow-hidden bg-[#101622]">
+		<div className="h-screen flex flex-col overflow-hidden bg-gray-50 dark:bg-[#101622]">
 			{/* Top Header */}
 			<KanbanHeader
 				searchQuery={searchQuery}
@@ -155,7 +155,7 @@ export function KanbanLayout() {
 				/>
 
 				{/* Main Content */}
-				<main className="flex-1 flex flex-col bg-[#101622] overflow-hidden">
+				<main className="flex-1 flex flex-col bg-gray-50 dark:bg-[#101622] overflow-hidden">
 					{/* Toolbar */}
 					<KanbanToolbar totalActive={totalActive} />
 

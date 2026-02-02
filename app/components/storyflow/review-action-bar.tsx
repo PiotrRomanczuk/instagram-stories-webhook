@@ -58,9 +58,9 @@ export function ReviewActionBar({
 					disabled={disabled}
 					className={cn(
 						'flex-1 flex items-center justify-center gap-3',
-						'bg-[#13ec5b]/20 hover:bg-[#13ec5b] text-[#13ec5b] hover:text-white',
-						'border border-[#13ec5b]/30 py-4 rounded-xl font-bold transition-all group',
-						'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#13ec5b]/20 disabled:hover:text-[#13ec5b]'
+						'bg-[#2b6cee]/20 hover:bg-[#2b6cee] text-[#2b6cee] hover:text-white',
+						'border border-[#2b6cee]/30 py-4 rounded-xl font-bold transition-all group',
+						'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#2b6cee]/20 disabled:hover:text-[#2b6cee]'
 					)}
 				>
 					{isLoading ? (
@@ -81,8 +81,8 @@ export function ReviewActionBar({
 					onClick={onPrevious}
 					disabled={!hasPrevious || disabled}
 					className={cn(
-						'flex items-center gap-2 text-slate-400 hover:text-white transition-colors',
-						'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-slate-400'
+						'flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors',
+						'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-slate-500 dark:disabled:hover:text-slate-400'
 					)}
 				>
 					<ChevronLeft className="h-5 w-5" />
@@ -93,8 +93,8 @@ export function ReviewActionBar({
 					onClick={onSkip}
 					disabled={!hasNext || disabled}
 					className={cn(
-						'flex items-center gap-2 text-slate-400 hover:text-white transition-colors',
-						'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-slate-400'
+						'flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors',
+						'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-slate-500 dark:disabled:hover:text-slate-400'
 					)}
 				>
 					<span className="text-sm">Skip Story</span>

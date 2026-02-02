@@ -132,17 +132,9 @@
   --sf-hover-dark: #232f48;
 }
 
-/* StoryFlow Review Interface - Emerald Theme */
-:root {
-  --sfr-primary: #13ec5b;
-  --sfr-primary-hover: #10d94e;
-  --sfr-primary-muted: rgba(19, 236, 91, 0.2);
-  --sfr-bg-dark: #102216;
-  --sfr-card-dark: #112217;
-  --sfr-border-dark: #23482f;
-  --sfr-hover-dark: #1a3323;
-  --sfr-text-muted: #94a3b8;
-}
+/* StoryFlow Review Interface - Now uses standard StoryFlow blue theme
+   Variables removed: sfr-primary, sfr-bg-dark, sfr-card-dark, sfr-border-dark, sfr-hover-dark
+   The review interface now uses the sf- variables and Tailwind dark: prefix */
 
 @layer base {
   * {

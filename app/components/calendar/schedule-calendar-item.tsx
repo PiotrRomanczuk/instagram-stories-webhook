@@ -102,8 +102,8 @@ export function ScheduleCalendarItem({
 					/>
 				</div>
 			) : (
-				<div className="absolute inset-0 flex items-center justify-center bg-slate-800">
-					<span className="text-[8px] text-slate-500">No preview</span>
+				<div className="absolute inset-0 flex items-center justify-center bg-gray-200 dark:bg-slate-800">
+					<span className="text-[8px] text-gray-500 dark:text-slate-500">No preview</span>
 				</div>
 			)}
 

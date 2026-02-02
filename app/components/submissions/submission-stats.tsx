@@ -13,7 +13,7 @@ interface SubmissionStatsProps {
 
 /**
  * Stats cards showing submission counts by status.
- * Uses the StoryFlow design system with dark theme.
+ * Uses the StoryFlow design system with light/dark theme support.
  */
 export function SubmissionStats({
 	pending,
