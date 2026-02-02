@@ -50,6 +50,7 @@ function ReadyAssetCard({ item, isScheduled, onClick }: ReadyAssetCardProps) {
 			{...(!isScheduled ? listeners : {})}
 			{...(!isScheduled ? attributes : {})}
 			onClick={onClick}
+			data-draggable-id={`ready-${item.id}`}
 			className={cn(
 				'group relative aspect-[9/16] w-full overflow-hidden rounded-xl shadow-md transition-all',
 				isDragging && 'z-50 opacity-80 shadow-2xl',

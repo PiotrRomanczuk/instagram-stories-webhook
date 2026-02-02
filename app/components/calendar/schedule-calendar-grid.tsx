@@ -53,6 +53,7 @@ function TimeSlot({ day, hour, items, onItemClick }: TimeSlotProps) {
 	return (
 		<div
 			ref={setNodeRef}
+			data-droppable-id={slotId}
 			className={cn(
 				'relative h-24 border-b border-r border-gray-200/50 transition-colors dark:border-slate-800/50',
 				isOver && 'bg-[#2b6cee]/10 ring-2 ring-inset ring-[#2b6cee]/50',

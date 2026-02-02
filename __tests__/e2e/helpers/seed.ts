@@ -1,7 +1,9 @@
 import { Page } from '@playwright/test';
+import { getMemeByIndex } from './test-assets';
 
 /**
  * Test data seeding utilities for E2E tests
+ * Uses real memes from /memes/ folder instead of fixture placeholders.
  */
 
 export interface TestUser {
@@ -189,26 +191,26 @@ export async function seedTestDatabase(page: Page): Promise<void> {
     role: 'user',
   });
 
-  // Create test meme submissions
+  // Create test meme submissions using real memes from /memes/ folder
   await createMemeSubmissions(page, [
     {
       title: 'Test Meme 1',
       caption: 'This is a test meme',
-      mediaUrl: '/fixtures/test-images/valid-square.jpg',
+      mediaUrl: getMemeByIndex(50),
       userId: userId1,
       status: 'pending',
     },
     {
       title: 'Test Meme 2',
       caption: 'Another test meme',
-      mediaUrl: '/fixtures/test-images/valid-story.jpg',
+      mediaUrl: getMemeByIndex(51),
       userId: userId1,
       status: 'approved',
     },
     {
       title: 'Test Meme 3',
       caption: 'User 2 meme',
-      mediaUrl: '/fixtures/test-images/valid-square.jpg',
+      mediaUrl: getMemeByIndex(52),
       userId: userId2,
       status: 'pending',
     },
@@ -238,7 +240,7 @@ export const TestDataFactory = {
   memeSubmission: (overrides: Partial<TestMemeSubmission> = {}): Omit<TestMemeSubmission, 'id'> => ({
     title: `Test Meme ${Date.now()}`,
     caption: 'This is a test meme submission',
-    mediaUrl: '/fixtures/test-images/valid-square.jpg',
+    mediaUrl: getMemeByIndex(Math.floor(Math.random() * 100)),
     userId: 'test-user-id',
     status: 'pending',
     ...overrides,
@@ -253,3 +255,199 @@ export const TestDataFactory = {
     ...overrides,
   }),
 };
+
+// ============================================================================
+// Content API Helpers (Unified /api/content endpoint)
+// ============================================================================
+
+/**
+ * Content item interface matching the unified Content API
+ */
+export interface TestContentItem {
+  id?: string;
+  title?: string;
+  caption?: string;
+  mediaUrl: string;
+  mediaType?: 'IMAGE' | 'VIDEO';
+  source?: 'submission' | 'direct';
+  submissionStatus?: 'pending' | 'approved' | 'rejected';
+  publishingStatus?: 'draft' | 'scheduled' | 'processing' | 'published' | 'failed';
+  scheduledTime?: number; // Unix timestamp in milliseconds
+}
+
+/**
+ * Create content via the unified /api/content endpoint
+ */
+export async function createContent(
+  page: Page,
+  content: Omit<TestContentItem, 'id'>
+): Promise<string> {
+  const response = await page.request.post('/api/content', {
+    data: content,
+  });
+
+  if (!response.ok()) {
+    const errorText = await response.text();
+    throw new Error(`Failed to create content: ${response.statusText()} - ${errorText}`);
+  }
+
+  const data = await response.json();
+  return data.item?.id || data.id;
+}
+
+/**
+ * Create pending content for review testing
+ */
+export async function createPendingContent(
+  page: Page,
+  options: {
+    title?: string;
+    caption?: string;
+    mediaIndex?: number;
+  } = {}
+): Promise<string> {
+  const { title, caption, mediaIndex = Math.floor(Math.random() * 100) } = options;
+
+  return createContent(page, {
+    title: title || `Test Content ${Date.now()}`,
+    caption: caption || 'Test caption for E2E testing',
+    mediaUrl: getMemeByIndex(mediaIndex),
+    mediaType: 'IMAGE',
+    source: 'submission',
+    submissionStatus: 'pending',
+    publishingStatus: 'draft',
+  });
+}
+
+/**
+ * Create approved content ready for scheduling
+ */
+export async function createApprovedContent(
+  page: Page,
+  options: {
+    title?: string;
+    caption?: string;
+    mediaIndex?: number;
+  } = {}
+): Promise<string> {
+  const { title, caption, mediaIndex = Math.floor(Math.random() * 100) } = options;
+
+  return createContent(page, {
+    title: title || `Approved Content ${Date.now()}`,
+    caption: caption || 'Approved caption for E2E testing',
+    mediaUrl: getMemeByIndex(mediaIndex),
+    mediaType: 'IMAGE',
+    source: 'submission',
+    submissionStatus: 'approved',
+    publishingStatus: 'draft',
+  });
+}
+
+/**
+ * Create scheduled content
+ */
+export async function createScheduledContent(
+  page: Page,
+  scheduledTime: Date | number,
+  options: {
+    title?: string;
+    caption?: string;
+    mediaIndex?: number;
+  } = {}
+): Promise<string> {
+  const { title, caption, mediaIndex = Math.floor(Math.random() * 100) } = options;
+  const timeMs = typeof scheduledTime === 'number' ? scheduledTime : scheduledTime.getTime();
+
+  return createContent(page, {
+    title: title || `Scheduled Content ${Date.now()}`,
+    caption: caption || 'Scheduled caption for E2E testing',
+    mediaUrl: getMemeByIndex(mediaIndex),
+    mediaType: 'IMAGE',
+    source: 'submission',
+    submissionStatus: 'approved',
+    publishingStatus: 'scheduled',
+    scheduledTime: timeMs,
+  });
+}
+
+/**
+ * Approve content via review API
+ */
+export async function approveContent(page: Page, contentId: string): Promise<void> {
+  const response = await page.request.post(`/api/content/${contentId}/review`, {
+    data: { action: 'approve' },
+  });
+
+  if (!response.ok()) {
+    throw new Error(`Failed to approve content: ${response.statusText()}`);
+  }
+}
+
+/**
+ * Reject content via review API
+ */
+export async function rejectContent(
+  page: Page,
+  contentId: string,
+  reason: string = 'Content does not meet guidelines'
+): Promise<void> {
+  const response = await page.request.post(`/api/content/${contentId}/review`, {
+    data: { action: 'reject', rejectionReason: reason },
+  });
+
+  if (!response.ok()) {
+    throw new Error(`Failed to reject content: ${response.statusText()}`);
+  }
+}
+
+/**
+ * Schedule content via PATCH
+ */
+export async function scheduleContent(
+  page: Page,
+  contentId: string,
+  scheduledTime: Date | number
+): Promise<void> {
+  const timeMs = typeof scheduledTime === 'number' ? scheduledTime : scheduledTime.getTime();
+
+  const response = await page.request.patch(`/api/content/${contentId}`, {
+    data: {
+      scheduledTime: timeMs,
+      publishingStatus: 'scheduled',
+    },
+  });
+
+  if (!response.ok()) {
+    throw new Error(`Failed to schedule content: ${response.statusText()}`);
+  }
+}
+
+/**
+ * Fetch content items from API
+ */
+export async function fetchContent(
+  page: Page,
+  filters: {
+    source?: 'submission' | 'direct';
+    submissionStatus?: 'pending' | 'approved' | 'rejected';
+    publishingStatus?: 'draft' | 'scheduled' | 'processing' | 'published' | 'failed';
+    limit?: number;
+  } = {}
+): Promise<TestContentItem[]> {
+  const params = new URLSearchParams();
+
+  if (filters.source) params.set('source', filters.source);
+  if (filters.submissionStatus) params.set('submissionStatus', filters.submissionStatus);
+  if (filters.publishingStatus) params.set('publishingStatus', filters.publishingStatus);
+  if (filters.limit) params.set('limit', filters.limit.toString());
+
+  const url = `/api/content?${params.toString()}`;
+  const response = await page.request.get(url);
+
+  if (!response.ok()) {
+    throw new Error(`Failed to fetch content: ${response.statusText()}`);
+  }
+
+  const data = await response.json();
+  return data.items || [];
+}

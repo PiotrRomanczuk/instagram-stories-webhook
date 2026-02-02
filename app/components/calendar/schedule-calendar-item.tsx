@@ -77,6 +77,8 @@ export function ScheduleCalendarItem({
 			{...(isDraggable && item.publishingStatus !== 'published' ? listeners : {})}
 			{...(isDraggable && item.publishingStatus !== 'published' ? attributes : {})}
 			onClick={onClick}
+			data-item-id={item.id}
+			data-publishing-status={item.publishingStatus}
 			className={cn(
 				'group relative aspect-[9/16] w-full cursor-pointer overflow-hidden rounded-lg border-2 shadow-lg transition-all',
 				isDragging && 'z-50 opacity-80 shadow-2xl scale-105',
