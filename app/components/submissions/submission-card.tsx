@@ -1,7 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import { format } from 'date-fns';
-import { Edit, Clock, CheckCircle, XCircle, Send, AlertCircle } from 'lucide-react';
+import { Edit, Clock, CheckCircle, XCircle, Send, AlertCircle, ImageOff } from 'lucide-react';
 import { Card, CardContent } from '@/app/components/ui/card';
 import { Badge } from '@/app/components/ui/badge';
 import { Button } from '@/app/components/ui/button';
@@ -94,15 +95,25 @@ function getStatusBadge(submission: ContentItem) {
 export function SubmissionCard({ submission, onEdit, className }: SubmissionCardProps) {
 	const canEdit = submission.submissionStatus === 'pending';
 	const createdDate = new Date(submission.createdAt);
+	const [imageError, setImageError] = useState(false);
+	const hasValidUrl = submission.mediaUrl && !submission.mediaUrl.startsWith('blob:');
 
 	return (
 		<Card className={cn('group overflow-hidden', className)}>
 			<div className="relative aspect-[9/16] bg-muted">
-				<img
-					src={submission.mediaUrl}
-					alt={submission.title || 'Submission'}
-					className="h-full w-full object-cover"
-				/>
+				{!imageError && hasValidUrl ? (
+					<img
+						src={submission.mediaUrl}
+						alt={submission.title || 'Submission'}
+						className="h-full w-full object-cover"
+						onError={() => setImageError(true)}
+					/>
+				) : (
+					<div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-muted text-muted-foreground">
+						<ImageOff className="h-12 w-12 opacity-50" />
+						<span className="text-xs">Image unavailable</span>
+					</div>
+				)}
 
 				{/* Overlay with actions */}
 				<div className="absolute inset-0 flex flex-col justify-between bg-gradient-to-b from-black/60 via-transparent to-black/60 p-3 opacity-0 transition-opacity group-hover:opacity-100">

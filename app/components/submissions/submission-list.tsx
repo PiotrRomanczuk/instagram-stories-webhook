@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { Grid, List } from 'lucide-react';
+import { Grid, List, ImageOff } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/app/components/ui/toggle-group';
 import {
@@ -104,6 +104,28 @@ function EmptyState() {
 	);
 }
 
+function SubmissionThumbnail({ mediaUrl }: { mediaUrl: string }) {
+	const [error, setError] = useState(false);
+	const hasValidUrl = mediaUrl && !mediaUrl.startsWith('blob:');
+
+	if (!hasValidUrl || error) {
+		return (
+			<div className="flex h-12 w-12 items-center justify-center rounded bg-muted">
+				<ImageOff className="h-5 w-5 text-muted-foreground opacity-50" />
+			</div>
+		);
+	}
+
+	return (
+		<img
+			src={mediaUrl}
+			alt=""
+			className="h-12 w-12 rounded object-cover"
+			onError={() => setError(true)}
+		/>
+	);
+}
+
 export function SubmissionList({
 	submissions,
 	isLoading,
@@ -168,11 +190,7 @@ export function SubmissionList({
 							{submissions.map((submission) => (
 								<TableRow key={submission.id}>
 									<TableCell>
-										<img
-											src={submission.mediaUrl}
-											alt=""
-											className="h-12 w-12 rounded object-cover"
-										/>
+										<SubmissionThumbnail mediaUrl={submission.mediaUrl} />
 									</TableCell>
 									<TableCell className="max-w-xs truncate">
 										{submission.caption || '-'}

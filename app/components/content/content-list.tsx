@@ -12,6 +12,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { ContentItem } from '@/lib/types/posts';
 import { ContentCard } from './content-card';
 import { ConfirmationDialog } from '../ui/confirmation-dialog';
+import { MediaThumbnail } from '../ui/media-thumbnail';
 import {
 	GripVertical,
 	Calendar,
@@ -33,6 +34,7 @@ import {
 	ArrowUpDown,
 	ArrowUp,
 	ArrowDown,
+	ImageOff,
 } from 'lucide-react';
 import { MediaInsight } from '@/lib/types/instagram';
 
@@ -56,6 +58,13 @@ function formatCreatorName(userEmail?: string): string {
  * Story Preview on Hover Component
  */
 function StoryPreviewHover({ item }: { item: ContentItem }) {
+	const [imageError, setImageError] = useState(false);
+	const hasValidUrl = item.mediaUrl && !item.mediaUrl.startsWith('blob:');
+
+	if (!hasValidUrl || imageError) {
+		return null; // Don't show preview for invalid images
+	}
+
 	return (
 		<div className='absolute left-full ml-4 top-1/2 -translate-y-1/2 z-50 opacity-0 group-hover/media:opacity-100 pointer-events-none transition-opacity duration-200'>
 			<div className='relative w-[180px] aspect-[9/16] rounded-2xl overflow-hidden shadow-2xl border-4 border-white bg-gray-900'>
@@ -64,12 +73,14 @@ function StoryPreviewHover({ item }: { item: ContentItem }) {
 					src={item.mediaUrl}
 					alt=''
 					className='absolute inset-0 h-full w-full object-cover blur-2xl opacity-60 scale-125'
+					onError={() => setImageError(true)}
 				/>
 				{/* Main Media */}
 				<img
 					src={item.mediaUrl}
 					alt='Story Preview'
 					className='relative z-10 h-full w-full object-contain drop-shadow-lg'
+					onError={() => setImageError(true)}
 				/>
 				{/* Story UI Overlay */}
 				<div className='absolute inset-0 z-20 p-3 flex flex-col justify-between pointer-events-none'>
@@ -822,13 +833,11 @@ export function ContentList({
 								)}
 								<td className='px-6 py-5'>
 									<div className='relative group/media'>
-										<div className='w-12 h-12 rounded-xl overflow-hidden shadow-sm bg-gray-100 shrink-0 cursor-pointer ring-2 ring-transparent group-hover/media:ring-indigo-400 transition-all'>
-											<img
-												src={item.mediaUrl}
-												alt=''
-												className='w-full h-full object-cover'
-											/>
-										</div>
+										<MediaThumbnail
+											src={item.mediaUrl}
+											size="sm"
+											className="ring-2 ring-transparent group-hover/media:ring-indigo-400 transition-all cursor-pointer rounded-xl"
+										/>
 										<StoryPreviewHover item={item} />
 									</div>
 								</td>

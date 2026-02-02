@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+  <rect width="400" height="400" fill="#f3f4f6"/>
+  <g fill="#9ca3af" transform="translate(150, 150)">
+    <path d="M100 50C100 77.6142 77.6142 100 50 100C22.3858 100 0 77.6142 0 50C0 22.3858 22.3858 0 50 0C77.6142 0 100 22.3858 100 50Z" opacity="0.3"/>
+    <path d="M50 35C42.268 35 36 41.268 36 49C36 56.732 42.268 63 50 63C57.732 63 64 56.732 64 49C64 41.268 57.732 35 50 35ZM50 58C45.029 58 41 53.971 41 49C41 44.029 45.029 40 50 40C54.971 40 59 44.029 59 49C59 53.971 54.971 58 50 58Z"/>
+    <path d="M30 70L42 55L48 62L58 48L70 70H30Z"/>
+  </g>
+  <text x="200" y="290" text-anchor="middle" fill="#9ca3af" font-family="Inter, system-ui, sans-serif" font-size="14" font-weight="500">Image unavailable</text>
+</svg>
