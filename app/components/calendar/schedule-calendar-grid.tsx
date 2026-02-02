@@ -28,30 +28,36 @@ interface ScheduleCalendarGridProps {
 	currentDate: Date;
 	scheduledItems: ContentItem[];
 	onItemClick?: (item: ContentItem) => void;
+	granularity?: number; // minutes per block (60, 30, 15, 5, or 1)
+	onIncreaseGranularity?: () => void;
+	onDecreaseGranularity?: () => void;
 }
 
 // Time slots from 6 AM to 11 PM
 const TIME_SLOTS = Array.from({ length: 18 }, (_, i) => i + 6);
 
-// Height of each hour slot in pixels
-const HOUR_HEIGHT = 96;
-// Each 15-min block height
-const BLOCK_HEIGHT = HOUR_HEIGHT / 4;
+// Base height of each hour slot in pixels
+const BASE_HOUR_HEIGHT = 96;
+// Minimum block height to ensure clickable/droppable targets
+const MIN_BLOCK_HEIGHT = 16;
 
 interface TimeBlockProps {
 	day: Date;
 	hour: number;
-	blockIndex: number; // 0, 1, 2, or 3 for :00, :15, :30, :45
+	blockIndex: number;
+	startMinute: number;
+	granularity: number;
+	blockHeight: number;
 	items: ContentItem[];
 	onItemClick?: (item: ContentItem) => void;
 }
 
-function TimeBlock({ day, hour, blockIndex, items, onItemClick }: TimeBlockProps) {
+function TimeBlock({ day, hour, blockIndex, startMinute, granularity, blockHeight, items, onItemClick }: TimeBlockProps) {
 	const slotRef = useRef<HTMLDivElement>(null);
-	const startMinute = blockIndex * 15;
-	const endMinute = startMinute + 14;
+	const endMinute = startMinute + granularity - 1;
 
-	const slotId = `${format(day, 'yyyy-MM-dd')}-${hour}-${blockIndex}`;
+	// Use minute directly in slot ID for clarity
+	const slotId = `${format(day, 'yyyy-MM-dd')}-${hour}-${startMinute}`;
 	const { setNodeRef, isOver } = useDroppable({
 		id: slotId,
 		data: { day, hour, minute: startMinute },
@@ -94,12 +100,11 @@ function TimeBlock({ day, hour, blockIndex, items, onItemClick }: TimeBlockProps
 			ref={combinedRef}
 			data-droppable-id={slotId}
 			className={cn(
-				'relative border-b border-gray-100 transition-colors dark:border-slate-800/30',
-				blockIndex === 3 && 'border-b-gray-200 dark:border-b-slate-700',
+				'relative transition-colors',
 				isOver && 'bg-[#2b6cee]/10 ring-1 ring-inset ring-[#2b6cee]/50',
 				'hover:bg-gray-50/50 dark:hover:bg-slate-800/20'
 			)}
-			style={{ height: `${BLOCK_HEIGHT}px` }}
+			style={{ height: `${blockHeight}px` }}
 		>
 			{/* Drop indicator */}
 			{isOver && (
@@ -178,11 +183,15 @@ interface HourRowProps {
 	hour: number;
 	items: ContentItem[];
 	onItemClick?: (item: ContentItem) => void;
+	granularity: number;
+	blocksPerHour: number;
+	blockHeight: number;
+	hourHeight: number;
 }
 
-function HourRow({ day, hour, items, onItemClick }: HourRowProps) {
+function HourRow({ day, hour, items, onItemClick, granularity, blocksPerHour, blockHeight, hourHeight }: HourRowProps) {
 	return (
-		<div className="flex" style={{ height: `${HOUR_HEIGHT}px` }}>
+		<div className="flex" style={{ height: `${hourHeight}px` }}>
 			{/* Time label */}
 			<div className="flex w-16 flex-shrink-0 flex-col items-center justify-start border-r border-gray-200 bg-white pt-1 dark:border-slate-800 dark:bg-transparent">
 				<span className="text-[11px] font-medium text-gray-500 dark:text-slate-400">
@@ -193,24 +202,30 @@ function HourRow({ day, hour, items, onItemClick }: HourRowProps) {
 				</span>
 			</div>
 
-			{/* 4 fifteen-minute blocks */}
+			{/* Time blocks based on granularity */}
 			<div className="flex flex-1 flex-col border-r border-gray-200/50 dark:border-slate-800/50">
-				{[0, 1, 2, 3].map((blockIndex) => (
-					<TimeBlock
-						key={blockIndex}
-						day={day}
-						hour={hour}
-						blockIndex={blockIndex}
-						items={items}
-						onItemClick={onItemClick}
-					/>
-				))}
+				{Array.from({ length: blocksPerHour }, (_, blockIndex) => {
+					const startMinute = blockIndex * granularity;
+					return (
+						<TimeBlock
+							key={blockIndex}
+							day={day}
+							hour={hour}
+							blockIndex={blockIndex}
+							startMinute={startMinute}
+							granularity={granularity}
+							blockHeight={blockHeight}
+							items={items}
+							onItemClick={onItemClick}
+						/>
+					);
+				})}
 			</div>
 		</div>
 	);
 }
 
-function CurrentTimeIndicator() {
+function CurrentTimeIndicator({ hourHeight }: { hourHeight: number }) {
 	const [now, setNow] = useState(new Date());
 
 	useEffect(() => {
@@ -225,7 +240,7 @@ function CurrentTimeIndicator() {
 
 	if (hour < 6 || hour > 23) return null;
 
-	const topOffset = (hour - 6) * HOUR_HEIGHT + (minutes / 60) * HOUR_HEIGHT;
+	const topOffset = (hour - 6) * hourHeight + (minutes / 60) * hourHeight;
 
 	return (
 		<div
@@ -250,11 +265,46 @@ export function ScheduleCalendarGrid({
 	currentDate,
 	scheduledItems,
 	onItemClick,
+	granularity = 15,
+	onIncreaseGranularity,
+	onDecreaseGranularity,
 }: ScheduleCalendarGridProps) {
 	const today = isToday(currentDate);
+	const containerRef = useRef<HTMLDivElement>(null);
+
+	// Calculate block dimensions based on granularity
+	const blocksPerHour = 60 / granularity;
+	const rawBlockHeight = BASE_HOUR_HEIGHT / blocksPerHour;
+	const blockHeight = Math.max(rawBlockHeight, MIN_BLOCK_HEIGHT);
+	const hourHeight = blockHeight * blocksPerHour;
+
+	// Handle Ctrl+scroll for granularity changes
+	useEffect(() => {
+		const container = containerRef.current;
+		if (!container || !onIncreaseGranularity || !onDecreaseGranularity) return;
+
+		const handleWheel = (e: WheelEvent) => {
+			if (e.ctrlKey || e.metaKey) {
+				e.preventDefault();
+				if (e.deltaY < 0) {
+					// Scroll up = zoom in = finer granularity
+					onIncreaseGranularity();
+				} else if (e.deltaY > 0) {
+					// Scroll down = zoom out = coarser granularity
+					onDecreaseGranularity();
+				}
+			}
+		};
+
+		container.addEventListener('wheel', handleWheel, { passive: false });
+		return () => container.removeEventListener('wheel', handleWheel);
+	}, [onIncreaseGranularity, onDecreaseGranularity]);
 
 	return (
-		<div className="flex-1 overflow-auto bg-gray-50 custom-scrollbar dark:bg-[#070b13]">
+		<div
+			ref={containerRef}
+			className="flex-1 overflow-auto bg-gray-50 custom-scrollbar dark:bg-[#070b13]"
+		>
 			<div className="min-w-[400px]">
 				{/* Header */}
 				<div className="sticky top-0 z-30 flex h-12 border-b border-gray-200 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-[#101622]/95">
@@ -291,7 +341,7 @@ export function ScheduleCalendarGrid({
 
 				{/* Time grid */}
 				<div className="relative">
-					{today && <CurrentTimeIndicator />}
+					{today && <CurrentTimeIndicator hourHeight={hourHeight} />}
 
 					{TIME_SLOTS.map((hour) => (
 						<HourRow
@@ -300,6 +350,10 @@ export function ScheduleCalendarGrid({
 							hour={hour}
 							items={scheduledItems}
 							onItemClick={onItemClick}
+							granularity={granularity}
+							blocksPerHour={blocksPerHour}
+							blockHeight={blockHeight}
+							hourHeight={hourHeight}
 						/>
 					))}
 				</div>

@@ -33,20 +33,21 @@ export async function waitForSidebarReady(page: Page): Promise<void> {
 }
 
 /**
- * Get selector for a specific time slot by date and hour
+ * Get selector for a specific time slot by date, hour, and minute
  * @param date - The date for the time slot
  * @param hour - Hour in 24-hour format (6-23)
+ * @param minute - Minute (0-59), defaults to 0
  */
-export function getTimeSlotSelector(date: Date, hour: number): string {
+export function getTimeSlotSelector(date: Date, hour: number, minute: number = 0): string {
 	const dateStr = format(date, 'yyyy-MM-dd');
-	return `[data-droppable-id="${dateStr}-${hour}"]`;
+	return `[data-droppable-id="${dateStr}-${hour}-${minute}"]`;
 }
 
 /**
- * Get the time slot locator for a specific date and hour
+ * Get the time slot locator for a specific date, hour, and minute
  */
-export function getTimeSlotLocator(page: Page, date: Date, hour: number): Locator {
-	return page.locator(getTimeSlotSelector(date, hour));
+export function getTimeSlotLocator(page: Page, date: Date, hour: number, minute: number = 0): Locator {
+	return page.locator(getTimeSlotSelector(date, hour, minute));
 }
 
 /**
@@ -103,15 +104,17 @@ export async function performDragAndDrop(
  * @param itemId - The content item ID
  * @param targetDate - Target date for scheduling
  * @param targetHour - Target hour (6-23)
+ * @param targetMinute - Target minute (0-59), defaults to 0
  */
 export async function dragToSchedule(
 	page: Page,
 	itemId: string,
 	targetDate: Date,
-	targetHour: number
+	targetHour: number,
+	targetMinute: number = 0
 ): Promise<void> {
 	const sourceSelector = `[data-draggable-id="ready-${itemId}"]`;
-	const targetSelector = getTimeSlotSelector(targetDate, targetHour);
+	const targetSelector = getTimeSlotSelector(targetDate, targetHour, targetMinute);
 
 	await performDragAndDrop(page, sourceSelector, targetSelector);
 }
@@ -125,6 +128,8 @@ export async function dragToSchedule(
  * @param fromHour - Current scheduled hour
  * @param toDate - New target date
  * @param toHour - New target hour
+ * @param fromMinute - Current scheduled minute (defaults to 0)
+ * @param toMinute - New target minute (defaults to 0)
  */
 export async function dragToReschedule(
 	page: Page,
@@ -132,11 +137,13 @@ export async function dragToReschedule(
 	fromDate: Date,
 	fromHour: number,
 	toDate: Date,
-	toHour: number
+	toHour: number,
+	fromMinute: number = 0,
+	toMinute: number = 0
 ): Promise<void> {
 	// Scheduled items in the calendar have their ID prefixed in the slot
-	const sourceSlotSelector = getTimeSlotSelector(fromDate, fromHour);
-	const targetSlotSelector = getTimeSlotSelector(toDate, toHour);
+	const sourceSlotSelector = getTimeSlotSelector(fromDate, fromHour, fromMinute);
+	const targetSlotSelector = getTimeSlotSelector(toDate, toHour, toMinute);
 
 	// Find the item within the source slot
 	const sourceSlot = page.locator(sourceSlotSelector);
@@ -438,9 +445,10 @@ export async function getScheduledItemsCount(page: Page): Promise<number> {
  * @param page - Playwright page
  * @param date - Date where the item is scheduled
  * @param hour - Hour where the item is scheduled
+ * @param minute - Minute where the item is scheduled (defaults to 0)
  */
-export async function clickScheduledItem(page: Page, date: Date, hour: number): Promise<void> {
-	const slotSelector = getTimeSlotSelector(date, hour);
+export async function clickScheduledItem(page: Page, date: Date, hour: number, minute: number = 0): Promise<void> {
+	const slotSelector = getTimeSlotSelector(date, hour, minute);
 	const slot = page.locator(slotSelector);
 
 	// Find the item within the slot

@@ -210,12 +210,13 @@ describe('ScheduleCalendarGrid - Droppable Zones', () => {
 			/>
 		);
 
-		// Check for specific droppable ID format: YYYY-MM-DD-hour-blockIndex
+		// Check for specific droppable ID format: YYYY-MM-DD-hour-minute
+		// With default 15-min granularity: :00, :15, :30, :45
 		const droppable = container.querySelector('[data-droppable-id="2024-01-15-10-0"]');
 		expect(droppable).toBeInTheDocument();
 
-		// Check another block
-		const droppable2 = container.querySelector('[data-droppable-id="2024-01-15-10-2"]');
+		// Check another block (10:30)
+		const droppable2 = container.querySelector('[data-droppable-id="2024-01-15-10-30"]');
 		expect(droppable2).toBeInTheDocument();
 	});
 });

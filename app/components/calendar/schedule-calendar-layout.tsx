@@ -14,6 +14,10 @@ import { toast } from 'sonner';
 import { setHours, setMinutes, format } from 'date-fns';
 
 import { ScheduleHeader, ViewMode } from './schedule-header';
+
+// Granularity levels in minutes (from coarse to fine)
+const GRANULARITY_LEVELS = [60, 30, 15, 5, 1] as const;
+export type Granularity = (typeof GRANULARITY_LEVELS)[number];
 import { ScheduleCalendarGrid } from './schedule-calendar-grid';
 import { ReadyToScheduleSidebar } from './ready-to-schedule-sidebar';
 import { ScheduleCalendarItem } from './schedule-calendar-item';
@@ -32,6 +36,21 @@ export function ScheduleCalendarLayout() {
 	// Calendar state - day view only
 	const [currentDate, setCurrentDate] = useState(new Date());
 	const [searchQuery, setSearchQuery] = useState('');
+	const [granularity, setGranularity] = useState<Granularity>(15);
+
+	const increaseGranularity = useCallback(() => {
+		const idx = GRANULARITY_LEVELS.indexOf(granularity);
+		if (idx < GRANULARITY_LEVELS.length - 1) {
+			setGranularity(GRANULARITY_LEVELS[idx + 1]);
+		}
+	}, [granularity]);
+
+	const decreaseGranularity = useCallback(() => {
+		const idx = GRANULARITY_LEVELS.indexOf(granularity);
+		if (idx > 0) {
+			setGranularity(GRANULARITY_LEVELS[idx - 1]);
+		}
+	}, [granularity]);
 
 	// Drag state
 	const [activeId, setActiveId] = useState<string | null>(null);
@@ -184,6 +203,9 @@ export function ScheduleCalendarLayout() {
 						onNewSchedule={handleNewSchedule}
 						searchQuery={searchQuery}
 						onSearchChange={setSearchQuery}
+						granularity={granularity}
+						onIncreaseGranularity={increaseGranularity}
+						onDecreaseGranularity={decreaseGranularity}
 					/>
 
 					{/* Calendar + Sidebar */}
@@ -193,6 +215,9 @@ export function ScheduleCalendarLayout() {
 							currentDate={currentDate}
 							scheduledItems={scheduledItems}
 							onItemClick={handleOpenPreview}
+							granularity={granularity}
+							onIncreaseGranularity={increaseGranularity}
+							onDecreaseGranularity={decreaseGranularity}
 						/>
 
 						{/* Ready to Schedule Sidebar */}

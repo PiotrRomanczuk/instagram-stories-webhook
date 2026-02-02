@@ -87,11 +87,17 @@ export function ScheduleCalendarItem({
 				ref={setNodeRef}
 				style={style}
 				{...dragProps}
-				onClick={onClick}
+				onClick={(e) => {
+					// Only trigger click if not dragging
+					if (!isDragging) {
+						onClick?.();
+					}
+				}}
 				data-item-id={item.id}
+				data-draggable-id={item.id}
 				data-publishing-status={item.publishingStatus}
 				className={cn(
-					'group flex h-[72px] w-full cursor-pointer items-center gap-2 overflow-hidden rounded-md border bg-white p-1.5 shadow-sm transition-all dark:bg-slate-900',
+					'group flex h-full w-full cursor-pointer items-center gap-2 overflow-hidden rounded-md border bg-white p-1 shadow-sm transition-all dark:bg-slate-900',
 					isDragging && 'z-50 opacity-80 shadow-xl scale-105',
 					item.publishingStatus === 'failed'
 						? 'border-red-500/50'
@@ -102,7 +108,7 @@ export function ScheduleCalendarItem({
 				)}
 			>
 				{/* Thumbnail */}
-				<div className="relative h-full w-12 flex-shrink-0 overflow-hidden rounded">
+				<div className="relative aspect-square h-full flex-shrink-0 overflow-hidden rounded">
 					{!imageError ? (
 						<>
 							<div
@@ -124,7 +130,7 @@ export function ScheduleCalendarItem({
 					{/* Status indicator bar */}
 					<div
 						className={cn(
-							'absolute bottom-0 left-0 right-0 h-1',
+							'absolute bottom-0 left-0 right-0 h-0.5',
 							item.publishingStatus === 'failed'
 								? 'bg-red-500'
 								: item.publishingStatus === 'published'
@@ -137,22 +143,12 @@ export function ScheduleCalendarItem({
 				</div>
 
 				{/* Content */}
-				<div className="flex min-w-0 flex-1 flex-col justify-center">
-					<div className="flex items-center gap-1">
-						<span
-							className={cn(
-								'flex items-center gap-0.5 rounded px-1 py-0.5 text-[8px] font-bold uppercase text-white',
-								status.className
-							)}
-						>
-							{status.icon}
-						</span>
-						<p className="truncate text-[10px] font-semibold text-gray-900 dark:text-white">
-							{title}
-						</p>
-					</div>
+				<div className="flex min-w-0 flex-1 flex-col justify-center overflow-hidden">
+					<p className="truncate text-[9px] font-semibold leading-tight text-gray-900 dark:text-white">
+						{title}
+					</p>
 					{scheduledTime && (
-						<p className="mt-0.5 text-[9px] font-medium text-gray-500 dark:text-slate-400">
+						<p className="truncate text-[8px] font-medium text-gray-500 dark:text-slate-400">
 							{format(scheduledTime, 'h:mm a')}
 						</p>
 					)}

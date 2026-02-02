@@ -4,7 +4,7 @@
  * Schedule Header - Top navigation bar with date controls and actions
  */
 
-import { ChevronLeft, ChevronRight, Search, Zap, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, Zap, Plus, Minus } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { format, addWeeks, subWeeks, addDays, subDays, startOfWeek, endOfWeek, addMonths, subMonths, startOfMonth, endOfMonth } from 'date-fns';
@@ -20,6 +20,9 @@ interface ScheduleHeaderProps {
 	onNewSchedule?: () => void;
 	searchQuery?: string;
 	onSearchChange?: (query: string) => void;
+	granularity?: number;
+	onIncreaseGranularity?: () => void;
+	onDecreaseGranularity?: () => void;
 }
 
 export function ScheduleHeader({
@@ -31,6 +34,9 @@ export function ScheduleHeader({
 	onNewSchedule,
 	searchQuery = '',
 	onSearchChange,
+	granularity = 15,
+	onIncreaseGranularity,
+	onDecreaseGranularity,
 }: ScheduleHeaderProps) {
 	const getDateRangeText = () => {
 		switch (viewMode) {
@@ -114,6 +120,35 @@ export function ScheduleHeader({
 						Day
 					</span>
 				</div>
+
+				{/* Granularity controls */}
+				{onDecreaseGranularity && onIncreaseGranularity && (
+					<div className="flex items-center rounded-lg border border-gray-200 dark:border-slate-700">
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={onDecreaseGranularity}
+							disabled={granularity === 60}
+							className="h-8 w-8 p-0 text-gray-500 hover:bg-gray-100 hover:text-gray-900 disabled:opacity-50 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
+							title="Decrease granularity (larger time blocks)"
+						>
+							<Minus className="h-4 w-4" />
+						</Button>
+						<span className="w-12 text-center text-xs font-medium text-gray-700 dark:text-slate-300">
+							{granularity}m
+						</span>
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={onIncreaseGranularity}
+							disabled={granularity === 1}
+							className="h-8 w-8 p-0 text-gray-500 hover:bg-gray-100 hover:text-gray-900 disabled:opacity-50 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
+							title="Increase granularity (smaller time blocks)"
+						>
+							<Plus className="h-4 w-4" />
+						</Button>
+					</div>
+				)}
 
 				<Button
 					variant="ghost"
