@@ -7,9 +7,10 @@ interface DateTimePickerProps {
     value: Date;
     onChange: (date: Date) => void;
     minDate?: Date;
+    hideQuickPicks?: boolean;
 }
 
-export function DateTimePicker({ value, onChange, minDate }: DateTimePickerProps) {
+export function DateTimePicker({ value, onChange, minDate, hideQuickPicks }: DateTimePickerProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [currentMonth, setCurrentMonth] = useState(new Date(value));
     const containerRef = useRef<HTMLDivElement>(null);
@@ -96,10 +97,10 @@ export function DateTimePicker({ value, onChange, minDate }: DateTimePickerProps
         onChange(newDate);
     };
 
-    // Time options (15-minute increments)
+    // Time options (1-minute increments)
     const timeOptions = [];
     for (let h = 0; h < 24; h++) {
-        for (let m = 0; m < 60; m += 15) {
+        for (let m = 0; m < 60; m += 1) {
             timeOptions.push({ hours: h, minutes: m });
         }
     }
@@ -143,20 +144,22 @@ export function DateTimePicker({ value, onChange, minDate }: DateTimePickerProps
             {isOpen && (
                 <div className="absolute top-full left-0 z-50 mt-2 bg-white border border-gray-200 rounded-xl shadow-xl p-4 w-full md:w-96">
                     {/* Quick Picks */}
-                    <div className="grid grid-cols-2 gap-2 mb-4">
-                        {getQuickPickOptions().map((option) => (
-                            <button
-                                key={option.label}
-                                type="button"
-                                onClick={() => handleQuickPick(option.getDate)}
-                                className="px-3 py-2 text-xs font-bold bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition border border-indigo-100"
-                            >
-                                {option.label}
-                            </button>
-                        ))}
-                    </div>
+                    {!hideQuickPicks && (
+                        <div className="grid grid-cols-2 gap-2 mb-4">
+                            {getQuickPickOptions().map((option) => (
+                                <button
+                                    key={option.label}
+                                    type="button"
+                                    onClick={() => handleQuickPick(option.getDate)}
+                                    className="px-3 py-2 text-xs font-bold bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition border border-indigo-100"
+                                >
+                                    {option.label}
+                                </button>
+                            ))}
+                        </div>
+                    )}
 
-                    <div className="border-t border-gray-200 pt-4">
+                    <div className={hideQuickPicks ? '' : 'border-t border-gray-200 pt-4'}>
                         {/* Month/Year Navigation */}
                         <div className="flex items-center justify-between mb-4">
                             <button
@@ -232,7 +235,7 @@ export function DateTimePicker({ value, onChange, minDate }: DateTimePickerProps
                                     onChange={(e) => handleTimeChange(value.getHours(), parseInt(e.target.value))}
                                     className="flex-1 px-2 py-2 text-xs font-bold rounded-lg border border-gray-200 focus:border-indigo-500 outline-none"
                                 >
-                                    {[0, 15, 30, 45].map(m => (
+                                    {Array.from({ length: 60 }, (_, m) => (
                                         <option key={m} value={String(m).padStart(2, '0')}>
                                             :{String(m).padStart(2, '0')}
                                         </option>

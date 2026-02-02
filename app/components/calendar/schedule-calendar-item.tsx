@@ -2,6 +2,9 @@
 
 /**
  * Schedule Calendar Item - Story card displayed on the calendar grid
+ * Supports two variants:
+ * - 'card': Full 9:16 aspect ratio card (for sidebar)
+ * - 'compact': Small horizontal card (for calendar grid)
  */
 
 import { useState } from 'react';
@@ -15,6 +18,8 @@ interface ScheduleCalendarItemProps {
 	item: ContentItem;
 	onClick?: () => void;
 	isDraggable?: boolean;
+	variant?: 'card' | 'compact';
+	showMinute?: boolean;
 }
 
 function getStatusBadge(item: ContentItem) {
@@ -50,6 +55,7 @@ export function ScheduleCalendarItem({
 	item,
 	onClick,
 	isDraggable = true,
+	variant = 'card',
 }: ScheduleCalendarItemProps) {
 	const [imageError, setImageError] = useState(false);
 
@@ -70,12 +76,97 @@ export function ScheduleCalendarItem({
 	const scheduledTime = item.scheduledTime ? new Date(item.scheduledTime) : null;
 	const title = item.title || item.caption?.slice(0, 30) || 'Untitled';
 
+	const dragProps = isDraggable && item.publishingStatus !== 'published'
+		? { ...listeners, ...attributes }
+		: {};
+
+	// Compact variant for calendar grid - horizontal card with small thumbnail
+	if (variant === 'compact') {
+		return (
+			<div
+				ref={setNodeRef}
+				style={style}
+				{...dragProps}
+				onClick={onClick}
+				data-item-id={item.id}
+				data-publishing-status={item.publishingStatus}
+				className={cn(
+					'group flex h-[72px] w-full cursor-pointer items-center gap-2 overflow-hidden rounded-md border bg-white p-1.5 shadow-sm transition-all dark:bg-slate-900',
+					isDragging && 'z-50 opacity-80 shadow-xl scale-105',
+					item.publishingStatus === 'failed'
+						? 'border-red-500/50'
+						: item.publishingStatus === 'published'
+						? 'border-emerald-500/40'
+						: 'border-[#2b6cee]/40 hover:border-[#2b6cee] hover:shadow-md',
+					isDraggable && item.publishingStatus !== 'published' && 'cursor-grab active:cursor-grabbing'
+				)}
+			>
+				{/* Thumbnail */}
+				<div className="relative h-full w-12 flex-shrink-0 overflow-hidden rounded">
+					{!imageError ? (
+						<>
+							<div
+								className="absolute inset-0 bg-cover bg-center"
+								style={{ backgroundImage: `url(${item.mediaUrl})` }}
+							/>
+							<img
+								src={item.mediaUrl}
+								alt=""
+								className="sr-only"
+								onError={() => setImageError(true)}
+							/>
+						</>
+					) : (
+						<div className="flex h-full w-full items-center justify-center bg-gray-200 dark:bg-slate-800">
+							<span className="text-[6px] text-gray-400">N/A</span>
+						</div>
+					)}
+					{/* Status indicator bar */}
+					<div
+						className={cn(
+							'absolute bottom-0 left-0 right-0 h-1',
+							item.publishingStatus === 'failed'
+								? 'bg-red-500'
+								: item.publishingStatus === 'published'
+								? 'bg-emerald-500'
+								: item.publishingStatus === 'processing'
+								? 'bg-yellow-500'
+								: 'bg-[#2b6cee]'
+						)}
+					/>
+				</div>
+
+				{/* Content */}
+				<div className="flex min-w-0 flex-1 flex-col justify-center">
+					<div className="flex items-center gap-1">
+						<span
+							className={cn(
+								'flex items-center gap-0.5 rounded px-1 py-0.5 text-[8px] font-bold uppercase text-white',
+								status.className
+							)}
+						>
+							{status.icon}
+						</span>
+						<p className="truncate text-[10px] font-semibold text-gray-900 dark:text-white">
+							{title}
+						</p>
+					</div>
+					{scheduledTime && (
+						<p className="mt-0.5 text-[9px] font-medium text-gray-500 dark:text-slate-400">
+							{format(scheduledTime, 'h:mm a')}
+						</p>
+					)}
+				</div>
+			</div>
+		);
+	}
+
+	// Card variant - full 9:16 aspect ratio (for sidebar)
 	return (
 		<div
 			ref={setNodeRef}
 			style={style}
-			{...(isDraggable && item.publishingStatus !== 'published' ? listeners : {})}
-			{...(isDraggable && item.publishingStatus !== 'published' ? attributes : {})}
+			{...dragProps}
 			onClick={onClick}
 			data-item-id={item.id}
 			data-publishing-status={item.publishingStatus}

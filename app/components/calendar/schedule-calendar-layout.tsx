@@ -11,7 +11,7 @@ import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent } from '@dnd-kit/core';
 import { toast } from 'sonner';
-import { setHours, format } from 'date-fns';
+import { setHours, setMinutes, format } from 'date-fns';
 
 import { ScheduleHeader, ViewMode } from './schedule-header';
 import { ScheduleCalendarGrid } from './schedule-calendar-grid';
@@ -108,7 +108,7 @@ export function ScheduleCalendarLayout() {
 			if (!over) return;
 
 			const draggedId = String(active.id);
-			const dropData = over.data.current as { day: Date; hour: number } | null;
+			const dropData = over.data.current as { day: Date; hour: number; minute?: number } | null;
 
 			if (!dropData) return;
 
@@ -118,8 +118,9 @@ export function ScheduleCalendarLayout() {
 
 			if (!item) return;
 
-			// Create scheduled time from drop target
-			const scheduledTime = setHours(dropData.day, dropData.hour);
+			// Create scheduled time from drop target (hour + minute)
+			const minute = dropData.minute ?? 0;
+			const scheduledTime = setMinutes(setHours(dropData.day, dropData.hour), minute);
 
 			// If it's already published, don't allow rescheduling
 			if (item.publishingStatus === 'published') {
@@ -134,6 +135,7 @@ export function ScheduleCalendarLayout() {
 					body: JSON.stringify({
 						scheduledTime: scheduledTime.getTime(),
 						publishingStatus: 'scheduled',
+						version: item.version,
 					}),
 				});
 
@@ -156,7 +158,7 @@ export function ScheduleCalendarLayout() {
 		[allItems, mutate]
 	);
 
-	const handleItemClick = useCallback((item: ContentItem) => {
+	const handleOpenPreview = useCallback((item: ContentItem) => {
 		setPreviewItem(item);
 	}, []);
 
@@ -191,13 +193,15 @@ export function ScheduleCalendarLayout() {
 						<ScheduleCalendarGrid
 							currentDate={currentDate}
 							scheduledItems={scheduledItems}
-							onItemClick={handleItemClick}
+							onItemClick={handleOpenPreview}
+							viewMode={viewMode}
 						/>
 
 						{/* Ready to Schedule Sidebar */}
 						<ReadyToScheduleSidebar
 							items={readyItems}
-							onItemClick={handleItemClick}
+							onOpenPreview={handleOpenPreview}
+							onRefresh={mutate}
 						/>
 					</div>
 

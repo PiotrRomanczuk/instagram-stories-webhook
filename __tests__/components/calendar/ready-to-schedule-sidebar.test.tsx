@@ -172,15 +172,17 @@ describe('ReadyToScheduleSidebar - Item Display', () => {
 			}),
 		];
 
-		const { container } = renderWithDnd(<ReadyToScheduleSidebar items={items} />);
+		renderWithDnd(<ReadyToScheduleSidebar items={items} />);
 
-		// Image should be rendered as background
-		const imageElement = container.querySelector('[style*="background-image"]');
+		// Image should be rendered as an img element with object-contain
+		const imageElement = screen.getByRole('img');
 		expect(imageElement).toBeInTheDocument();
+		expect(imageElement).toHaveAttribute('src', 'https://example.com/test-image.jpg');
+		expect(imageElement).toHaveClass('object-contain');
 	});
 
 	it('should render clickable items', () => {
-		const onItemClick = vi.fn();
+		const onOpenPreview = vi.fn();
 
 		const items = [
 			createMockItem({
@@ -192,7 +194,7 @@ describe('ReadyToScheduleSidebar - Item Display', () => {
 		];
 
 		const { container } = renderWithDnd(
-			<ReadyToScheduleSidebar items={items} onItemClick={onItemClick} />
+			<ReadyToScheduleSidebar items={items} onOpenPreview={onOpenPreview} />
 		);
 
 		// Find the card container (has cursor-grab class) - it's clickable
@@ -494,7 +496,7 @@ describe('ReadyToScheduleSidebar - Image Handling', () => {
 		vi.clearAllMocks();
 	});
 
-	it('should show fallback when image fails to load', () => {
+	it('should show fallback when image fails to load', async () => {
 		const items = [
 			createMockItem({
 				id: '1',
@@ -504,16 +506,14 @@ describe('ReadyToScheduleSidebar - Image Handling', () => {
 			}),
 		];
 
-		const { container } = renderWithDnd(<ReadyToScheduleSidebar items={items} />);
+		renderWithDnd(<ReadyToScheduleSidebar items={items} />);
 
-		// Find the hidden img element and trigger error
-		const img = container.querySelector('img.sr-only') as HTMLImageElement;
-		if (img) {
-			fireEvent.error(img);
-		}
+		// Find the img element and trigger error
+		const img = screen.getByRole('img');
+		fireEvent.error(img);
 
 		// Should show "No preview" fallback
-		waitFor(() => {
+		await waitFor(() => {
 			expect(screen.getByText('No preview')).toBeInTheDocument();
 		});
 	});
