@@ -451,3 +451,147 @@ export async function fetchContent(
   const data = await response.json();
   return data.items || [];
 }
+
+// ============================================================================
+// Batch Seeding Helpers for E2E Tests
+// ============================================================================
+
+/**
+ * Create multiple approved content items ready for scheduling
+ * @param count - Number of items to create
+ * @returns Array of created content IDs
+ */
+export async function seedApprovedContentBatch(
+  page: Page,
+  count: number,
+  options: {
+    titlePrefix?: string;
+    captionPrefix?: string;
+    startIndex?: number;
+  } = {}
+): Promise<string[]> {
+  const { titlePrefix = 'Test Content', captionPrefix = 'Test caption', startIndex = 0 } = options;
+  const ids: string[] = [];
+
+  for (let i = 0; i < count; i++) {
+    const id = await createApprovedContent(page, {
+      title: `${titlePrefix} ${startIndex + i + 1}`,
+      caption: `${captionPrefix} ${startIndex + i + 1}`,
+      mediaIndex: (startIndex + i) % 100, // Cycle through available memes
+    });
+    ids.push(id);
+  }
+
+  return ids;
+}
+
+/**
+ * Create scheduled content at a specific time
+ * @param scheduledTime - The time to schedule the content
+ */
+export async function seedScheduledContentAtTime(
+  page: Page,
+  scheduledTime: Date,
+  options: {
+    title?: string;
+    caption?: string;
+    mediaIndex?: number;
+  } = {}
+): Promise<string> {
+  return createScheduledContent(page, scheduledTime, options);
+}
+
+/**
+ * Create multiple scheduled content items at different times
+ * @param times - Array of Date objects for scheduling
+ */
+export async function seedScheduledContentBatch(
+  page: Page,
+  times: Date[],
+  options: {
+    titlePrefix?: string;
+    captionPrefix?: string;
+  } = {}
+): Promise<string[]> {
+  const { titlePrefix = 'Scheduled Content', captionPrefix = 'Scheduled caption' } = options;
+  const ids: string[] = [];
+
+  for (let i = 0; i < times.length; i++) {
+    const id = await createScheduledContent(page, times[i], {
+      title: `${titlePrefix} ${i + 1}`,
+      caption: `${captionPrefix} ${i + 1}`,
+      mediaIndex: i % 100,
+    });
+    ids.push(id);
+  }
+
+  return ids;
+}
+
+/**
+ * Delete specific content items by ID
+ * @param ids - Array of content IDs to delete
+ */
+export async function cleanupTestContent(page: Page, ids: string[]): Promise<void> {
+  for (const id of ids) {
+    try {
+      await page.request.delete(`/api/content/${id}`);
+    } catch (error) {
+      console.warn(`Failed to delete content ${id}:`, error);
+    }
+  }
+}
+
+/**
+ * Delete all test content matching a pattern
+ * @param titlePattern - Pattern to match against titles (e.g., "Test Content")
+ */
+export async function cleanupTestContentByPattern(
+  page: Page,
+  titlePattern: string
+): Promise<number> {
+  const content = await fetchContent(page, { limit: 100 });
+  const matching = content.filter(c => c.title?.includes(titlePattern));
+  const ids = matching.map(c => c.id).filter((id): id is string => !!id);
+
+  await cleanupTestContent(page, ids);
+  return ids.length;
+}
+
+/**
+ * Get content item by ID
+ */
+export async function getContentById(
+  page: Page,
+  contentId: string
+): Promise<TestContentItem | null> {
+  try {
+    const response = await page.request.get(`/api/content/${contentId}`);
+    if (!response.ok()) {
+      return null;
+    }
+    const data = await response.json();
+    return data.item || data;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Verify content was scheduled correctly
+ */
+export async function verifyContentScheduled(
+  page: Page,
+  contentId: string,
+  expectedTime: Date,
+  toleranceMs: number = 60000 // 1 minute tolerance
+): Promise<boolean> {
+  const content = await getContentById(page, contentId);
+  if (!content) return false;
+
+  if (content.publishingStatus !== 'scheduled') return false;
+  if (!content.scheduledTime) return false;
+
+  const diff = Math.abs(content.scheduledTime - expectedTime.getTime());
+  return diff <= toleranceMs;
+}

@@ -240,13 +240,163 @@ export async function navigateToWeek(page: Page, date: Date): Promise<void> {
  * @param mode - View mode ('day' or 'week')
  */
 export async function switchViewMode(page: Page, mode: 'day' | 'week'): Promise<void> {
-	const buttonText = mode === 'day' ? 'Day' : 'Week';
-	const viewButton = page.getByRole('button', { name: buttonText });
+	const viewButton = page.locator('button').filter({ hasText: new RegExp(`^${mode}$`, 'i') });
 
 	if (await viewButton.isVisible()) {
 		await viewButton.click();
 		await page.waitForTimeout(300);
 	}
+}
+
+/**
+ * Switch to day view specifically
+ */
+export async function switchToDayView(page: Page): Promise<void> {
+	await switchViewMode(page, 'day');
+	// Verify single column is shown
+	const dayColumns = await getDayColumnCount(page);
+	if (dayColumns !== 1) {
+		throw new Error(`Expected 1 day column in day view, got ${dayColumns}`);
+	}
+}
+
+/**
+ * Switch to week view specifically
+ */
+export async function switchToWeekView(page: Page): Promise<void> {
+	await switchViewMode(page, 'week');
+	// Verify 7 columns are shown
+	const dayColumns = await getDayColumnCount(page);
+	if (dayColumns !== 7) {
+		throw new Error(`Expected 7 day columns in week view, got ${dayColumns}`);
+	}
+}
+
+/**
+ * Get the number of visible day columns in the calendar
+ */
+export async function getDayColumnCount(page: Page): Promise<number> {
+	// Count day column headers (elements with data-day-column attribute)
+	const dayColumns = page.locator('[data-day-column]');
+	return await dayColumns.count();
+}
+
+/**
+ * Get the date text displayed in the header
+ */
+export async function getHeaderDateText(page: Page): Promise<string> {
+	const header = page.locator('header h2, header .text-lg');
+	return await header.first().textContent() || '';
+}
+
+/**
+ * Wait for a modal to open
+ */
+export async function waitForModal(page: Page, timeout = 5000): Promise<void> {
+	await page.locator('[role="dialog"], [class*="Modal"], .fixed.inset-0.z-\\[70\\], .fixed.inset-0.z-\\[90\\]').first().waitFor({ state: 'visible', timeout });
+}
+
+/**
+ * Close currently open modal
+ */
+export async function closeModal(page: Page): Promise<void> {
+	// Try clicking close button first
+	const closeButton = page.locator('button').filter({ has: page.locator('.lucide-x') }).first();
+	if (await closeButton.isVisible({ timeout: 1000 }).catch(() => false)) {
+		await closeButton.click();
+		await page.waitForTimeout(300);
+		return;
+	}
+
+	// Fallback to Escape key
+	await page.keyboard.press('Escape');
+	await page.waitForTimeout(300);
+}
+
+/**
+ * Open the datetime picker in the edit modal
+ */
+export async function openDateTimePicker(page: Page): Promise<void> {
+	// The datetime picker button has a Clock icon
+	const pickerButton = page.locator('button').filter({ has: page.locator('.lucide-clock, [class*="Clock"]') });
+	if (await pickerButton.isVisible()) {
+		await pickerButton.click();
+		await page.waitForTimeout(300);
+	}
+}
+
+/**
+ * Select a quick pick option in the datetime picker
+ * @param label - The label text like "In 1 hour", "Tomorrow 9am", etc.
+ */
+export async function selectQuickPick(page: Page, label: string): Promise<void> {
+	const quickPickButton = page.locator('button').filter({ hasText: label });
+	if (await quickPickButton.isVisible()) {
+		await quickPickButton.click();
+		await page.waitForTimeout(300);
+	} else {
+		throw new Error(`Quick pick option "${label}" not found`);
+	}
+}
+
+/**
+ * Select a specific day in the calendar date picker
+ * @param day - Day of month (1-31)
+ */
+export async function selectCalendarDate(page: Page, day: number): Promise<void> {
+	// Find the calendar grid and click the day button
+	const dayButton = page.locator('.grid.grid-cols-7 button').filter({ hasText: String(day) });
+	// Get the button that exactly matches the day (not a substring)
+	const buttons = await dayButton.all();
+	for (const btn of buttons) {
+		const text = await btn.textContent();
+		if (text?.trim() === String(day)) {
+			await btn.click();
+			await page.waitForTimeout(300);
+			return;
+		}
+	}
+	throw new Error(`Calendar day ${day} not found`);
+}
+
+/**
+ * Select hour in the time picker dropdown
+ * @param hour - Hour in 24-hour format (0-23)
+ */
+export async function selectHour(page: Page, hour: number): Promise<void> {
+	const hourSelect = page.locator('select').first();
+	await hourSelect.selectOption(String(hour).padStart(2, '0'));
+	await page.waitForTimeout(200);
+}
+
+/**
+ * Select minute in the time picker dropdown
+ * @param minute - Minute (0-59)
+ */
+export async function selectMinute(page: Page, minute: number): Promise<void> {
+	const minuteSelect = page.locator('select').nth(1);
+	await minuteSelect.selectOption(String(minute).padStart(2, '0'));
+	await page.waitForTimeout(200);
+}
+
+/**
+ * Get the currently selected date/time from the picker display
+ */
+export async function getSelectedDateTime(page: Page): Promise<string> {
+	const pickerButton = page.locator('button').filter({ has: page.locator('.lucide-clock, [class*="Clock"]') });
+	return await pickerButton.textContent() || '';
+}
+
+/**
+ * Get the current view mode from the calendar data attribute
+ */
+export async function getCurrentViewMode(page: Page): Promise<'day' | 'week' | 'month' | null> {
+	const calendar = page.locator('[data-view-mode]');
+	if (await calendar.isVisible({ timeout: 1000 }).catch(() => false)) {
+		const mode = await calendar.getAttribute('data-view-mode');
+		return mode as 'day' | 'week' | 'month' | null;
+	}
+	return null;
 }
 
 /**

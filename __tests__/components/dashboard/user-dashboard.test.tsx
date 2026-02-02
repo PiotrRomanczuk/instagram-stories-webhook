@@ -128,10 +128,11 @@ describe('UserDashboard', () => {
 			isLoading: false,
 		});
 
-		const { container } = render(<UserDashboard userName="John" />);
+		render(<UserDashboard userName="John" />);
 
-		// Should render the submission card with background image style
-		const backgroundDiv = container.querySelector('[style*="background-image"]');
-		expect(backgroundDiv).toBeInTheDocument();
+		// Should render the submission card with an image element
+		const img = screen.getByRole('img', { name: /Submission/i });
+		expect(img).toBeInTheDocument();
+		expect(img).toHaveAttribute('src', 'https://example.com/image.jpg');
 	});
 });

@@ -22,16 +22,15 @@ const createMockSubmission = (
 });
 
 describe('SubmissionCard', () => {
-	it('should render with background image style', () => {
+	it('should render with image element', () => {
 		const submission = createMockSubmission();
-		const { container } = render(<SubmissionCard submission={submission} />);
+		render(<SubmissionCard submission={submission} />);
 
-		// The card uses background-image CSS instead of <img> tag
-		const backgroundDiv = container.querySelector('[style*="background-image"]');
-		expect(backgroundDiv).toBeInTheDocument();
-		expect(backgroundDiv).toHaveStyle({
-			backgroundImage: 'url("https://example.com/image.jpg")',
-		});
+		// The card uses an img element with object-contain
+		const img = screen.getByRole('img', { name: /Submission/i });
+		expect(img).toBeInTheDocument();
+		expect(img).toHaveAttribute('src', 'https://example.com/image.jpg');
+		expect(img).toHaveClass('object-contain');
 	});
 
 	it('should show pending status badge', () => {

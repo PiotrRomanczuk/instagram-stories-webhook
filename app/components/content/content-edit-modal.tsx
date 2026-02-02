@@ -9,9 +9,9 @@ import {
 	Type,
 	AlignLeft,
 	Send,
-	Sparkles,
 } from 'lucide-react';
 import { DateTimePicker } from '../ui/datetime-picker';
+import { StoryPreview } from '../media/story-preview';
 
 interface ContentEditModalProps {
 	item: ContentItem;
@@ -115,32 +115,14 @@ export function ContentEditModal({
 			/>
 			<div className='fixed inset-0 z-[70] flex items-center justify-center p-4 sm:p-6'>
 				<div className='relative w-full max-w-4xl rounded-3xl bg-white overflow-hidden shadow-2xl ring-1 ring-black/5 flex flex-col md:flex-row max-h-[90vh] animate-in fade-in zoom-in duration-300'>
-					{/* Left Side: Preview */}
-					<div className='hidden md:flex md:w-2/5 bg-gray-50 flex-col border-r border-gray-100'>
-						<div className='p-6 border-b border-gray-100 flex items-center gap-2'>
-							<Sparkles className='h-5 w-5 text-indigo-600' />
-							<span className='font-bold text-gray-900'>Post Preview</span>
+					{/* Left Side: Phone Preview */}
+					<div className='hidden md:flex md:w-2/5 bg-gray-50 dark:bg-[#101622] flex-col border-r border-gray-100 dark:border-slate-800'>
+						<div className='p-6 border-b border-gray-100 dark:border-slate-800 flex items-center gap-2'>
+							<Calendar className='h-5 w-5 text-indigo-600' />
+							<span className='font-bold text-gray-900 dark:text-white'>Story Preview</span>
 						</div>
-						<div className='flex-1 p-8 flex items-center justify-center bg-gray-100/50'>
-							<div className='relative w-full aspect-[4/5] rounded-2xl overflow-hidden shadow-2xl border-4 border-white transform hover:scale-[1.02] transition-transform duration-500'>
-								<img
-									src={item.mediaUrl}
-									alt='Preview'
-									className='h-full w-full object-cover'
-								/>
-								<div className='absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-6'>
-									{title && (
-										<h4 className='text-white font-bold text-lg mb-1 truncate'>
-											{title}
-										</h4>
-									)}
-									{caption && (
-										<p className='text-white/80 text-xs line-clamp-2 leading-relaxed'>
-											{caption}
-										</p>
-									)}
-								</div>
-							</div>
+						<div className='flex-1 p-8 flex items-center justify-center bg-gray-100/50 dark:bg-black/20'>
+							<StoryPreview imageUrl={item.mediaUrl} alt={title || 'Story preview'} />
 						</div>
 					</div>
 

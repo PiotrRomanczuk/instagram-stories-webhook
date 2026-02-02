@@ -68,32 +68,24 @@ export function SubmissionCard({
 		<div
 			className={cn(
 				'group relative aspect-[9/16] rounded-xl overflow-hidden',
-				'bg-white dark:bg-[var(--sf-card-dark)] border border-gray-200 dark:border-[var(--sf-border-dark)]',
+				'bg-black border border-gray-200 dark:border-[var(--sf-border-dark)]',
 				'hover:shadow-2xl transition-all duration-300',
 				className
 			)}
 		>
 			{/* Background Image */}
 			{!imageError && hasValidUrl ? (
-				<div
-					className="absolute inset-0 bg-cover bg-center"
-					style={{ backgroundImage: `url("${submission.mediaUrl}")` }}
+				<img
+					src={submission.mediaUrl}
+					alt={submission.title || 'Submission'}
+					className="absolute inset-0 h-full w-full object-contain"
+					onError={() => setImageError(true)}
 				/>
 			) : (
 				<div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gray-100 dark:bg-[var(--sf-card-dark)] text-gray-500 dark:text-[var(--sf-text-secondary)]">
 					<ImageOff className="h-12 w-12 opacity-50" />
 					<span className="text-xs">Image unavailable</span>
 				</div>
-			)}
-
-			{/* Hidden img element for error handling */}
-			{hasValidUrl && !imageError && (
-				<img
-					src={submission.mediaUrl}
-					alt=""
-					className="sr-only"
-					onError={() => setImageError(true)}
-				/>
 			)}
 
 			{/* Gradient Overlay */}
