@@ -1,12 +1,13 @@
 import { test, expect, Page } from '@playwright/test';
 import { signInAsRealIG } from './helpers/auth';
-import path from 'path';
+import { getMemeByIndex } from './helpers/test-assets';
 
 /**
  * Instagram Publishing - LIVE Tests
  *
  * These tests ACTUALLY PUBLISH stories to Instagram (@www_hehe_pl).
  * They verify the core functionality of the app works end-to-end.
+ * Uses real memes from /memes/ folder instead of external URLs.
  *
  * REQUIREMENTS:
  * - ENABLE_REAL_IG_TESTS=true
@@ -17,7 +18,8 @@ import path from 'path';
  * RUN: ENABLE_REAL_IG_TESTS=true ENABLE_LIVE_IG_PUBLISH=true npx playwright test instagram-publishing-live.spec.ts
  */
 
-const TEST_IMAGE_PATH = path.join(__dirname, 'fixtures/test-images/valid-story.jpg');
+// Use real meme for live publishing tests
+const getTestImagePath = () => getMemeByIndex(20);
 
 test.describe('Instagram Publishing - LIVE', () => {
 	// Skip in CI - never run live publishing in CI
@@ -59,10 +61,11 @@ test.describe('Instagram Publishing - LIVE', () => {
 		// Find the Debug Publisher card
 		await expect(page.locator('text=Debug Publisher')).toBeVisible();
 
-		// Upload test image
+		// Upload test image from /memes/ folder
+		const testImagePath = getTestImagePath();
 		const fileInput = page.locator('input[type="file"]');
-		await fileInput.setInputFiles(TEST_IMAGE_PATH);
-		console.log('📤 Uploading test image...');
+		await fileInput.setInputFiles(testImagePath);
+		console.log('Uploading test image...');
 
 		// Wait for upload to complete (URL should appear in input)
 		const urlInput = page.locator('input#debug-image-url');
@@ -118,35 +121,37 @@ test.describe('Instagram Publishing - LIVE', () => {
 	});
 
 	/**
-	 * LIVE-PUB-02: Publish story with manual URL
+	 * LIVE-PUB-02: Publish story with file upload
 	 *
-	 * Tests publishing with a pre-existing public image URL.
+	 * Tests publishing with a real meme from /memes/ folder.
 	 */
-	test('LIVE-PUB-02: publish story with manual URL', async ({ page }) => {
-		// Use a known public test image (Instagram recommended dimensions)
-		const publicImageUrl = 'https://picsum.photos/1080/1920';
-
+	test('LIVE-PUB-02: publish story with file upload', async ({ page }) => {
 		await page.goto('/debug');
 		await page.waitForLoadState('domcontentloaded');
 
 		// Verify Instagram connection
 		await expect(page.locator('text=www_hehe_pl')).toBeVisible({ timeout: 10000 });
 
-		// Enter URL manually
+		// Upload meme file instead of using external URL
+		const testImagePath = getMemeByIndex(21);
+		const fileInput = page.locator('input[type="file"]');
+		await fileInput.setInputFiles(testImagePath);
+		console.log('Uploading meme from /memes/ folder...');
+
+		// Wait for upload to complete
 		const urlInput = page.locator('input#debug-image-url');
-		await urlInput.fill(publicImageUrl);
-		console.log(`📷 Using public image: ${publicImageUrl}`);
+		await expect(urlInput).not.toHaveValue('', { timeout: 30000 });
 
 		// Click Publish
 		const publishButton = page.getByRole('button', { name: /Publish to Instagram Now/i });
 		await publishButton.click();
-		console.log('🚀 Publishing...');
+		console.log('Publishing...');
 
 		// Wait for result
 		const successAlert = page.locator('text=Published Successfully!');
 		await expect(successAlert).toBeVisible({ timeout: 60000 });
 
-		console.log('✅ Published successfully with manual URL!');
+		console.log('Published successfully with file upload!');
 	});
 
 	/**
@@ -159,9 +164,10 @@ test.describe('Instagram Publishing - LIVE', () => {
 		await page.goto('/debug');
 		await page.waitForLoadState('domcontentloaded');
 
-		// Upload and publish
+		// Upload and publish using real meme
+		const testImagePath = getMemeByIndex(22);
 		const fileInput = page.locator('input[type="file"]');
-		await fileInput.setInputFiles(TEST_IMAGE_PATH);
+		await fileInput.setInputFiles(testImagePath);
 
 		const urlInput = page.locator('input#debug-image-url');
 		await expect(urlInput).not.toHaveValue('', { timeout: 30000 });
@@ -279,9 +285,10 @@ test.describe('Instagram Connection Verification', () => {
 		await page.goto('/debug');
 		await page.waitForLoadState('domcontentloaded');
 
-		// Upload test image
+		// Upload test image from /memes/ folder
+		const testImagePath = getMemeByIndex(23);
 		const fileInput = page.locator('input[type="file"]');
-		await fileInput.setInputFiles(TEST_IMAGE_PATH);
+		await fileInput.setInputFiles(testImagePath);
 
 		// Wait for upload to complete
 		const urlInput = page.locator('input#debug-image-url');

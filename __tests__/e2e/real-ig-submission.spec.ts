@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { signInAsUser } from './helpers/auth';
+import { getMemeByIndex } from './helpers/test-assets';
 
 /**
  * Content Submission E2E Tests (Real Account)
@@ -67,12 +68,10 @@ test.describe('Content Submission (User Account)', () => {
 		await page.goto('/submit');
 		await page.waitForLoadState('domcontentloaded');
 
-		// Use URL input to add an image (simpler than file upload in E2E)
-		const urlInput = page.getByPlaceholder('Or paste image URL...');
-		await urlInput.fill('https://picsum.photos/1080/1920');
-
-		const loadButton = page.getByRole('button', { name: 'Load' });
-		await loadButton.click();
+		// Use file upload with real meme from /memes/ folder
+		const memePath = getMemeByIndex(0);
+		const fileInput = page.locator('input[type="file"]');
+		await fileInput.setInputFiles(memePath);
 
 		// Wait for image to load and preview to appear
 		await page.waitForTimeout(2000);
@@ -109,12 +108,10 @@ test.describe('Content Submission (User Account)', () => {
 		await page.goto('/submit');
 		await page.waitForLoadState('domcontentloaded');
 
-		// Use URL input to add an image
-		const urlInput = page.getByPlaceholder('Or paste image URL...');
-		await urlInput.fill('https://picsum.photos/1080/1920');
-
-		const loadButton = page.getByRole('button', { name: 'Load' });
-		await loadButton.click();
+		// Use file upload with real meme from /memes/ folder
+		const memePath = getMemeByIndex(1);
+		const fileInput = page.locator('input[type="file"]');
+		await fileInput.setInputFiles(memePath);
 
 		// Wait for image to load
 		await page.waitForTimeout(2000);
@@ -149,12 +146,10 @@ test.describe('Content Submission (User Account)', () => {
 
 		const uniqueCaption = `E2E Test Submission ${Date.now()}`;
 
-		// Use URL input to add an image
-		const urlInput = page.getByPlaceholder('Or paste image URL...');
-		await urlInput.fill('https://picsum.photos/1080/1920');
-
-		const loadButton = page.getByRole('button', { name: 'Load' });
-		await loadButton.click();
+		// Use file upload with real meme from /memes/ folder
+		const memePath = getMemeByIndex(2);
+		const fileInput = page.locator('input[type="file"]');
+		await fileInput.setInputFiles(memePath);
 
 		await page.waitForTimeout(2000);
 
@@ -197,11 +192,9 @@ test.describe('Content Submission (User Account)', () => {
 		await page.waitForLoadState('domcontentloaded');
 
 		// First load an image so the form is active
-		const urlInput = page.getByPlaceholder('Or paste image URL...');
-		await urlInput.fill('https://picsum.photos/1080/1920');
-
-		const loadButton = page.getByRole('button', { name: 'Load' });
-		await loadButton.click();
+		const memePath = getMemeByIndex(3);
+		const fileInput = page.locator('input[type="file"]');
+		await fileInput.setInputFiles(memePath);
 
 		await page.waitForTimeout(2000);
 
@@ -233,12 +226,10 @@ test.describe('Content Submission (User Account)', () => {
 		const previewPlaceholder = page.getByText('Story Preview');
 		await expect(previewPlaceholder).toBeVisible();
 
-		// Load an image
-		const urlInput = page.getByPlaceholder('Or paste image URL...');
-		await urlInput.fill('https://picsum.photos/1080/1920');
-
-		const loadButton = page.getByRole('button', { name: 'Load' });
-		await loadButton.click();
+		// Load an image using file upload with real meme
+		const memePath = getMemeByIndex(4);
+		const fileInput = page.locator('input[type="file"]');
+		await fileInput.setInputFiles(memePath);
 
 		// Wait for image to load
 		await page.waitForTimeout(3000);
@@ -262,12 +253,10 @@ test.describe('Content Submission (User Account)', () => {
 		await page.goto('/submit');
 		await page.waitForLoadState('domcontentloaded');
 
-		// Load a square image (1:1 ratio, not 9:16)
-		const urlInput = page.getByPlaceholder('Or paste image URL...');
-		await urlInput.fill('https://picsum.photos/500/500'); // Square image
-
-		const loadButton = page.getByRole('button', { name: 'Load' });
-		await loadButton.click();
+		// Load a real meme image (most memes are not 9:16 aspect ratio)
+		const memePath = getMemeByIndex(5);
+		const fileInput = page.locator('input[type="file"]');
+		await fileInput.setInputFiles(memePath);
 
 		// Wait for image to load and aspect ratio to be analyzed
 		await page.waitForTimeout(3000);
@@ -338,12 +327,10 @@ test.describe('Content Submission - Edge Cases', () => {
 		await page.goto('/submit');
 		await page.waitForLoadState('domcontentloaded');
 
-		// Use URL input to add an image
-		const urlInput = page.getByPlaceholder('Or paste image URL...');
-		await urlInput.fill('https://picsum.photos/1080/1920');
-
-		const loadButton = page.getByRole('button', { name: 'Load' });
-		await loadButton.click();
+		// Use file upload with real meme from /memes/ folder
+		const memePath = getMemeByIndex(6);
+		const fileInput = page.locator('input[type="file"]');
+		await fileInput.setInputFiles(memePath);
 
 		await page.waitForTimeout(2000);
 

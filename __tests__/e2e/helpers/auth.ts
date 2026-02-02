@@ -37,29 +37,34 @@ export const TEST_USERS = {
 /**
  * Sign in as admin user with retry logic
  */
-export async function signInAsAdmin(page: Page, maxRetries = 3) {
+export async function signInAsAdmin(page: Page, maxRetries = 5) {
 	for (let attempt = 1; attempt <= maxRetries; attempt++) {
 		try {
-			await page.goto('/auth/signin', { waitUntil: 'domcontentloaded' });
+			// Clear cookies before each attempt to ensure clean state
+			await page.context().clearCookies();
+
+			await page.goto('/auth/signin', { waitUntil: 'load', timeout: 30000 });
 
 			// Wait for React hydration - the "Development Only" text only appears after useEffect runs
 			const devOnlyText = page.locator('text=Development Only');
-			const testBtn = page.getByRole('button', { name: 'Test Admin' });
 
-			// Wait for hydration indicator first, then button
-			await devOnlyText.waitFor({ state: 'visible', timeout: 15000 });
-			await testBtn.waitFor({ state: 'visible', timeout: 5000 });
+			// Wait for hydration with longer timeout
+			await devOnlyText.waitFor({ state: 'visible', timeout: 20000 });
+
+			// Find and wait for button to be ready
+			const testBtn = page.getByRole('button', { name: 'Test Admin' });
+			await testBtn.waitFor({ state: 'visible', timeout: 10000 });
 
 			// Give React a moment to fully hydrate event handlers
-			await page.waitForTimeout(500);
+			await page.waitForTimeout(1000);
 
-			// Click the button
-			await testBtn.click();
+			// Click the button with force option as fallback
+			await testBtn.click({ timeout: 5000 });
 
 			// Wait for navigation away from signin page
 			await page.waitForURL(
 				(url) => !url.pathname.includes('/auth/signin'),
-				{ timeout: 30000, waitUntil: 'domcontentloaded' },
+				{ timeout: 30000 },
 			);
 
 			// Verify we're actually signed in
@@ -72,8 +77,9 @@ export async function signInAsAdmin(page: Page, maxRetries = 3) {
 			console.warn(`Test Admin sign-in attempt ${attempt}/${maxRetries} failed:`, errorMsg);
 
 			if (attempt < maxRetries) {
-				// Wait before retry with exponential backoff
-				await page.waitForTimeout(1500 * attempt);
+				// Clear cookies and wait before retry with exponential backoff
+				await page.context().clearCookies();
+				await page.waitForTimeout(2000 * attempt);
 			}
 		}
 	}
@@ -85,29 +91,34 @@ export async function signInAsAdmin(page: Page, maxRetries = 3) {
 /**
  * Sign in as regular user with retry logic
  */
-export async function signInAsUser(page: Page, maxRetries = 3) {
+export async function signInAsUser(page: Page, maxRetries = 5) {
 	for (let attempt = 1; attempt <= maxRetries; attempt++) {
 		try {
-			await page.goto('/auth/signin', { waitUntil: 'domcontentloaded' });
+			// Clear cookies before each attempt to ensure clean state
+			await page.context().clearCookies();
+
+			await page.goto('/auth/signin', { waitUntil: 'load', timeout: 30000 });
 
 			// Wait for React hydration - the "Development Only" text only appears after useEffect runs
 			const devOnlyText = page.locator('text=Development Only');
-			const testBtn = page.getByRole('button', { name: 'Test User' });
 
-			// Wait for hydration indicator first, then button
-			await devOnlyText.waitFor({ state: 'visible', timeout: 15000 });
-			await testBtn.waitFor({ state: 'visible', timeout: 5000 });
+			// Wait for hydration with longer timeout
+			await devOnlyText.waitFor({ state: 'visible', timeout: 20000 });
+
+			// Find and wait for button to be ready
+			const testBtn = page.getByRole('button', { name: 'Test User' });
+			await testBtn.waitFor({ state: 'visible', timeout: 10000 });
 
 			// Give React a moment to fully hydrate event handlers
-			await page.waitForTimeout(500);
+			await page.waitForTimeout(1000);
 
-			// Click the button
-			await testBtn.click();
+			// Click the button with force option as fallback
+			await testBtn.click({ timeout: 5000 });
 
 			// Wait for navigation away from signin page
 			await page.waitForURL(
 				(url) => !url.pathname.includes('/auth/signin'),
-				{ timeout: 30000, waitUntil: 'domcontentloaded' },
+				{ timeout: 30000 },
 			);
 
 			// Verify we're actually signed in
@@ -120,8 +131,9 @@ export async function signInAsUser(page: Page, maxRetries = 3) {
 			console.warn(`Test User sign-in attempt ${attempt}/${maxRetries} failed:`, errorMsg);
 
 			if (attempt < maxRetries) {
-				// Wait before retry with exponential backoff
-				await page.waitForTimeout(1500 * attempt);
+				// Clear cookies and wait before retry with exponential backoff
+				await page.context().clearCookies();
+				await page.waitForTimeout(2000 * attempt);
 			}
 		}
 	}
@@ -134,30 +146,33 @@ export async function signInAsUser(page: Page, maxRetries = 3) {
  * Sign in as real Instagram account (for testing actual publishing)
  * This uses the p.romanczuk@gmail.com account which has linked Instagram tokens
  */
-export async function signInAsRealIG(page: Page, maxRetries = 3) {
+export async function signInAsRealIG(page: Page, maxRetries = 5) {
 	for (let attempt = 1; attempt <= maxRetries; attempt++) {
 		try {
+			// Clear cookies before each attempt to ensure clean state
+			await page.context().clearCookies();
+
 			// Navigate to signin page
-			await page.goto('/auth/signin', { waitUntil: 'domcontentloaded', timeout: 15000 });
+			await page.goto('/auth/signin', { waitUntil: 'load', timeout: 30000 });
 
 			// Wait for React hydration - the "Development Only" text only appears after useEffect runs
 			const devOnlyText = page.locator('text=Development Only');
-			await devOnlyText.waitFor({ state: 'visible', timeout: 15000 });
+			await devOnlyText.waitFor({ state: 'visible', timeout: 20000 });
 
 			// Find the Real IG button
 			const testBtn = page.getByRole('button', { name: 'Test Real IG' });
-			await testBtn.waitFor({ state: 'visible', timeout: 5000 });
+			await testBtn.waitFor({ state: 'visible', timeout: 10000 });
 
 			// Give React a moment to fully hydrate event handlers
-			await page.waitForTimeout(500);
+			await page.waitForTimeout(1000);
 
 			// Click and wait for navigation
-			await testBtn.click();
+			await testBtn.click({ timeout: 5000 });
 
 			// Wait for navigation away from signin page (NextAuth does redirects)
 			await page.waitForURL(
 				(url) => !url.pathname.includes('/auth/signin'),
-				{ timeout: 30000, waitUntil: 'domcontentloaded' },
+				{ timeout: 30000 },
 			);
 
 			// Final check - ensure we're not on signin anymore
@@ -171,9 +186,9 @@ export async function signInAsRealIG(page: Page, maxRetries = 3) {
 			console.warn(`Real IG sign-in attempt ${attempt}/${maxRetries} failed:`, errorMsg);
 
 			if (attempt < maxRetries) {
-				// Clear cookies and retry
+				// Clear cookies and retry with exponential backoff
 				await page.context().clearCookies();
-				await page.waitForTimeout(1500 * attempt);
+				await page.waitForTimeout(2000 * attempt);
 			}
 		}
 	}

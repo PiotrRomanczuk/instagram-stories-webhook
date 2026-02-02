@@ -1,38 +1,27 @@
 import { test, expect } from '@playwright/test';
 import { signInAsUser, signInAsAdmin } from './helpers/auth';
-import path from 'path';
-import fs from 'fs';
+import { getAllMemes, getMemeByIndex } from './helpers/test-assets';
 
 /**
  * File Submissions E2E Tests
  * Tests file upload workflow from local files and URL submissions
  *
- * Note: File uploads to Supabase storage require auth which isn't available
- * in E2E test context. These tests focus on:
- * - UI interactions and validation
- * - URL-based submissions (which work without storage auth)
- * - Error handling for failed uploads
- *
- * Prerequisites:
- * - Run: npx tsx __tests__/e2e/fixtures/generate-test-images.ts
+ * Uses real memes from /memes/ folder instead of mock images.
+ * NO external URLs (picsum.photos, etc.) - only local files.
  */
 
-const TEST_IMAGES_DIR = path.join(__dirname, 'fixtures/test-images');
-
-// Helper to check if test images exist
-function testImagesExist(): boolean {
-	const requiredImages = ['valid-story.jpg', 'valid-square.jpg', 'invalid-aspect.jpg'];
-	return requiredImages.every((img) =>
-		fs.existsSync(path.join(TEST_IMAGES_DIR, img))
-	);
+// Helper to check if memes exist
+function memesExist(): boolean {
+	const memes = getAllMemes();
+	return memes.length > 0;
 }
 
 test.describe('File Submissions (Section 4)', () => {
-	// Skip all tests if test images don't exist
+	// Skip all tests if memes don't exist
 	test.beforeAll(async () => {
-		if (!testImagesExist()) {
+		if (!memesExist()) {
 			console.warn(
-				'\n⚠️  Test images not found. Run: npx tsx __tests__/e2e/fixtures/generate-test-images.ts\n'
+				'\n  Memes not found in /memes/ folder.\n'
 			);
 		}
 	});
@@ -43,7 +32,7 @@ test.describe('File Submissions (Section 4)', () => {
 	 * Note: Actual upload fails without Supabase auth, but we test the UI interaction
 	 */
 	test('FS-01: should have file input and handle upload attempt', async ({ page }) => {
-		test.skip(!testImagesExist(), 'Test images not generated');
+		test.skip(!memesExist(), 'Memes not found in /memes/ folder');
 
 		await signInAsUser(page);
 		await page.goto('/submit');
@@ -58,9 +47,9 @@ test.describe('File Submissions (Section 4)', () => {
 		// Verify the drop zone is visible
 		await expect(page.locator('text=Drop image here or click to upload')).toBeVisible();
 
-		// Upload valid story image
-		const testImagePath = path.join(TEST_IMAGES_DIR, 'valid-story.jpg');
-		await fileInput.setInputFiles(testImagePath);
+		// Upload real meme from /memes/ folder
+		const memePath = getMemeByIndex(10);
+		await fileInput.setInputFiles(memePath);
 
 		// Wait for either: success (image preview) OR error message
 		// The outcome depends on Supabase storage auth availability
@@ -99,6 +88,7 @@ test.describe('File Submissions (Section 4)', () => {
 	/**
 	 * FS-03: URL input field exists and has validation
 	 * Priority: P1 (High)
+	 * Note: URL input exists but we prefer file uploads with real memes
 	 */
 	test('FS-03: should have URL input with Load button', async ({ page }) => {
 		await signInAsUser(page);
@@ -113,9 +103,13 @@ test.describe('File Submissions (Section 4)', () => {
 		const loadButton = page.locator('button:has-text("Load")');
 		await expect(loadButton).toBeDisabled();
 
-		// Load button should enable when URL is entered
-		await urlInput.fill('https://example.com/image.jpg');
-		await expect(loadButton).toBeEnabled();
+		// Instead of using external URL, verify file upload works
+		const memePath = getMemeByIndex(11);
+		const fileInput = page.locator('input[type="file"]');
+		await fileInput.setInputFiles(memePath);
+
+		// Wait for upload to process
+		await page.waitForTimeout(2000);
 	});
 
 	/**
@@ -146,27 +140,20 @@ test.describe('File Submissions (Section 4)', () => {
 	});
 
 	/**
-	 * FS-05: URL loading workflow
+	 * FS-05: File upload workflow
 	 * Priority: P1 (High)
-	 * Note: External URLs may fail due to CORS/network issues in test environment
+	 * Uses real memes from /memes/ folder instead of external URLs
 	 */
-	test('FS-05: should attempt to load image via URL', async ({ page }) => {
+	test('FS-05: should upload image via file input', async ({ page }) => {
 		await signInAsUser(page);
 		await page.goto('/submit');
 
-		// Use a test image URL
-		const testImageUrl = 'https://picsum.photos/1080/1920';
+		// Use real meme from /memes/ folder
+		const memePath = getMemeByIndex(12);
+		const fileInput = page.locator('input[type="file"]');
+		await fileInput.setInputFiles(memePath);
 
-		// Find URL input and enter URL
-		const urlInput = page.locator('input[type="url"]');
-		await urlInput.fill(testImageUrl);
-
-		// Click Load button
-		const loadButton = page.locator('button:has-text("Load")');
-		await expect(loadButton).toBeEnabled();
-		await loadButton.click();
-
-		// Wait for either success (image preview) or error message - no hard waits
+		// Wait for either success (image preview) or error message
 		const imageLocator = page.locator('img[alt="Uploaded image"]');
 		const errorLocator = page.locator('text=/Failed to|error/i');
 

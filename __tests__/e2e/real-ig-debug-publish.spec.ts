@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { signInAsRealIG } from './helpers/auth';
+import { getMemeByIndex } from './helpers/test-assets';
 
 /**
  * Debug Page and Direct Publishing E2E Tests (Real Account)
@@ -123,24 +124,22 @@ test.describe('Debug Page (Real Account)', () => {
 	});
 
 	/**
-	 * DBG-04: Enter URL Manually
+	 * DBG-04: Upload image via file input
 	 * Priority: P2 (Medium)
-	 * Verifies manual URL input in debug publisher
+	 * Verifies file upload in debug publisher
 	 */
-	test('DBG-04: should accept manual URL input', async ({ page }) => {
+	test('DBG-04: should accept file upload', async ({ page }) => {
 		await page.goto('/debug');
 		await page.waitForLoadState('domcontentloaded');
 
-		// Find the URL input
+		// Find the file input and upload real meme
+		const memePath = getMemeByIndex(30);
+		const fileInput = page.locator('input[type="file"]');
+		await fileInput.setInputFiles(memePath);
+
+		// Wait for upload to complete - URL input should be populated
 		const urlInput = page.locator('#debug-image-url');
-		await expect(urlInput).toBeVisible();
-
-		// Enter a test URL
-		const testUrl = 'https://example.com/test-image.jpg';
-		await urlInput.fill(testUrl);
-
-		// Verify the value was set
-		await expect(urlInput).toHaveValue(testUrl);
+		await expect(urlInput).not.toHaveValue('', { timeout: 30000 });
 
 		// The publish button should become enabled
 		const publishButton = page.locator('button:has-text("Publish to Instagram Now")');
@@ -169,9 +168,13 @@ test.describe('Debug Page (Real Account)', () => {
 		const noLogsMessage = page.locator('text=No logs yet');
 		await expect(noLogsMessage).toBeVisible();
 
-		// Enter a URL to trigger log activity
-		const urlInput = page.locator('#debug-image-url');
-		await urlInput.fill('https://example.com/test.jpg');
+		// Upload a file to trigger activity
+		const memePath = getMemeByIndex(31);
+		const fileInput = page.locator('input[type="file"]');
+		await fileInput.setInputFiles(memePath);
+
+		// Wait for upload to process
+		await page.waitForTimeout(2000);
 
 		// Logs panel should still be visible
 		await expect(logsContainer).toBeVisible();
@@ -190,9 +193,13 @@ test.describe('Debug Page (Real Account)', () => {
 		const clearButton = page.locator('button[aria-label="Clear debug logs"], button:has-text("Clear")');
 		await expect(clearButton).toBeVisible();
 
-		// Enter a URL (this doesn't add logs directly, but verifies clear button is interactive)
-		const urlInput = page.locator('#debug-image-url');
-		await urlInput.fill('https://example.com/test.jpg');
+		// Upload a file (this adds logs, but verifies clear button is interactive)
+		const memePath = getMemeByIndex(32);
+		const fileInput = page.locator('input[type="file"]');
+		await fileInput.setInputFiles(memePath);
+
+		// Wait for upload to process
+		await page.waitForTimeout(2000);
 
 		// Click clear button
 		await clearButton.click();
@@ -278,14 +285,14 @@ test.describe('Debug Publishing - Live (CAUTION)', () => {
 			return;
 		}
 
-		// Find the URL input and enter a test image
-		// Using a known valid public image URL for testing
-		const urlInput = page.locator('#debug-image-url');
-		await expect(urlInput).toBeVisible();
+		// Upload a real meme from /memes/ folder
+		const memePath = getMemeByIndex(33);
+		const fileInput = page.locator('input[type="file"]');
+		await fileInput.setInputFiles(memePath);
 
-		// Use a reliable test image (Supabase storage or public CDN)
-		const testImageUrl = process.env.TEST_IMAGE_URL || 'https://picsum.photos/1080/1920';
-		await urlInput.fill(testImageUrl);
+		// Wait for upload to complete
+		const urlInput = page.locator('#debug-image-url');
+		await expect(urlInput).not.toHaveValue('', { timeout: 30000 });
 
 		// Click publish button
 		const publishButton = page.locator('button:has-text("Publish to Instagram Now")');

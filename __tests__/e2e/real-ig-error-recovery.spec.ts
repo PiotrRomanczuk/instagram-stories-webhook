@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { signInAsRealIG } from './helpers/auth';
+import { getMemeByIndex } from './helpers/test-assets';
 
 /**
  * Error Recovery E2E Tests (Real Account)
@@ -295,8 +296,13 @@ test.describe('Error Recovery (Real Account)', () => {
 		// Publish button should be disabled with no URL
 		await expect(publishButton).toBeDisabled();
 
-		// Enter a new valid URL
-		await urlInput.fill('https://example.com/new-valid-image.jpg');
+		// Upload a valid meme file for recovery
+		const memePath = getMemeByIndex(40);
+		const fileInput = page.locator('input[type="file"]');
+		await fileInput.setInputFiles(memePath);
+
+		// Wait for upload to complete
+		await expect(urlInput).not.toHaveValue('', { timeout: 30000 });
 
 		// Publish button should be enabled again
 		await expect(publishButton).toBeEnabled();

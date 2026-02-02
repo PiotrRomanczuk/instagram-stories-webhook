@@ -1,10 +1,12 @@
 import { test, expect } from '@playwright/test';
 import { signInAsUser } from './helpers/auth';
 import { cleanupTestData } from './helpers/seed';
+import { getMemeByIndex } from './helpers/test-assets';
 
 /**
  * Rate Limiting E2E Tests
  * Tests that users see proper error messages when hitting rate limits
+ * Uses real memes from /memes/ folder instead of external URLs.
  */
 
 test.describe('Rate Limiting', () => {
@@ -28,12 +30,14 @@ test.describe('Rate Limiting', () => {
 		const uniqueId = Date.now();
 
 		// Test a few API submissions to verify response structure
+		// Note: This uses a placeholder path since we're testing the API response structure
+		// The actual file is not uploaded, just testing rate limit behavior
 		const response = await page.request.post('/api/memes', {
 			data: {
 				title: `Rate Limit Test ${uniqueId}`,
 				caption: `Testing rate limits ${uniqueId}`,
-				mediaUrl: `https://example.com/test-${uniqueId}.jpg`,
-				storagePath: `test/path-${uniqueId}.jpg`,
+				mediaUrl: `file://memes/test-${uniqueId}.jpg`,
+				storagePath: `memes/test-${uniqueId}.jpg`,
 			},
 		});
 
