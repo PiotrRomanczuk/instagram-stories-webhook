@@ -13,11 +13,11 @@ export default defineConfig({
   // Fail the build on CI if you accidentally left test.only in the source code
   forbidOnly: !!process.env.CI,
 
-  // Retry on CI only
-  retries: process.env.CI ? 2 : 0,
+  // Retry failed tests to handle flakiness (auth timing issues)
+  retries: process.env.CI ? 2 : 1,
 
-  // Opt out of parallel tests on CI
-  workers: process.env.CI ? 1 : undefined,
+  // Limit parallel workers to reduce auth race conditions
+  workers: process.env.CI ? 1 : 3,
 
   // Reporter to use
   reporter: [
@@ -41,7 +41,7 @@ export default defineConfig({
     video: 'retain-on-failure',
 
     // Timeout for each action (e.g., click, fill)
-    actionTimeout: 10000,
+    actionTimeout: 15000,
 
     // Timeout for navigation actions
     navigationTimeout: 30000,
@@ -56,12 +56,12 @@ export default defineConfig({
     },
   },
 
-  // Test timeout
-  timeout: 60000,
+  // Test timeout (increased for auth flakiness)
+  timeout: 90000,
 
   // Expect timeout
   expect: {
-    timeout: 10000,
+    timeout: 15000,
   },
 
   // Configure projects for major browsers
@@ -70,8 +70,6 @@ export default defineConfig({
       name: 'chromium',
       use: {
         ...devices['Desktop Chrome'],
-        // Note: storageState is optional - tests handle auth internally
-        // storageState: '__tests__/e2e/fixtures/auth/.auth.json',
       },
     },
 

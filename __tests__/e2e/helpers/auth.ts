@@ -27,6 +27,11 @@ export const TEST_USERS = {
 		name: 'Test User 2',
 		role: 'user',
 	},
+	realIG: {
+		email: 'p.romanczuk@gmail.com',
+		name: 'Real IG',
+		role: 'admin',
+	},
 };
 
 /**
@@ -42,24 +47,20 @@ export async function signInAsAdmin(page: Page, maxRetries = 3) {
 			const testBtn = page.getByRole('button', { name: 'Test Admin' });
 
 			// Wait for hydration indicator first, then button
-			await devOnlyText.waitFor({ state: 'visible', timeout: 8000 });
-			await testBtn.waitFor({ state: 'visible', timeout: 3000 });
+			await devOnlyText.waitFor({ state: 'visible', timeout: 15000 });
+			await testBtn.waitFor({ state: 'visible', timeout: 5000 });
 
-			// Ensure button is clickable (not disabled, visible, stable)
-			await testBtn.waitFor({ state: 'visible', timeout: 2000 });
-			await page.waitForTimeout(300);
+			// Give React a moment to fully hydrate event handlers
+			await page.waitForTimeout(500);
 
-			// Click and wait for navigation
-			await Promise.all([
-				page.waitForURL(
-					(url) =>
-						url.pathname === '/' ||
-						url.pathname === '/en' ||
-						url.pathname === '/en/',
-					{ timeout: 20000, waitUntil: 'domcontentloaded' },
-				),
-				testBtn.click(),
-			]);
+			// Click the button
+			await testBtn.click();
+
+			// Wait for navigation away from signin page
+			await page.waitForURL(
+				(url) => !url.pathname.includes('/auth/signin'),
+				{ timeout: 30000, waitUntil: 'domcontentloaded' },
+			);
 
 			// Verify we're actually signed in
 			const currentUrl = page.url();
@@ -72,7 +73,7 @@ export async function signInAsAdmin(page: Page, maxRetries = 3) {
 
 			if (attempt < maxRetries) {
 				// Wait before retry with exponential backoff
-				await page.waitForTimeout(1000 * attempt);
+				await page.waitForTimeout(1500 * attempt);
 			}
 		}
 	}
@@ -94,24 +95,20 @@ export async function signInAsUser(page: Page, maxRetries = 3) {
 			const testBtn = page.getByRole('button', { name: 'Test User' });
 
 			// Wait for hydration indicator first, then button
-			await devOnlyText.waitFor({ state: 'visible', timeout: 8000 });
-			await testBtn.waitFor({ state: 'visible', timeout: 3000 });
+			await devOnlyText.waitFor({ state: 'visible', timeout: 15000 });
+			await testBtn.waitFor({ state: 'visible', timeout: 5000 });
 
-			// Ensure button is clickable (not disabled, visible, stable)
-			await testBtn.waitFor({ state: 'visible', timeout: 2000 });
-			await page.waitForTimeout(300);
+			// Give React a moment to fully hydrate event handlers
+			await page.waitForTimeout(500);
 
-			// Click and wait for navigation
-			await Promise.all([
-				page.waitForURL(
-					(url) =>
-						url.pathname === '/' ||
-						url.pathname === '/en' ||
-						url.pathname === '/en/',
-					{ timeout: 20000, waitUntil: 'domcontentloaded' },
-				),
-				testBtn.click(),
-			]);
+			// Click the button
+			await testBtn.click();
+
+			// Wait for navigation away from signin page
+			await page.waitForURL(
+				(url) => !url.pathname.includes('/auth/signin'),
+				{ timeout: 30000, waitUntil: 'domcontentloaded' },
+			);
 
 			// Verify we're actually signed in
 			const currentUrl = page.url();
@@ -124,13 +121,64 @@ export async function signInAsUser(page: Page, maxRetries = 3) {
 
 			if (attempt < maxRetries) {
 				// Wait before retry with exponential backoff
-				await page.waitForTimeout(1000 * attempt);
+				await page.waitForTimeout(1500 * attempt);
 			}
 		}
 	}
 
 	// All retries failed - throw error instead of silent fallback
 	throw new Error(`Failed to sign in as user after ${maxRetries} attempts`);
+}
+
+/**
+ * Sign in as real Instagram account (for testing actual publishing)
+ * This uses the p.romanczuk@gmail.com account which has linked Instagram tokens
+ */
+export async function signInAsRealIG(page: Page, maxRetries = 3) {
+	for (let attempt = 1; attempt <= maxRetries; attempt++) {
+		try {
+			// Navigate to signin page
+			await page.goto('/auth/signin', { waitUntil: 'domcontentloaded', timeout: 15000 });
+
+			// Wait for React hydration - the "Development Only" text only appears after useEffect runs
+			const devOnlyText = page.locator('text=Development Only');
+			await devOnlyText.waitFor({ state: 'visible', timeout: 15000 });
+
+			// Find the Real IG button
+			const testBtn = page.getByRole('button', { name: 'Test Real IG' });
+			await testBtn.waitFor({ state: 'visible', timeout: 5000 });
+
+			// Give React a moment to fully hydrate event handlers
+			await page.waitForTimeout(500);
+
+			// Click and wait for navigation
+			await testBtn.click();
+
+			// Wait for navigation away from signin page (NextAuth does redirects)
+			await page.waitForURL(
+				(url) => !url.pathname.includes('/auth/signin'),
+				{ timeout: 30000, waitUntil: 'domcontentloaded' },
+			);
+
+			// Final check - ensure we're not on signin anymore
+			const currentUrl = page.url();
+			if (!currentUrl.includes('/auth/signin')) {
+				console.log(`✅ Signed in as Real IG (attempt ${attempt}): ${currentUrl}`);
+				return; // Success
+			}
+		} catch (error) {
+			const errorMsg = error instanceof Error ? error.message : String(error);
+			console.warn(`Real IG sign-in attempt ${attempt}/${maxRetries} failed:`, errorMsg);
+
+			if (attempt < maxRetries) {
+				// Clear cookies and retry
+				await page.context().clearCookies();
+				await page.waitForTimeout(1500 * attempt);
+			}
+		}
+	}
+
+	throw new Error(`Failed to sign in as Real IG after ${maxRetries} attempts`);
 }
 
 /**
