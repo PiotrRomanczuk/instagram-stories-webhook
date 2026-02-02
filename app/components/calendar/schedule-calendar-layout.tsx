@@ -29,9 +29,8 @@ export function ScheduleCalendarLayout() {
 	const { data: session } = useSession();
 	const router = useRouter();
 
-	// Calendar state
+	// Calendar state - day view only
 	const [currentDate, setCurrentDate] = useState(new Date());
-	const [viewMode, setViewMode] = useState<ViewMode>('week');
 	const [searchQuery, setSearchQuery] = useState('');
 
 	// Drag state
@@ -178,9 +177,9 @@ export function ScheduleCalendarLayout() {
 					{/* Top Header */}
 					<ScheduleHeader
 						currentDate={currentDate}
-						viewMode={viewMode}
+						viewMode="day"
 						onDateChange={setCurrentDate}
-						onViewModeChange={setViewMode}
+						onViewModeChange={() => {}}
 						onPublishNow={handlePublishNow}
 						onNewSchedule={handleNewSchedule}
 						searchQuery={searchQuery}
@@ -194,7 +193,6 @@ export function ScheduleCalendarLayout() {
 							currentDate={currentDate}
 							scheduledItems={scheduledItems}
 							onItemClick={handleOpenPreview}
-							viewMode={viewMode}
 						/>
 
 						{/* Ready to Schedule Sidebar */}

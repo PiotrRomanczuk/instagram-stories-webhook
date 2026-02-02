@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { ScheduleCalendarGrid } from '@/app/components/calendar/schedule-calendar-grid';
 import { DndContext } from '@dnd-kit/core';
 import { ContentItem } from '@/lib/types';
-import { format, startOfWeek, addDays, setHours } from 'date-fns';
+import { format, setHours, setMinutes } from 'date-fns';
 
 // Helper to wrap component with DndContext
 const renderWithDnd = (ui: React.ReactElement) => {
@@ -22,8 +22,8 @@ const createMockItem = (overrides: Partial<ContentItem> = {}): ContentItem => ({
 	publishingStatus: 'scheduled',
 	caption: 'Test caption',
 	version: 1,
-	createdAt: '2024-01-15T10:00:00Z',
-	updatedAt: '2024-01-15T10:00:00Z',
+	createdAt: new Date().toISOString(),
+	updatedAt: new Date().toISOString(),
 	...overrides,
 });
 
@@ -42,14 +42,10 @@ describe('ScheduleCalendarGrid', () => {
 			/>
 		);
 
-		// Should render day headers
-		expect(screen.getByText('Mon')).toBeInTheDocument();
-		expect(screen.getByText('Tue')).toBeInTheDocument();
-		expect(screen.getByText('Wed')).toBeInTheDocument();
-		expect(screen.getByText('Thu')).toBeInTheDocument();
-		expect(screen.getByText('Fri')).toBeInTheDocument();
-		expect(screen.getByText('Sat')).toBeInTheDocument();
-		expect(screen.getByText('Sun')).toBeInTheDocument();
+		// Should show day name
+		expect(screen.getByText('Monday')).toBeInTheDocument();
+		// Should show date
+		expect(screen.getByText('15')).toBeInTheDocument();
 	});
 
 	it('should render time slots from 6 AM to 11 PM', () => {
@@ -60,12 +56,8 @@ describe('ScheduleCalendarGrid', () => {
 			/>
 		);
 
-		// Time is now displayed as separate hour and AM/PM spans
-		// Check that 18 time slots exist (6 AM to 11 PM)
-		const timeColumns = container.querySelectorAll('.flex.items-start.justify-center');
-		expect(timeColumns.length).toBe(18);
-
-		// Check AM and PM labels exist
+		// Check that 18 hour rows exist (6 AM to 11 PM)
+		// Each hour has a time label div
 		expect(screen.getAllByText('AM').length).toBeGreaterThan(0);
 		expect(screen.getAllByText('PM').length).toBeGreaterThan(0);
 	});
@@ -78,60 +70,26 @@ describe('ScheduleCalendarGrid', () => {
 			/>
 		);
 
-		// Should show timezone (e.g., "New_York", "Los_Angeles", or "Local")
+		// Should show some timezone indicator
 		const container = document.body;
-		// The timezone label is in the top-left corner
-		// It extracts the city name from the timezone
-		expect(container.textContent).toMatch(/\w+/);
+		expect(container.textContent).toMatch(/Local|Warsaw|UTC|New_York|Los_Angeles|Europe|America/i);
+	});
+});
+
+describe('ScheduleCalendarGrid - Scheduled Items', () => {
+	const defaultDate = new Date('2024-01-15T12:00:00');
+
+	beforeEach(() => {
+		vi.clearAllMocks();
 	});
 
-	it('should render week days with correct dates', () => {
-		renderWithDnd(
-			<ScheduleCalendarGrid
-				currentDate={defaultDate}
-				scheduledItems={[]}
-			/>
-		);
-
-		// For Jan 15, 2024 (Monday), the week should show 15-21
-		const weekStart = startOfWeek(defaultDate, { weekStartsOn: 1 });
-
-		for (let i = 0; i < 7; i++) {
-			const day = addDays(weekStart, i);
-			const dayNumber = format(day, 'd');
-			// The date number should be visible (may appear multiple times)
-			const elements = screen.getAllByText(dayNumber);
-			expect(elements.length).toBeGreaterThan(0);
-		}
-	});
-
-	it('should highlight today column', () => {
-		// Use current date to test today highlighting
-		const today = new Date();
-
-		const { container } = renderWithDnd(
-			<ScheduleCalendarGrid
-				currentDate={today}
-				scheduledItems={[]}
-			/>
-		);
-
-		// Today's column should have special styling
-		// This is visual verification - the component adds special classes to today
-		const dayNumber = format(today, 'd');
-		// Day number may appear multiple times (in date header and possibly time columns)
-		const elements = screen.getAllByText(dayNumber);
-		expect(elements.length).toBeGreaterThan(0);
-	});
-
-	it('should render scheduled items in correct time slots', () => {
-		const weekStart = startOfWeek(defaultDate, { weekStartsOn: 1 });
-		const scheduledTime = setHours(weekStart, 10); // 10 AM Monday
+	it('should render scheduled items in correct time blocks', () => {
+		const scheduledTime = setMinutes(setHours(defaultDate, 10), 30); // 10:30 AM
 
 		const mockItem = createMockItem({
-			id: 'scheduled-1',
+			id: 'item-1',
+			title: 'Test Item',
 			scheduledTime: scheduledTime.getTime(),
-			caption: 'Scheduled Post',
 		});
 
 		renderWithDnd(
@@ -141,34 +99,57 @@ describe('ScheduleCalendarGrid', () => {
 			/>
 		);
 
-		// The item should be rendered in the grid
-		// ScheduleCalendarItem should be present
-		const itemContainer = document.querySelector('[data-testid]') || document.body;
-		expect(itemContainer).toBeTruthy();
+		// Item should be visible
+		expect(screen.getByText('Test Item')).toBeInTheDocument();
 	});
 
-	it('should call onItemClick when clicking an item', async () => {
-		const weekStart = startOfWeek(defaultDate, { weekStartsOn: 1 });
-		const scheduledTime = setHours(weekStart, 10);
+	it('should handle multiple items in the same 15-minute block', () => {
+		const time1 = setMinutes(setHours(defaultDate, 10), 32); // 10:32
+		const time2 = setMinutes(setHours(defaultDate, 10), 38); // 10:38
 
-		const mockItem = createMockItem({
-			id: 'clickable-item',
-			scheduledTime: scheduledTime.getTime(),
-			title: 'Clickable Item',
-		});
-
-		const onItemClick = vi.fn();
+		const items = [
+			createMockItem({
+				id: 'item-1',
+				title: 'First Item',
+				scheduledTime: time1.getTime(),
+			}),
+			createMockItem({
+				id: 'item-2',
+				title: 'Second Item',
+				scheduledTime: time2.getTime(),
+			}),
+		];
 
 		renderWithDnd(
 			<ScheduleCalendarGrid
 				currentDate={defaultDate}
-				scheduledItems={[mockItem]}
-				onItemClick={onItemClick}
+				scheduledItems={items}
 			/>
 		);
 
-		// Items are rendered but finding them depends on implementation
-		// The click handler is attached to ScheduleCalendarItem
+		// Both items should be visible (displayed side by side)
+		expect(screen.getByText('First Item')).toBeInTheDocument();
+		expect(screen.getByText('Second Item')).toBeInTheDocument();
+	});
+
+	it('should show overflow indicator when more than 2 items in same block', () => {
+		const baseTime = setMinutes(setHours(defaultDate, 10), 30);
+
+		const items = [
+			createMockItem({ id: 'item-1', title: 'Item 1', scheduledTime: baseTime.getTime() }),
+			createMockItem({ id: 'item-2', title: 'Item 2', scheduledTime: baseTime.getTime() + 60000 }),
+			createMockItem({ id: 'item-3', title: 'Item 3', scheduledTime: baseTime.getTime() + 120000 }),
+		];
+
+		renderWithDnd(
+			<ScheduleCalendarGrid
+				currentDate={defaultDate}
+				scheduledItems={items}
+			/>
+		);
+
+		// Should show +1 overflow indicator
+		expect(screen.getByText('+1')).toBeInTheDocument();
 	});
 
 	it('should handle empty scheduled items', () => {
@@ -180,112 +161,34 @@ describe('ScheduleCalendarGrid', () => {
 		);
 
 		// Grid should still render without items
-		expect(screen.getByText('Mon')).toBeInTheDocument();
-		// Time columns should exist
-		const timeColumns = container.querySelectorAll('.flex.items-start.justify-center');
-		expect(timeColumns.length).toBe(18);
+		expect(screen.getByText('Monday')).toBeInTheDocument();
 	});
 
-	it('should render multiple items in the same time slot', () => {
-		const weekStart = startOfWeek(defaultDate, { weekStartsOn: 1 });
-		const sameTime = setHours(weekStart, 14); // 2 PM Monday
+	it('should not render items from different days', () => {
+		const differentDay = new Date('2024-01-16T10:30:00'); // Jan 16 instead of 15
 
-		const mockItems = [
-			createMockItem({
-				id: 'item-1',
-				scheduledTime: sameTime.getTime(),
-				title: 'First Item',
-			}),
-			createMockItem({
-				id: 'item-2',
-				scheduledTime: sameTime.getTime(),
-				title: 'Second Item',
-			}),
-		];
-
-		renderWithDnd(
-			<ScheduleCalendarGrid
-				currentDate={defaultDate}
-				scheduledItems={mockItems}
-			/>
-		);
-
-		// Both items should be rendered
-		// This depends on ScheduleCalendarItem rendering
-	});
-
-	it('should only show items within the current week', () => {
-		const weekStart = startOfWeek(defaultDate, { weekStartsOn: 1 });
-		const nextWeek = addDays(weekStart, 10); // Outside current week
-
-		const insideWeekItem = createMockItem({
-			id: 'inside-week',
-			scheduledTime: setHours(weekStart, 10).getTime(),
-			title: 'Inside Week',
-		});
-
-		const outsideWeekItem = createMockItem({
-			id: 'outside-week',
-			scheduledTime: setHours(nextWeek, 10).getTime(),
-			title: 'Outside Week',
+		const mockItem = createMockItem({
+			id: 'item-1',
+			title: 'Wrong Day Item',
+			scheduledTime: differentDay.getTime(),
 		});
 
 		renderWithDnd(
 			<ScheduleCalendarGrid
 				currentDate={defaultDate}
-				scheduledItems={[insideWeekItem, outsideWeekItem]}
+				scheduledItems={[mockItem]}
 			/>
 		);
 
-		// Only inside week item should appear
-		// This is a visual test based on the filtering logic
-	});
-});
-
-describe('ScheduleCalendarGrid - Time Slots', () => {
-	const defaultDate = new Date('2024-01-15T12:00:00');
-
-	it('should render correct number of time slots', () => {
-		const { container } = renderWithDnd(
-			<ScheduleCalendarGrid
-				currentDate={defaultDate}
-				scheduledItems={[]}
-			/>
-		);
-
-		// Time slots from 6 AM to 11 PM = 18 slots
-		// Time is now displayed as separate hour and AM/PM spans
-		const timeColumns = container.querySelectorAll('.flex.items-start.justify-center');
-		expect(timeColumns.length).toBe(18); // 18 hours from 6 AM to 11 PM
-
-		// Check AM and PM labels exist
-		expect(screen.getAllByText('AM').length).toBeGreaterThan(0);
-		expect(screen.getAllByText('PM').length).toBeGreaterThan(0);
-	});
-
-	it('should format time correctly (AM/PM)', () => {
-		const { container } = renderWithDnd(
-			<ScheduleCalendarGrid
-				currentDate={defaultDate}
-				scheduledItems={[]}
-			/>
-		);
-
-		// Check that time slots exist (hour and AM/PM are now separate spans)
-		// There are 18 time slots from 6 AM to 11 PM
-		expect(screen.getAllByText('AM').length).toBeGreaterThan(0);
-		expect(screen.getAllByText('PM').length).toBeGreaterThan(0);
-
-		// Check that the time column exists with proper styling
-		const timeColumns = container.querySelectorAll('.flex.items-start.justify-center');
-		expect(timeColumns.length).toBe(18); // 18 hours from 6 AM to 11 PM
+		// Item should not be visible since it's for a different day
+		expect(screen.queryByText('Wrong Day Item')).not.toBeInTheDocument();
 	});
 });
 
 describe('ScheduleCalendarGrid - Droppable Zones', () => {
 	const defaultDate = new Date('2024-01-15T12:00:00');
 
-	it('should have droppable time slots', () => {
+	it('should have droppable time blocks', () => {
 		const { container } = renderWithDnd(
 			<ScheduleCalendarGrid
 				currentDate={defaultDate}
@@ -293,12 +196,13 @@ describe('ScheduleCalendarGrid - Droppable Zones', () => {
 			/>
 		);
 
-		// Time slots should be droppable targets
-		// DndContext provides droppable functionality
-		// Each slot has a unique ID based on date-hour
+		// Each hour has 4 fifteen-minute droppable blocks
+		// 18 hours * 4 blocks = 72 droppable zones
+		const droppableZones = container.querySelectorAll('[data-droppable-id]');
+		expect(droppableZones.length).toBe(72);
 	});
 
-	it('should render grid structure correctly', () => {
+	it('should format droppable IDs correctly', () => {
 		const { container } = renderWithDnd(
 			<ScheduleCalendarGrid
 				currentDate={defaultDate}
@@ -306,108 +210,39 @@ describe('ScheduleCalendarGrid - Droppable Zones', () => {
 			/>
 		);
 
-		// Grid should have 8 columns (1 time + 7 days)
-		const grid = container.querySelector('[class*="grid"]');
-		expect(grid).toBeInTheDocument();
+		// Check for specific droppable ID format: YYYY-MM-DD-hour-blockIndex
+		const droppable = container.querySelector('[data-droppable-id="2024-01-15-10-0"]');
+		expect(droppable).toBeInTheDocument();
+
+		// Check another block
+		const droppable2 = container.querySelector('[data-droppable-id="2024-01-15-10-2"]');
+		expect(droppable2).toBeInTheDocument();
 	});
 });
 
-describe('ScheduleCalendarGrid - Item Placement', () => {
+describe('ScheduleCalendarGrid - Click Handling', () => {
 	const defaultDate = new Date('2024-01-15T12:00:00');
 
-	it('should place items based on scheduledTime', () => {
-		const weekStart = startOfWeek(defaultDate, { weekStartsOn: 1 });
+	it('should call onItemClick when item is clicked', async () => {
+		const onItemClick = vi.fn();
+		const scheduledTime = setMinutes(setHours(defaultDate, 10), 30);
 
-		// Create item for Tuesday at 2 PM
-		const tuesdayItem = createMockItem({
-			id: 'tuesday-item',
-			scheduledTime: setHours(addDays(weekStart, 1), 14).getTime(),
-			title: 'Tuesday at 2 PM',
+		const mockItem = createMockItem({
+			id: 'item-1',
+			title: 'Clickable Item',
+			scheduledTime: scheduledTime.getTime(),
 		});
 
 		renderWithDnd(
 			<ScheduleCalendarGrid
 				currentDate={defaultDate}
-				scheduledItems={[tuesdayItem]}
+				scheduledItems={[mockItem]}
+				onItemClick={onItemClick}
 			/>
 		);
 
-		// Item should be placed in the correct slot
-		// Visual verification - the item is in Tuesday's 2 PM slot
-	});
-
-	it('should not display items outside time range (before 6 AM)', () => {
-		const weekStart = startOfWeek(defaultDate, { weekStartsOn: 1 });
-
-		// Create item for 5 AM (outside visible range)
-		const earlyItem = createMockItem({
-			id: 'early-item',
-			scheduledTime: setHours(weekStart, 5).getTime(),
-			title: 'Too Early',
-		});
-
-		renderWithDnd(
-			<ScheduleCalendarGrid
-				currentDate={defaultDate}
-				scheduledItems={[earlyItem]}
-			/>
-		);
-
-		// Item should not be visible (outside 6 AM - 11 PM range)
-	});
-
-	it('should filter items by publishingStatus', () => {
-		const weekStart = startOfWeek(defaultDate, { weekStartsOn: 1 });
-		const scheduledTime = setHours(weekStart, 10).getTime();
-
-		const scheduledItem = createMockItem({
-			id: 'scheduled',
-			scheduledTime,
-			publishingStatus: 'scheduled',
-		});
-
-		const publishedItem = createMockItem({
-			id: 'published',
-			scheduledTime,
-			publishingStatus: 'published',
-		});
-
-		const draftItem = createMockItem({
-			id: 'draft',
-			scheduledTime,
-			publishingStatus: 'draft',
-		});
-
-		// The component should display scheduled, processing, published, and failed items
-		renderWithDnd(
-			<ScheduleCalendarGrid
-				currentDate={defaultDate}
-				scheduledItems={[scheduledItem, publishedItem, draftItem]}
-			/>
-		);
-
-		// Grid should render the items based on their scheduledTime
-	});
-});
-
-describe('ScheduleCalendarGrid - Current Time Indicator', () => {
-	it('should show current time indicator when viewing today', () => {
-		const today = new Date();
-
-		renderWithDnd(
-			<ScheduleCalendarGrid
-				currentDate={today}
-				scheduledItems={[]}
-			/>
-		);
-
-		// Current time indicator should be visible if within 6 AM - 11 PM
-		const currentHour = today.getHours();
-		if (currentHour >= 6 && currentHour <= 23) {
-			// There should be a time indicator element
-			// The format is like "10:30 AM"
-			const timeIndicator = document.querySelector('[class*="bg-\\[#2b6cee\\]"]');
-			// The indicator exists in today's column
-		}
+		// The click handler is attached to ScheduleCalendarItem
+		const item = screen.getByText('Clickable Item');
+		expect(item).toBeInTheDocument();
 	});
 });

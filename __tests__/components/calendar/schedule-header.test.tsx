@@ -7,7 +7,7 @@ import { format, addDays, subDays, addWeeks, subWeeks, addMonths, subMonths, sta
 describe('ScheduleHeader', () => {
 	const defaultProps = {
 		currentDate: new Date('2024-01-15'),
-		viewMode: 'week' as ViewMode,
+		viewMode: 'day' as ViewMode,
 		onDateChange: vi.fn(),
 		onViewModeChange: vi.fn(),
 	};
@@ -24,18 +24,6 @@ describe('ScheduleHeader', () => {
 		expect(buttons.length).toBeGreaterThan(0);
 	});
 
-	it('should display correct date range for week view', () => {
-		render(<ScheduleHeader {...defaultProps} />);
-
-		// For week of Jan 15, 2024 (Monday-Sunday)
-		// Should show something like "January 15 - 21, 2024"
-		const weekStart = startOfWeek(new Date('2024-01-15'), { weekStartsOn: 1 });
-		const weekEnd = endOfWeek(new Date('2024-01-15'), { weekStartsOn: 1 });
-
-		// The exact format depends on whether dates span months
-		expect(screen.getByRole('heading', { level: 2 })).toBeInTheDocument();
-	});
-
 	it('should display correct date for day view', () => {
 		render(<ScheduleHeader {...defaultProps} viewMode="day" />);
 
@@ -43,32 +31,11 @@ describe('ScheduleHeader', () => {
 		expect(screen.getByText('January 15, 2024')).toBeInTheDocument();
 	});
 
-	it('should display correct date for month view', () => {
-		render(<ScheduleHeader {...defaultProps} viewMode="month" />);
-
-		// Should show "January 2024"
-		expect(screen.getByText('January 2024')).toBeInTheDocument();
-	});
-
-	it('should render view mode toggle buttons', () => {
+	it('should show Day label in view mode indicator', () => {
 		render(<ScheduleHeader {...defaultProps} />);
 
-		expect(screen.getByText('day')).toBeInTheDocument();
-		expect(screen.getByText('week')).toBeInTheDocument();
-		expect(screen.getByText('month')).toBeInTheDocument();
-	});
-
-	it('should call onViewModeChange when clicking view mode buttons', async () => {
-		const user = userEvent.setup();
-		const onViewModeChange = vi.fn();
-
-		render(<ScheduleHeader {...defaultProps} onViewModeChange={onViewModeChange} />);
-
-		await user.click(screen.getByText('day'));
-		expect(onViewModeChange).toHaveBeenCalledWith('day');
-
-		await user.click(screen.getByText('month'));
-		expect(onViewModeChange).toHaveBeenCalledWith('month');
+		// Only day view is available now
+		expect(screen.getByText('Day')).toBeInTheDocument();
 	});
 
 	it('should have Today button', () => {
@@ -95,7 +62,7 @@ describe('ScheduleHeader', () => {
 describe('ScheduleHeader - Navigation', () => {
 	const defaultProps = {
 		currentDate: new Date('2024-01-15'),
-		viewMode: 'week' as ViewMode,
+		viewMode: 'day' as ViewMode,
 		onDateChange: vi.fn(),
 		onViewModeChange: vi.fn(),
 	};
@@ -104,7 +71,7 @@ describe('ScheduleHeader - Navigation', () => {
 		vi.clearAllMocks();
 	});
 
-	it('should navigate to previous week when clicking previous in week view', async () => {
+	it('should navigate to previous day when clicking previous', async () => {
 		const onDateChange = vi.fn();
 
 		render(<ScheduleHeader {...defaultProps} onDateChange={onDateChange} />);
@@ -119,11 +86,11 @@ describe('ScheduleHeader - Navigation', () => {
 
 		expect(onDateChange).toHaveBeenCalled();
 		const newDate = onDateChange.mock.calls[0][0];
-		// Should be 7 days earlier
+		// Should be 1 day earlier
 		expect(newDate.getTime()).toBeLessThan(new Date('2024-01-15').getTime());
 	});
 
-	it('should navigate to next week when clicking next in week view', async () => {
+	it('should navigate to next day when clicking next', async () => {
 		const onDateChange = vi.fn();
 
 		render(<ScheduleHeader {...defaultProps} onDateChange={onDateChange} />);
@@ -139,7 +106,7 @@ describe('ScheduleHeader - Navigation', () => {
 
 		expect(onDateChange).toHaveBeenCalled();
 		const newDate = onDateChange.mock.calls[0][0];
-		// Should be 7 days later
+		// Should be 1 day later
 		expect(newDate.getTime()).toBeGreaterThan(new Date('2024-01-15').getTime());
 	});
 
@@ -161,30 +128,12 @@ describe('ScheduleHeader - Navigation', () => {
 		const expectedDate = subDays(new Date('2024-01-15'), 1);
 		expect(newDate.toDateString()).toBe(expectedDate.toDateString());
 	});
-
-	it('should navigate by month in month view', async () => {
-		const onDateChange = vi.fn();
-
-		render(<ScheduleHeader {...defaultProps} viewMode="month" onDateChange={onDateChange} />);
-
-		const buttons = screen.getAllByRole('button');
-		const prevButton = buttons.find((btn) => btn.querySelector('svg'));
-
-		if (prevButton) {
-			fireEvent.click(prevButton);
-		}
-
-		expect(onDateChange).toHaveBeenCalled();
-		const newDate = onDateChange.mock.calls[0][0];
-		// Should be 1 month earlier
-		expect(newDate.getMonth()).toBe(11); // December (month before January)
-	});
 });
 
 describe('ScheduleHeader - Search', () => {
 	const defaultProps = {
 		currentDate: new Date('2024-01-15'),
-		viewMode: 'week' as ViewMode,
+		viewMode: 'day' as ViewMode,
 		onDateChange: vi.fn(),
 		onViewModeChange: vi.fn(),
 	};
@@ -242,7 +191,7 @@ describe('ScheduleHeader - Search', () => {
 describe('ScheduleHeader - Action Buttons', () => {
 	const defaultProps = {
 		currentDate: new Date('2024-01-15'),
-		viewMode: 'week' as ViewMode,
+		viewMode: 'day' as ViewMode,
 		onDateChange: vi.fn(),
 		onViewModeChange: vi.fn(),
 	};
@@ -291,34 +240,5 @@ describe('ScheduleHeader - Action Buttons', () => {
 		await user.click(screen.getByRole('button', { name: /New Schedule/i }));
 
 		expect(onNewSchedule).toHaveBeenCalled();
-	});
-});
-
-describe('ScheduleHeader - View Mode Styling', () => {
-	const defaultProps = {
-		currentDate: new Date('2024-01-15'),
-		viewMode: 'week' as ViewMode,
-		onDateChange: vi.fn(),
-		onViewModeChange: vi.fn(),
-	};
-
-	it('should highlight active view mode', () => {
-		render(<ScheduleHeader {...defaultProps} viewMode="week" />);
-
-		const weekButton = screen.getByText('week');
-		// Active button should have different styling (contains bg-white in dark mode or similar)
-		expect(weekButton.className).toMatch(/bg-white|bg-slate-700|shadow/);
-	});
-
-	it('should change highlight when view mode changes', () => {
-		const { rerender } = render(<ScheduleHeader {...defaultProps} viewMode="week" />);
-
-		let weekButton = screen.getByText('week');
-		expect(weekButton.className).toMatch(/bg-white|bg-slate-700|shadow/);
-
-		rerender(<ScheduleHeader {...defaultProps} viewMode="day" />);
-
-		const dayButton = screen.getByText('day');
-		expect(dayButton.className).toMatch(/bg-white|bg-slate-700|shadow/);
 	});
 });

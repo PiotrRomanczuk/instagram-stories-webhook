@@ -108,21 +108,11 @@ export function ScheduleHeader({
 					</Button>
 				</div>
 
-				{/* View mode toggle */}
+				{/* View mode indicator - day only */}
 				<div className="flex rounded-lg bg-gray-100 p-1 dark:bg-slate-800">
-					{(['day', 'week', 'month'] as ViewMode[]).map((mode) => (
-						<button
-							key={mode}
-							onClick={() => onViewModeChange(mode)}
-							className={`rounded-md px-3 py-1 text-xs font-medium capitalize transition-colors ${
-								viewMode === mode
-									? 'bg-white text-gray-900 shadow-sm dark:bg-slate-700 dark:text-white'
-									: 'text-gray-500 hover:text-gray-900 dark:text-slate-400 dark:hover:text-white'
-							}`}
-						>
-							{mode}
-						</button>
-					))}
+					<span className="rounded-md bg-white px-3 py-1 text-xs font-medium text-gray-900 shadow-sm dark:bg-slate-700 dark:text-white">
+						Day
+					</span>
 				</div>
 
 				<Button
