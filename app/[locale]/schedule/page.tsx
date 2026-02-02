@@ -19,7 +19,7 @@ export default async function SchedulePage() {
 	}
 
 	return (
-		<main className="min-h-screen bg-white dark:bg-[#101622]">
+		<main className="min-h-screen bg-gray-50 dark:bg-[#101622]">
 			<ScheduleCalendarLayout />
 		</main>
 	);

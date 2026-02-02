@@ -12,13 +12,15 @@ export default async function SubmitPage() {
 	}
 
 	return (
-		<main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-			<PageHeader
-				title="Submit for Review"
-				description="Upload an image to submit for review. Once approved, it will be scheduled for publishing."
-				className="mb-8"
-			/>
-			<SubmitForm />
+		<main className="min-h-screen bg-gray-50 dark:bg-[#101622]">
+			<div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+				<PageHeader
+					title="Submit for Review"
+					description="Upload an image to submit for review. Once approved, it will be scheduled for publishing."
+					className="mb-8"
+				/>
+				<SubmitForm />
+			</div>
 		</main>
 	);
 }

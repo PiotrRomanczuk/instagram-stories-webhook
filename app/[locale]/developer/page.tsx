@@ -31,7 +31,7 @@ export default async function DeveloperPage() {
 	const webhookUrl = `${appUrl}/api/webhook/story`;
 
 	return (
-		<main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+		<main className="min-h-screen bg-gray-50 dark:bg-[#101622] mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
 			<div className="space-y-6">
 				<PageHeader
 					title="Developer Tools"

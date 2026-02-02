@@ -13,13 +13,13 @@ export default async function SubmitMemePage() {
     }
 
     return (
-        <main className="min-h-screen bg-slate-50 dark:bg-[#09090b] p-4 md:p-8 lg:p-12">
+        <main className="min-h-screen bg-gray-50 dark:bg-[#101622] p-4 md:p-8 lg:p-12">
             <div className="max-w-2xl mx-auto">
                 {/* Header */}
                 <div className="mb-8">
                     <Link
                         href="/memes"
-                        className="inline-flex items-center gap-1 text-sm font-bold text-indigo-600 hover:text-indigo-700 transition-colors uppercase tracking-widest mb-4 group"
+                        className="inline-flex items-center gap-1 text-sm font-bold text-[#2b6cee] hover:text-[#2b6cee]/80 transition-colors uppercase tracking-widest mb-4 group"
                     >
                         <ChevronLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
                         My Submissions
@@ -30,10 +30,10 @@ export default async function SubmitMemePage() {
                             <Sparkles className="w-6 h-6 text-white" />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-black text-slate-900 dark:text-white">
+                            <h1 className="text-3xl font-black text-gray-900 dark:text-white">
                                 Submit a Meme
                             </h1>
-                            <p className="text-slate-500 dark:text-slate-400">
+                            <p className="text-gray-500 dark:text-[#92a4c9]">
                                 Share your best memes with us
                             </p>
                         </div>
@@ -41,7 +41,7 @@ export default async function SubmitMemePage() {
                 </div>
 
                 {/* Form Card */}
-                <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 md:p-8 shadow-xl border border-slate-200 dark:border-slate-700">
+                <div className="bg-white dark:bg-[#1a2332] rounded-3xl p-6 md:p-8 shadow-xl border border-gray-200 dark:border-[#232f48]">
                     <MemeSubmitForm />
                 </div>
             </div>

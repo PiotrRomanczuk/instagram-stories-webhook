@@ -21,21 +21,23 @@ export default async function InboxPage() {
 	}
 
 	return (
-		<main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-			<div className="space-y-6">
-				<PageHeader
-					title="Instagram Inbox"
-					description="View and respond to Instagram direct messages from your customers."
-					badge={<Badge variant="secondary">Live Messages</Badge>}
-				/>
+		<main className="min-h-screen bg-gray-50 dark:bg-[#101622]">
+			<div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+				<div className="space-y-6">
+					<PageHeader
+						title="Instagram Inbox"
+						description="View and respond to Instagram direct messages from your customers."
+						badge={<Badge variant="secondary">Live Messages</Badge>}
+					/>
 
-				<InboxManagerNew />
+					<InboxManagerNew />
 
-				<footer className="pt-8 border-t text-center">
-					<p className="text-sm text-muted-foreground">
-						Rate Limit: 200 messages/hour &middot; Instagram Messaging API v21.0
-					</p>
-				</footer>
+					<footer className="pt-8 border-t border-gray-200 dark:border-[#232f48] text-center">
+						<p className="text-sm text-gray-500 dark:text-[#92a4c9]">
+							Rate Limit: 200 messages/hour &middot; Instagram Messaging API v21.0
+						</p>
+					</footer>
+				</div>
 			</div>
 		</main>
 	);

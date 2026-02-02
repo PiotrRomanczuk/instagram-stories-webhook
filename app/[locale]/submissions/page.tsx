@@ -83,7 +83,7 @@ export default function SubmissionsPage() {
 	);
 
 	return (
-		<main className="min-h-screen bg-gray-50 dark:bg-[var(--sf-bg-dark)]">
+		<main className="min-h-screen bg-gray-50 dark:bg-[#101622]">
 			<div className="max-w-[1200px] mx-auto px-4 lg:px-10 py-8">
 				{/* Page Header */}
 				<div className="flex flex-wrap justify-between items-end gap-3 mb-8">
@@ -91,13 +91,13 @@ export default function SubmissionsPage() {
 						<h1 className="text-gray-900 dark:text-white text-4xl font-black leading-tight tracking-[-0.033em]">
 							My Submissions
 						</h1>
-						<p className="text-gray-500 dark:text-[var(--sf-text-secondary)] text-base font-normal leading-normal">
+						<p className="text-gray-500 dark:text-[#92a4c9] text-base font-normal leading-normal">
 							Manage and track your Instagram story content workflow
 						</p>
 					</div>
 					<Button
 						asChild
-						className="bg-[var(--sf-primary)] hover:bg-[var(--sf-primary-hover)] text-white"
+						className="bg-[#2b6cee] hover:bg-[#2b6cee]/90 text-white"
 					>
 						<Link href="/submit">
 							<Plus className="mr-2 h-4 w-4" />
@@ -118,7 +118,7 @@ export default function SubmissionsPage() {
 				</div>
 
 				{/* Tab Filters */}
-				<div className="mb-6 border-b border-gray-200 dark:border-[var(--sf-border-dark)]">
+				<div className="mb-6 border-b border-gray-200 dark:border-[#232f48]">
 					<div className="flex gap-8 px-2 overflow-x-auto no-scrollbar">
 						{TABS.map((tab) => (
 							<button
@@ -128,8 +128,8 @@ export default function SubmissionsPage() {
 									'flex flex-col items-center justify-center pb-3 pt-2 transition-colors whitespace-nowrap',
 									'border-b-2',
 									filter === tab.value
-										? 'border-[var(--sf-primary)] text-gray-900 dark:text-white'
-										: 'border-transparent text-gray-500 dark:text-[var(--sf-text-secondary)] hover:text-gray-900 dark:hover:text-white'
+										? 'border-[#2b6cee] text-gray-900 dark:text-white'
+										: 'border-transparent text-gray-500 dark:text-[#92a4c9] hover:text-gray-900 dark:hover:text-white'
 								)}
 							>
 								<span className="text-sm font-bold leading-normal tracking-[0.015em]">
@@ -152,7 +152,7 @@ export default function SubmissionsPage() {
 					<div className="mt-12 flex justify-center">
 						<Button
 							variant="outline"
-							className="px-8 py-3 rounded-xl bg-white dark:bg-[var(--sf-card-dark)] border-gray-200 dark:border-[var(--sf-border-dark)] text-gray-500 dark:text-[var(--sf-text-secondary)] font-bold text-sm hover:text-gray-900 dark:hover:text-white hover:border-[var(--sf-primary)] transition-all"
+							className="px-8 py-3 rounded-xl bg-white dark:bg-[#1a2332] border-gray-200 dark:border-[#232f48] text-gray-500 dark:text-[#92a4c9] font-bold text-sm hover:text-gray-900 dark:hover:text-white hover:border-[#2b6cee] transition-all"
 						>
 							Load More Submissions
 						</Button>

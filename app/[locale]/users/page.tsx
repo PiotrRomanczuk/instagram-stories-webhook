@@ -19,8 +19,10 @@ export default async function UsersPage() {
 	}
 
 	return (
-		<main className="mx-auto max-w-[1600px] px-4 py-8 sm:px-6 lg:px-8">
-			<UsersLayout />
+		<main className="min-h-screen bg-gray-50 dark:bg-[#101622]">
+			<div className="mx-auto max-w-[1600px] px-4 py-8 sm:px-6 lg:px-8">
+				<UsersLayout />
+			</div>
 		</main>
 	);
 }
