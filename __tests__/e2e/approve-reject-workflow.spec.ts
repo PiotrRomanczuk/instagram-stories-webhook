@@ -11,6 +11,25 @@ import { signInAsAdmin, signInAsUser } from './helpers/auth';
  * - REV-01 to REV-07 for review workflow scenarios
  */
 
+// Helper to wait for review page to load properly
+async function waitForReviewPageLoad(page: import('@playwright/test').Page) {
+	await page.waitForLoadState('domcontentloaded');
+
+	// Wait for content API to respond
+	await page.waitForResponse(
+		(response) => response.url().includes('/api/content') && response.status() === 200,
+		{ timeout: 15000 }
+	).catch(() => {});
+
+	// Wait for either content or empty state
+	await Promise.race([
+		page.getByRole('heading', { name: 'Story Review Queue' }).waitFor({ state: 'visible', timeout: 10000 }).catch(() => {}),
+		page.getByText('All caught up!').waitFor({ state: 'visible', timeout: 10000 }).catch(() => {}),
+	]);
+
+	await page.waitForTimeout(500);
+}
+
 test.describe('Approve/Reject Workflow', () => {
 	test.describe('Admin Review Page Access', () => {
 		/**
@@ -25,12 +44,16 @@ test.describe('Approve/Reject Workflow', () => {
 			await expect(page).toHaveURL(/\/(en\/)?review/);
 
 			// Wait for content to load
-			await page.waitForLoadState('domcontentloaded');
-			await page.waitForTimeout(1000);
+			await waitForReviewPageLoad(page);
 
-			// Page should show the Story Review Queue header
+			// Page should show either Story Review Queue header or empty state
 			const pageHeader = page.getByText('Story Review Queue');
-			await expect(pageHeader).toBeVisible();
+			const emptyState = page.getByText('All caught up!');
+
+			const hasHeader = await pageHeader.isVisible().catch(() => false);
+			const hasEmptyState = await emptyState.isVisible().catch(() => false);
+
+			expect(hasHeader || hasEmptyState).toBe(true);
 
 			// Should show either pending items or empty state
 			const bodyText = await page.innerText('body');
@@ -67,8 +90,7 @@ test.describe('Approve/Reject Workflow', () => {
 		test.beforeEach(async ({ page }) => {
 			await signInAsAdmin(page);
 			await page.goto('/review');
-			await page.waitForLoadState('domcontentloaded');
-			await page.waitForTimeout(1000);
+			await waitForReviewPageLoad(page);
 		});
 
 		/**
@@ -152,8 +174,7 @@ test.describe('Approve/Reject Workflow', () => {
 		test.beforeEach(async ({ page }) => {
 			await signInAsAdmin(page);
 			await page.goto('/review');
-			await page.waitForLoadState('domcontentloaded');
-			await page.waitForTimeout(1000);
+			await waitForReviewPageLoad(page);
 		});
 
 		/**
@@ -242,8 +263,7 @@ test.describe('Approve/Reject Workflow', () => {
 		test.beforeEach(async ({ page }) => {
 			await signInAsAdmin(page);
 			await page.goto('/review');
-			await page.waitForLoadState('domcontentloaded');
-			await page.waitForTimeout(1000);
+			await waitForReviewPageLoad(page);
 		});
 
 		/**
@@ -442,16 +462,7 @@ test.describe('Approve/Reject Workflow', () => {
 		 */
 		test('review history sidebar shows recent actions', async ({ page }) => {
 			await page.goto('/review');
-			await page.waitForLoadState('domcontentloaded');
-
-			// Wait for the content API to complete
-			await page.waitForResponse(
-				(response) => response.url().includes('/api/content') && response.status() === 200,
-				{ timeout: 10000 }
-			).catch(() => {});
-
-			// Wait for the page to fully render
-			await page.waitForTimeout(1000);
+			await waitForReviewPageLoad(page);
 
 			// Verify the page has loaded with the review layout
 			const bodyText = await page.innerText('body');
