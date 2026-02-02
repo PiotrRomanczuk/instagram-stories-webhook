@@ -1,171 +1,200 @@
 'use client';
 
 import { useState } from 'react';
-import { format } from 'date-fns';
-import { Edit, Clock, CheckCircle, XCircle, Send, AlertCircle, ImageOff } from 'lucide-react';
-import { Card, CardContent } from '@/app/components/ui/card';
-import { Badge } from '@/app/components/ui/badge';
-import { Button } from '@/app/components/ui/button';
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from '@/app/components/ui/tooltip';
-import { ContentItem, SubmissionStatus, PublishingStatus } from '@/lib/types';
+import { formatDistanceToNow } from 'date-fns';
+import { Eye, Edit, Trash2, BarChart3, Share2, ImageOff } from 'lucide-react';
+import { ContentItem } from '@/lib/types';
+import { SfAvatar, SfStatusBadge } from '@/app/components/storyflow';
 import { cn } from '@/lib/utils';
 
 interface SubmissionCardProps {
 	submission: ContentItem;
+	onView?: (submission: ContentItem) => void;
 	onEdit?: (submission: ContentItem) => void;
+	onDelete?: (submission: ContentItem) => void;
 	className?: string;
 }
 
-function getStatusBadge(submission: ContentItem) {
-	const { submissionStatus, publishingStatus } = submission;
+type StatusType = 'pending' | 'approved' | 'rejected' | 'published' | 'scheduled' | 'processing';
 
-	// Published takes precedence
-	if (publishingStatus === 'published') {
-		return (
-			<Badge className="gap-1 bg-green-500 hover:bg-green-600">
-				<CheckCircle className="h-3 w-3" />
-				Published
-			</Badge>
-		);
-	}
+/**
+ * Determines the display status from submission and publishing statuses
+ */
+function getDisplayStatus(submission: ContentItem): StatusType {
+	// Publishing status takes precedence for active states
+	if (submission.publishingStatus === 'published') return 'published';
+	if (submission.publishingStatus === 'scheduled') return 'scheduled';
+	if (submission.publishingStatus === 'processing') return 'processing';
 
-	// Scheduled
-	if (publishingStatus === 'scheduled') {
-		return (
-			<Badge className="gap-1 bg-blue-500 hover:bg-blue-600">
-				<Clock className="h-3 w-3" />
-				Scheduled
-			</Badge>
-		);
-	}
+	// Fall back to submission status
+	if (submission.submissionStatus === 'approved') return 'approved';
+	if (submission.submissionStatus === 'rejected') return 'rejected';
 
-	// Processing
-	if (publishingStatus === 'processing') {
-		return (
-			<Badge className="gap-1 bg-purple-500 hover:bg-purple-600">
-				<Send className="h-3 w-3" />
-				Processing
-			</Badge>
-		);
-	}
+	return 'pending';
+}
 
-	// Failed
-	if (publishingStatus === 'failed') {
-		return (
-			<Badge variant="destructive" className="gap-1">
-				<AlertCircle className="h-3 w-3" />
-				Failed
-			</Badge>
-		);
-	}
+/**
+ * Story card component with 9:16 aspect ratio, hover actions, and status badge.
+ * Follows the StoryFlow design system.
+ */
+export function SubmissionCard({
+	submission,
+	onView,
+	onEdit,
+	onDelete,
+	className,
+}: SubmissionCardProps) {
+	const [imageError, setImageError] = useState(false);
+	const hasValidUrl = submission.mediaUrl && !submission.mediaUrl.startsWith('blob:');
+	const status = getDisplayStatus(submission);
+	const isPublished = status === 'published';
+	const canEdit = submission.submissionStatus === 'pending';
 
-	// Submission statuses
-	if (submissionStatus === 'approved') {
-		return (
-			<Badge className="gap-1 bg-emerald-500 hover:bg-emerald-600">
-				<CheckCircle className="h-3 w-3" />
-				Approved
-			</Badge>
-		);
-	}
+	// Format the time text based on status
+	const getTimeText = () => {
+		if (status === 'published' && submission.publishedAt) {
+			return `Published ${formatDistanceToNow(new Date(submission.publishedAt), { addSuffix: true })}`;
+		}
+		if (status === 'scheduled' && submission.scheduledTime) {
+			return `Scheduled for ${new Date(submission.scheduledTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}`;
+		}
+		return `Submitted ${formatDistanceToNow(new Date(submission.createdAt), { addSuffix: true })}`;
+	};
 
-	if (submissionStatus === 'rejected') {
-		return (
-			<Badge variant="destructive" className="gap-1">
-				<XCircle className="h-3 w-3" />
-				Rejected
-			</Badge>
-		);
-	}
+	// Extract username from email for display
+	const displayName = submission.userEmail?.split('@')[0] || 'Unknown';
 
-	// Pending (default)
 	return (
-		<Badge variant="secondary" className="gap-1">
-			<Clock className="h-3 w-3" />
-			Pending
-		</Badge>
+		<div
+			className={cn(
+				'group relative aspect-[9/16] rounded-xl overflow-hidden',
+				'bg-[var(--sf-card-dark)] border border-[var(--sf-border-dark)]',
+				'hover:shadow-2xl transition-all duration-300',
+				className
+			)}
+		>
+			{/* Background Image */}
+			{!imageError && hasValidUrl ? (
+				<div
+					className="absolute inset-0 bg-cover bg-center"
+					style={{ backgroundImage: `url("${submission.mediaUrl}")` }}
+				/>
+			) : (
+				<div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-[var(--sf-card-dark)] text-[var(--sf-text-secondary)]">
+					<ImageOff className="h-12 w-12 opacity-50" />
+					<span className="text-xs">Image unavailable</span>
+				</div>
+			)}
+
+			{/* Hidden img element for error handling */}
+			{hasValidUrl && !imageError && (
+				<img
+					src={submission.mediaUrl}
+					alt=""
+					className="sr-only"
+					onError={() => setImageError(true)}
+				/>
+			)}
+
+			{/* Gradient Overlay */}
+			<div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
+
+			{/* Status Badge */}
+			<div className="absolute top-4 left-4">
+				<SfStatusBadge status={status} size="sm" />
+			</div>
+
+			{/* Hover Actions Overlay */}
+			<div
+				className={cn(
+					'absolute inset-0 flex items-center justify-center gap-3',
+					'bg-black/40 backdrop-blur-[2px]',
+					'opacity-0 group-hover:opacity-100 transition-opacity duration-300'
+				)}
+			>
+				{isPublished ? (
+					// Published items: show analytics and share
+					<>
+						<button
+							onClick={() => onView?.(submission)}
+							className="size-10 rounded-full bg-white text-black flex items-center justify-center hover:bg-[var(--sf-primary)] hover:text-white transition-all transform hover:scale-110"
+							aria-label="View analytics"
+						>
+							<BarChart3 className="h-5 w-5" />
+						</button>
+						<button
+							className="size-10 rounded-full bg-white text-black flex items-center justify-center hover:bg-[var(--sf-primary)] hover:text-white transition-all transform hover:scale-110"
+							aria-label="Share"
+						>
+							<Share2 className="h-5 w-5" />
+						</button>
+					</>
+				) : (
+					// Non-published items: view, edit, delete
+					<>
+						<button
+							onClick={() => onView?.(submission)}
+							className="size-10 rounded-full bg-white text-black flex items-center justify-center hover:bg-[var(--sf-primary)] hover:text-white transition-all transform hover:scale-110"
+							aria-label="View"
+						>
+							<Eye className="h-5 w-5" />
+						</button>
+						{canEdit && onEdit && (
+							<button
+								onClick={() => onEdit(submission)}
+								className="size-10 rounded-full bg-white text-black flex items-center justify-center hover:bg-[var(--sf-primary)] hover:text-white transition-all transform hover:scale-110"
+								aria-label="Edit"
+							>
+								<Edit className="h-5 w-5" />
+							</button>
+						)}
+						{onDelete && (
+							<button
+								onClick={() => onDelete(submission)}
+								className="size-10 rounded-full bg-white text-black flex items-center justify-center hover:bg-red-500 hover:text-white transition-all transform hover:scale-110"
+								aria-label="Delete"
+							>
+								<Trash2 className="h-5 w-5" />
+							</button>
+						)}
+					</>
+				)}
+			</div>
+
+			{/* Footer Info */}
+			<div className="absolute bottom-0 left-0 right-0 p-4">
+				<div className="flex items-center gap-2 mb-1">
+					<SfAvatar
+						fallback={displayName}
+						size="xs"
+						className="border border-white/20"
+					/>
+					<p className="text-white text-sm font-bold truncate">
+						@{displayName}
+					</p>
+				</div>
+				<p className="text-white/60 text-[11px]">{getTimeText()}</p>
+			</div>
+		</div>
 	);
 }
 
-export function SubmissionCard({ submission, onEdit, className }: SubmissionCardProps) {
-	const canEdit = submission.submissionStatus === 'pending';
-	const createdDate = new Date(submission.createdAt);
-	const [imageError, setImageError] = useState(false);
-	const hasValidUrl = submission.mediaUrl && !submission.mediaUrl.startsWith('blob:');
-
+/**
+ * Skeleton loading state for submission card
+ */
+export function SubmissionCardSkeleton() {
 	return (
-		<Card className={cn('group overflow-hidden', className)}>
-			<div className="relative aspect-[9/16] bg-muted">
-				{!imageError && hasValidUrl ? (
-					<img
-						src={submission.mediaUrl}
-						alt={submission.title || 'Submission'}
-						className="h-full w-full object-cover"
-						onError={() => setImageError(true)}
-					/>
-				) : (
-					<div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-muted text-muted-foreground">
-						<ImageOff className="h-12 w-12 opacity-50" />
-						<span className="text-xs">Image unavailable</span>
-					</div>
-				)}
-
-				{/* Overlay with actions */}
-				<div className="absolute inset-0 flex flex-col justify-between bg-gradient-to-b from-black/60 via-transparent to-black/60 p-3 opacity-0 transition-opacity group-hover:opacity-100">
-					<div className="flex justify-end">
-						{canEdit && onEdit && (
-							<Button
-								variant="secondary"
-								size="icon"
-								className="h-8 w-8"
-								onClick={() => onEdit(submission)}
-							>
-								<Edit className="h-4 w-4" />
-							</Button>
-						)}
-					</div>
-				</div>
-
-				{/* Status badge - always visible */}
-				<div className="absolute left-2 top-2">
-					{getStatusBadge(submission)}
-				</div>
+		<div className="relative aspect-[9/16] rounded-xl overflow-hidden bg-[var(--sf-card-dark)] border border-[var(--sf-border-dark)] animate-pulse">
+			<div className="absolute top-4 left-4">
+				<div className="h-5 w-16 rounded-full bg-[var(--sf-border-dark)]" />
 			</div>
-
-			<CardContent className="space-y-2 p-3">
-				{/* Caption preview */}
-				{submission.caption && (
-					<p className="line-clamp-2 text-sm text-foreground">
-						{submission.caption}
-					</p>
-				)}
-
-				{/* Rejection reason */}
-				{submission.submissionStatus === 'rejected' && submission.rejectionReason && (
-					<TooltipProvider>
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<p className="line-clamp-1 text-xs text-destructive">
-									Reason: {submission.rejectionReason}
-								</p>
-							</TooltipTrigger>
-							<TooltipContent>
-								<p className="max-w-xs">{submission.rejectionReason}</p>
-							</TooltipContent>
-						</Tooltip>
-					</TooltipProvider>
-				)}
-
-				{/* Date */}
-				<p className="text-xs text-muted-foreground">
-					{format(createdDate, 'MMM d, yyyy')}
-				</p>
-			</CardContent>
-		</Card>
+			<div className="absolute bottom-0 left-0 right-0 p-4">
+				<div className="flex items-center gap-2 mb-2">
+					<div className="h-6 w-6 rounded-full bg-[var(--sf-border-dark)]" />
+					<div className="h-4 w-24 rounded bg-[var(--sf-border-dark)]" />
+				</div>
+				<div className="h-3 w-20 rounded bg-[var(--sf-border-dark)]" />
+			</div>
+		</div>
 	);
 }

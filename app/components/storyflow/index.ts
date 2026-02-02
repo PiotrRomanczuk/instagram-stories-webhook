@@ -34,3 +34,10 @@ export {
 
 // Phone frame components
 export { SfPhoneFrame, SfPhoneFrameGrid } from './sf-phone-frame';
+
+// Review Interface components (Emerald theme)
+export { StoryflowReviewLayout } from './review-layout';
+export { ReviewHistorySidebar } from './review-history-sidebar';
+export { PhonePreview } from './phone-preview';
+export { ReviewDetailsSidebar } from './review-details-sidebar';
+export { ReviewActionBar } from './review-action-bar';

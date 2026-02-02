@@ -1,0 +1,251 @@
+'use client';
+
+import { useState, useCallback, useEffect } from 'react';
+import useSWR, { mutate } from 'swr';
+import { toast } from 'sonner';
+import { Loader2, AlertTriangle, Inbox, Layers } from 'lucide-react';
+import { ReviewHistorySidebar } from './review-history-sidebar';
+import { PhonePreview } from './phone-preview';
+import { ReviewDetailsSidebar } from './review-details-sidebar';
+import { ReviewActionBar } from './review-action-bar';
+import { useKeyboardNav } from '../story-review/use-keyboard-nav';
+import { Button } from '@/app/components/ui/button';
+import { cn } from '@/lib/utils';
+import { ContentItem } from '@/lib/types';
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
+interface ReviewedItem {
+	id: string;
+	title: string;
+	thumbnail: string;
+	status: 'approved' | 'rejected';
+	timestamp: Date;
+}
+
+interface StoryflowReviewLayoutProps {
+	className?: string;
+}
+
+export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps) {
+	const [currentIndex, setCurrentIndex] = useState(0);
+	const [reviewHistory, setReviewHistory] = useState<ReviewedItem[]>([]);
+	const [reviewComment, setReviewComment] = useState('');
+	const [isActionLoading, setIsActionLoading] = useState(false);
+
+	// Fetch pending submissions
+	const { data, isLoading, error } = useSWR<{ items: ContentItem[] }>(
+		'/api/content?source=submission&submissionStatus=pending',
+		fetcher
+	);
+
+	const items = data?.items || [];
+	const currentItem = items[currentIndex] || null;
+
+	// Calculate daily goal stats
+	const dailyGoal = 50;
+	const reviewedCount = reviewHistory.length;
+	const progressPercent = Math.min(Math.round((reviewedCount / dailyGoal) * 100), 100);
+	const remainingCount = items.length;
+
+	const refreshList = useCallback(() => {
+		mutate('/api/content?source=submission&submissionStatus=pending');
+	}, []);
+
+	// Navigation handlers
+	const goToNext = useCallback(() => {
+		if (currentIndex < items.length - 1) {
+			setCurrentIndex(currentIndex + 1);
+		}
+	}, [currentIndex, items.length]);
+
+	const goToPrevious = useCallback(() => {
+		if (currentIndex > 0) {
+			setCurrentIndex(currentIndex - 1);
+		}
+	}, [currentIndex]);
+
+	const skipStory = useCallback(() => {
+		goToNext();
+	}, [goToNext]);
+
+	// Add to review history
+	const addToHistory = useCallback((item: ContentItem, status: 'approved' | 'rejected') => {
+		const historyItem: ReviewedItem = {
+			id: item.id,
+			title: item.title || item.caption?.slice(0, 30) || 'Untitled Story',
+			thumbnail: item.mediaUrl,
+			status,
+			timestamp: new Date(),
+		};
+		setReviewHistory((prev) => [historyItem, ...prev].slice(0, 20)); // Keep last 20
+	}, []);
+
+	// Action handlers
+	const handleApprove = async () => {
+		if (!currentItem || isActionLoading) return;
+		setIsActionLoading(true);
+		try {
+			const response = await fetch(`/api/content/${currentItem.id}/review`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ action: 'approve', feedback: reviewComment || undefined }),
+			});
+
+			if (!response.ok) {
+				const errorData = await response.json();
+				throw new Error(errorData.error || 'Failed to approve');
+			}
+
+			addToHistory(currentItem, 'approved');
+			toast.success('Story approved and ready to schedule');
+			setReviewComment('');
+			refreshList();
+
+			// Adjust index if needed
+			if (currentIndex >= items.length - 1) {
+				setCurrentIndex(Math.max(0, currentIndex - 1));
+			}
+		} catch (err) {
+			toast.error(err instanceof Error ? err.message : 'Failed to approve');
+		} finally {
+			setIsActionLoading(false);
+		}
+	};
+
+	const handleReject = async () => {
+		if (!currentItem || isActionLoading) return;
+		setIsActionLoading(true);
+		try {
+			const response = await fetch(`/api/content/${currentItem.id}/review`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					action: 'reject',
+					rejectionReason: reviewComment || 'Content does not meet guidelines'
+				}),
+			});
+
+			if (!response.ok) {
+				const errorData = await response.json();
+				throw new Error(errorData.error || 'Failed to reject');
+			}
+
+			addToHistory(currentItem, 'rejected');
+			toast.success('Story rejected');
+			setReviewComment('');
+			refreshList();
+
+			if (currentIndex >= items.length - 1) {
+				setCurrentIndex(Math.max(0, currentIndex - 1));
+			}
+		} catch (err) {
+			toast.error(err instanceof Error ? err.message : 'Failed to reject');
+		} finally {
+			setIsActionLoading(false);
+		}
+	};
+
+	// Keyboard navigation
+	useKeyboardNav({
+		onNext: goToNext,
+		onPrevious: goToPrevious,
+		onApprove: handleApprove,
+		onReject: handleReject,
+		enabled: items.length > 0 && !isActionLoading,
+	});
+
+	// Loading state
+	if (isLoading) {
+		return (
+			<div className={cn('flex h-[calc(100vh-120px)] items-center justify-center', className)}>
+				<div className="text-center space-y-4">
+					<Loader2 className="h-12 w-12 animate-spin text-[#13ec5b] mx-auto" />
+					<p className="text-slate-400 font-medium">Loading stories...</p>
+				</div>
+			</div>
+		);
+	}
+
+	// Error state
+	if (error) {
+		return (
+			<div className={cn('flex flex-col items-center justify-center h-[calc(100vh-120px)]', className)}>
+				<AlertTriangle className="h-12 w-12 text-red-400 mb-4" />
+				<h3 className="text-lg font-semibold text-white">Failed to load stories</h3>
+				<p className="text-sm text-slate-400 mt-2 mb-4">
+					{error.message || 'An error occurred'}
+				</p>
+				<Button onClick={refreshList} variant="outline" className="border-[#23482f] hover:bg-[#23482f]">
+					Try Again
+				</Button>
+			</div>
+		);
+	}
+
+	// Empty state
+	if (items.length === 0) {
+		return (
+			<div className={cn('flex flex-col items-center justify-center h-[calc(100vh-120px)]', className)}>
+				<div className="h-20 w-20 rounded-full bg-[#1a3323] flex items-center justify-center mb-4">
+					<Inbox className="h-10 w-10 text-[#13ec5b]" />
+				</div>
+				<h3 className="text-lg font-semibold text-white">All caught up!</h3>
+				<p className="text-sm text-slate-400 mt-2">
+					No stories pending review
+				</p>
+			</div>
+		);
+	}
+
+	return (
+		<div className={cn('flex h-[calc(100vh-120px)] bg-[#102216]', className)}>
+			{/* Left Sidebar: Review History */}
+			<ReviewHistorySidebar history={reviewHistory} />
+
+			{/* Main Content */}
+			<main className="flex-1 flex flex-col bg-black/20 overflow-y-auto">
+				<div className="max-w-4xl mx-auto w-full p-8 flex flex-col items-center">
+					{/* Header */}
+					<div className="mb-6 text-center">
+						<h1 className="text-2xl font-bold text-white mb-1">Story Review Queue</h1>
+						<p className="text-slate-400 text-sm">
+							{remainingCount} {remainingCount === 1 ? 'story' : 'stories'} pending review
+						</p>
+					</div>
+
+					{/* Phone Preview */}
+					<PhonePreview
+						item={currentItem}
+						onImageError={() => {
+							// Handle image error gracefully - the component handles this internally
+						}}
+					/>
+
+					{/* Action Buttons */}
+					<ReviewActionBar
+						onApprove={handleApprove}
+						onReject={handleReject}
+						onPrevious={goToPrevious}
+						onSkip={skipStory}
+						hasPrevious={currentIndex > 0}
+						hasNext={currentIndex < items.length - 1}
+						disabled={!currentItem || isActionLoading}
+						isLoading={isActionLoading}
+					/>
+				</div>
+			</main>
+
+			{/* Right Sidebar: Stats & Metadata */}
+			<ReviewDetailsSidebar
+				item={currentItem}
+				reviewedCount={reviewedCount}
+				dailyGoal={dailyGoal}
+				progressPercent={progressPercent}
+				remainingCount={remainingCount}
+				reviewComment={reviewComment}
+				onReviewCommentChange={setReviewComment}
+			/>
+		</div>
+	);
+}

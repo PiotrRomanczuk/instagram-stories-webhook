@@ -1,8 +1,7 @@
 'use client';
 
 import { Clock, CheckCircle, Calendar, Send } from 'lucide-react';
-import { Card, CardContent } from '@/app/components/ui/card';
-import { Skeleton } from '@/app/components/ui/skeleton';
+import { SfStatsCard, SfStatsCardSkeleton } from '@/app/components/storyflow';
 
 interface SubmissionStatsProps {
 	pending: number;
@@ -12,41 +11,10 @@ interface SubmissionStatsProps {
 	isLoading?: boolean;
 }
 
-interface StatCardProps {
-	label: string;
-	value: number;
-	icon: React.ReactNode;
-	color: string;
-}
-
-function StatCard({ label, value, icon, color }: StatCardProps) {
-	return (
-		<Card>
-			<CardContent className="flex items-center gap-4 p-4">
-				<div className={`rounded-lg p-2 ${color}`}>{icon}</div>
-				<div>
-					<p className="text-2xl font-bold">{value}</p>
-					<p className="text-sm text-muted-foreground">{label}</p>
-				</div>
-			</CardContent>
-		</Card>
-	);
-}
-
-function StatCardSkeleton() {
-	return (
-		<Card>
-			<CardContent className="flex items-center gap-4 p-4">
-				<Skeleton className="h-10 w-10 rounded-lg" />
-				<div className="space-y-2">
-					<Skeleton className="h-6 w-12" />
-					<Skeleton className="h-4 w-20" />
-				</div>
-			</CardContent>
-		</Card>
-	);
-}
-
+/**
+ * Stats cards showing submission counts by status.
+ * Uses the StoryFlow design system with dark theme.
+ */
 export function SubmissionStats({
 	pending,
 	approved,
@@ -56,40 +24,48 @@ export function SubmissionStats({
 }: SubmissionStatsProps) {
 	if (isLoading) {
 		return (
-			<div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-				<StatCardSkeleton />
-				<StatCardSkeleton />
-				<StatCardSkeleton />
-				<StatCardSkeleton />
+			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+				<SfStatsCardSkeleton />
+				<SfStatsCardSkeleton />
+				<SfStatsCardSkeleton />
+				<SfStatsCardSkeleton />
 			</div>
 		);
 	}
 
 	return (
-		<div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-			<StatCard
+		<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+			<SfStatsCard
 				label="Pending"
 				value={pending}
-				icon={<Clock className="h-5 w-5 text-yellow-600" />}
-				color="bg-yellow-100"
+				icon={<Clock className="h-5 w-5" />}
+				iconBgColor="bg-yellow-500/10 dark:bg-yellow-500/20"
+				iconColor="text-yellow-600 dark:text-yellow-500"
+				className="hover:border-yellow-500/50 transition-colors"
 			/>
-			<StatCard
+			<SfStatsCard
 				label="Approved"
 				value={approved}
-				icon={<CheckCircle className="h-5 w-5 text-emerald-600" />}
-				color="bg-emerald-100"
+				icon={<CheckCircle className="h-5 w-5" />}
+				iconBgColor="bg-emerald-500/10 dark:bg-emerald-500/20"
+				iconColor="text-emerald-600 dark:text-emerald-500"
+				className="hover:border-emerald-500/50 transition-colors"
 			/>
-			<StatCard
+			<SfStatsCard
 				label="Scheduled"
 				value={scheduled}
-				icon={<Calendar className="h-5 w-5 text-blue-600" />}
-				color="bg-blue-100"
+				icon={<Calendar className="h-5 w-5" />}
+				iconBgColor="bg-[var(--sf-primary)]/10 dark:bg-[var(--sf-primary)]/20"
+				iconColor="text-[var(--sf-primary)]"
+				className="hover:border-[var(--sf-primary)]/50 transition-colors"
 			/>
-			<StatCard
+			<SfStatsCard
 				label="Published"
 				value={published}
-				icon={<Send className="h-5 w-5 text-purple-600" />}
-				color="bg-purple-100"
+				icon={<Send className="h-5 w-5" />}
+				iconBgColor="bg-purple-500/10 dark:bg-purple-500/20"
+				iconColor="text-purple-600 dark:text-purple-500"
+				className="hover:border-purple-500/50 transition-colors"
 			/>
 		</div>
 	);

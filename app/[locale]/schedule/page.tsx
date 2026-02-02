@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth/next';
 import { redirect } from 'next/navigation';
 import { authOptions } from '@/lib/auth';
 import { getUserRole } from '@/lib/auth-helpers';
-import { CalendarLayout } from '@/app/components/calendar';
+import { ScheduleCalendarLayout } from '@/app/components/calendar';
 
 export default async function SchedulePage() {
 	const session = await getServerSession(authOptions);
@@ -18,9 +18,5 @@ export default async function SchedulePage() {
 		redirect('/');
 	}
 
-	return (
-		<main className="mx-auto max-w-[1600px] px-4 py-8 sm:px-6 lg:px-8">
-			<CalendarLayout />
-		</main>
-	);
+	return <ScheduleCalendarLayout />;
 }

@@ -46,8 +46,8 @@ export function Navbar() {
 	const pathname = usePathname();
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-	// Don't show navbar on signin page
-	if (pathname === '/auth/signin') return null;
+	// Don't show navbar on signin page or schedule page (has its own sidebar)
+	if (pathname === '/auth/signin' || pathname === '/schedule') return null;
 
 	const user = session?.user;
 	const userRole = (user as { role?: UserRole })?.role;

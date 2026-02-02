@@ -132,6 +132,18 @@
   --sf-hover-dark: #232f48;
 }
 
+/* StoryFlow Review Interface - Emerald Theme */
+:root {
+  --sfr-primary: #13ec5b;
+  --sfr-primary-hover: #10d94e;
+  --sfr-primary-muted: rgba(19, 236, 91, 0.2);
+  --sfr-bg-dark: #102216;
+  --sfr-card-dark: #112217;
+  --sfr-border-dark: #23482f;
+  --sfr-hover-dark: #1a3323;
+  --sfr-text-muted: #94a3b8;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -139,4 +151,62 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Kanban Board Styles */
+.kanban-column {
+  min-width: 280px;
+  max-width: 320px;
+}
+
+.story-thumbnail {
+  aspect-ratio: 9/16;
+}
+
+/* Custom scrollbar for dark theme */
+.dark ::-webkit-scrollbar,
+[class*="bg-[#101622]"] ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.dark ::-webkit-scrollbar-track,
+[class*="bg-[#101622]"] ::-webkit-scrollbar-track {
+  background: #101622;
+}
+
+.dark ::-webkit-scrollbar-thumb,
+[class*="bg-[#101622]"] ::-webkit-scrollbar-thumb {
+  background: #2d3a54;
+  border-radius: 10px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover,
+[class*="bg-[#101622]"] ::-webkit-scrollbar-thumb:hover {
+  background: #2b6cee;
+}
+
+/* Custom scrollbar utility class */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #232f48;
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #2a3649;
+}
+
+/* Firefox scrollbar */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #232f48 transparent;
 }

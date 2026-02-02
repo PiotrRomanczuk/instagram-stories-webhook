@@ -13,8 +13,8 @@ import {
 	TableHeader,
 	TableRow,
 } from '@/app/components/ui/table';
-import { Skeleton } from '@/app/components/ui/skeleton';
-import { SubmissionCard } from './submission-card';
+import { SubmissionCard, SubmissionCardSkeleton } from './submission-card';
+import { SfStatusBadge } from '@/app/components/storyflow';
 import { ContentItem } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
@@ -23,29 +23,28 @@ type ViewMode = 'grid' | 'table';
 interface SubmissionListProps {
 	submissions: ContentItem[];
 	isLoading?: boolean;
+	onView?: (submission: ContentItem) => void;
 	onEdit?: (submission: ContentItem) => void;
+	onDelete?: (submission: ContentItem) => void;
 	className?: string;
 }
 
-function getStatusLabel(submission: ContentItem): string {
-	if (submission.publishingStatus === 'published') return 'Published';
-	if (submission.publishingStatus === 'scheduled') return 'Scheduled';
-	if (submission.publishingStatus === 'processing') return 'Processing';
-	if (submission.publishingStatus === 'failed') return 'Failed';
-	if (submission.submissionStatus === 'approved') return 'Approved';
-	if (submission.submissionStatus === 'rejected') return 'Rejected';
-	return 'Pending';
+type StatusType = 'pending' | 'approved' | 'rejected' | 'published' | 'scheduled' | 'processing';
+
+function getStatusType(submission: ContentItem): StatusType {
+	if (submission.publishingStatus === 'published') return 'published';
+	if (submission.publishingStatus === 'scheduled') return 'scheduled';
+	if (submission.publishingStatus === 'processing') return 'processing';
+	if (submission.submissionStatus === 'approved') return 'approved';
+	if (submission.submissionStatus === 'rejected') return 'rejected';
+	return 'pending';
 }
 
 function GridSkeleton() {
 	return (
-		<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-			{Array.from({ length: 8 }).map((_, i) => (
-				<div key={i} className="space-y-2">
-					<Skeleton className="aspect-[9/16] rounded-lg" />
-					<Skeleton className="h-4 w-3/4" />
-					<Skeleton className="h-3 w-1/2" />
-				</div>
+		<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+			{Array.from({ length: 10 }).map((_, i) => (
+				<SubmissionCardSkeleton key={i} />
 			))}
 		</div>
 	);
@@ -53,34 +52,34 @@ function GridSkeleton() {
 
 function TableSkeleton() {
 	return (
-		<div className="rounded-md border">
+		<div className="rounded-xl border border-[var(--sf-border-dark)] bg-[var(--sf-card-dark)] overflow-hidden">
 			<Table>
 				<TableHeader>
-					<TableRow>
-						<TableHead className="w-20">Image</TableHead>
-						<TableHead>Caption</TableHead>
-						<TableHead className="w-24">Status</TableHead>
-						<TableHead className="w-32">Date</TableHead>
-						<TableHead className="w-20">Actions</TableHead>
+					<TableRow className="border-[var(--sf-border-dark)] hover:bg-transparent">
+						<TableHead className="w-20 text-[var(--sf-text-secondary)]">Image</TableHead>
+						<TableHead className="text-[var(--sf-text-secondary)]">Caption</TableHead>
+						<TableHead className="w-24 text-[var(--sf-text-secondary)]">Status</TableHead>
+						<TableHead className="w-32 text-[var(--sf-text-secondary)]">Date</TableHead>
+						<TableHead className="w-20 text-[var(--sf-text-secondary)]">Actions</TableHead>
 					</TableRow>
 				</TableHeader>
 				<TableBody>
 					{Array.from({ length: 5 }).map((_, i) => (
-						<TableRow key={i}>
+						<TableRow key={i} className="border-[var(--sf-border-dark)]">
 							<TableCell>
-								<Skeleton className="h-12 w-12 rounded" />
+								<div className="h-12 w-12 rounded bg-[var(--sf-border-dark)] animate-pulse" />
 							</TableCell>
 							<TableCell>
-								<Skeleton className="h-4 w-48" />
+								<div className="h-4 w-48 rounded bg-[var(--sf-border-dark)] animate-pulse" />
 							</TableCell>
 							<TableCell>
-								<Skeleton className="h-5 w-16 rounded-full" />
+								<div className="h-5 w-16 rounded-full bg-[var(--sf-border-dark)] animate-pulse" />
 							</TableCell>
 							<TableCell>
-								<Skeleton className="h-4 w-24" />
+								<div className="h-4 w-24 rounded bg-[var(--sf-border-dark)] animate-pulse" />
 							</TableCell>
 							<TableCell>
-								<Skeleton className="h-8 w-8 rounded" />
+								<div className="h-8 w-8 rounded bg-[var(--sf-border-dark)] animate-pulse" />
 							</TableCell>
 						</TableRow>
 					))}
@@ -92,13 +91,13 @@ function TableSkeleton() {
 
 function EmptyState() {
 	return (
-		<div className="flex flex-col items-center justify-center py-12 text-center">
-			<div className="rounded-full bg-muted p-4">
-				<List className="h-8 w-8 text-muted-foreground" />
+		<div className="flex flex-col items-center justify-center py-16 text-center">
+			<div className="rounded-full bg-[var(--sf-card-dark)] border border-[var(--sf-border-dark)] p-6">
+				<List className="h-10 w-10 text-[var(--sf-text-secondary)]" />
 			</div>
-			<h3 className="mt-4 text-lg font-semibold">No submissions</h3>
-			<p className="mt-1 text-sm text-muted-foreground">
-				You haven't submitted anything yet.
+			<h3 className="mt-6 text-xl font-semibold text-white">No submissions yet</h3>
+			<p className="mt-2 text-sm text-[var(--sf-text-secondary)] max-w-sm">
+				You haven&apos;t submitted any content yet. Create your first submission to get started.
 			</p>
 		</div>
 	);
@@ -110,8 +109,8 @@ function SubmissionThumbnail({ mediaUrl }: { mediaUrl: string }) {
 
 	if (!hasValidUrl || error) {
 		return (
-			<div className="flex h-12 w-12 items-center justify-center rounded bg-muted">
-				<ImageOff className="h-5 w-5 text-muted-foreground opacity-50" />
+			<div className="flex h-12 w-12 items-center justify-center rounded bg-[var(--sf-border-dark)]">
+				<ImageOff className="h-5 w-5 text-[var(--sf-text-secondary)] opacity-50" />
 			</div>
 		);
 	}
@@ -129,7 +128,9 @@ function SubmissionThumbnail({ mediaUrl }: { mediaUrl: string }) {
 export function SubmissionList({
 	submissions,
 	isLoading,
+	onView,
 	onEdit,
+	onDelete,
 	className,
 }: SubmissionListProps) {
 	const [viewMode, setViewMode] = useState<ViewMode>('grid');
@@ -143,31 +144,42 @@ export function SubmissionList({
 	}
 
 	return (
-		<div className={cn('space-y-4', className)}>
+		<div className={cn('space-y-6', className)}>
 			{/* View toggle */}
 			<div className="flex justify-end">
 				<ToggleGroup
 					type="single"
 					value={viewMode}
 					onValueChange={(value) => value && setViewMode(value as ViewMode)}
+					className="bg-[var(--sf-card-dark)] border border-[var(--sf-border-dark)] rounded-lg p-1"
 				>
-					<ToggleGroupItem value="grid" aria-label="Grid view">
+					<ToggleGroupItem
+						value="grid"
+						aria-label="Grid view"
+						className="data-[state=on]:bg-[var(--sf-primary)] data-[state=on]:text-white text-[var(--sf-text-secondary)] hover:text-white"
+					>
 						<Grid className="h-4 w-4" />
 					</ToggleGroupItem>
-					<ToggleGroupItem value="table" aria-label="Table view">
+					<ToggleGroupItem
+						value="table"
+						aria-label="Table view"
+						className="data-[state=on]:bg-[var(--sf-primary)] data-[state=on]:text-white text-[var(--sf-text-secondary)] hover:text-white"
+					>
 						<List className="h-4 w-4" />
 					</ToggleGroupItem>
 				</ToggleGroup>
 			</div>
 
-			{/* Grid view */}
+			{/* Grid view - 5 columns on xl, 4 on lg, 3 on md, 2 on sm, 1 on mobile */}
 			{viewMode === 'grid' && (
-				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+				<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
 					{submissions.map((submission) => (
 						<SubmissionCard
 							key={submission.id}
 							submission={submission}
+							onView={onView}
 							onEdit={onEdit}
+							onDelete={onDelete}
 						/>
 					))}
 				</div>
@@ -175,28 +187,33 @@ export function SubmissionList({
 
 			{/* Table view */}
 			{viewMode === 'table' && (
-				<div className="rounded-md border">
+				<div className="rounded-xl border border-[var(--sf-border-dark)] bg-[var(--sf-card-dark)] overflow-hidden">
 					<Table>
 						<TableHeader>
-							<TableRow>
-								<TableHead className="w-20">Image</TableHead>
-								<TableHead>Caption</TableHead>
-								<TableHead className="w-24">Status</TableHead>
-								<TableHead className="w-32">Date</TableHead>
-								<TableHead className="w-20">Actions</TableHead>
+							<TableRow className="border-[var(--sf-border-dark)] hover:bg-transparent">
+								<TableHead className="w-20 text-[var(--sf-text-secondary)]">Image</TableHead>
+								<TableHead className="text-[var(--sf-text-secondary)]">Caption</TableHead>
+								<TableHead className="w-24 text-[var(--sf-text-secondary)]">Status</TableHead>
+								<TableHead className="w-32 text-[var(--sf-text-secondary)]">Date</TableHead>
+								<TableHead className="w-20 text-[var(--sf-text-secondary)]">Actions</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
 							{submissions.map((submission) => (
-								<TableRow key={submission.id}>
+								<TableRow
+									key={submission.id}
+									className="border-[var(--sf-border-dark)] hover:bg-[var(--sf-hover-dark)]"
+								>
 									<TableCell>
 										<SubmissionThumbnail mediaUrl={submission.mediaUrl} />
 									</TableCell>
-									<TableCell className="max-w-xs truncate">
-										{submission.caption || '-'}
+									<TableCell className="max-w-xs truncate text-white">
+										{submission.caption || <span className="text-[var(--sf-text-secondary)]">No caption</span>}
 									</TableCell>
-									<TableCell>{getStatusLabel(submission)}</TableCell>
 									<TableCell>
+										<SfStatusBadge status={getStatusType(submission)} size="sm" />
+									</TableCell>
+									<TableCell className="text-[var(--sf-text-secondary)]">
 										{format(new Date(submission.createdAt), 'MMM d, yyyy')}
 									</TableCell>
 									<TableCell>
@@ -205,6 +222,7 @@ export function SubmissionList({
 												variant="ghost"
 												size="sm"
 												onClick={() => onEdit(submission)}
+												className="text-[var(--sf-text-secondary)] hover:text-white hover:bg-[var(--sf-hover-dark)]"
 											>
 												Edit
 											</Button>

@@ -25,22 +25,23 @@ describe('SubmissionList', () => {
 	it('should show empty state when no submissions', () => {
 		render(<SubmissionList submissions={[]} />);
 
-		expect(screen.getByText('No submissions')).toBeInTheDocument();
+		expect(screen.getByText('No submissions yet')).toBeInTheDocument();
 		expect(
-			screen.getByText("You haven't submitted anything yet.")
+			screen.getByText(/You haven't submitted any content yet/)
 		).toBeInTheDocument();
 	});
 
 	it('should render submissions in grid view by default', () => {
 		const submissions = [
-			createMockSubmission({ id: '1' }),
-			createMockSubmission({ id: '2' }),
+			createMockSubmission({ id: '1', userEmail: 'user1@example.com' }),
+			createMockSubmission({ id: '2', userEmail: 'user2@example.com' }),
 		];
 
 		render(<SubmissionList submissions={submissions} />);
 
-		const images = screen.getAllByRole('img');
-		expect(images.length).toBe(2);
+		// Check for username display from email (extracted from userEmail)
+		expect(screen.getByText('@user1')).toBeInTheDocument();
+		expect(screen.getByText('@user2')).toBeInTheDocument();
 	});
 
 	it('should show loading skeletons when isLoading', () => {

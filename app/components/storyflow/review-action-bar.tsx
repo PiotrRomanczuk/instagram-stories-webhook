@@ -1,0 +1,106 @@
+'use client';
+
+import { Check, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+interface ReviewActionBarProps {
+	onApprove: () => void;
+	onReject: () => void;
+	onPrevious: () => void;
+	onSkip: () => void;
+	hasPrevious: boolean;
+	hasNext: boolean;
+	disabled?: boolean;
+	isLoading?: boolean;
+	className?: string;
+}
+
+export function ReviewActionBar({
+	onApprove,
+	onReject,
+	onPrevious,
+	onSkip,
+	hasPrevious,
+	hasNext,
+	disabled = false,
+	isLoading = false,
+	className,
+}: ReviewActionBarProps) {
+	return (
+		<div className={cn('w-full flex flex-col items-center', className)}>
+			{/* Primary Action Buttons */}
+			<div className="mt-10 flex items-center gap-6 w-full max-w-sm">
+				{/* Reject Button */}
+				<button
+					onClick={onReject}
+					disabled={disabled}
+					className={cn(
+						'flex-1 flex items-center justify-center gap-3',
+						'bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white',
+						'border border-red-500/30 py-4 rounded-xl font-bold transition-all group',
+						'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-red-500/10 disabled:hover:text-red-500'
+					)}
+				>
+					{isLoading ? (
+						<Loader2 className="h-5 w-5 animate-spin" />
+					) : (
+						<X className="h-5 w-5" />
+					)}
+					<span>Reject</span>
+					<kbd className="hidden group-hover:inline-block bg-white/20 px-1.5 rounded text-[10px] ml-2">
+						R
+					</kbd>
+				</button>
+
+				{/* Approve Button */}
+				<button
+					onClick={onApprove}
+					disabled={disabled}
+					className={cn(
+						'flex-1 flex items-center justify-center gap-3',
+						'bg-[#13ec5b]/20 hover:bg-[#13ec5b] text-[#13ec5b] hover:text-white',
+						'border border-[#13ec5b]/30 py-4 rounded-xl font-bold transition-all group',
+						'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#13ec5b]/20 disabled:hover:text-[#13ec5b]'
+					)}
+				>
+					{isLoading ? (
+						<Loader2 className="h-5 w-5 animate-spin" />
+					) : (
+						<Check className="h-5 w-5" />
+					)}
+					<span>Approve</span>
+					<kbd className="hidden group-hover:inline-block bg-white/20 px-1.5 rounded text-[10px] ml-2">
+						A
+					</kbd>
+				</button>
+			</div>
+
+			{/* Navigation Buttons */}
+			<div className="mt-8 flex gap-4">
+				<button
+					onClick={onPrevious}
+					disabled={!hasPrevious || disabled}
+					className={cn(
+						'flex items-center gap-2 text-slate-400 hover:text-white transition-colors',
+						'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-slate-400'
+					)}
+				>
+					<ChevronLeft className="h-5 w-5" />
+					<span className="text-sm">Previous</span>
+				</button>
+
+				<button
+					onClick={onSkip}
+					disabled={!hasNext || disabled}
+					className={cn(
+						'flex items-center gap-2 text-slate-400 hover:text-white transition-colors',
+						'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-slate-400'
+					)}
+				>
+					<span className="text-sm">Skip Story</span>
+					<ChevronRight className="h-5 w-5" />
+				</button>
+			</div>
+		</div>
+	);
+}
