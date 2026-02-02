@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { publishMedia } from '@/lib/instagram';
+import { processImageForStory } from '@/lib/media/story-processor';
+import { supabaseAdmin } from '@/lib/config/supabase-admin';
 
 /**
  * DEBUG ENDPOINT: Direct publish to Instagram without scheduler
@@ -52,11 +54,47 @@ export async function POST(request: NextRequest) {
         log(`📷 Media URL: ${url}`);
         log(`📋 Media Type: ${type}`);
 
-        // 3. Attempt direct publish
-        log('📤 Calling publishMedia directly...');
-        
+        // 3. Process image for story format (9:16 with blurred background)
+        let publishUrl = url;
+        if (type === 'IMAGE') {
+            log('🎨 Processing image for story format (9:16)...');
+            try {
+                const processedBuffer = await processImageForStory(url);
+                log(`✅ Image processed: ${processedBuffer.length} bytes`);
+
+                // Upload processed image to storage
+                const filename = `debug-processed-${Date.now()}.jpg`;
+                const storagePath = `uploads/${filename}`;
+
+                const { error: uploadError } = await supabaseAdmin.storage
+                    .from('stories')
+                    .upload(storagePath, processedBuffer, {
+                        contentType: 'image/jpeg',
+                        upsert: true,
+                    });
+
+                if (uploadError) {
+                    log(`⚠️ Failed to upload processed image: ${uploadError.message}`);
+                    log('📤 Falling back to original URL...');
+                } else {
+                    const { data: urlData } = supabaseAdmin.storage
+                        .from('stories')
+                        .getPublicUrl(storagePath);
+                    publishUrl = urlData.publicUrl;
+                    log(`✅ Processed image uploaded: ${publishUrl}`);
+                }
+            } catch (processError) {
+                const errMsg = processError instanceof Error ? processError.message : 'Unknown error';
+                log(`⚠️ Image processing failed: ${errMsg}`);
+                log('📤 Falling back to original URL...');
+            }
+        }
+
+        // 4. Attempt direct publish
+        log('📤 Calling publishMedia...');
+
         const result = await publishMedia(
-            url,
+            publishUrl,
             type,
             'STORY', // Always story for debug
             '', // No caption
