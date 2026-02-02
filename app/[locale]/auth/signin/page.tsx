@@ -126,6 +126,14 @@ export default function SignIn() {
 											Test Admin
 										</Button>
 									</div>
+									<Button
+										variant="outline"
+										size="sm"
+										className="mt-2 w-full border-purple-500 text-purple-600 hover:bg-purple-50"
+										onClick={() => handleTestSignIn('p.romanczuk@gmail.com', 'admin')}
+									>
+										Test Real IG
+									</Button>
 								</div>
 							</>
 						)}

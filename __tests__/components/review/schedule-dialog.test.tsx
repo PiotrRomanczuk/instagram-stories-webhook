@@ -61,7 +61,7 @@ describe('ScheduleDialog', () => {
 		expect(screen.getByText(/Schedule "My Cool Post"/)).toBeInTheDocument();
 	});
 
-	it('should have specific time mode and queue mode options', () => {
+	it('should have specific time mode and soon mode options', () => {
 		render(
 			<ScheduleDialog
 				open={true}
@@ -71,10 +71,10 @@ describe('ScheduleDialog', () => {
 		);
 
 		expect(screen.getByText('Specific Time')).toBeInTheDocument();
-		expect(screen.getByText('Add to Queue')).toBeInTheDocument();
+		expect(screen.getByText('Post Now or Soon')).toBeInTheDocument();
 	});
 
-	it('should show queue interval options when queue mode is selected', async () => {
+	it('should show soon interval options when soon mode is selected', async () => {
 		const user = userEvent.setup();
 
 		render(
@@ -85,13 +85,13 @@ describe('ScheduleDialog', () => {
 			/>
 		);
 
-		// Click on "Add to Queue" radio option
-		const queueOption = screen.getByText('Add to Queue');
-		await user.click(queueOption);
+		// Click on "Post Now or Soon" radio option
+		const soonOption = screen.getByText('Post Now or Soon');
+		await user.click(soonOption);
 
 		// Should show interval selector
 		await waitFor(() => {
-			expect(screen.getByText('Publish in')).toBeInTheDocument();
+			expect(screen.getByText('When to publish')).toBeInTheDocument();
 		});
 	});
 
@@ -110,7 +110,7 @@ describe('ScheduleDialog', () => {
 		expect(scheduleButton).toBeDisabled();
 	});
 
-	it('should call onConfirm with scheduled time when queue mode is submitted', async () => {
+	it('should call onConfirm with scheduled time when soon mode is submitted', async () => {
 		const user = userEvent.setup();
 		mockOnConfirm.mockResolvedValue(undefined);
 
@@ -122,9 +122,9 @@ describe('ScheduleDialog', () => {
 			/>
 		);
 
-		// Switch to queue mode
-		const queueOption = screen.getByText('Add to Queue');
-		await user.click(queueOption);
+		// Switch to soon mode
+		const soonOption = screen.getByText('Post Now or Soon');
+		await user.click(soonOption);
 
 		// Wait for the mode to change and find the schedule button
 		await waitFor(() => {
@@ -175,7 +175,7 @@ describe('ScheduleDialog', () => {
 		expect(screen.getByRole('button', { name: /pick a date/i })).toBeInTheDocument();
 	});
 
-	it('should show hour and minute selectors in specific mode', () => {
+	it('should show time input in specific mode', () => {
 		render(
 			<ScheduleDialog
 				open={true}
@@ -184,7 +184,9 @@ describe('ScheduleDialog', () => {
 			/>
 		);
 
-		expect(screen.getByText('Hour')).toBeInTheDocument();
-		expect(screen.getByText('Minute')).toBeInTheDocument();
+		expect(screen.getByText('Time')).toBeInTheDocument();
+		// Should have a time input element
+		const timeInput = document.querySelector('input[type="time"]');
+		expect(timeInput).toBeInTheDocument();
 	});
 });

@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth/next';
 import { redirect } from 'next/navigation';
 import { authOptions } from '@/lib/auth';
 import { getUserRole } from '@/lib/auth-helpers';
-import { UsersManager } from '@/app/components/users/users-manager';
+import { UsersLayout } from '@/app/components/users-v2';
 
 export default async function UsersPage() {
 	const session = await getServerSession(authOptions);
@@ -19,8 +19,8 @@ export default async function UsersPage() {
 	}
 
 	return (
-		<main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-			<UsersManager currentUserEmail={session.user.email || undefined} />
+		<main className="mx-auto max-w-[1600px] px-4 py-8 sm:px-6 lg:px-8">
+			<UsersLayout />
 		</main>
 	);
 }

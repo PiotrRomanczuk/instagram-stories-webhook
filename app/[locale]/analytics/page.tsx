@@ -2,8 +2,7 @@ import { getServerSession } from 'next-auth/next';
 import { redirect } from 'next/navigation';
 import { authOptions } from '@/lib/auth';
 import { getUserRole } from '@/lib/auth-helpers';
-import { PageHeader } from '@/app/components/layout/page-header';
-import { AnalyticsDashboard } from '@/app/components/analytics/analytics-dashboard';
+import { AnalyticsLayout } from '@/app/components/analytics-v2';
 
 export default async function AnalyticsPage() {
 	const session = await getServerSession(authOptions);
@@ -20,15 +19,8 @@ export default async function AnalyticsPage() {
 	}
 
 	return (
-		<main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-			<div className="space-y-6">
-				<PageHeader
-					title="Analytics Dashboard"
-					description="Performance insights and metrics"
-				/>
-
-				<AnalyticsDashboard />
-			</div>
+		<main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+			<AnalyticsLayout />
 		</main>
 	);
 }

@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth/next';
 import { redirect } from 'next/navigation';
 import { authOptions } from '@/lib/auth';
 import { getUserRole } from '@/lib/auth-helpers';
-import { ReviewManager } from '@/app/components/review/review-manager';
+import { StoryReviewLayout } from '@/app/components/story-review';
 
 export default async function ReviewPage() {
 	const session = await getServerSession(authOptions);
@@ -19,8 +19,8 @@ export default async function ReviewPage() {
 	}
 
 	return (
-		<main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-			<ReviewManager />
+		<main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+			<StoryReviewLayout />
 		</main>
 	);
 }

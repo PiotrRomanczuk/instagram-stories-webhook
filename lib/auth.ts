@@ -81,7 +81,7 @@ export const authOptions: AuthOptions = {
 			// Allow test credentials in development/test mode
 			if (account?.provider === 'test-credentials') {
 				// Allow known test emails without whitelist check in dev/test
-				const testEmails = ['user@test.com', 'admin@test.com', 'user2@test.com'];
+				const testEmails = ['user@test.com', 'admin@test.com', 'user2@test.com', 'p.romanczuk@gmail.com'];
 				if (testEmails.includes(userEmail)) {
 					await Logger.info(
 						MODULE,
@@ -173,6 +173,7 @@ export const authOptions: AuthOptions = {
 					'user@test.com': 'user',
 					'admin@test.com': 'admin',
 					'user2@test.com': 'user',
+					'p.romanczuk@gmail.com': 'admin',
 				};
 				if (process.env.NODE_ENV !== 'production' && testUserRoles[email]) {
 					token.role = testUserRoles[email];

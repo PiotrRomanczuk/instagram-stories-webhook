@@ -5,6 +5,7 @@ import { PageHeader } from '@/app/components/layout/page-header';
 import { Alert, AlertDescription, AlertTitle } from '@/app/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
 import { DebugPublisherNew } from '@/app/components/developer/debug-publisher-new';
+import { InstagramConnectionStatus } from '@/app/components/developer/instagram-connection-status';
 
 export default async function DebugPage() {
 	const session = await getServerSession(authOptions);
@@ -20,6 +21,8 @@ export default async function DebugPage() {
 					title="Publish Debug"
 					description="Directly test Instagram publishing. This bypasses the scheduler and database completely to isolate API issues."
 				/>
+
+				<InstagramConnectionStatus />
 
 				<DebugPublisherNew />
 

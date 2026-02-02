@@ -115,6 +115,23 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* StoryFlow Design System Colors */
+:root {
+  --sf-primary: #2b6cee;
+  --sf-primary-hover: #1d5cd4;
+  --sf-primary-light: #5d95fb;
+  --sf-bg-light: #f6f6f8;
+  --sf-card-light: #ffffff;
+  --sf-border-light: #e5e7eb;
+  --sf-text-secondary-light: #6b7280;
+  --sf-bg-dark: #101622;
+  --sf-card-dark: #1a2332;
+  --sf-sidebar-dark: #111722;
+  --sf-border-dark: #2a3649;
+  --sf-text-secondary: #92a4c9;
+  --sf-hover-dark: #232f48;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
