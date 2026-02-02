@@ -129,7 +129,7 @@ export async function PATCH(
 
 		// Parse request body
 		const body = await req.json();
-		const { caption, title, userTags, hashtags, scheduledTime, version } = body;
+		const { caption, title, userTags, hashtags, scheduledTime, publishingStatus, version } = body;
 
 		// Validate version for optimistic locking
 		if (version === undefined) {
@@ -163,6 +163,7 @@ export async function PATCH(
 				userTags,
 				hashtags,
 				scheduledTime,
+				publishingStatus,
 			},
 			version,
 		);

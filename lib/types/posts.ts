@@ -114,6 +114,7 @@ export interface UpdateContentInput {
 	userTags?: UserTag[];
 	hashtags?: string[];
 	scheduledTime?: number;
+	publishingStatus?: PublishingStatus;
 	version?: number; // For optimistic locking
 }
 

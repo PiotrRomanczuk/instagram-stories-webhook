@@ -275,6 +275,8 @@ export async function updateContentItem(
 		if (input.hashtags !== undefined) updates.hashtags = input.hashtags;
 		if (input.scheduledTime !== undefined)
 			updates.scheduled_time = input.scheduledTime;
+		if (input.publishingStatus !== undefined)
+			updates.publishing_status = input.publishingStatus;
 
 		const { data, error } = await supabaseAdmin
 			.from('content_items')
