@@ -2,6 +2,150 @@
 
 **instagram-stories-webhook** is a Next.js app for programmatic Instagram Stories publishing via Meta Graph API. Integrates Google auth, Supabase, and cron-based scheduling.
 
+---
+
+## 📊 Development Status
+
+**For current project status and progress**, see **[PROJECT_STATUS.md](./PROJECT_STATUS.md)**
+
+`PROJECT_STATUS.md` is the primary source of truth for:
+- 🎯 Current development phase and weekly progress
+- 📋 Active work and immediate priorities (with task assignments)
+- 🆕 Recent changes and updates (mini changelog)
+- 🐛 Known issues and blockers
+- 🔗 Quick navigation to all documentation
+- ⚡ Development quick reference (commands, URLs, credentials)
+
+**This file (CLAUDE.md)** contains stable reference information:
+- Project architecture and conventions
+- Code organization patterns
+- Testing strategies
+- Commands reference
+- **Parallel execution coordination protocol** (see below)
+
+**For detailed metrics and historical tracking**, see [IMPLEMENTATION_STATUS.md](./IMPLEMENTATION_STATUS.md)
+
+---
+
+## 🤝 Parallel Execution Coordination
+
+**When multiple Claude Code sessions may run in parallel:**
+
+### Before Starting Any Work
+
+1. **Read PROJECT_STATUS.md first**
+   ```bash
+   # Always start by checking current status
+   cat PROJECT_STATUS.md
+   ```
+
+2. **Check "Active Tasks" section**
+   - Look for tasks with Status: ⏳ Available
+   - Verify no other session claimed it recently
+   - Avoid tasks marked "🔄 In Progress" unless >2 hours old
+
+3. **Ask user which task to work on**
+   - Do NOT assume which task to start
+   - Ask: "I see these available tasks: [list]. Which would you like me to work on?"
+   - Wait for explicit assignment
+
+### Claiming a Task
+
+**Required Protocol**:
+
+1. **Check PROJECT_STATUS.md "Active Tasks"** section
+2. **Verify task is available** (Status: ⏳ Available, Owner: *Unclaimed*)
+3. **Edit PROJECT_STATUS.md** to claim:
+   ```markdown
+   - **Status**: 🔄 In Progress
+   - **Owner**: Session: Claude #[N] ([User Name]) - Started: [Timestamp]
+   ```
+4. **Proceed with work** on that specific task only
+5. **Update status when complete**:
+   ```markdown
+   - **Status**: ✅ Complete
+   - **Owner**: Session: Claude #[N] - Completed: [Timestamp]
+   ```
+
+### Conflict Resolution
+
+**If task is already claimed**:
+- Check timestamp - if >2 hours old, may be abandoned
+- Ask user: "Task X is claimed by Session Y since [time]. Should I take over or work on something else?"
+- Never forcibly take over active tasks
+
+**If multiple sessions start same task**:
+- First to update PROJECT_STATUS.md wins
+- Others should abort and pick different task
+- Ask user to mediate if unclear
+
+### Example Workflow
+
+```
+User: "Work on authentication testing"
+
+Claude: "I see these available tasks in PROJECT_STATUS.md Active Tasks:
+1. Task 1.1: Measure Accurate Coverage Baseline (⏳ Available, 1-2h)
+2. Task 1.2: Authentication Flow Testing (⏳ Available, 3-4h)
+3. Task 1.3: Instagram API Integration Testing (⏳ Available, 4-5h)
+
+Which task would you like me to work on?"
+
+User: "Task 1.2"
+
+Claude: "Claiming Task 1.2 in PROJECT_STATUS.md..."
+[Updates file with Status: In Progress, Owner: Session info]
+"Starting work on authentication flow testing..."
+```
+
+### Why This Matters
+
+- **Prevents duplicate work** - Multiple sessions won't test the same file
+- **Clear ownership** - Easy to see who's working on what
+- **Coordination** - Team can work in parallel efficiently
+- **Accountability** - Track who completed which tasks
+- **Recovery** - Abandoned tasks can be identified and reassigned
+
+---
+
+## 🔍 Research-First Development Protocol
+
+**ALWAYS perform web research before implementing new features:**
+
+1. **Official Documentation**
+   - Check framework/library official docs (Next.js, React, Supabase, Instagram Graph API)
+   - Review API references and migration guides
+   - Look for breaking changes and deprecations
+
+2. **Best Practices & Patterns**
+   - Search for recommended patterns and examples
+   - Review official examples repositories
+   - Check community-approved solutions
+
+3. **Common Pitfalls**
+   - Look for known issues and gotchas
+   - Review GitHub issues and discussions
+   - Check Stack Overflow for edge cases
+
+4. **Version Compatibility**
+   - Verify compatibility between dependencies
+   - Check for breaking changes in recent versions
+   - Review changelogs and upgrade guides
+
+5. **Examples & References**
+   - Find working examples of similar features
+   - Review open-source implementations
+   - Check official starter templates
+
+**Why This Matters:**
+- Prevents implementing deprecated patterns
+- Saves time by avoiding known issues
+- Ensures compatibility with latest versions
+- Follows framework-recommended approaches
+- Reduces technical debt from the start
+
+---
+
 ## Quick Start
 
 **Dev**: `npm run dev` | **Build**: `npm run build` | **Tests**: `npm run test` | **Lint**: `npm run lint`
