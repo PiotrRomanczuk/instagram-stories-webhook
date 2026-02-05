@@ -17,7 +17,7 @@ export default defineConfig({
             SUPABASE_SERVICE_ROLE_KEY: 'test-service-key',
         },
         coverage: {
-            provider: 'istanbul',
+            provider: 'v8',
             reporter: ['text', 'json', 'html'],
             exclude: [
                 'node_modules/',
@@ -26,6 +26,9 @@ export default defineConfig({
                 '*.config.{ts,js}',
                 'types/',
             ],
+            reportsDirectory: './coverage',
+            clean: true,
+            cleanOnRerun: true,
         },
     },
     resolve: {

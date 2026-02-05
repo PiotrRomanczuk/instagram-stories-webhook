@@ -11,6 +11,7 @@ const eslintConfig = [
       'test-results/**',
       'node_modules/**',
       'dist/**',
+      'coverage/**',
     ],
   },
 ];
