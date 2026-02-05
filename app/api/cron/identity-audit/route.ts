@@ -11,6 +11,17 @@ export async function GET(req: NextRequest) {
         return new NextResponse('Unauthorized', { status: 401 });
     }
 
+    // Guard: Skip cron on preview deployments
+    if (
+        process.env.DISABLE_CRON === 'true' ||
+        (process.env.VERCEL_ENV === 'preview' && process.env.STAGING_MODE !== 'true')
+    ) {
+        return NextResponse.json(
+            { message: 'Cron disabled on preview deployment', skipped: true },
+            { status: 200 }
+        );
+    }
+
     try {
         const result = await runIdentityAudit();
         return NextResponse.json(result);

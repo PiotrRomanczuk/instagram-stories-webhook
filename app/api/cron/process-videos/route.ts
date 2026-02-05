@@ -42,6 +42,17 @@ export async function GET(req: NextRequest) {
 			);
 		}
 
+		// Guard: Skip cron on preview deployments
+		if (
+			process.env.DISABLE_CRON === 'true' ||
+			(process.env.VERCEL_ENV === 'preview' && process.env.STAGING_MODE !== 'true')
+		) {
+			return NextResponse.json(
+				{ message: 'Cron disabled on preview deployment', skipped: true },
+				{ status: 200 }
+			);
+		}
+
 		Logger.info(MODULE, 'Starting video processing cron job');
 
 		// Process videos queue

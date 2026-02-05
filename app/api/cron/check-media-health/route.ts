@@ -30,6 +30,17 @@ export async function GET(req: NextRequest) {
 			requireAdmin(session);
 		}
 
+		// Guard: Skip cron on preview deployments
+		if (
+			process.env.DISABLE_CRON === 'true' ||
+			(process.env.VERCEL_ENV === 'preview' && process.env.STAGING_MODE !== 'true')
+		) {
+			return NextResponse.json(
+				{ message: 'Cron disabled on preview deployment', skipped: true },
+				{ status: 200 }
+			);
+		}
+
 		await Logger.info(
 			MODULE,
 			'🏥 Starting media health check for pending memes...',

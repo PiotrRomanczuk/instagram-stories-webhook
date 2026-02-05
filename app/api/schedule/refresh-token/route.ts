@@ -28,6 +28,17 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Missing app credentials' }, { status: 500 });
         }
 
+        // Guard: Skip cron on preview deployments
+        if (
+            process.env.DISABLE_CRON === 'true' ||
+            (process.env.VERCEL_ENV === 'preview' && process.env.STAGING_MODE !== 'true')
+        ) {
+            return NextResponse.json(
+                { message: 'Cron disabled on preview deployment', skipped: true },
+                { status: 200 }
+            );
+        }
+
         // 1. Fetch all linked accounts from Supabase
         const { data: accounts, error: fetchError } = await supabase
             .from('linked_accounts')

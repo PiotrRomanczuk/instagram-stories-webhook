@@ -2,9 +2,9 @@ name: E2E Tests
 
 on:
   push:
-    branches: [master, main, develop, claude/**]
+    branches: [develop, claude/**]  # Removed main/master - use staging instead
   pull_request:
-    branches: [master, main, develop]
+    branches: [staging]  # Changed from main to staging
   workflow_dispatch: # Allow manual trigger
 
 env:
