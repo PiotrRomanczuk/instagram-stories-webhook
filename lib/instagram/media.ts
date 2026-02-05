@@ -151,3 +151,82 @@ export async function getMediaDetails(
 		return null;
 	}
 }
+
+/**
+ * Verifies if a story with the given media ID exists on Instagram
+ * @param userId The user ID (for token)
+ * @param mediaId The Instagram media ID to verify
+ * @returns True if the story exists, false otherwise
+ */
+export async function verifyStoryExists(
+	userId: string,
+	mediaId: string
+): Promise<boolean> {
+	try {
+		const details = await getMediaDetails(mediaId, userId);
+		return details !== null;
+	} catch (error) {
+		await Logger.error(MODULE, `Failed to verify story ${mediaId}`, error);
+		return false;
+	}
+}
+
+/**
+ * Verifies if a story with the given media URL was published
+ * Useful for E2E tests to verify a specific image/video was posted
+ * @param userId The user ID (for token)
+ * @param mediaUrl The media URL to search for
+ * @returns The story if found, null otherwise
+ */
+export async function verifyStoryByUrl(
+	userId: string,
+	mediaUrl: string
+): Promise<InstagramStory | null> {
+	try {
+		const { stories } = await getRecentStories(userId, 25);
+
+		// Find story with matching media URL
+		const matchingStory = stories.find(s => s.media_url === mediaUrl);
+
+		if (matchingStory) {
+			await Logger.info(MODULE, `✅ Verified story exists: ${matchingStory.id}`);
+		} else {
+			await Logger.warn(MODULE, `⚠️ No story found with URL: ${mediaUrl.substring(0, 50)}...`);
+		}
+
+		return matchingStory || null;
+	} catch (error) {
+		await Logger.error(MODULE, `Failed to verify story by URL`, error);
+		return null;
+	}
+}
+
+/**
+ * Checks if a media URL was published within the last N hours
+ * Useful for preventing duplicate publishes in tests
+ * @param userId The user ID
+ * @param mediaUrl The media URL to check
+ * @param hoursAgo Number of hours to look back (default: 24)
+ * @returns True if the URL was published recently
+ */
+export async function wasPublishedRecently(
+	userId: string,
+	mediaUrl: string,
+	hoursAgo: number = 24
+): Promise<boolean> {
+	try {
+		const { stories } = await getRecentStories(userId, 25);
+
+		const cutoffTime = Date.now() - hoursAgo * 60 * 60 * 1000;
+
+		const recentPublish = stories.find(s => {
+			const storyTime = new Date(s.timestamp).getTime();
+			return s.media_url === mediaUrl && storyTime > cutoffTime;
+		});
+
+		return recentPublish !== undefined;
+	} catch (error) {
+		await Logger.error(MODULE, `Failed to check recent publish`, error);
+		return false;
+	}
+}

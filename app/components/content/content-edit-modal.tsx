@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ContentItem } from '@/lib/types/posts';
+import { ContentItem, UserTag } from '@/lib/types/posts';
 import {
 	X,
 	Loader2,
@@ -9,9 +9,11 @@ import {
 	Type,
 	AlignLeft,
 	Send,
+	Tag as TagIcon,
 } from 'lucide-react';
 import { DateTimePicker } from '../ui/datetime-picker';
 import { StoryPreview } from '../media/story-preview';
+import { TagInput } from '../ui/tag-input';
 
 interface ContentEditModalProps {
 	item: ContentItem;
@@ -31,6 +33,9 @@ export function ContentEditModal({
 			? new Date(item.scheduledTime)
 			: new Date(Date.now() + 3600000),
 	);
+	const [tags, setTags] = useState<string[]>(
+		item.userTags?.map((t) => t.username) || [],
+	);
 	const [isSaving, setIsSaving] = useState(false);
 	const [error, setError] = useState('');
 
@@ -39,13 +44,20 @@ export function ContentEditModal({
 			setIsSaving(true);
 			setError('');
 
-			// First update caption/title if changed
+			// Map tags to UserTag objects, preserving existing positions or defaulting to center
+			const userTags: UserTag[] = tags.map((username) => {
+				const existingTag = item.userTags?.find((t) => t.username === username);
+				return existingTag || { username, x: 0.5, y: 0.5 };
+			});
+
+			// First update caption/title/userTags if changed
 			const updateResponse = await fetch(`/api/content/${item.id}`, {
 				method: 'PATCH',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					caption,
 					title,
+					userTags,
 					scheduledTime: scheduledDate.getTime(),
 					version: item.version,
 				}),
@@ -70,14 +82,27 @@ export function ContentEditModal({
 			setIsSaving(true);
 			setError('');
 
-			// First update caption/title if changed
-			if (caption !== item.caption || title !== item.title) {
+			// Map tags to UserTag objects, preserving existing positions or defaulting to center
+			const userTags: UserTag[] = tags.map((username) => {
+				const existingTag = item.userTags?.find((t) => t.username === username);
+				return existingTag || { username, x: 0.5, y: 0.5 };
+			});
+
+			// Check if anything changed
+			const hasChanges =
+				caption !== item.caption ||
+				title !== item.title ||
+				JSON.stringify(tags) !== JSON.stringify(item.userTags?.map((t) => t.username) || []);
+
+			// First update caption/title/userTags if changed
+			if (hasChanges) {
 				const updateResponse = await fetch(`/api/content/${item.id}`, {
 					method: 'PATCH',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({
 						caption,
 						title,
+						userTags,
 						version: item.version,
 					}),
 				});
@@ -213,6 +238,21 @@ export function ContentEditModal({
 												{caption.length} / 2200
 											</div>
 										</div>
+									</div>
+
+									<div className='group'>
+										<label className='block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1 transition-colors group-focus-within:text-pink-600'>
+											User Tags
+										</label>
+										<TagInput
+											tags={tags}
+											onChange={setTags}
+											placeholder='@username'
+											maxTags={20}
+										/>
+										<p className='text-[10px] text-gray-400 pl-1 mt-1.5'>
+											Tag up to 20 Instagram users on this story
+										</p>
 									</div>
 								</div>
 							</section>

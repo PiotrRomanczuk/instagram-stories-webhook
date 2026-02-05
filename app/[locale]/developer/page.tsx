@@ -20,8 +20,8 @@ export default async function DeveloperPage() {
 
 	const role = getUserRole(session);
 
-	// Only developers can access this page
-	if (role !== 'developer') {
+	// Only developers and admins can access this page
+	if (role !== 'developer' && role !== 'admin') {
 		redirect('/');
 	}
 

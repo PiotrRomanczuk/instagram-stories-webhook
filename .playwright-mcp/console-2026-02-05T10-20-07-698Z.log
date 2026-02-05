@@ -1,0 +1,46 @@
+[    1579ms] [ERROR] Creating a worker from 'blob:http://localhost:3000/8dcc7f78-5097-42bd-8655-18169d24b8dd' violates the following Content Security Policy directive: "script-src 'self' 'unsafe-inline' 'unsafe-eval'". Note that 'worker-src' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked. @ http://localhost:3000/_next/static/chunks/node_modules_%40sentry-internal_replay_build_npm_esm_index_32be9d39.js:5096
+[    1822ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/en/monitoring?o=4507242635853824&p=4510789940543568&r=de:0
+[    2079ms] [ERROR] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+%s%s https://react.dev/link/hydration-mismatch 
+
+  ...
+    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
+      <AppDevOverlayErrorBoundary globalError={[...]}>
+        <ReplaySsrOnlyErrors>
+        <DevRootHTTPAccessFallbackBoundary>
+          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
+            <HTTPAccessFallbackErrorBoundary pathname="/en/schedule" notFound={<NotAllowedRootHTTPFallbackError>} ...>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <Head>
+                  <__next_root_layout_boundary__>
+                    <SegmentViewNode type="layout" pagePath="layout.tsx">
+                      <SegmentTrieNode>
+                      <RootLayout>
+                        <html
+                          lang="en"
+-                         className="light"
+-                         style={{color-scheme:"light"}}
+                        >
+                          <body
+-                           className="geist_a71539c9-module__T19VSG__variable geist_mono_8d43a2aa-module__8Li5zG__var..."
+                          >
+                  ...
+ @ http://localhost:3000/_next/static/chunks/node_modules_%40sentry_core_build_esm_0496101d._.js:10053
+[    2672ms] [ERROR] Loading the image 'https://fastly.picsum.photos/id/874/1080/1920.jpg?hmac=MzEebI1qKe7r_MiYn_TI5CA_q30UboXzv_n9dnVlmgI' violates the following Content Security Policy directive: "img-src 'self' data: blob: https://*.supabase.co https://*.googleusercontent.com https://picsum.photos". The action has been blocked. @ http://localhost:3000/en/schedule:0
+[    2674ms] [ERROR] Loading the image 'https://fastly.picsum.photos/id/82/1080/1920.jpg?hmac=YdvsbRZrPIoe3Yv2WM9cipW4dlXeYxEQa-5yR3IPPuA' violates the following Content Security Policy directive: "img-src 'self' data: blob: https://*.supabase.co https://*.googleusercontent.com https://picsum.photos". The action has been blocked. @ http://localhost:3000/en/schedule:0
+[    2675ms] [ERROR] Loading the image 'https://fastly.picsum.photos/id/479/1080/1920.jpg?hmac=f0-1R4FRcW_OpDVma8P2bcN1aaNTOP65HIxzHQiurY0' violates the following Content Security Policy directive: "img-src 'self' data: blob: https://*.supabase.co https://*.googleusercontent.com https://picsum.photos". The action has been blocked. @ http://localhost:3000/en/schedule:0
+[    2676ms] [ERROR] Loading the image 'https://fastly.picsum.photos/id/621/1080/1920.jpg?hmac=2kJfhIupTbu6li9k74HC0H3NaaR_wQW1uAZL3eWm8JE' violates the following Content Security Policy directive: "img-src 'self' data: blob: https://*.supabase.co https://*.googleusercontent.com https://picsum.photos". The action has been blocked. @ http://localhost:3000/en/schedule:0
+[    2678ms] [ERROR] Loading the image 'https://fastly.picsum.photos/id/175/1080/1920.jpg?hmac=qK6nEAt68jUSLnwILSEMyLZPon0b3NNoT9sYNenCny4' violates the following Content Security Policy directive: "img-src 'self' data: blob: https://*.supabase.co https://*.googleusercontent.com https://picsum.photos". The action has been blocked. @ http://localhost:3000/en/schedule:0
+[    2680ms] [ERROR] Loading the image 'https://fastly.picsum.photos/id/276/1080/1920.jpg?hmac=mtPs9P-YuUvMy6_Pe4WcC6-x5Av1UdQXkuWP1RpZ6zw' violates the following Content Security Policy directive: "img-src 'self' data: blob: https://*.supabase.co https://*.googleusercontent.com https://picsum.photos". The action has been blocked. @ http://localhost:3000/en/schedule:0
+[    2729ms] [ERROR] Loading the image 'https://fastly.picsum.photos/id/425/1080/1920.jpg?hmac=N3d_1dG32w6kjvOV2QyTUuSbnvjleog0nuRGduLFHCU' violates the following Content Security Policy directive: "img-src 'self' data: blob: https://*.supabase.co https://*.googleusercontent.com https://picsum.photos". The action has been blocked. @ http://localhost:3000/en/schedule:0
+[    3694ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/en/monitoring?o=4507242635853824&p=4510789940543568&r=de:0

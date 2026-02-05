@@ -7,9 +7,9 @@ import { Button } from '@/app/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Skeleton } from '@/app/components/ui/skeleton';
 import { StatsCard, StatsCardSkeleton } from './stats-card';
-import { TokenStatusCard } from './token-status-card';
 import { SubmissionCard } from '@/app/components/submissions/submission-card';
 import { ContentItem } from '@/lib/types';
+import { useTour } from '@/app/hooks/use-tour';
 
 interface UserDashboardProps {
 	userName: string;
@@ -24,6 +24,13 @@ export function UserDashboard({ userName }: UserDashboardProps) {
 	);
 
 	const submissions = data?.items || [];
+
+	// Initialize tour
+	useTour({
+		role: 'user',
+		autoStart: true,
+		hasSubmissions: submissions.length > 0,
+	});
 
 	// Calculate stats from submissions
 	const stats = {
@@ -41,7 +48,7 @@ export function UserDashboard({ userName }: UserDashboardProps) {
 		<div className="space-y-8">
 			{/* Welcome Section */}
 			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-				<div>
+				<div data-tour="user-welcome">
 					<h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
 						Hello, {userName}
 					</h1>
@@ -49,7 +56,7 @@ export function UserDashboard({ userName }: UserDashboardProps) {
 						Welcome back. Here's an overview of your submissions.
 					</p>
 				</div>
-				<Button asChild size="lg">
+				<Button asChild size="lg" data-tour="user-submit-button">
 					<Link href="/submit">
 						<Plus className="mr-2 h-5 w-5" />
 						Submit New
@@ -66,14 +73,16 @@ export function UserDashboard({ userName }: UserDashboardProps) {
 					<StatsCardSkeleton />
 				</div>
 			) : (
-				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-					<StatsCard
-						label="Pending Review"
-						value={stats.pending}
-						icon={<Clock className="h-5 w-5 text-yellow-600" />}
-						iconBgColor="bg-yellow-100"
-						description="Awaiting admin review"
-					/>
+				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" data-tour="user-stats-grid">
+					<div data-tour="user-stat-pending">
+						<StatsCard
+							label="Pending Review"
+							value={stats.pending}
+							icon={<Clock className="h-5 w-5 text-yellow-600" />}
+							iconBgColor="bg-yellow-100"
+							description="Awaiting admin review"
+						/>
+					</div>
 					<StatsCard
 						label="Approved"
 						value={stats.approved}
@@ -98,14 +107,11 @@ export function UserDashboard({ userName }: UserDashboardProps) {
 				</div>
 			)}
 
-			{/* Token Status */}
-			<TokenStatusCard />
-
 			{/* Recent Submissions */}
-			<Card>
+			<Card data-tour="user-recent-submissions">
 				<CardHeader className="flex flex-row items-center justify-between">
 					<CardTitle>Recent Submissions</CardTitle>
-					<Button variant="outline" size="sm" asChild>
+					<Button variant="outline" size="sm" asChild data-tour="user-view-all">
 						<Link href="/submissions">View All</Link>
 					</Button>
 				</CardHeader>
@@ -121,8 +127,13 @@ export function UserDashboard({ userName }: UserDashboardProps) {
 						</div>
 					) : recentSubmissions.length > 0 ? (
 						<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-							{recentSubmissions.map((submission) => (
-								<SubmissionCard key={submission.id} submission={submission} />
+							{recentSubmissions.map((submission, index) => (
+								<div
+									key={submission.id}
+									{...(index === 0 && { 'data-tour': 'user-submission-card' })}
+								>
+									<SubmissionCard submission={submission} />
+								</div>
 							))}
 						</div>
 					) : (

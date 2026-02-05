@@ -1348,7 +1348,7 @@ describe('content-db', () => {
 				user_email: 'test@example.com',
 				media_url: 'https://example.com/image.jpg',
 				media_type: 'IMAGE',
-				source: 'manual',
+				source: 'direct',
 				scheduled_time: futureTime,
 				publishing_status: 'scheduled',
 			};
@@ -1365,7 +1365,7 @@ describe('content-db', () => {
 			vi.mocked(supabaseAdmin.from).mockReturnValue(mockQuery as any);
 
 			const result = await createContentItem('user1', 'test@example.com', {
-				source: 'manual',
+				source: 'direct',
 				mediaUrl: 'https://example.com/image.jpg',
 				mediaType: 'IMAGE',
 				scheduledTime: futureTime,

@@ -13,14 +13,11 @@ test.describe('Story Preview Feature', () => {
 	 */
 	test('SP-01: should display story preview component in developer page', async ({ page }) => {
 		await signInAsAdmin(page);
-		await page.goto('/developer');
+		await page.goto('/developer', { waitUntil: 'load' });
 
-		// Wait for page load
-		await page.waitForLoadState('networkidle', { timeout: 10000 });
-
-		// Check for story preview card
-		const storyPreviewHeading = page.getByRole('heading', { name: /Posted Stories Preview/i });
-		await expect(storyPreviewHeading).toBeVisible();
+		// Wait for story preview card to be visible
+		const storyPreviewTitle = page.getByText('Posted Stories Preview');
+		await expect(storyPreviewTitle).toBeVisible({ timeout: 15000 });
 	});
 
 	/**
@@ -29,7 +26,6 @@ test.describe('Story Preview Feature', () => {
 	 */
 	test('SP-02: should show loading state while fetching stories', async ({ page }) => {
 		await signInAsAdmin(page);
-		await page.goto('/developer');
 
 		// Intercept the API call to add delay
 		await page.route('/api/instagram/recent-stories*', async (route) => {
@@ -37,8 +33,13 @@ test.describe('Story Preview Feature', () => {
 			await route.continue();
 		});
 
-		// Reload to trigger fetch
+		await page.goto('/developer', { waitUntil: 'load' });
+
+		// Wait for refresh button to be visible
 		const refreshButton = page.getByRole('button', { name: /Refresh/i }).last();
+		await expect(refreshButton).toBeVisible({ timeout: 15000 });
+
+		// Click to trigger fetch
 		await refreshButton.click();
 
 		// Should show loading spinner briefly
@@ -68,8 +69,11 @@ test.describe('Story Preview Feature', () => {
 			});
 		});
 
-		await page.goto('/developer');
-		await page.waitForLoadState('networkidle', { timeout: 10000 });
+		await page.goto('/developer', { waitUntil: 'load' });
+
+		// Wait for story preview card to be visible
+		const storyPreviewTitle = page.getByText('Posted Stories Preview');
+		await expect(storyPreviewTitle).toBeVisible({ timeout: 15000 });
 
 		// Should show empty state message
 		const bodyText = await page.innerText('body');
@@ -108,8 +112,11 @@ test.describe('Story Preview Feature', () => {
 			});
 		});
 
-		await page.goto('/developer');
-		await page.waitForLoadState('networkidle', { timeout: 10000 });
+		await page.goto('/developer', { waitUntil: 'load' });
+
+		// Wait for story preview card to be visible
+		const storyPreviewTitle = page.getByText('Posted Stories Preview');
+		await expect(storyPreviewTitle).toBeVisible({ timeout: 15000 });
 
 		// Should display story details
 		const bodyText = await page.innerText('body');
@@ -148,8 +155,11 @@ test.describe('Story Preview Feature', () => {
 			});
 		});
 
-		await page.goto('/developer');
-		await page.waitForLoadState('networkidle', { timeout: 10000 });
+		await page.goto('/developer', { waitUntil: 'load' });
+		
+		// Wait for story preview heading to be visible
+		const storyPreviewTitle = page.getByText('Posted Stories Preview');
+		await expect(storyPreviewTitle).toBeVisible({ timeout: 15000 });
 
 		// Should show VIDEO badge
 		const bodyText = await page.innerText('body');
@@ -168,8 +178,11 @@ test.describe('Story Preview Feature', () => {
 	 */
 	test('SP-06: should refresh stories when refresh button clicked', async ({ page }) => {
 		await signInAsAdmin(page);
-		await page.goto('/developer');
-		await page.waitForLoadState('networkidle', { timeout: 10000 });
+		await page.goto('/developer', { waitUntil: 'load' });
+		
+		// Wait for story preview heading to be visible
+		const storyPreviewTitle = page.getByText('Posted Stories Preview');
+		await expect(storyPreviewTitle).toBeVisible({ timeout: 15000 });
 
 		// Find and click refresh button
 		const refreshButton = page.getByRole('button', { name: /Refresh/i }).last();
@@ -217,8 +230,11 @@ test.describe('Story Preview Feature', () => {
 			});
 		});
 
-		await page.goto('/developer');
-		await page.waitForLoadState('networkidle', { timeout: 10000 });
+		await page.goto('/developer', { waitUntil: 'load' });
+		
+		// Wait for story preview heading to be visible
+		const storyPreviewTitle = page.getByText('Posted Stories Preview');
+		await expect(storyPreviewTitle).toBeVisible({ timeout: 15000 });
 
 		// Should show error message
 		const bodyText = await page.innerText('body');
@@ -258,8 +274,11 @@ test.describe('Story Preview Feature', () => {
 			});
 		});
 
-		await page.goto('/developer');
-		await page.waitForLoadState('networkidle', { timeout: 10000 });
+		await page.goto('/developer', { waitUntil: 'load' });
+		
+		// Wait for story preview heading to be visible
+		const storyPreviewTitle = page.getByText('Posted Stories Preview');
+		await expect(storyPreviewTitle).toBeVisible({ timeout: 15000 });
 
 		const bodyText = await page.innerText('body');
 
@@ -298,8 +317,11 @@ test.describe('Story Preview Feature', () => {
 			});
 		});
 
-		await page.goto('/developer');
-		await page.waitForLoadState('networkidle', { timeout: 10000 });
+		await page.goto('/developer', { waitUntil: 'load' });
+		
+		// Wait for story preview heading to be visible
+		const storyPreviewTitle = page.getByText('Posted Stories Preview');
+		await expect(storyPreviewTitle).toBeVisible({ timeout: 15000 });
 
 		// Look for "View on Instagram" link
 		const instagramLink = page.getByRole('link', { name: /View on Instagram/i });
@@ -350,8 +372,11 @@ test.describe('Story Preview Feature', () => {
 			});
 		});
 
-		await page.goto('/developer');
-		await page.waitForLoadState('networkidle', { timeout: 10000 });
+		await page.goto('/developer', { waitUntil: 'load' });
+		
+		// Wait for story preview heading to be visible
+		const storyPreviewTitle = page.getByText('Posted Stories Preview');
+		await expect(storyPreviewTitle).toBeVisible({ timeout: 15000 });
 
 		const bodyText = await page.innerText('body');
 

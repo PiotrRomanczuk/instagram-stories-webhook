@@ -421,17 +421,34 @@ export function ContentPreviewModal({
 						{showStoryFrame ? (
 							<div className='h-full w-full aspect-[9/16] max-h-full flex items-center justify-center relative overflow-hidden'>
 								{/* Blurred Background */}
-								<img
-									src={item.mediaUrl}
-									alt=''
-									className='absolute inset-0 h-full w-full object-cover blur-3xl opacity-40 scale-125'
-								/>
+								{item.mediaType === 'VIDEO' && item.thumbnailUrl ? (
+									<img
+										src={item.thumbnailUrl}
+										alt=''
+										className='absolute inset-0 h-full w-full object-cover blur-3xl opacity-40 scale-125'
+									/>
+								) : (
+									<img
+										src={item.mediaUrl}
+										alt=''
+										className='absolute inset-0 h-full w-full object-cover blur-3xl opacity-40 scale-125'
+									/>
+								)}
 								{/* Main Media */}
-								<img
-									src={item.mediaUrl}
-									alt='Story Preview'
-									className='relative z-10 max-h-full max-w-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]'
-								/>
+								{item.mediaType === 'VIDEO' ? (
+									<video
+										src={item.mediaUrl}
+										controls
+										poster={item.thumbnailUrl}
+										className='relative z-10 max-h-full max-w-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]'
+									/>
+								) : (
+									<img
+										src={item.mediaUrl}
+										alt='Story Preview'
+										className='relative z-10 max-h-full max-w-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]'
+									/>
+								)}
 								{/* Instagram Story UI Mockup */}
 								<div className='absolute inset-0 z-20 p-6 flex flex-col justify-between pointer-events-none'>
 									<div className='space-y-4'>
@@ -479,11 +496,20 @@ export function ContentPreviewModal({
 							</div>
 						) : (
 							<div className='relative w-full h-full flex items-center justify-center p-8'>
-								<img
-									src={item.mediaUrl}
-									alt='Original Preview'
-									className='max-h-full max-w-full object-contain rounded-2xl shadow-2xl'
-								/>
+								{item.mediaType === 'VIDEO' ? (
+									<video
+										src={item.mediaUrl}
+										controls
+										poster={item.thumbnailUrl}
+										className='max-h-full max-w-full object-contain rounded-2xl shadow-2xl'
+									/>
+								) : (
+									<img
+										src={item.mediaUrl}
+										alt='Original Preview'
+										className='max-h-full max-w-full object-contain rounded-2xl shadow-2xl'
+									/>
+								)}
 							</div>
 						)}
 
@@ -647,6 +673,38 @@ export function ContentPreviewModal({
 											{item.mediaType.toLowerCase()}
 										</p>
 									</div>
+									{item.mediaType === 'VIDEO' && item.videoDuration && (
+										<>
+											<div className='space-y-1'>
+												<p className='text-[10px] font-black text-gray-300 uppercase tracking-widest'>
+													Duration
+												</p>
+												<p className='text-xs font-bold text-gray-900'>
+													{Math.floor(item.videoDuration)}s
+												</p>
+											</div>
+											{item.videoCodec && (
+												<div className='space-y-1'>
+													<p className='text-[10px] font-black text-gray-300 uppercase tracking-widest'>
+														Codec
+													</p>
+													<p className='text-xs font-bold text-gray-900 uppercase'>
+														{item.videoCodec}
+													</p>
+												</div>
+											)}
+											{item.videoFramerate && (
+												<div className='space-y-1'>
+													<p className='text-[10px] font-black text-gray-300 uppercase tracking-widest'>
+														Frame Rate
+													</p>
+													<p className='text-xs font-bold text-gray-900'>
+														{item.videoFramerate.toFixed(1)} fps
+													</p>
+												</div>
+											)}
+										</>
+									)}
 								</div>
 							</section>
 						</div>

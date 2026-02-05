@@ -377,7 +377,7 @@ describe('Memes Database Layer', () => {
 			};
 			setupSupabaseMock(mockScheduled);
 
-			const result = await scheduleMeme('m1', scheduledTime);
+			const result = await scheduleMeme('m1', scheduledTime, 'sp1');
 
 			expect(result?.status).toBe('scheduled');
 			expect(result?.scheduled_time).toBe(scheduledTime);
@@ -386,7 +386,7 @@ describe('Memes Database Layer', () => {
 		it('should return null if submission not found', async () => {
 			setupSupabaseMock(null, { message: 'Not found' });
 
-			const result = await scheduleMeme('m1', Date.now());
+			const result = await scheduleMeme('m1', Date.now(), 'sp1');
 
 			expect(result).toBe(null);
 		});
@@ -394,7 +394,7 @@ describe('Memes Database Layer', () => {
 		it('should handle update errors', async () => {
 			setupSupabaseMock(null, { message: 'Update failed' });
 
-			const result = await scheduleMeme('m1', Date.now());
+			const result = await scheduleMeme('m1', Date.now(), 'sp1');
 
 			expect(result).toBe(null);
 		});

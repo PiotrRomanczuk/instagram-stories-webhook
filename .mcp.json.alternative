@@ -1,0 +1,12 @@
+{
+  "stitch": {
+    "command": "npx",
+    "args": [
+      "-y",
+      "@_davideast/stitch-mcp",
+      "proxy",
+      "--token",
+      "AQ.Ab8RN6IndX8VSGl0KxW1TPlEcGj21QQLAEmJIiLFXM4gCYFNEQ"
+    ]
+  }
+}

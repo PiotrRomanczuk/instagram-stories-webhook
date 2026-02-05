@@ -207,7 +207,7 @@ describe('Developer Page', () => {
 			expect(redirect).toHaveBeenCalledWith('/');
 		});
 
-		it('redirects to home if user is admin but not developer', async () => {
+		it('allows admin users to access developer page', async () => {
 			const { getServerSession } = await import('next-auth/next');
 			const { getUserRole } = await import('@/lib/auth-helpers');
 			const { redirect } = await import('next/navigation');
@@ -220,7 +220,8 @@ describe('Developer Page', () => {
 			const DeveloperPage = (await import('@/app/[locale]/developer/page')).default;
 			await DeveloperPage();
 
-			expect(redirect).toHaveBeenCalledWith('/');
+			// Admin users should NOT be redirected - they have access
+			expect(redirect).not.toHaveBeenCalled();
 		});
 	});
 });

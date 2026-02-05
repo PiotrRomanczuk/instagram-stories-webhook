@@ -42,17 +42,25 @@ export async function POST(request: NextRequest) {
 
         // 2. Parse body
         const body = await request.json();
-        const { url, type = 'IMAGE' } = body;
-        
+        const { url, type = 'IMAGE', userTags = [] } = body;
+
         if (!url) {
             log('❌ Missing URL in request body');
-            return NextResponse.json({ 
-                error: 'Missing URL', 
-                logs 
+            return NextResponse.json({
+                error: 'Missing URL',
+                logs
             }, { status: 400 });
         }
         log(`📷 Media URL: ${url}`);
         log(`📋 Media Type: ${type}`);
+
+        // Log user tags if present
+        if (userTags && Array.isArray(userTags) && userTags.length > 0) {
+            log(`🏷️ User Tags: ${userTags.length} tag(s)`);
+            userTags.forEach((tag: { username: string; x: number; y: number }, idx: number) => {
+                log(`   Tag ${idx + 1}: @${tag.username} at (${tag.x}, ${tag.y})`);
+            });
+        }
 
         // 3. Process image for story format (9:16 with blurred background)
         let publishUrl = url;
@@ -99,7 +107,7 @@ export async function POST(request: NextRequest) {
             'STORY', // Always story for debug
             '', // No caption
             session.user.id,
-            [] // No user tags
+            userTags // Pass user tags from request body
         );
 
         const duration = Date.now() - startTime;

@@ -52,6 +52,13 @@ export interface ContentItem {
 	mediaType: MediaType;
 	storagePath?: string;
 	dimensions?: ContentItemDimensions;
+	thumbnailUrl?: string; // Video thumbnail
+
+	// Video Metadata
+	videoDuration?: number; // Duration in seconds
+	videoCodec?: string; // e.g., 'h264', 'vp9'
+	videoFramerate?: number; // e.g., 30.0
+	needsProcessing?: boolean; // Whether video needs conversion
 
 	// Content
 	title?: string; // Optional, for submissions
@@ -103,6 +110,11 @@ export interface CreateContentInput {
 	scheduledTime?: number;
 	storagePath?: string;
 	dimensions?: ContentItemDimensions;
+	thumbnailUrl?: string;
+	videoDuration?: number;
+	videoCodec?: string;
+	videoFramerate?: number;
+	needsProcessing?: boolean;
 }
 
 /**
@@ -129,6 +141,11 @@ export interface ContentItemRow {
 	media_type: string;
 	storage_path?: string;
 	dimensions?: string; // JSON stringified
+	thumbnail_url?: string;
+	video_duration?: number;
+	video_codec?: string;
+	video_framerate?: number;
+	needs_processing?: boolean;
 	title?: string;
 	caption?: string;
 	user_tags?: string; // JSON stringified
@@ -322,6 +339,11 @@ export function mapContentItemRow(row: ContentItemRow): ContentItem {
 		mediaType: row.media_type as MediaType,
 		storagePath: row.storage_path,
 		dimensions: row.dimensions ? JSON.parse(row.dimensions) : undefined,
+		thumbnailUrl: row.thumbnail_url,
+		videoDuration: row.video_duration,
+		videoCodec: row.video_codec,
+		videoFramerate: row.video_framerate,
+		needsProcessing: row.needs_processing,
 		title: row.title,
 		caption: row.caption,
 		userTags: row.user_tags ? JSON.parse(row.user_tags) : undefined,
@@ -343,5 +365,51 @@ export function mapContentItemRow(row: ContentItemRow): ContentItem {
 		version: row.version,
 		createdAt: row.created_at,
 		updatedAt: row.updated_at,
+	};
+}
+
+// ============== PUBLISHING LOG TYPES ==============
+
+export interface PublishingLog {
+	id: string;
+	userId: string;
+	mediaUrl: string;
+	mediaType: MediaType;
+	postType: PostType;
+	caption?: string;
+	status: 'SUCCESS' | 'FAILED';
+	igMediaId?: string;
+	errorMessage?: string;
+	createdAt: string;
+}
+
+export interface PublishingLogRow {
+	id: string;
+	user_id: string;
+	media_url: string;
+	media_type: string;
+	post_type: string;
+	caption?: string;
+	status: string;
+	ig_media_id?: string;
+	error_message?: string;
+	created_at: string;
+}
+
+/**
+ * Maps a database row to a PublishingLog object
+ */
+export function mapPublishingLogRow(row: PublishingLogRow): PublishingLog {
+	return {
+		id: row.id,
+		userId: row.user_id,
+		mediaUrl: row.media_url,
+		mediaType: row.media_type as MediaType,
+		postType: row.post_type as PostType,
+		caption: row.caption ?? undefined,
+		status: row.status as 'SUCCESS' | 'FAILED',
+		igMediaId: row.ig_media_id ?? undefined,
+		errorMessage: row.error_message ?? undefined,
+		createdAt: row.created_at,
 	};
 }

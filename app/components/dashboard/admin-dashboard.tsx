@@ -19,6 +19,7 @@ import { Badge } from '@/app/components/ui/badge';
 import { StatsCard, StatsCardSkeleton } from './stats-card';
 import { TokenStatusCard } from './token-status-card';
 import { ContentItem } from '@/lib/types';
+import { useTour } from '@/app/hooks/use-tour';
 
 interface AdminDashboardProps {
 	userName: string;
@@ -71,6 +72,13 @@ export function AdminDashboard({ userName, isDeveloper }: AdminDashboardProps) {
 
 	const isLoading = contentLoading || usersLoading;
 
+	// Initialize tour with stats
+	const { startTour } = useTour({
+		role: isDeveloper ? 'developer' : 'admin',
+		autoStart: true,
+		hasFailedPosts: stats.failed > 0,
+	});
+
 	// Quick actions
 	const quickActions = [
 		{
@@ -80,6 +88,7 @@ export function AdminDashboard({ userName, isDeveloper }: AdminDashboardProps) {
 			badge: stats.pendingReview > 0 ? stats.pendingReview : undefined,
 			color: 'text-yellow-600',
 			bgColor: 'bg-yellow-50 hover:bg-yellow-100',
+			dataTour: 'admin-action-review',
 		},
 		{
 			label: 'Scheduled Posts',
@@ -88,6 +97,7 @@ export function AdminDashboard({ userName, isDeveloper }: AdminDashboardProps) {
 			badge: stats.scheduledToday > 0 ? `${stats.scheduledToday} today` : undefined,
 			color: 'text-blue-600',
 			bgColor: 'bg-blue-50 hover:bg-blue-100',
+			dataTour: 'admin-action-schedule',
 		},
 		{
 			label: 'Manage Users',
@@ -95,6 +105,7 @@ export function AdminDashboard({ userName, isDeveloper }: AdminDashboardProps) {
 			icon: Users,
 			color: 'text-purple-600',
 			bgColor: 'bg-purple-50 hover:bg-purple-100',
+			dataTour: 'admin-action-users',
 		},
 		...(isDeveloper
 			? [
@@ -104,6 +115,7 @@ export function AdminDashboard({ userName, isDeveloper }: AdminDashboardProps) {
 						icon: Settings,
 						color: 'text-slate-600',
 						bgColor: 'bg-slate-50 hover:bg-slate-100',
+						dataTour: undefined,
 					},
 			  ]
 			: []),
@@ -112,7 +124,7 @@ export function AdminDashboard({ userName, isDeveloper }: AdminDashboardProps) {
 	return (
 		<div className="space-y-8">
 			{/* Welcome Section */}
-			<div>
+			<div data-tour="admin-welcome">
 				<h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
 					Welcome back, {userName}
 				</h1>
@@ -129,13 +141,18 @@ export function AdminDashboard({ userName, isDeveloper }: AdminDashboardProps) {
 					))}
 				</div>
 			) : (
-				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-					<StatsCard
-						label="Pending Review"
-						value={stats.pendingReview}
-						icon={<Clock className="h-5 w-5 text-yellow-600" />}
-						iconBgColor="bg-yellow-100"
-					/>
+				<div
+					className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
+					data-tour="admin-stats-grid"
+				>
+					<div data-tour="admin-stat-pending">
+						<StatsCard
+							label="Pending Review"
+							value={stats.pendingReview}
+							icon={<Clock className="h-5 w-5 text-yellow-600" />}
+							iconBgColor="bg-yellow-100"
+						/>
+					</div>
 					<StatsCard
 						label="Scheduled Today"
 						value={stats.scheduledToday}
@@ -185,6 +202,7 @@ export function AdminDashboard({ userName, isDeveloper }: AdminDashboardProps) {
 										key={action.href}
 										href={action.href}
 										className={`group flex items-center justify-between rounded-lg border p-4 transition-colors ${action.bgColor}`}
+										{...(action.dataTour && { 'data-tour': action.dataTour })}
 									>
 										<div className="flex items-center gap-3">
 											<div className={`rounded-lg bg-white p-2 shadow-sm`}>
@@ -208,12 +226,14 @@ export function AdminDashboard({ userName, isDeveloper }: AdminDashboardProps) {
 				</Card>
 
 				{/* Token Status */}
-				<TokenStatusCard />
+				<div data-tour="admin-token-status">
+					<TokenStatusCard />
+				</div>
 			</div>
 
 			{/* Failed Posts Alert */}
 			{stats.failed > 0 && (
-				<Card className="border-red-200 bg-red-50">
+				<Card className="border-red-200 bg-red-50" data-tour="admin-failed-alert">
 					<CardContent className="flex items-center justify-between p-4">
 						<div className="flex items-center gap-3">
 							<div className="rounded-full bg-red-100 p-2">

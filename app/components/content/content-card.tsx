@@ -10,6 +10,9 @@ import {
 	Send,
 	ChevronRight,
 	Eye,
+	Play,
+	Video,
+	UserCheck,
 } from 'lucide-react';
 import { ConfirmationDialog } from '../ui/confirmation-dialog';
 
@@ -75,16 +78,38 @@ export function ContentCard({
 		<div className='group relative bg-white rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-2xl transition-all duration-500 overflow-hidden flex flex-col'>
 			{/* Media Section */}
 			<div className='relative h-60 overflow-hidden'>
-				<img
-					src={item.mediaUrl}
-					alt={item.title || 'Post Media'}
-					className='h-full w-full object-cover transition-transform duration-700 group-hover:scale-110'
-					onError={(e) => {
-						const target = e.target as HTMLImageElement;
-						if (target.src.includes('placeholder.svg')) return;
-						target.src = '/placeholder.svg';
-					}}
-				/>
+				{item.mediaType === 'VIDEO' ? (
+					<>
+						{/* Show thumbnail for videos */}
+						<img
+							src={item.thumbnailUrl || item.mediaUrl}
+							alt={item.title || 'Video Thumbnail'}
+							className='h-full w-full object-cover transition-transform duration-700 group-hover:scale-110'
+							onError={(e) => {
+								const target = e.target as HTMLImageElement;
+								if (target.src.includes('placeholder.svg')) return;
+								target.src = '/placeholder.svg';
+							}}
+						/>
+						{/* Video play button overlay */}
+						<div className='absolute inset-0 flex items-center justify-center'>
+							<div className='w-16 h-16 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center'>
+								<Play className='h-8 w-8 text-white ml-1' fill='white' />
+							</div>
+						</div>
+					</>
+				) : (
+					<img
+						src={item.mediaUrl}
+						alt={item.title || 'Post Media'}
+						className='h-full w-full object-cover transition-transform duration-700 group-hover:scale-110'
+						onError={(e) => {
+							const target = e.target as HTMLImageElement;
+							if (target.src.includes('placeholder.svg')) return;
+							target.src = '/placeholder.svg';
+						}}
+					/>
+				)}
 				<div className='absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500' />
 
 				{/* Badges */}
@@ -94,6 +119,13 @@ export function ContentCard({
 					>
 						{item.publishingStatus}
 					</span>
+					{/* Video duration badge */}
+					{item.mediaType === 'VIDEO' && item.videoDuration && (
+						<span className='px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg backdrop-blur-md bg-black/80 text-white flex items-center gap-1'>
+							<Video className='h-3 w-3' />
+							{Math.floor(item.videoDuration)}s
+						</span>
+					)}
 				</div>
 
 				<div className='absolute top-4 right-4'>
@@ -165,6 +197,17 @@ export function ContentCard({
 									hour: '2-digit',
 									minute: '2-digit',
 								})}
+							</span>
+						</div>
+					)}
+					{item.userTags && item.userTags.length > 0 && (
+						<div
+							className='flex items-center gap-2 bg-indigo-50 px-3 py-1.5 rounded-full border border-indigo-100'
+							title={`Tagged users: ${item.userTags.map((tag) => `@${tag.username}`).join(', ')}`}
+						>
+							<UserCheck className='h-3 w-3 text-indigo-500' />
+							<span className='text-[10px] font-black text-indigo-600'>
+								{item.userTags.length} {item.userTags.length === 1 ? 'tag' : 'tags'}
 							</span>
 						</div>
 					)}

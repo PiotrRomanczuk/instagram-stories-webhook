@@ -191,6 +191,12 @@ export async function GET(req: NextRequest) {
  *   hashtags?: string[],
  *   scheduledTime?: number (only for direct),
  *   storagePath?: string,
+ *   dimensions?: {width, height},
+ *   thumbnailUrl?: string (for videos),
+ *   videoDuration?: number (for videos),
+ *   videoCodec?: string (for videos),
+ *   videoFramerate?: number (for videos),
+ *   needsProcessing?: boolean (for videos),
  * }
  */
 export async function POST(req: NextRequest) {
@@ -220,6 +226,11 @@ export async function POST(req: NextRequest) {
 			scheduledTime,
 			storagePath,
 			dimensions,
+			thumbnailUrl,
+			videoDuration,
+			videoCodec,
+			videoFramerate,
+			needsProcessing,
 		} = body;
 
 		// Validate required fields
@@ -266,6 +277,11 @@ export async function POST(req: NextRequest) {
 			scheduledTime,
 			storagePath,
 			dimensions,
+			thumbnailUrl,
+			videoDuration,
+			videoCodec,
+			videoFramerate,
+			needsProcessing,
 		};
 
 		// Create content item

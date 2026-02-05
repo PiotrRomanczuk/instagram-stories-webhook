@@ -304,17 +304,7 @@ describe('Dashboard Page Integration', () => {
 			expect(submitLink).toHaveAttribute('href', '/submit');
 		});
 
-		it('should render token status card', async () => {
-			const useSWR = (await import('swr')).default as unknown as ReturnType<typeof vi.fn>;
-			useSWR.mockReturnValue({
-				data: { items: [] },
-				isLoading: false,
-			});
-
-			render(<UserDashboard userName="John" />);
-
-			expect(screen.getByTestId('token-status-card')).toBeInTheDocument();
-		});
+		// Note: TokenStatusCard is only used in AdminDashboard, not UserDashboard
 	});
 });
 
