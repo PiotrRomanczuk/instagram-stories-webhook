@@ -44,12 +44,18 @@ jobs:
           ADMIN_EMAIL=admin@test.com
           AUTH_GOOGLE_ID=${{ secrets.AUTH_GOOGLE_ID || 'dummy' }}
           AUTH_GOOGLE_SECRET=${{ secrets.AUTH_GOOGLE_SECRET || 'dummy' }}
+          ENABLE_REAL_IG_TESTS=true
+          ENABLE_LIVE_IG_PUBLISH=true
           EOF
+          echo "✅ Test environment configured"
+          echo "📱 Live Instagram publishing: enabled"
 
       - name: Run E2E tests
         run: npm run test:e2e
         env:
           CI: true
+          ENABLE_REAL_IG_TESTS: true
+          ENABLE_LIVE_IG_PUBLISH: true
 
       - name: Upload Playwright report
         if: failure()

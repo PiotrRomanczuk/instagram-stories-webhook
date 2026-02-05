@@ -238,6 +238,39 @@ npm run lint && npx tsc && npm run test
 
 **Acceptance**: If data reaches `scheduled_posts` table correctly, it's ready for publishing.
 
+### Test Execution Order (Dependency Workflow)
+
+The E2E test suite uses a **dependency workflow** to ensure the critical live Instagram publishing test passes before running other tests.
+
+**Prerequisite Test:**
+- File: `__tests__/e2e/instagram-publishing-live.spec.ts`
+- Account: p.romanczuk@gmail.com (@www_hehe_pl)
+- Environment: Requires `ENABLE_REAL_IG_TESTS=true` and `ENABLE_LIVE_IG_PUBLISH=true`
+
+**How It Works:**
+1. Playwright runs the "live-publishing-prerequisite" project first
+2. If it passes, "main-tests" project runs (all other E2E tests)
+3. If it fails, "main-tests" are automatically skipped
+
+**Local Development:**
+```bash
+# Run all tests (with dependency chain)
+npm run test:e2e
+
+# Run only live publishing test
+npm run test:e2e:live
+
+# Skip live publishing test (unset environment variables)
+unset ENABLE_LIVE_IG_PUBLISH
+npm run test:e2e
+```
+
+**CI/CD:**
+- Live publishing test runs automatically in GitHub Actions
+- Environment variables set in workflow file
+- Requires valid Instagram tokens in Supabase for p.romanczuk@gmail.com
+- If prerequisite fails, all main tests are skipped (fail fast)
+
 ## Code Standards
 
 ### General
