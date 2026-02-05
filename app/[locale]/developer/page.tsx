@@ -9,6 +9,7 @@ import { Badge } from '@/app/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { DebugPublisherNew } from '@/app/components/developer/debug-publisher-new';
+import { StoryPreview } from '@/app/components/developer/story-preview';
 
 export default async function DeveloperPage() {
 	const session = await getServerSession(authOptions);
@@ -44,7 +45,10 @@ export default async function DeveloperPage() {
 					}
 				/>
 
-				<DebugPublisherNew />
+				<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+					<DebugPublisherNew />
+					<StoryPreview />
+				</div>
 
 				<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 					{/* Webhook URL Card */}
