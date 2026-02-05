@@ -15,13 +15,24 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { signInAsAdmin, signInAsUser } from './helpers/auth';
+import { signInAsRealIG, signInAsUser } from './helpers/auth';
 import { format, addDays } from 'date-fns';
 
 test.describe('Schedule Page - Comprehensive Desktop Tests', () => {
+	// Skip in CI environments
+	test.skip(
+		() => process.env.CI === 'true',
+		'Skipping in CI - requires real Instagram tokens',
+	);
+
+	// Also skip if ENABLE_REAL_IG_TESTS is not set
+	test.skip(
+		() => !process.env.ENABLE_REAL_IG_TESTS,
+		'Set ENABLE_REAL_IG_TESTS=true to run real Instagram tests',
+	);
 	test.describe('Calendar Grid Tests (CAL-MCP-01 to CAL-MCP-10)', () => {
 		test.beforeEach(async ({ page }) => {
-			await signInAsAdmin(page);
+			await signInAsRealIG(page);
 			await page.goto('/schedule');
 			await page.waitForLoadState('domcontentloaded');
 			await page.waitForTimeout(1000);
@@ -188,7 +199,7 @@ test.describe('Schedule Page - Comprehensive Desktop Tests', () => {
 
 	test.describe('Granularity Control Tests (GRAN-MCP-01 to GRAN-MCP-08)', () => {
 		test.beforeEach(async ({ page }) => {
-			await signInAsAdmin(page);
+			await signInAsRealIG(page);
 			await page.goto('/schedule');
 			await page.waitForTimeout(1000);
 		});
@@ -330,7 +341,7 @@ test.describe('Schedule Page - Comprehensive Desktop Tests', () => {
 
 	test.describe('Sidebar Tests (SIDE-MCP-01 to SIDE-MCP-12)', () => {
 		test.beforeEach(async ({ page }) => {
-			await signInAsAdmin(page);
+			await signInAsRealIG(page);
 			await page.goto('/schedule');
 			await page.waitForTimeout(1000);
 		});
@@ -501,14 +512,14 @@ test.describe('Schedule Page - Comprehensive Desktop Tests', () => {
 
 	test.describe('Access Control Tests (AUTH-MCP-01 to AUTH-MCP-04)', () => {
 		test('AUTH-MCP-01: Admin can access /schedule', async ({ page }) => {
-			await signInAsAdmin(page);
+			await signInAsRealIG(page);
 			await page.goto('/schedule');
 			await expect(page).toHaveURL(/\/schedule/);
 		});
 
 		test('AUTH-MCP-02: Developer can access /schedule', async ({ page }) => {
 			// Assuming developer role exists
-			await signInAsAdmin(page); // Using admin as proxy
+			await signInAsRealIG(page); // Using admin as proxy
 			await page.goto('/schedule');
 			await expect(page).toHaveURL(/\/schedule/);
 		});
@@ -541,7 +552,7 @@ test.describe('Schedule Page - Comprehensive Desktop Tests', () => {
 
 	test.describe('Performance Tests (PERF-MCP-01 to PERF-MCP-05)', () => {
 		test.beforeEach(async ({ page }) => {
-			await signInAsAdmin(page);
+			await signInAsRealIG(page);
 		});
 
 		test('PERF-MCP-01: Calendar renders <2s with 100 items', async ({ page }) => {

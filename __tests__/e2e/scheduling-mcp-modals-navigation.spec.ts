@@ -15,13 +15,24 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { signInAsAdmin } from './helpers/auth';
+import { signInAsRealIG } from './helpers/auth';
 import { format, addDays } from 'date-fns';
 
 test.describe('Schedule Page - Modals & Navigation', () => {
+	// Skip in CI environments
+	test.skip(
+		() => process.env.CI === 'true',
+		'Skipping in CI - requires real Instagram tokens',
+	);
+
+	// Also skip if ENABLE_REAL_IG_TESTS is not set
+	test.skip(
+		() => !process.env.ENABLE_REAL_IG_TESTS,
+		'Set ENABLE_REAL_IG_TESTS=true to run real Instagram tests',
+	);
 	test.describe('Quick Schedule Popover Tests (QS-MCP-01 to QS-MCP-12)', () => {
 		test.beforeEach(async ({ page }) => {
-			await signInAsAdmin(page);
+			await signInAsRealIG(page);
 			await page.goto('/schedule');
 			await page.waitForTimeout(1000);
 		});
@@ -225,7 +236,7 @@ test.describe('Schedule Page - Modals & Navigation', () => {
 
 	test.describe('Navigation Tests (NAV-MCP-01 to NAV-MCP-08)', () => {
 		test.beforeEach(async ({ page }) => {
-			await signInAsAdmin(page);
+			await signInAsRealIG(page);
 			await page.goto('/schedule');
 			await page.waitForTimeout(1000);
 		});
@@ -321,7 +332,7 @@ test.describe('Schedule Page - Modals & Navigation', () => {
 
 	test.describe('Search Tests (SEARCH-MCP-01 to SEARCH-MCP-05)', () => {
 		test.beforeEach(async ({ page }) => {
-			await signInAsAdmin(page);
+			await signInAsRealIG(page);
 			await page.goto('/schedule');
 			await page.waitForTimeout(1000);
 		});
@@ -395,7 +406,7 @@ test.describe('Schedule Page - Modals & Navigation', () => {
 
 	test.describe('Drag & Drop Advanced (DD-MCP-01 to DD-MCP-15)', () => {
 		test.beforeEach(async ({ page }) => {
-			await signInAsAdmin(page);
+			await signInAsRealIG(page);
 			await page.goto('/schedule');
 			await page.waitForTimeout(1000);
 		});
@@ -692,7 +703,7 @@ test.describe('Schedule Page - Modals & Navigation', () => {
 
 	test.describe('Dark Mode Tests (DARK-MCP-01 to DARK-MCP-04)', () => {
 		test.beforeEach(async ({ page }) => {
-			await signInAsAdmin(page);
+			await signInAsRealIG(page);
 			await page.emulateMedia({ colorScheme: 'dark' });
 			await page.goto('/schedule');
 			await page.waitForTimeout(1000);
@@ -739,7 +750,7 @@ test.describe('Schedule Page - Modals & Navigation', () => {
 
 	test.describe('Error Handling Tests (ERR-MCP-01 to ERR-MCP-08)', () => {
 		test.beforeEach(async ({ page }) => {
-			await signInAsAdmin(page);
+			await signInAsRealIG(page);
 			await page.goto('/schedule');
 			await page.waitForTimeout(1000);
 		});

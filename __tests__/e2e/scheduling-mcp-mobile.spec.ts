@@ -12,12 +12,24 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { signInAsAdmin } from './helpers/auth';
+import { signInAsRealIG } from './helpers/auth';
 
 test.describe('Schedule Page - Mobile Tests', () => {
+	// Skip in CI environments
+	test.skip(
+		() => process.env.CI === 'true',
+		'Skipping in CI - requires real Instagram tokens',
+	);
+
+	// Also skip if ENABLE_REAL_IG_TESTS is not set
+	test.skip(
+		() => !process.env.ENABLE_REAL_IG_TESTS,
+		'Set ENABLE_REAL_IG_TESTS=true to run real Instagram tests',
+	);
+
 	test.beforeEach(async ({ page, isMobile }) => {
-		// Authenticate as admin first
-		await signInAsAdmin(page);
+		// Authenticate with real IG test account for full E2E testing
+		await signInAsRealIG(page);
 		// Then navigate to schedule page
 		await page.goto('/schedule');
 		await page.waitForLoadState('domcontentloaded');
