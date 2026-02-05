@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth/next';
 import { redirect } from 'next/navigation';
 import { authOptions } from '@/lib/auth';
 import { getUserRole } from '@/lib/auth-helpers';
-import { UsersLayout } from '@/app/components/users-v2';
+import { UsersManagementLayout } from '@/app/components/users/users-management-layout';
 
 export default async function UsersPage() {
 	const session = await getServerSession(authOptions);
@@ -19,9 +19,9 @@ export default async function UsersPage() {
 	}
 
 	return (
-		<main className="min-h-screen bg-gray-50 dark:bg-[#101622]">
-			<div className="mx-auto max-w-[1600px] px-4 py-8 sm:px-6 lg:px-8">
-				<UsersLayout />
+		<main className="min-h-screen bg-gray-50 dark:bg-gray-900">
+			<div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+				<UsersManagementLayout />
 			</div>
 		</main>
 	);
