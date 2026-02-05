@@ -1,6 +1,6 @@
 import { test, expect, Page } from '@playwright/test';
 import { signInAsRealIG } from './helpers/auth';
-import { getMemeByIndex } from './helpers/test-assets';
+import { getMemeByIndex, getUnpublishedMeme } from './helpers/test-assets';
 
 /**
  * Instagram Publishing - LIVE Tests
@@ -48,8 +48,9 @@ test.describe('Instagram Publishing - LIVE', () => {
 	 * LIVE-PUB-01: Publish story via Debug Page
 	 *
 	 * This is THE critical test - verifies we can actually publish to Instagram.
+	 * Includes verification to avoid publishing the same meme within 24 hours.
 	 */
-	test('LIVE-PUB-01: publish story via debug page', async ({ page }) => {
+	test('LIVE-PUB-01: publish story via debug page', async ({ page, request }) => {
 		// Navigate to debug page
 		await page.goto('/debug');
 		await page.waitForLoadState('domcontentloaded');
@@ -61,8 +62,16 @@ test.describe('Instagram Publishing - LIVE', () => {
 		// Find the Debug Publisher card
 		await expect(page.locator('text=Debug Publisher')).toBeVisible();
 
+		// Select a meme that hasn't been published in the last 24 hours
+		const testImagePath = await getUnpublishedMeme(request);
+
+		if (!testImagePath) {
+			console.warn('⚠️ All memes were published in the last 24 hours, skipping test');
+			test.skip();
+			return;
+		}
+
 		// Upload test image from /memes/ folder
-		const testImagePath = getTestImagePath();
 		const fileInput = page.locator('input[type="file"]');
 		await fileInput.setInputFiles(testImagePath);
 		console.log('Uploading test image...');
@@ -124,16 +133,25 @@ test.describe('Instagram Publishing - LIVE', () => {
 	 * LIVE-PUB-02: Publish story with file upload
 	 *
 	 * Tests publishing with a real meme from /memes/ folder.
+	 * Includes verification to avoid publishing the same meme within 24 hours.
 	 */
-	test('LIVE-PUB-02: publish story with file upload', async ({ page }) => {
+	test('LIVE-PUB-02: publish story with file upload', async ({ page, request }) => {
 		await page.goto('/debug');
 		await page.waitForLoadState('domcontentloaded');
 
 		// Verify Instagram connection
 		await expect(page.locator('text=www_hehe_pl')).toBeVisible({ timeout: 10000 });
 
+		// Select a meme that hasn't been published in the last 24 hours
+		const testImagePath = await getUnpublishedMeme(request);
+
+		if (!testImagePath) {
+			console.warn('⚠️ All memes were published in the last 24 hours, skipping test');
+			test.skip();
+			return;
+		}
+
 		// Upload meme file instead of using external URL
-		const testImagePath = getMemeByIndex(21);
 		const fileInput = page.locator('input[type="file"]');
 		await fileInput.setInputFiles(testImagePath);
 		console.log('Uploading meme from /memes/ folder...');
@@ -158,14 +176,23 @@ test.describe('Instagram Publishing - LIVE', () => {
 	 * LIVE-PUB-03: Verify published story appears in publishing logs
 	 *
 	 * After publishing, verify it's recorded in the database.
+	 * Includes verification to avoid publishing the same meme within 24 hours.
 	 */
 	test('LIVE-PUB-03: verify publishing is logged', async ({ page, request }) => {
 		// First publish a story
 		await page.goto('/debug');
 		await page.waitForLoadState('domcontentloaded');
 
+		// Select a meme that hasn't been published in the last 24 hours
+		const testImagePath = await getUnpublishedMeme(request);
+
+		if (!testImagePath) {
+			console.warn('⚠️ All memes were published in the last 24 hours, skipping test');
+			test.skip();
+			return;
+		}
+
 		// Upload and publish using real meme
-		const testImagePath = getMemeByIndex(22);
 		const fileInput = page.locator('input[type="file"]');
 		await fileInput.setInputFiles(testImagePath);
 
