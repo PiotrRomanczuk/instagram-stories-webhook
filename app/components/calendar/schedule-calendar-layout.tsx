@@ -11,21 +11,25 @@ import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent } from '@dnd-kit/core';
 import { toast } from 'sonner';
-import { setHours, setMinutes, format } from 'date-fns';
+import { setHours, setMinutes, format, isSameDay, getHours } from 'date-fns';
 
-import { ScheduleHeader, ViewMode } from './schedule-header';
+import { ScheduleHeader, ViewMode, ScheduleViewType } from './schedule-header';
 
 // Granularity levels in minutes (from coarse to fine)
 const GRANULARITY_LEVELS = [60, 30, 15, 5, 1] as const;
 export type Granularity = (typeof GRANULARITY_LEVELS)[number];
 import { ScheduleCalendarGrid } from './schedule-calendar-grid';
+import { ScheduleListView } from './schedule-list-view';
+import { WeekStrip } from './week-strip';
 import { ReadyToScheduleSidebar } from './ready-to-schedule-sidebar';
 import { ScheduleCalendarItem } from './schedule-calendar-item';
 import { ContentPreviewModal } from '../content/content-preview-modal';
 import { ContentEditModal } from '../content/content-edit-modal';
 import { ContentItem } from '@/lib/types/posts';
 import type { UserRole } from '@/lib/types/posts';
-import { Layers } from 'lucide-react';
+import { Layers, ChevronRight } from 'lucide-react';
+import { TimelineLayout, groupPostsByTime } from '../schedule-mobile/timeline-layout';
+import type { TimelineCardPost } from '../schedule-mobile/timeline-card';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -37,6 +41,7 @@ export function ScheduleCalendarLayout() {
 	const [currentDate, setCurrentDate] = useState(new Date());
 	const [searchQuery, setSearchQuery] = useState('');
 	const [granularity, setGranularity] = useState<Granularity>(15);
+	const [scheduleViewType, setScheduleViewType] = useState<ScheduleViewType>('calendar');
 
 	const increaseGranularity = useCallback(() => {
 		const idx = GRANULARITY_LEVELS.indexOf(granularity);
@@ -51,6 +56,9 @@ export function ScheduleCalendarLayout() {
 			setGranularity(GRANULARITY_LEVELS[idx - 1]);
 		}
 	}, [granularity]);
+
+	// Mobile sidebar state
+	const [showMobileSidebar, setShowMobileSidebar] = useState(false);
 
 	// Drag state
 	const [activeId, setActiveId] = useState<string | null>(null);
@@ -96,6 +104,33 @@ export function ScheduleCalendarLayout() {
 			return isApproved;
 		});
 	}, [allItems]);
+
+	// Convert ContentItems to TimelineCardPosts for timeline view
+	const timelinePosts: TimelineCardPost[] = useMemo(() => {
+		return scheduledItems
+			.filter((item) => item.scheduledTime)
+			.map((item) => ({
+				id: item.id,
+				url: item.mediaUrl || '',
+				caption: item.caption || '',
+				scheduledTime: item.scheduledTime!,
+				publishingStatus: (item.publishingStatus || 'scheduled') as TimelineCardPost['publishingStatus'],
+				mediaType: item.mediaType as 'IMAGE' | 'VIDEO' | undefined,
+			}));
+	}, [scheduledItems]);
+
+	const timelineGroups = useMemo(() => groupPostsByTime(timelinePosts), [timelinePosts]);
+
+	// Item counts per date for week strip
+	const itemCountsByDate = useMemo(() => {
+		const counts: Record<string, number> = {};
+		for (const item of scheduledItems) {
+			if (!item.scheduledTime) continue;
+			const dateKey = format(new Date(item.scheduledTime), 'yyyy-MM-dd');
+			counts[dateKey] = (counts[dateKey] || 0) + 1;
+		}
+		return counts;
+	}, [scheduledItems]);
 
 	const totalScheduled = scheduledItems.filter(
 		(item) => item.publishingStatus === 'scheduled'
@@ -206,44 +241,114 @@ export function ScheduleCalendarLayout() {
 						granularity={granularity}
 						onIncreaseGranularity={increaseGranularity}
 						onDecreaseGranularity={decreaseGranularity}
+						scheduleViewType={scheduleViewType}
+						onScheduleViewTypeChange={setScheduleViewType}
 					/>
 
-					{/* Calendar + Sidebar */}
-					<div className="flex flex-1 overflow-hidden">
-						{/* Calendar Grid */}
-						<ScheduleCalendarGrid
-							currentDate={currentDate}
-							scheduledItems={scheduledItems}
-							onItemClick={handleOpenPreview}
-							granularity={granularity}
-							onIncreaseGranularity={increaseGranularity}
-							onDecreaseGranularity={decreaseGranularity}
+					{/* Week strip for list view */}
+					{scheduleViewType === 'list' && (
+						<WeekStrip
+							selectedDate={currentDate}
+							onDateSelect={setCurrentDate}
+							itemCounts={itemCountsByDate}
 						/>
+					)}
 
-						{/* Ready to Schedule Sidebar */}
-						<ReadyToScheduleSidebar
-							items={readyItems}
-							onOpenPreview={handleOpenPreview}
-							onRefresh={mutate}
-						/>
+					{/* View content + Sidebar */}
+					<div className="flex flex-1 overflow-hidden">
+						{/* View content based on type */}
+						{scheduleViewType === 'calendar' && (
+							<ScheduleCalendarGrid
+								currentDate={currentDate}
+								scheduledItems={scheduledItems}
+								onItemClick={handleOpenPreview}
+								granularity={granularity}
+								onIncreaseGranularity={increaseGranularity}
+								onDecreaseGranularity={decreaseGranularity}
+							/>
+						)}
+
+						{scheduleViewType === 'timeline' && (
+							<div className="flex-1 overflow-auto bg-gray-50 p-4 dark:bg-[#070b13]">
+								<TimelineLayout
+									groups={timelineGroups}
+									onPostClick={() => {}}
+									enableSwipe
+								/>
+							</div>
+						)}
+
+						{scheduleViewType === 'list' && (
+							<ScheduleListView
+								currentDate={currentDate}
+								scheduledItems={scheduledItems}
+								onItemClick={handleOpenPreview}
+							/>
+						)}
+
+						{/* Ready to Schedule Sidebar - hidden on mobile, visible on lg+ */}
+						<div className="hidden lg:flex">
+							<ReadyToScheduleSidebar
+								items={readyItems}
+								onOpenPreview={handleOpenPreview}
+								onRefresh={mutate}
+							/>
+						</div>
 					</div>
 
+					{/* Mobile Sidebar Toggle Button */}
+					<button
+						type="button"
+						onClick={() => setShowMobileSidebar(true)}
+						className="fixed bottom-6 right-4 z-40 flex items-center gap-2 rounded-full bg-[#2b6cee] px-4 py-3 text-sm font-semibold text-white shadow-lg transition-transform hover:scale-105 active:scale-95 lg:hidden"
+					>
+						<Layers className="h-4 w-4" />
+						Ready
+						{readyItems.length > 0 && (
+							<span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-white/20 px-1.5 text-xs font-bold">
+								{readyItems.length}
+							</span>
+						)}
+						<ChevronRight className="h-4 w-4" />
+					</button>
+
+					{/* Mobile Sidebar Overlay */}
+					{showMobileSidebar && (
+						<div className="fixed inset-0 z-50 lg:hidden">
+							<div
+								className="absolute inset-0 bg-black/50"
+								onClick={() => setShowMobileSidebar(false)}
+							/>
+							<div className="absolute right-0 top-0 bottom-0 w-full max-w-sm bg-white dark:bg-[#101622]">
+								<ReadyToScheduleSidebar
+									items={readyItems}
+									onOpenPreview={(item) => {
+										setShowMobileSidebar(false);
+										handleOpenPreview(item);
+									}}
+									onRefresh={mutate}
+									onClose={() => setShowMobileSidebar(false)}
+								/>
+							</div>
+						</div>
+					)}
+
 					{/* Footer Legend */}
-					<footer className="flex items-center justify-between border-t border-gray-200 bg-gray-100 px-6 py-2 text-[10px] text-gray-500 dark:border-slate-800 dark:bg-[#0d1421] dark:text-slate-500">
-						<div className="flex gap-6">
-							<div className="flex items-center gap-2">
+					<footer className="flex items-center justify-between border-t border-gray-200 bg-gray-100 px-3 py-2 text-[10px] text-gray-500 lg:px-6 dark:border-slate-800 dark:bg-[#0d1421] dark:text-slate-500">
+						<div className="flex gap-3 lg:gap-6">
+							<div className="flex items-center gap-1.5 lg:gap-2">
 								<span className="h-2 w-2 rounded-full bg-[#2b6cee]" />
 								<span>Scheduled</span>
 							</div>
-							<div className="flex items-center gap-2">
+							<div className="flex items-center gap-1.5 lg:gap-2">
 								<span className="h-2 w-2 rounded-full bg-emerald-500" />
 								<span>Published</span>
 							</div>
-							<div className="flex items-center gap-2">
+							<div className="flex items-center gap-1.5 lg:gap-2">
 								<span className="h-2 w-2 rounded-full bg-red-500" />
 								<span>Failed</span>
 							</div>
-							<div className="flex items-center gap-2">
+							<div className="hidden items-center gap-2 lg:flex">
 								<Layers className="h-3 w-3" />
 								<span>Drag to reschedule</span>
 							</div>

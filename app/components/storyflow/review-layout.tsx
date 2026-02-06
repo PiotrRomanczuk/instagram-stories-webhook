@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import useSWR, { mutate } from 'swr';
 import { toast } from 'sonner';
-import { Loader2, AlertTriangle, Inbox, Layers } from 'lucide-react';
+import { Loader2, AlertTriangle, Inbox, Layers, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
 import { ReviewHistorySidebar } from './review-history-sidebar';
 import { PhonePreview } from './phone-preview';
 import { ReviewDetailsSidebar } from './review-details-sidebar';
@@ -32,6 +32,7 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 	const [reviewHistory, setReviewHistory] = useState<ReviewedItem[]>([]);
 	const [reviewComment, setReviewComment] = useState('');
 	const [isActionLoading, setIsActionLoading] = useState(false);
+	const [showMobileDetails, setShowMobileDetails] = useState(false);
 
 	// Fetch pending submissions
 	const { data, isLoading, error } = useSWR<{ items: ContentItem[] }>(
@@ -200,17 +201,22 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 
 	return (
 		<div className={cn('flex h-[calc(100vh-120px)] bg-white dark:bg-[#101622]', className)}>
-			{/* Left Sidebar: Review History */}
+			{/* Left Sidebar: Review History (desktop only) */}
 			<ReviewHistorySidebar history={reviewHistory} />
 
 			{/* Main Content */}
 			<main className="flex-1 flex flex-col bg-slate-50 dark:bg-black/20 overflow-y-auto">
-				<div className="max-w-4xl mx-auto w-full p-8 flex flex-col items-center">
+				<div className="max-w-4xl mx-auto w-full px-3 py-4 sm:p-8 flex flex-col items-center">
 					{/* Header */}
-					<div className="mb-6 text-center">
-						<h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">Story Review Queue</h1>
-						<p className="text-slate-500 dark:text-slate-400 text-sm">
+					<div className="mb-4 sm:mb-6 text-center">
+						<h1 className="text-lg sm:text-2xl font-bold text-slate-900 dark:text-white mb-1">Story Review Queue</h1>
+						<p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm">
 							{remainingCount} {remainingCount === 1 ? 'story' : 'stories'} pending review
+							{reviewedCount > 0 && (
+								<span className="ml-2 text-[#2b6cee]">
+									({reviewedCount} reviewed)
+								</span>
+							)}
 						</p>
 					</div>
 
@@ -233,10 +239,65 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 						disabled={!currentItem || isActionLoading}
 						isLoading={isActionLoading}
 					/>
+
+					{/* Mobile Details Section (visible below lg) */}
+					<div className="w-full mt-4 lg:hidden">
+						<button
+							onClick={() => setShowMobileDetails(!showMobileDetails)}
+							className={cn(
+								'w-full flex items-center justify-center gap-2',
+								'bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10',
+								'text-slate-700 dark:text-white py-2.5 rounded-xl text-sm font-medium transition-colors'
+							)}
+						>
+							<MessageSquare className="h-4 w-4" />
+							<span>{showMobileDetails ? 'Hide Details' : 'Details & Comment'}</span>
+							{showMobileDetails ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+						</button>
+
+						{showMobileDetails && (
+							<div className="mt-3 space-y-3 animate-in slide-in-from-top-2 duration-200">
+								{/* Story info */}
+								{currentItem && (
+									<div className="p-3 bg-white dark:bg-white/5 rounded-xl border border-slate-200 dark:border-[#2a3649]">
+										<div className="flex justify-between text-xs text-slate-500 dark:text-slate-400">
+											<span>Author</span>
+											<span className="font-medium text-slate-900 dark:text-white capitalize">
+												{currentItem.userEmail?.split('@')[0] || 'Unknown'}
+											</span>
+										</div>
+										{currentItem.caption && (
+											<p className="mt-2 text-xs text-slate-600 dark:text-slate-300 line-clamp-2">
+												{currentItem.caption}
+											</p>
+										)}
+									</div>
+								)}
+
+								{/* Comment input */}
+								<div className="space-y-1.5">
+									<label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+										Review Comment
+									</label>
+									<textarea
+										value={reviewComment}
+										onChange={(e) => setReviewComment(e.target.value)}
+										placeholder="Add notes about this review..."
+										className={cn(
+											'w-full min-h-[60px] p-3 rounded-xl resize-none',
+											'bg-white dark:bg-black/20 border border-slate-200 dark:border-[#2a3649]',
+											'text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm',
+											'focus:outline-none focus:ring-2 focus:ring-[#2b6cee]/50 focus:border-[#2b6cee]'
+										)}
+									/>
+								</div>
+							</div>
+						)}
+					</div>
 				</div>
 			</main>
 
-			{/* Right Sidebar: Stats & Metadata */}
+			{/* Right Sidebar: Stats & Metadata (desktop only) */}
 			<ReviewDetailsSidebar
 				item={currentItem}
 				reviewedCount={reviewedCount}

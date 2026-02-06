@@ -217,11 +217,11 @@ export function Navbar() {
 							</Button>
 						)}
 
-						{/* Mobile Menu Button */}
+						{/* Mobile Menu Button - hidden when bottom nav is active */}
 						<Button
 							variant="ghost"
 							size="icon"
-							className="md:hidden"
+							className="hidden max-md:block max-lg:hidden"
 							onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
 						>
 							<Menu className="h-5 w-5" />

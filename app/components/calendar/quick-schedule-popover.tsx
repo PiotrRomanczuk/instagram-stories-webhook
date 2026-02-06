@@ -110,7 +110,7 @@ export function QuickSchedulePopover({
 			{isOpen && (
 				<div
 					ref={popoverRef}
-					className="absolute left-0 top-full z-50 mt-2 w-72 rounded-xl border border-gray-200 bg-white p-4 shadow-xl dark:border-slate-700 dark:bg-slate-900"
+					className="fixed inset-x-4 bottom-4 z-[60] w-auto rounded-xl border border-gray-200 bg-white p-4 shadow-xl dark:border-slate-700 dark:bg-slate-900 sm:absolute sm:inset-auto sm:left-0 sm:top-full sm:z-50 sm:mt-2 sm:w-72"
 				>
 					{/* Header with thumbnail */}
 					<div className="mb-4 flex gap-3">

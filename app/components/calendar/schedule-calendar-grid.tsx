@@ -193,7 +193,7 @@ function HourRow({ day, hour, items, onItemClick, granularity, blocksPerHour, bl
 	return (
 		<div className="flex" style={{ height: `${hourHeight}px` }}>
 			{/* Time label */}
-			<div className="flex w-16 flex-shrink-0 flex-col items-center justify-start border-r border-gray-200 bg-white pt-1 dark:border-slate-800 dark:bg-transparent">
+			<div className="flex w-12 sm:w-16 flex-shrink-0 flex-col items-center justify-start border-r border-gray-200 bg-white pt-1 dark:border-slate-800 dark:bg-transparent">
 				<span className="text-[11px] font-medium text-gray-500 dark:text-slate-400">
 					{hour === 12 ? '12' : hour < 12 ? hour : hour - 12}
 				</span>
@@ -248,7 +248,7 @@ function CurrentTimeIndicator({ hourHeight }: { hourHeight: number }) {
 			style={{ top: `${topOffset}px` }}
 		>
 			<div className="flex items-center">
-				<div className="w-16 flex justify-end pr-2">
+				<div className="w-12 sm:w-16 flex justify-end pr-2">
 					<span className="rounded bg-[#2b6cee] px-1.5 py-0.5 text-[10px] font-bold text-white">
 						{format(now, 'h:mm a')}
 					</span>
@@ -305,11 +305,11 @@ export function ScheduleCalendarGrid({
 			ref={containerRef}
 			className="flex-1 overflow-auto bg-gray-50 custom-scrollbar dark:bg-[#070b13]"
 		>
-			<div className="min-w-[400px]">
+			<div className="min-w-0">
 				{/* Header */}
 				<div className="sticky top-0 z-30 flex h-12 border-b border-gray-200 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-[#101622]/95">
 					{/* Timezone */}
-					<div className="flex w-16 flex-shrink-0 items-center justify-center border-r border-gray-200 text-[10px] font-bold text-gray-500 dark:border-slate-800 dark:text-slate-400">
+					<div className="flex w-12 sm:w-16 flex-shrink-0 items-center justify-center border-r border-gray-200 text-[10px] font-bold text-gray-500 dark:border-slate-800 dark:text-slate-400">
 						{Intl.DateTimeFormat().resolvedOptions().timeZone.split('/')[1] || 'Local'}
 					</div>
 

@@ -8,13 +8,15 @@ import { useState, useRef, useEffect } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { ContentItem } from '@/lib/types/posts';
 import { cn, formatRelativeTime } from '@/lib/utils';
-import { CheckCircle, Clock, Grid2X2, List, MoreVertical, Eye } from 'lucide-react';
+import { CheckCircle, Clock, Grid2X2, List, MoreVertical, Eye, X } from 'lucide-react';
 import { QuickSchedulePopover } from './quick-schedule-popover';
 
 interface ReadyToScheduleSidebarProps {
 	items: ContentItem[];
 	onOpenPreview?: (item: ContentItem) => void;
 	onRefresh?: () => void;
+	className?: string;
+	onClose?: () => void;
 }
 
 type FilterTab = 'all' | 'recent' | 'approved';
@@ -210,6 +212,8 @@ export function ReadyToScheduleSidebar({
 	items,
 	onOpenPreview,
 	onRefresh,
+	className,
+	onClose,
 }: ReadyToScheduleSidebarProps) {
 	const [activeTab, setActiveTab] = useState<FilterTab>('all');
 	const [viewDensity, setViewDensity] = useState<ViewDensity>('comfortable');
@@ -261,11 +265,26 @@ export function ReadyToScheduleSidebar({
 	};
 
 	return (
-		<aside className="flex h-full w-80 flex-col border-l border-gray-200 bg-white dark:border-slate-800 dark:bg-[#101622]">
+		<aside className={cn(
+			'flex h-full w-full lg:w-80 flex-col border-l border-gray-200 bg-white dark:border-slate-800 dark:bg-[#101622]',
+			className
+		)}>
 			{/* Header */}
 			<div className="border-b border-gray-200 p-4 dark:border-slate-800">
 				<h3 className="flex items-center justify-between text-sm font-bold text-gray-900 dark:text-white">
-					Ready to Schedule
+					<span className="flex items-center gap-2">
+						Ready to Schedule
+						{onClose && (
+							<button
+								type="button"
+								onClick={onClose}
+								className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 lg:hidden dark:hover:bg-slate-800 dark:hover:text-slate-300"
+								aria-label="Close sidebar"
+							>
+								<X className="h-4 w-4" />
+							</button>
+						)}
+					</span>
 					<span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] text-gray-500 dark:bg-slate-800 dark:text-slate-400">
 						{readyItems.length} assets
 					</span>

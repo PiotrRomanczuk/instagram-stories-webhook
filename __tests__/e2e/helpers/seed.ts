@@ -1,5 +1,13 @@
 import { Page } from '@playwright/test';
-import { getMemeByIndex } from './test-assets';
+
+/**
+ * Returns a publicly accessible test image URL for seeding content via API.
+ * Uses picsum.photos deterministic images so they're always available.
+ * Local file paths from getMemeByIndex() don't work in the browser.
+ */
+export function getTestMediaUrl(index: number): string {
+	return `https://picsum.photos/seed/e2e-test-${index}/1080/1920`;
+}
 
 /**
  * Test data seeding utilities for E2E tests
@@ -191,26 +199,26 @@ export async function seedTestDatabase(page: Page): Promise<void> {
     role: 'user',
   });
 
-  // Create test meme submissions using real memes from /memes/ folder
+  // Create test meme submissions using publicly accessible test images
   await createMemeSubmissions(page, [
     {
       title: 'Test Meme 1',
       caption: 'This is a test meme',
-      mediaUrl: getMemeByIndex(50),
+      mediaUrl: getTestMediaUrl(50),
       userId: userId1,
       status: 'pending',
     },
     {
       title: 'Test Meme 2',
       caption: 'Another test meme',
-      mediaUrl: getMemeByIndex(51),
+      mediaUrl: getTestMediaUrl(51),
       userId: userId1,
       status: 'approved',
     },
     {
       title: 'Test Meme 3',
       caption: 'User 2 meme',
-      mediaUrl: getMemeByIndex(52),
+      mediaUrl: getTestMediaUrl(52),
       userId: userId2,
       status: 'pending',
     },
@@ -240,7 +248,7 @@ export const TestDataFactory = {
   memeSubmission: (overrides: Partial<TestMemeSubmission> = {}): Omit<TestMemeSubmission, 'id'> => ({
     title: `Test Meme ${Date.now()}`,
     caption: 'This is a test meme submission',
-    mediaUrl: getMemeByIndex(Math.floor(Math.random() * 100)),
+    mediaUrl: getTestMediaUrl(Math.floor(Math.random() * 100)),
     userId: 'test-user-id',
     status: 'pending',
     ...overrides,
@@ -311,7 +319,7 @@ export async function createPendingContent(
   return createContent(page, {
     title: title || `Test Content ${Date.now()}`,
     caption: caption || 'Test caption for E2E testing',
-    mediaUrl: getMemeByIndex(mediaIndex),
+    mediaUrl: getTestMediaUrl(mediaIndex),
     mediaType: 'IMAGE',
     source: 'submission',
     submissionStatus: 'pending',
@@ -335,7 +343,7 @@ export async function createApprovedContent(
   return createContent(page, {
     title: title || `Approved Content ${Date.now()}`,
     caption: caption || 'Approved caption for E2E testing',
-    mediaUrl: getMemeByIndex(mediaIndex),
+    mediaUrl: getTestMediaUrl(mediaIndex),
     mediaType: 'IMAGE',
     source: 'submission',
     submissionStatus: 'approved',
@@ -361,7 +369,7 @@ export async function createScheduledContent(
   return createContent(page, {
     title: title || `Scheduled Content ${Date.now()}`,
     caption: caption || 'Scheduled caption for E2E testing',
-    mediaUrl: getMemeByIndex(mediaIndex),
+    mediaUrl: getTestMediaUrl(mediaIndex),
     mediaType: 'IMAGE',
     source: 'submission',
     submissionStatus: 'approved',

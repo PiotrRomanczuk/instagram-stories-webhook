@@ -38,26 +38,17 @@ export function PhonePreview({ item, onImageError, className }: PhonePreviewProp
 		setRetryKey((k) => k + 1);
 	};
 
-	// Story dimensions in 9:16 ratio
-	const frameWidth = 270;
-	const frameHeight = 480;
-
 	return (
 		<div className={cn('flex flex-col items-center gap-2', className)}>
 			<div
-				className="relative rounded-[2rem] border-4 border-foreground/20 bg-muted p-2 shadow-lg"
-				style={{
-					width: frameWidth + 16,
-					height: frameHeight + 16,
-				}}
+				className="relative rounded-[2rem] border-4 border-foreground/20 bg-muted p-2 shadow-lg w-[216px] h-[396px] sm:w-[286px] sm:h-[496px]"
 			>
 				{/* Notch */}
-				<div className="absolute left-1/2 top-2 h-5 w-20 -translate-x-1/2 rounded-full bg-foreground/20" />
+				<div className="absolute left-1/2 top-2 h-4 w-16 sm:h-5 sm:w-20 -translate-x-1/2 rounded-full bg-foreground/20" />
 
 				{/* Screen */}
 				<div
-					className="relative overflow-hidden rounded-[1.5rem] bg-black"
-					style={{ width: frameWidth, height: frameHeight }}
+					className="relative overflow-hidden rounded-[1.5rem] bg-black w-[200px] h-[380px] sm:w-[270px] sm:h-[480px]"
 				>
 					{item ? (
 						<>

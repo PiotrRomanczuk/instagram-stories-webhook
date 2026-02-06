@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { Clock, AlertCircle, TrendingUp } from 'lucide-react';
+import { Clock, AlertCircle, TrendingUp, Video, ImageIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { ContentItem } from '@/lib/types/posts';
 import { TimelineCardActions } from './timeline-card-actions';
 import { TimelineCardHoverOverlay } from './timeline-card-hover-overlay';
@@ -33,11 +34,18 @@ interface TimelineCardProps {
 	onUpdate?: () => void; // Callback to refresh timeline
 }
 
-const statusColors: Record<TimelineCardStatus, string> = {
-	scheduled: '#3b82f6', // blue
-	published: '#10b981', // green
-	failed: '#ef4444', // red
-	processing: '#f59e0b', // amber
+const statusConfig: Record<TimelineCardStatus, { label: string; dot: string; text: string; bg: string }> = {
+	scheduled: { label: 'SCHEDULED', dot: 'bg-blue-500', text: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-500/10' },
+	published: { label: 'PUBLISHED', dot: 'bg-emerald-500', text: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-500/10' },
+	failed: { label: 'FAILED', dot: 'bg-red-500', text: 'text-red-600 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-500/10' },
+	processing: { label: 'PROCESSING', dot: 'bg-amber-500', text: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-500/10' },
+};
+
+const borderColors: Record<TimelineCardStatus, string> = {
+	scheduled: 'border-l-blue-500',
+	published: 'border-l-emerald-500',
+	failed: 'border-l-red-500',
+	processing: 'border-l-amber-500',
 };
 
 export function TimelineCard({ post, item, onClick, onUpdate }: TimelineCardProps) {
@@ -56,7 +64,8 @@ export function TimelineCard({ post, item, onClick, onUpdate }: TimelineCardProp
 		hour12: true,
 	});
 
-	const statusColor = statusColors[post.publishingStatus];
+	const status = statusConfig[post.publishingStatus];
+	const borderColor = borderColors[post.publishingStatus];
 
 	const handleClick = () => {
 		if (onClick) {
@@ -71,7 +80,6 @@ export function TimelineCard({ post, item, onClick, onUpdate }: TimelineCardProp
 
 	const handleReschedule = (e: React.MouseEvent) => {
 		e.stopPropagation();
-		// For now, reschedule opens the edit modal (which includes time picker)
 		setShowEditModal(true);
 	};
 
@@ -139,40 +147,43 @@ export function TimelineCard({ post, item, onClick, onUpdate }: TimelineCardProp
 			onClick={handleClick}
 			onMouseEnter={() => isDesktop && setIsHovered(true)}
 			onMouseLeave={() => isDesktop && setIsHovered(false)}
-			className="relative bg-[#1a1f2e] rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 cursor-pointer group min-h-[48px]"
-			style={{
-				borderLeft: `4px solid ${statusColor}`,
-			}}
+			className={cn(
+				'relative flex gap-3 rounded-xl border-l-4 p-3',
+				'bg-white shadow-sm hover:shadow-md',
+				'dark:bg-[#1a1f2e] dark:shadow-lg dark:hover:shadow-xl',
+				'transition-all duration-200 hover:-translate-y-0.5 cursor-pointer group',
+				borderColor
+			)}
 		>
-			{/* Media Thumbnail */}
-			<div className="relative w-20 h-[142px] float-left mr-3">
+			{/* Thumbnail */}
+			<div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100 dark:bg-slate-800">
 				{post.mediaType === 'VIDEO' ? (
-					<div className="w-full h-full bg-slate-800 flex items-center justify-center">
+					<div className="flex h-full w-full items-center justify-center bg-gray-100 dark:bg-slate-800">
 						<video
 							src={post.url}
-							className="w-full h-full object-cover"
+							className="h-full w-full object-cover"
 							preload="metadata"
 						/>
 						<div className="absolute inset-0 flex items-center justify-center bg-black/20">
-							<div className="w-8 h-8 rounded-full bg-white/30 backdrop-blur-sm flex items-center justify-center">
-								<div className="border-t-3 border-b-3 border-l-6 border-transparent border-l-white ml-0.5" />
+							<div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/30 backdrop-blur-sm">
+								<Video className="h-3.5 w-3.5 text-white" />
 							</div>
 						</div>
 					</div>
 				) : (
 					<>
-						{!imageError ? (
+						{post.url && !imageError ? (
 							<Image
 								src={post.url}
 								alt="Story preview"
 								fill
-								className="object-cover group-hover:scale-105 transition-transform duration-300"
+								className="object-cover transition-transform duration-300 group-hover:scale-105"
 								unoptimized
 								onError={() => setImageError(true)}
 							/>
 						) : (
-							<div className="w-full h-full bg-slate-800 flex items-center justify-center">
-								<AlertCircle className="w-6 h-6 text-slate-500" />
+							<div className="flex h-full w-full items-center justify-center">
+								<ImageIcon className="h-6 w-6 text-gray-400 dark:text-slate-500" />
 							</div>
 						)}
 					</>
@@ -180,53 +191,56 @@ export function TimelineCard({ post, item, onClick, onUpdate }: TimelineCardProp
 			</div>
 
 			{/* Content */}
-			<div className="p-3 pl-0">
-				{/* Time Badge */}
-				<div className="flex items-center gap-2 mb-2">
+			<div className="flex min-w-0 flex-1 flex-col justify-center">
+				{/* Top row: time + status */}
+				<div className="mb-1.5 flex items-center gap-2">
+					{/* Time badge */}
 					<div
 						data-testid="time-badge"
-						className="inline-flex items-center gap-1.5 px-2 py-1 bg-[#2b6cee]/10 rounded-lg border border-[#2b6cee]/20"
+						className="inline-flex items-center gap-1 rounded-md bg-[#2b6cee]/8 px-2 py-0.5 dark:bg-[#2b6cee]/15"
 					>
-						<Clock className="w-3 h-3 text-[#2b6cee]" />
-						<span className="text-xs font-semibold text-[#2b6cee]">
+						<Clock className="h-3 w-3 text-[#2b6cee]" />
+						<span className="text-[11px] font-bold text-[#2b6cee]">
 							{timeStr}
 						</span>
 					</div>
 
-					{/* Optional metadata badges */}
-					{post.engagement?.predicted && (
-						<div
-							data-testid="engagement-badge"
-							className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-500/10 rounded-lg border border-emerald-500/20"
-						>
-							<TrendingUp className="w-3 h-3 text-emerald-400" />
-							<span className="text-xs font-semibold text-emerald-400">
-								{post.engagement.predicted}%
-							</span>
-						</div>
-					)}
+					{/* Status badge */}
+					<span className={cn('inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold', status.text, status.bg)}>
+						<span className={cn('h-1.5 w-1.5 rounded-full', status.dot)} />
+						{status.label}
+					</span>
 
+					{/* Warning */}
 					{post.warning && (
-						<div
-							data-testid="warning-badge"
-							className="inline-flex items-center gap-1 px-2 py-1 bg-amber-500/10 rounded-lg border border-amber-500/20"
-						>
-							<AlertCircle className="w-3 h-3 text-amber-400" />
-						</div>
+						<AlertCircle data-testid="warning-badge" className="h-3.5 w-3.5 text-amber-500" />
 					)}
 				</div>
 
-				{/* Caption Preview */}
+				{/* Caption */}
 				<p
 					data-testid="caption-preview"
-					className="text-sm text-slate-300 line-clamp-2 leading-relaxed"
+					className="line-clamp-2 text-sm leading-snug text-gray-700 dark:text-slate-300"
 				>
 					{post.caption || 'No caption'}
 				</p>
 
+				{/* Engagement prediction */}
+				{post.engagement?.predicted && (
+					<div
+						data-testid="engagement-badge"
+						className="mt-1.5 inline-flex items-center gap-1 self-start text-xs text-emerald-600 dark:text-emerald-400"
+					>
+						<TrendingUp className="h-3 w-3" />
+						<span className="font-medium">{post.engagement.predicted}% engagement</span>
+					</div>
+				)}
+
 				{/* Mobile Action Buttons (hidden on desktop) */}
 				{onUpdate && !isDesktop && (
-					<TimelineCardActions item={contentItem} onUpdate={onUpdate} />
+					<div className="mt-2">
+						<TimelineCardActions item={contentItem} onUpdate={onUpdate} />
+					</div>
 				)}
 			</div>
 

@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import '../globals.css';
 import { Providers } from '../components/providers/providers';
 import { Navbar } from '../components/layout/navbar';
+import { BottomNav } from '../components/layout/bottom-nav';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
@@ -48,7 +49,10 @@ export default async function RootLayout({
 				<NextIntlClientProvider messages={messages}>
 					<Providers>
 						<Navbar />
-						{children}
+						<div className="pb-16 lg:pb-0">
+							{children}
+						</div>
+						<BottomNav />
 					</Providers>
 				</NextIntlClientProvider>
 			</body>
