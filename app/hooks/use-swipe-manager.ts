@@ -3,29 +3,40 @@
  *
  * Manages swipe state for timeline cards to ensure only one card is open at a time.
  * Provides handlers for opening/closing cards and tracking the currently open card.
+ * Supports optional direction tracking for bidirectional swipe.
  */
 
 import { useState, useCallback } from 'react';
 
+export type SwipeDirection = 'left' | 'right';
+
 export function useSwipeManager() {
 	const [openCardId, setOpenCardId] = useState<string | null>(null);
+	const [openDirection, setOpenDirection] = useState<SwipeDirection | null>(null);
 
-	const openCard = useCallback((cardId: string) => {
+	const openCard = useCallback((cardId: string, direction?: SwipeDirection) => {
 		setOpenCardId(cardId);
+		setOpenDirection(direction ?? null);
 	}, []);
 
 	const closeCard = useCallback(() => {
 		setOpenCardId(null);
+		setOpenDirection(null);
 	}, []);
 
 	const toggleCard = useCallback(
-		(cardId: string, isOpen: boolean) => {
+		(cardId: string, isOpen: boolean, direction?: SwipeDirection) => {
 			if (isOpen) {
-				// Close other cards, open this one
 				setOpenCardId(cardId);
+				setOpenDirection(direction ?? null);
 			} else {
-				// Only close if this card is the one that's open
-				setOpenCardId((current) => (current === cardId ? null : current));
+				setOpenCardId((current) => {
+					if (current === cardId) {
+						setOpenDirection(null);
+						return null;
+					}
+					return current;
+				});
 			}
 		},
 		[]
@@ -36,11 +47,20 @@ export function useSwipeManager() {
 		[openCardId]
 	);
 
+	const getCardDirection = useCallback(
+		(cardId: string): SwipeDirection | null => {
+			return openCardId === cardId ? openDirection : null;
+		},
+		[openCardId, openDirection]
+	);
+
 	return {
 		openCardId,
+		openDirection,
 		openCard,
 		closeCard,
 		toggleCard,
 		isCardOpen,
+		getCardDirection,
 	};
 }
