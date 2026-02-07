@@ -48,10 +48,10 @@ Visit: `http://localhost:3000/debug`
 
 ## 🛠️ Debugging Tools
 
-### Interactive Debug Script (`debug-auth.bat`)
+### Interactive Debug Script (`scripts/debug-auth.bat`)
 Run this on Windows for a menu-driven diagnostic tool:
 ```powershell
-.\debug-auth.bat
+.\scripts\debug-auth.bat
 ```
 It allows you to:
 - Clear tokens (for a fresh start)

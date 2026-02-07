@@ -58,5 +58,8 @@ test-results
 # Local MCP config
 .mcp.json
 
-# Temp directories
-stitch_content_queue_dashboard/
+# Screenshots and design references
+/screenshots/
+
+# Playwright MCP logs
+.playwright-mcp/

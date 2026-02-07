@@ -52,7 +52,7 @@ E2E tests for Instagram Stories with user tags functionality. These tests **ACTU
 
 ```bash
 # Run all user tagging tests
-./run-user-tagging-tests.sh
+./scripts/run-user-tagging-tests.sh
 ```
 
 ### Individual Test

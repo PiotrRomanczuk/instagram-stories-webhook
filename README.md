@@ -82,7 +82,7 @@ For new deployments, use the built-in Settings page to configure credentials:
 
 ## 🆘 Need Help?
 
-*   Run the interactive debug script: `.\debug-auth.bat`
+*   Run the interactive debug script: `.\scripts\debug-auth.bat`
 *   Visit the live debug center: `http://localhost:3000/debug`
 *   Follow the automated workflow: `/fresh-meta-auth`
 

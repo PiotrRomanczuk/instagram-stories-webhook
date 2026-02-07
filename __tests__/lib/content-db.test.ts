@@ -60,6 +60,7 @@ describe('content-db', () => {
 
 			const mockQuery = {
 				select: vi.fn().mockReturnThis(),
+				is: vi.fn().mockReturnThis(),
 				eq: vi.fn().mockReturnThis(),
 				order: vi.fn().mockReturnThis(),
 				range: vi.fn().mockResolvedValue({
@@ -79,6 +80,7 @@ describe('content-db', () => {
 		it('should apply filters correctly', async () => {
 			const mockQuery = {
 				select: vi.fn().mockReturnThis(),
+				is: vi.fn().mockReturnThis(),
 				eq: vi.fn().mockReturnThis(),
 				or: vi.fn().mockReturnThis(),
 				order: vi.fn().mockReturnThis(),
@@ -104,6 +106,7 @@ describe('content-db', () => {
 		it('should handle errors gracefully', async () => {
 			const mockQuery = {
 				select: vi.fn().mockReturnThis(),
+				is: vi.fn().mockReturnThis(),
 				eq: vi.fn().mockReturnThis(),
 				order: vi.fn().mockReturnThis(),
 				range: vi.fn().mockResolvedValue({
@@ -1224,6 +1227,7 @@ describe('content-db', () => {
 		it('should handle all filter combinations', async () => {
 			const mockQuery = {
 				select: vi.fn().mockReturnThis(),
+				is: vi.fn().mockReturnThis(),
 				eq: vi.fn().mockReturnThis(),
 				gte: vi.fn().mockReturnThis(),
 				lt: vi.fn().mockReturnThis(),
@@ -1263,6 +1267,7 @@ describe('content-db', () => {
 		it('should handle different sort options', async () => {
 			const mockQuery = {
 				select: vi.fn().mockReturnThis(),
+				is: vi.fn().mockReturnThis(),
 				order: vi.fn().mockReturnThis(),
 				range: vi.fn().mockResolvedValue({
 					data: [],

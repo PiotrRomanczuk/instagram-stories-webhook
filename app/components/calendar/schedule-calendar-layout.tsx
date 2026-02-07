@@ -30,6 +30,9 @@ import type { UserRole } from '@/lib/types/posts';
 import { Layers, ChevronRight } from 'lucide-react';
 import { TimelineLayout, groupPostsByTime } from '../schedule-mobile/timeline-layout';
 import type { TimelineCardPost } from '../schedule-mobile/timeline-card';
+import { MobileScheduleView } from '../schedule-mobile/mobile-schedule-view';
+import { MobileReadyToPost } from '../schedule-mobile/mobile-ready-to-post';
+import { useMediaQuery } from '@/app/hooks/use-media-query';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -223,6 +226,59 @@ export function ScheduleCalendarLayout() {
 		router.push('/content');
 	}, [router]);
 
+	const isMobile = useMediaQuery('(max-width: 1023px)');
+
+	// Mobile: show Stitch-based mobile schedule view
+	if (isMobile) {
+		return (
+			<>
+				<div className="flex h-[calc(100vh-4rem)] w-full overflow-hidden text-gray-900 dark:text-slate-100">
+					<MobileScheduleView
+						scheduledItems={scheduledItems}
+						currentDate={currentDate}
+						onDateChange={setCurrentDate}
+						onItemClick={handleOpenPreview}
+						onRefresh={mutate}
+						readyCount={readyItems.length}
+						onReadyClick={() => setShowMobileSidebar(true)}
+					/>
+				</div>
+
+				{/* Mobile Ready to Post - Full-screen Stitch view */}
+				{showMobileSidebar && (
+					<MobileReadyToPost
+						items={readyItems}
+						scheduledItems={scheduledItems}
+						onBack={() => setShowMobileSidebar(false)}
+						onItemClick={(item) => {
+							setShowMobileSidebar(false);
+							handleOpenPreview(item);
+						}}
+						onRefresh={mutate}
+					/>
+				)}
+
+				{/* Preview Modal */}
+				{previewItem && (
+					<ContentPreviewModal
+						item={previewItem}
+						onClose={() => setPreviewItem(null)}
+						onEdit={(item) => { setPreviewItem(null); setEditItem(item); }}
+						onRefresh={mutate}
+						isAdmin={isAdmin}
+						items={allItems}
+						currentIndex={allItems.findIndex((i) => i.id === previewItem.id)}
+						onNavigate={(item) => setPreviewItem(item)}
+					/>
+				)}
+				{editItem && (
+					<ContentEditModal item={editItem} onClose={() => setEditItem(null)} onSave={mutate} />
+				)}
+			</>
+		);
+	}
+
+	// Desktop: existing layout
 	return (
 		<DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
 			<div className="flex h-[calc(100vh-4rem)] w-full overflow-hidden bg-gray-50 text-gray-900 dark:bg-[#101622] dark:text-slate-100">

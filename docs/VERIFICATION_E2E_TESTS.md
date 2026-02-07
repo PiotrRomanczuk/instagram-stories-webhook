@@ -74,9 +74,9 @@ npm run test
 
 1. `__tests__/e2e/instagram-publishing-live.spec.ts` - Added 3 user tagging tests
 2. `app/api/debug/publish/route.ts` - Accepts userTags parameter
-3. `run-user-tagging-tests.sh` - Helper script (new)
-4. `USER_TAGGING_E2E_TESTS.md` - Full documentation (new)
-5. `QUICK_TEST_VERIFICATION.md` - This file (new)
+3. `scripts/run-user-tagging-tests.sh` - Helper script (new)
+4. `docs/FEATURE_USER_TAGGING_TESTS.md` - Full documentation (new)
+5. `docs/VERIFICATION_E2E_TESTS.md` - This file (new)
 
 ## Test User
 

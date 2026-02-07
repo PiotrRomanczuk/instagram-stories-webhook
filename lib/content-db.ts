@@ -29,6 +29,7 @@ interface GetContentOptions {
 	sortBy?: 'newest' | 'oldest' | 'schedule-asc'; // Sort direction
 	scheduledTimeAfter?: number; // Filter scheduled_time >= value
 	scheduledTimeBefore?: number; // Filter scheduled_time < value
+	includeArchived?: boolean; // Include archived items (default: false)
 	limit?: number;
 	offset?: number;
 }
@@ -48,6 +49,7 @@ export async function getContentItems(
 		sortBy = 'newest',
 		scheduledTimeAfter,
 		scheduledTimeBefore,
+		includeArchived = false,
 		limit = 20,
 		offset = 0,
 	} = options;
@@ -56,6 +58,9 @@ export async function getContentItems(
 		let query = supabaseAdmin
 			.from('content_items')
 			.select('*', { count: 'exact' });
+
+		// Filter out archived items by default
+		if (!includeArchived) query = query.is('archived_at', null);
 
 		// Apply filters
 		if (userId) query = query.eq('user_id', userId);
@@ -781,6 +786,34 @@ export async function getContentItemForProcessing(
 	} catch (error) {
 		console.error('Error in getContentItemForProcessing:', error);
 		return null;
+	}
+}
+
+// ============== ARCHIVE ==============
+
+/**
+ * Soft-archive a content item by setting archived_at timestamp
+ */
+export async function archiveContentItem(id: string): Promise<boolean> {
+	try {
+		const { error } = await supabaseAdmin
+			.from('content_items')
+			.update({
+				archived_at: new Date().toISOString(),
+				updated_at: new Date().toISOString(),
+			})
+			.eq('id', id)
+			.is('archived_at', null);
+
+		if (error) {
+			console.error('Error archiving content item:', error);
+			return false;
+		}
+
+		return true;
+	} catch (error) {
+		console.error('Error in archiveContentItem:', error);
+		return false;
 	}
 }
 

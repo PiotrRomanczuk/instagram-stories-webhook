@@ -14,7 +14,7 @@
 
 ## Design Reference
 
-See the template screenshots in `/stitch_content_queue_dashboard/` folder:
+See the template screenshots in `/screenshots/stitch-project/` folder:
 - `content_queue_dashboard_1/screen.png` - Main content queue with dark mode
 - `content_queue_dashboard_2/screen.png` - Alternative queue layout
 - `story_review_&_approval_panel_1/screen.png` - Review interface
@@ -210,7 +210,7 @@ import { MediaThumbnail } from '@/app/components/ui/media-thumbnail';
 
 ## Files to Reference
 
-The HTML templates are in `/stitch_content_queue_dashboard/*/code.html` - these show the complete styling with Tailwind classes that can be adapted to React components.
+The HTML templates are in `/screenshots/stitch-project/*/code.html` - these show the complete styling with Tailwind classes that can be adapted to React components.
 
 ## Priority Order
 
