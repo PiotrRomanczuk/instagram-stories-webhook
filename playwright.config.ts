@@ -30,8 +30,11 @@ export default defineConfig({
     // Collect trace when retrying the failed test
     trace: 'on-first-retry',
 
-    // Screenshot on failure
-    screenshot: 'only-on-failure',
+    // Screenshot on failure — saved to screenshots/ directory
+    screenshot: {
+      mode: 'only-on-failure',
+      fullPage: true,
+    },
 
     // Video on failure
     video: 'retain-on-failure',
@@ -152,4 +155,8 @@ export default defineConfig({
 
   // Output folder for test artifacts
   outputDir: 'test-results',
+
+  // Screenshot output directory
+  snapshotDir: 'screenshots',
+  snapshotPathTemplate: 'screenshots/{testFilePath}/{arg}{ext}',
 });

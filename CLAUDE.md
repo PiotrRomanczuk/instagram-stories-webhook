@@ -604,6 +604,10 @@ app/                    # Next.js routes
 lib/                    # Shared logic
 ├─ auth.ts, config/, instagram/, scheduler/, media/, types/, validations/
 
+docs/                   # Project documentation (guides, feature docs, standards)
+scripts/                # Utility scripts (migrations, deployment, testing)
+screenshots/            # Playwright failure screenshots & manual reference images
+
 __tests__/              # Unit tests (Vitest)
 tests/e2e/              # E2E tests (Playwright)
 supabase/               # Migrations + seeds
