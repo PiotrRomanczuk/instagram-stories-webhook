@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import { ContentItem } from '@/lib/types/posts';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
-import { AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { SwipeableReadyCard } from './swipeable-ready-card';
 import { useSwipeManager } from '@/app/hooks/use-swipe-manager';
 import { ContentEditModal } from '../content/content-edit-modal';
@@ -234,7 +234,13 @@ export function MobileReadyToPost({ items, scheduledItems = [], onBack, onItemCl
 	}, [selectedIds, readyItems, clearSelection, onRefresh]);
 
 	return (
-		<div className="fixed inset-0 z-50 flex flex-col bg-gray-100 dark:bg-[#0f1115] text-gray-900 dark:text-gray-100">
+		<motion.div
+			initial={{ x: '100%' }}
+			animate={{ x: 0 }}
+			exit={{ x: '100%' }}
+			transition={{ type: 'spring', damping: 26, stiffness: 200 }}
+			className="fixed inset-0 z-50 flex flex-col bg-gray-100 dark:bg-[#0f1115] text-gray-900 dark:text-gray-100"
+		>
 			{/* Header */}
 			<header className="flex h-16 shrink-0 items-center justify-between border-b border-gray-200 bg-white/90 px-4 backdrop-blur-xl dark:border-gray-800 dark:bg-[#181b21]/90">
 				<div className="flex items-center gap-3">
@@ -440,6 +446,6 @@ export function MobileReadyToPost({ items, scheduledItems = [], onBack, onItemCl
 					}}
 				/>
 			)}
-		</div>
+		</motion.div>
 	);
 }

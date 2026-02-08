@@ -28,6 +28,7 @@ import { ContentEditModal } from '../content/content-edit-modal';
 import { ContentItem } from '@/lib/types/posts';
 import type { UserRole } from '@/lib/types/posts';
 import { Layers, ChevronRight } from 'lucide-react';
+import { AnimatePresence } from 'framer-motion';
 import { TimelineLayout, groupPostsByTime } from '../schedule-mobile/timeline-layout';
 import type { TimelineCardPost } from '../schedule-mobile/timeline-card';
 import { MobileScheduleView } from '../schedule-mobile/mobile-schedule-view';
@@ -245,18 +246,20 @@ export function ScheduleCalendarLayout() {
 				</div>
 
 				{/* Mobile Ready to Post - Full-screen Stitch view */}
-				{showMobileSidebar && (
-					<MobileReadyToPost
-						items={readyItems}
-						scheduledItems={scheduledItems}
-						onBack={() => setShowMobileSidebar(false)}
-						onItemClick={(item) => {
-							setShowMobileSidebar(false);
-							handleOpenPreview(item);
-						}}
-						onRefresh={mutate}
-					/>
-				)}
+				<AnimatePresence>
+					{showMobileSidebar && (
+						<MobileReadyToPost
+							items={readyItems}
+							scheduledItems={scheduledItems}
+							onBack={() => setShowMobileSidebar(false)}
+							onItemClick={(item) => {
+								setShowMobileSidebar(false);
+								handleOpenPreview(item);
+							}}
+							onRefresh={mutate}
+						/>
+					)}
+				</AnimatePresence>
 
 				{/* Preview Modal */}
 				{previewItem && (
