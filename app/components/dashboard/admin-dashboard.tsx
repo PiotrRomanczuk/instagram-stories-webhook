@@ -122,7 +122,7 @@ export function AdminDashboard({ userName, isDeveloper }: AdminDashboardProps) {
 	];
 
 	return (
-		<div className="space-y-8">
+		<div className="space-y-6">
 			{/* Welcome Section */}
 			<div data-tour="admin-welcome">
 				<h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
@@ -133,16 +133,40 @@ export function AdminDashboard({ userName, isDeveloper }: AdminDashboardProps) {
 				</p>
 			</div>
 
+			{/* Failed Posts Alert */}
+			{stats.failed > 0 && (
+				<Card className="border-red-200 bg-red-50" data-tour="admin-failed-alert">
+					<CardContent className="flex items-center justify-between p-4">
+						<div className="flex items-center gap-3">
+							<div className="rounded-full bg-red-100 p-2">
+								<AlertCircle className="h-5 w-5 text-red-600" />
+							</div>
+							<div>
+								<p className="font-medium text-red-900">
+									{stats.failed} post{stats.failed !== 1 ? 's' : ''} failed to publish
+								</p>
+								<p className="text-sm text-red-700">
+									Review and retry failed posts in the schedule manager.
+								</p>
+							</div>
+						</div>
+						<Button variant="outline" size="sm" asChild>
+							<Link href="/schedule?filter=failed">View Failed</Link>
+						</Button>
+					</CardContent>
+				</Card>
+			)}
+
 			{/* Stats Grid */}
 			{isLoading ? (
-				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+				<div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-6">
 					{Array.from({ length: 6 }).map((_, i) => (
 						<StatsCardSkeleton key={i} />
 					))}
 				</div>
 			) : (
 				<div
-					className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
+					className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-6"
 					data-tour="admin-stats-grid"
 				>
 					<div data-tour="admin-stat-pending">
@@ -230,30 +254,6 @@ export function AdminDashboard({ userName, isDeveloper }: AdminDashboardProps) {
 					<TokenStatusCard />
 				</div>
 			</div>
-
-			{/* Failed Posts Alert */}
-			{stats.failed > 0 && (
-				<Card className="border-red-200 bg-red-50" data-tour="admin-failed-alert">
-					<CardContent className="flex items-center justify-between p-4">
-						<div className="flex items-center gap-3">
-							<div className="rounded-full bg-red-100 p-2">
-								<AlertCircle className="h-5 w-5 text-red-600" />
-							</div>
-							<div>
-								<p className="font-medium text-red-900">
-									{stats.failed} post{stats.failed !== 1 ? 's' : ''} failed to publish
-								</p>
-								<p className="text-sm text-red-700">
-									Review and retry failed posts in the schedule manager.
-								</p>
-							</div>
-						</div>
-						<Button variant="outline" size="sm" asChild>
-							<Link href="/schedule?filter=failed">View Failed</Link>
-						</Button>
-					</CardContent>
-				</Card>
-			)}
 		</div>
 	);
 }

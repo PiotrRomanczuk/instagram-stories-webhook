@@ -28,12 +28,12 @@ export function StatsCard({
 }: StatsCardProps) {
 	return (
 		<Card className={cn('', className)}>
-			<CardContent className="p-6">
+			<CardContent className="p-4 sm:p-6">
 				<div className="flex items-start justify-between">
 					<div className="space-y-2">
 						<p className="text-sm font-medium text-muted-foreground">{label}</p>
 						<div className="flex items-baseline gap-2">
-							<p className="text-3xl font-bold tracking-tight">{value}</p>
+							<p className="text-2xl sm:text-3xl font-bold tracking-tight">{value}</p>
 							{trend && (
 								<span
 									className={cn(
@@ -49,7 +49,7 @@ export function StatsCard({
 							<p className="text-xs text-muted-foreground">{description}</p>
 						)}
 					</div>
-					<div className={cn('rounded-lg p-3', iconBgColor)}>{icon}</div>
+					<div className={cn('rounded-lg p-2 sm:p-3', iconBgColor)}>{icon}</div>
 				</div>
 			</CardContent>
 		</Card>
@@ -59,14 +59,14 @@ export function StatsCard({
 export function StatsCardSkeleton({ className }: { className?: string }) {
 	return (
 		<Card className={className}>
-			<CardContent className="p-6">
+			<CardContent className="p-4 sm:p-6">
 				<div className="flex items-start justify-between">
 					<div className="space-y-2">
 						<Skeleton className="h-4 w-24" />
-						<Skeleton className="h-8 w-16" />
+						<Skeleton className="h-7 sm:h-8 w-16" />
 						<Skeleton className="h-3 w-32" />
 					</div>
-					<Skeleton className="h-12 w-12 rounded-lg" />
+					<Skeleton className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg" />
 				</div>
 			</CardContent>
 		</Card>

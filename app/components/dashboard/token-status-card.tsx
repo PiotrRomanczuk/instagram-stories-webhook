@@ -77,7 +77,7 @@ export function TokenStatusCard() {
 
 	if (!connected || !tokenData) {
 		return (
-			<Card>
+			<Card className="border-amber-200 bg-amber-50">
 				<CardHeader className="pb-3">
 					<CardTitle className="flex items-center gap-2 text-base">
 						<Key className="h-4 w-4" />
@@ -85,10 +85,13 @@ export function TokenStatusCard() {
 					</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<div className="flex items-center gap-3 text-muted-foreground">
-						<XCircle className="h-5 w-5" />
+					<div className="flex items-center gap-3 text-amber-800">
+						<XCircle className="h-5 w-5 text-amber-500" />
 						<span className="text-sm">No token linked. Connect your Instagram account.</span>
 					</div>
+					<Button variant="outline" size="sm" className="mt-3 w-full" asChild>
+						<a href="/api/auth/link-facebook">Connect Instagram</a>
+					</Button>
 				</CardContent>
 			</Card>
 		);
