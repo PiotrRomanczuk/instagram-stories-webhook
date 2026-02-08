@@ -83,12 +83,71 @@ export function UsersTable({
 	}
 
 	return (
-		<div className="rounded-md border">
+		<>
+		{/* Mobile card list */}
+		<div className="sm:hidden space-y-2">
+			{users.map((user) => {
+				const isCurrentUser = user.email.toLowerCase() === currentUserEmail?.toLowerCase();
+				return (
+					<div
+						key={user.id || user.email}
+						className={cn(
+							'flex items-center justify-between gap-3 rounded-lg border p-3',
+							isCurrentUser && 'bg-muted/50'
+						)}
+					>
+						<div className="min-w-0 flex-1">
+							<div className="flex items-center gap-2">
+								<span className="truncate text-sm font-medium">{user.email}</span>
+								{isCurrentUser && (
+									<Badge variant="outline" className="shrink-0 text-xs">You</Badge>
+								)}
+							</div>
+							<div className="mt-1 flex items-center gap-2">
+								{getRoleBadge(user.role)}
+								{user.created_at && (
+									<span className="text-xs text-muted-foreground">
+										{format(new Date(user.created_at), 'MMM d, yyyy')}
+									</span>
+								)}
+							</div>
+						</div>
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button variant="ghost" size="sm" disabled={isCurrentUser}>
+									<MoreHorizontal className="h-4 w-4" />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align="end">
+								<DropdownMenuLabel>Change Role</DropdownMenuLabel>
+								<DropdownMenuSeparator />
+								<DropdownMenuItem onClick={() => onChangeRole(user.email, 'user')} disabled={user.role === 'user'}>
+									<User className="mr-2 h-4 w-4" />Set as User
+								</DropdownMenuItem>
+								<DropdownMenuItem onClick={() => onChangeRole(user.email, 'admin')} disabled={user.role === 'admin'}>
+									<Shield className="mr-2 h-4 w-4" />Set as Admin
+								</DropdownMenuItem>
+								<DropdownMenuItem onClick={() => onChangeRole(user.email, 'developer')} disabled={user.role === 'developer'}>
+									<Code className="mr-2 h-4 w-4" />Set as Developer
+								</DropdownMenuItem>
+								<DropdownMenuSeparator />
+								<DropdownMenuItem onClick={() => onRemove(user.email)} className="text-destructive focus:text-destructive">
+									<Trash2 className="mr-2 h-4 w-4" />Remove User
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
+					</div>
+				);
+			})}
+		</div>
+
+		{/* Desktop table */}
+		<div className="hidden sm:block rounded-md border">
 			<Table>
 				<TableHeader>
 					<TableRow>
 						<TableHead>Email</TableHead>
-						<TableHead>Display Name</TableHead>
+						<TableHead className="hidden md:table-cell">Display Name</TableHead>
 						<TableHead>Role</TableHead>
 						<TableHead>Added</TableHead>
 						<TableHead className="text-right">Actions</TableHead>
@@ -113,7 +172,7 @@ export function UsersTable({
 										)}
 									</div>
 								</TableCell>
-								<TableCell>
+								<TableCell className="hidden md:table-cell">
 									{user.display_name || (
 										<span className="text-muted-foreground">—</span>
 									)}
@@ -180,17 +239,33 @@ export function UsersTable({
 				</TableBody>
 			</Table>
 		</div>
+		</>
 	);
 }
 
 function UsersTableSkeleton() {
 	return (
-		<div className="rounded-md border">
+		<>
+		{/* Mobile skeleton */}
+		<div className="sm:hidden space-y-2">
+			{Array.from({ length: 5 }).map((_, i) => (
+				<div key={i} className="flex items-center justify-between rounded-lg border p-3">
+					<div className="space-y-2 flex-1">
+						<Skeleton className="h-4 w-48" />
+						<Skeleton className="h-5 w-20" />
+					</div>
+					<Skeleton className="h-8 w-8" />
+				</div>
+			))}
+		</div>
+
+		{/* Desktop skeleton */}
+		<div className="hidden sm:block rounded-md border">
 			<Table>
 				<TableHeader>
 					<TableRow>
 						<TableHead>Email</TableHead>
-						<TableHead>Display Name</TableHead>
+						<TableHead className="hidden md:table-cell">Display Name</TableHead>
 						<TableHead>Role</TableHead>
 						<TableHead>Added</TableHead>
 						<TableHead className="text-right">Actions</TableHead>
@@ -202,7 +277,7 @@ function UsersTableSkeleton() {
 							<TableCell>
 								<Skeleton className="h-4 w-48" />
 							</TableCell>
-							<TableCell>
+							<TableCell className="hidden md:table-cell">
 								<Skeleton className="h-4 w-32" />
 							</TableCell>
 							<TableCell>
@@ -219,5 +294,6 @@ function UsersTableSkeleton() {
 				</TableBody>
 			</Table>
 		</div>
+		</>
 	);
 }

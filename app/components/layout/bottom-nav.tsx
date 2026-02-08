@@ -2,7 +2,7 @@
 
 import { Link, usePathname } from '@/i18n/routing';
 import { useSession } from 'next-auth/react';
-import { Home, Calendar, Plus, Check, BarChart3, User } from 'lucide-react';
+import { Home, Calendar, Plus, Check, ClipboardCheck, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UserRole } from '@/lib/types';
 
@@ -27,7 +27,7 @@ export function BottomNav() {
 		{ href: '/', label: 'Home', icon: Home },
 		{ href: '/schedule', label: 'Schedule', icon: Calendar },
 		{ href: '/submit', label: 'New', icon: Plus, isFab: true },
-		{ href: '/insights', label: 'Insights', icon: BarChart3 },
+		{ href: '/review', label: 'Review', icon: ClipboardCheck },
 		{ href: '/submissions', label: 'Profile', icon: User },
 	];
 

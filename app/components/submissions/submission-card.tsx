@@ -2,8 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { Eye, Edit, Trash2, Share2, ImageOff, X } from 'lucide-react';
-import { toast } from 'sonner';
+import { Eye, Edit, Trash2, ImageOff, X } from 'lucide-react';
 import { ContentItem } from '@/lib/types';
 import { SfAvatar, SfStatusBadge } from '@/app/components/storyflow';
 import { Dialog, DialogContent, DialogTitle } from '@/app/components/ui/dialog';
@@ -76,27 +75,6 @@ export function SubmissionCard({
 		}
 	}, [onView, submission]);
 
-	const handleShare = useCallback(async () => {
-		const shareData = {
-			title: submission.caption || 'Instagram Story',
-			url: submission.mediaUrl,
-		};
-
-		try {
-			if (navigator.share) {
-				await navigator.share(shareData);
-			} else {
-				await navigator.clipboard.writeText(submission.mediaUrl);
-				toast.success('Link copied to clipboard');
-			}
-		} catch (err) {
-			if ((err as Error).name !== 'AbortError') {
-				await navigator.clipboard.writeText(submission.mediaUrl);
-				toast.success('Link copied to clipboard');
-			}
-		}
-	}, [submission]);
-
 	return (
 		<div
 			className={cn(
@@ -142,23 +120,14 @@ export function SubmissionCard({
 				)}
 			>
 				{isPublished ? (
-					// Published items: show view and share
-					<>
-						<button
-							onClick={handleView}
-							className="size-10 rounded-full bg-white text-black flex items-center justify-center hover:bg-[var(--sf-primary)] hover:text-white transition-all transform hover:scale-110"
-							aria-label="View"
-						>
-							<Eye className="h-5 w-5" />
-						</button>
-						<button
-							className="size-10 rounded-full bg-white text-black flex items-center justify-center hover:bg-[var(--sf-primary)] hover:text-white transition-all transform hover:scale-110"
-							onClick={handleShare}
-						aria-label="Share"
-						>
-							<Share2 className="h-5 w-5" />
-						</button>
-					</>
+					// Published items: show view
+					<button
+						onClick={handleView}
+						className="size-10 rounded-full bg-white text-black flex items-center justify-center hover:bg-[var(--sf-primary)] hover:text-white transition-all transform hover:scale-110"
+						aria-label="View"
+					>
+						<Eye className="h-5 w-5" />
+					</button>
 				) : (
 					// Non-published items: view, edit, delete
 					<>
@@ -225,18 +194,9 @@ export function SubmissionCard({
 						/>
 					)}
 					<div className="p-4 bg-black">
-						<div className="flex items-center justify-between">
-							<div className="flex items-center gap-2">
-								<SfStatusBadge status={status} size="sm" />
-								<span className="text-white/60 text-xs">{getTimeText()}</span>
-							</div>
-							<button
-								onClick={handleShare}
-								className="size-8 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20 transition-colors"
-								aria-label="Share"
-							>
-								<Share2 className="h-4 w-4" />
-							</button>
+						<div className="flex items-center gap-2">
+							<SfStatusBadge status={status} size="sm" />
+							<span className="text-white/60 text-xs">{getTimeText()}</span>
 						</div>
 						{submission.caption && (
 							<p className="text-white text-sm mt-3 line-clamp-3">{submission.caption}</p>

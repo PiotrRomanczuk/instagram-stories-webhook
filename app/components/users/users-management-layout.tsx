@@ -97,7 +97,7 @@ export function UsersManagementLayout() {
 
 	return (
 		<>
-			<div className="flex min-h-[calc(100vh-8rem)] flex-col space-y-6">
+			<div className="flex min-h-[calc(100vh-8rem)] flex-col space-y-6 pb-24 lg:pb-8">
 				{/* Page Header */}
 				<div className="flex flex-wrap items-start justify-between gap-4">
 					<div className="flex flex-col gap-1">
@@ -108,14 +108,14 @@ export function UsersManagementLayout() {
 							Manage user access and roles for the application.
 						</p>
 					</div>
-					<Button onClick={handleAddUser} className="gap-2">
+					<Button onClick={handleAddUser} className="hidden sm:inline-flex gap-2">
 						<UserPlus className="h-4 w-4" />
 						Add User
 					</Button>
 				</div>
 
 				{/* Stats Cards */}
-				<div className="grid gap-4 md:grid-cols-4">
+				<div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
 					<div className="rounded-lg border bg-card p-4">
 						<div className="text-sm font-medium text-muted-foreground">
 							Total Users

@@ -9,12 +9,8 @@ import {
 	ClipboardCheck,
 	Calendar,
 	Users,
-	Terminal,
 	Menu,
 	Languages,
-	Inbox,
-	BarChart3,
-	LineChart,
 } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -83,34 +79,10 @@ export function Navbar() {
 			roles: ['admin', 'developer'],
 		},
 		{
-			href: '/inbox',
-			label: t('inbox') || 'Inbox',
-			icon: Inbox,
-			roles: ['admin', 'developer'],
-		},
-		{
-			href: '/insights',
-			label: t('insights') || 'Insights',
-			icon: BarChart3,
-			roles: ['admin', 'developer'],
-		},
-		{
-			href: '/analytics',
-			label: t('analytics') || 'Analytics',
-			icon: LineChart,
-			roles: ['admin', 'developer'],
-		},
-		{
 			href: '/users',
 			label: t('users'),
 			icon: Users,
 			roles: ['admin', 'developer'],
-		},
-		{
-			href: '/developer',
-			label: t('devTools'),
-			icon: Terminal,
-			roles: ['developer'],
 		},
 	];
 
