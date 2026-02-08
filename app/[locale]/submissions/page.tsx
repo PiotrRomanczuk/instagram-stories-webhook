@@ -84,7 +84,7 @@ export default function SubmissionsPage() {
 
 	return (
 		<main className="min-h-screen bg-gray-50 dark:bg-[#101622]">
-			<div className="max-w-[1200px] mx-auto px-4 lg:px-10 py-8">
+			<div className="max-w-[1200px] mx-auto px-4 lg:px-10 pt-8 pb-24 lg:pb-8">
 				{/* Page Header */}
 				<div className="flex flex-wrap justify-between items-end gap-3 mb-8">
 					<div className="flex flex-col gap-2">
@@ -97,7 +97,7 @@ export default function SubmissionsPage() {
 					</div>
 					<Button
 						asChild
-						className="bg-[#2b6cee] hover:bg-[#2b6cee]/90 text-white"
+						className="hidden sm:inline-flex bg-[#2b6cee] hover:bg-[#2b6cee]/90 text-white"
 					>
 						<Link href="/submit">
 							<Plus className="mr-2 h-4 w-4" />
@@ -107,7 +107,7 @@ export default function SubmissionsPage() {
 				</div>
 
 				{/* Stats Cards */}
-				<div className="mb-10">
+				<div className="mb-6 lg:mb-10">
 					<SubmissionStats
 						pending={stats.pending}
 						approved={stats.approved}
@@ -118,7 +118,7 @@ export default function SubmissionsPage() {
 				</div>
 
 				{/* Tab Filters */}
-				<div className="mb-6 border-b border-gray-200 dark:border-[#232f48]">
+				<div className="relative mb-6 border-b border-gray-200 dark:border-[#232f48]">
 					<div className="flex gap-8 px-2 overflow-x-auto no-scrollbar">
 						{TABS.map((tab) => (
 							<button
@@ -138,6 +138,7 @@ export default function SubmissionsPage() {
 							</button>
 						))}
 					</div>
+					<div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-gray-50 dark:from-[#101622] sm:hidden" />
 				</div>
 
 				{/* Submissions List */}

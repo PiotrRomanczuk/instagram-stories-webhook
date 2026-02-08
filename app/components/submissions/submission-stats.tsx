@@ -24,7 +24,7 @@ export function SubmissionStats({
 }: SubmissionStatsProps) {
 	if (isLoading) {
 		return (
-			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+			<div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
 				<SfStatsCardSkeleton />
 				<SfStatsCardSkeleton />
 				<SfStatsCardSkeleton />
@@ -34,7 +34,7 @@ export function SubmissionStats({
 	}
 
 	return (
-		<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+		<div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
 			<SfStatsCard
 				label="Pending"
 				value={pending}

@@ -42,7 +42,7 @@ function getStatusType(submission: ContentItem): StatusType {
 
 function GridSkeleton() {
 	return (
-		<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+		<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-6">
 			{Array.from({ length: 10 }).map((_, i) => (
 				<SubmissionCardSkeleton key={i} />
 			))}
@@ -146,7 +146,7 @@ export function SubmissionList({
 	return (
 		<div className={cn('space-y-6', className)}>
 			{/* View toggle */}
-			<div className="flex justify-end">
+			<div className="hidden sm:flex justify-end">
 				<ToggleGroup
 					type="single"
 					value={viewMode}
@@ -170,9 +170,9 @@ export function SubmissionList({
 				</ToggleGroup>
 			</div>
 
-			{/* Grid view - 5 columns on xl, 4 on lg, 3 on md, 2 on sm, 1 on mobile */}
+			{/* Grid view - 5 columns on xl, 4 on lg, 3 on md, 2 on mobile */}
 			{viewMode === 'grid' && (
-				<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+				<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-6">
 					{submissions.map((submission) => (
 						<SubmissionCard
 							key={submission.id}
@@ -187,7 +187,7 @@ export function SubmissionList({
 
 			{/* Table view */}
 			{viewMode === 'table' && (
-				<div className="rounded-xl border border-gray-200 dark:border-[var(--sf-border-dark)] bg-white dark:bg-[var(--sf-card-dark)] overflow-hidden">
+				<div className="rounded-xl border border-gray-200 dark:border-[var(--sf-border-dark)] bg-white dark:bg-[var(--sf-card-dark)] overflow-x-auto overflow-hidden">
 					<Table>
 						<TableHeader>
 							<TableRow className="border-gray-200 dark:border-[var(--sf-border-dark)] hover:bg-transparent">

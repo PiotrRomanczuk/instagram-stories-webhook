@@ -1,10 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { Eye, Edit, Trash2, BarChart3, Share2, ImageOff } from 'lucide-react';
+import { Eye, Edit, Trash2, Share2, ImageOff, X } from 'lucide-react';
+import { toast } from 'sonner';
 import { ContentItem } from '@/lib/types';
 import { SfAvatar, SfStatusBadge } from '@/app/components/storyflow';
+import { Dialog, DialogContent, DialogTitle } from '@/app/components/ui/dialog';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { cn } from '@/lib/utils';
 
 interface SubmissionCardProps {
@@ -45,6 +48,7 @@ export function SubmissionCard({
 	className,
 }: SubmissionCardProps) {
 	const [imageError, setImageError] = useState(false);
+	const [previewOpen, setPreviewOpen] = useState(false);
 	const hasValidUrl = submission.mediaUrl && !submission.mediaUrl.startsWith('blob:');
 	const status = getDisplayStatus(submission);
 	const isPublished = status === 'published';
@@ -63,6 +67,35 @@ export function SubmissionCard({
 
 	// Extract username from email for display
 	const displayName = submission.userEmail?.split('@')[0] || 'Unknown';
+
+	const handleView = useCallback(() => {
+		if (onView) {
+			onView(submission);
+		} else {
+			setPreviewOpen(true);
+		}
+	}, [onView, submission]);
+
+	const handleShare = useCallback(async () => {
+		const shareData = {
+			title: submission.caption || 'Instagram Story',
+			url: submission.mediaUrl,
+		};
+
+		try {
+			if (navigator.share) {
+				await navigator.share(shareData);
+			} else {
+				await navigator.clipboard.writeText(submission.mediaUrl);
+				toast.success('Link copied to clipboard');
+			}
+		} catch (err) {
+			if ((err as Error).name !== 'AbortError') {
+				await navigator.clipboard.writeText(submission.mediaUrl);
+				toast.success('Link copied to clipboard');
+			}
+		}
+	}, [submission]);
 
 	return (
 		<div
@@ -100,23 +133,28 @@ export function SubmissionCard({
 			<div
 				className={cn(
 					'absolute inset-0 flex items-center justify-center gap-3',
-					'bg-black/40 backdrop-blur-[2px]',
-					'opacity-0 group-hover:opacity-100 transition-opacity duration-300'
+					'transition-opacity duration-300',
+					// Mobile: always visible, no backdrop
+					'opacity-100',
+					// Desktop: hidden until hover, with backdrop
+					'lg:opacity-0 lg:group-hover:opacity-100',
+					'lg:bg-black/40 lg:backdrop-blur-[2px]'
 				)}
 			>
 				{isPublished ? (
-					// Published items: show analytics and share
+					// Published items: show view and share
 					<>
 						<button
-							onClick={() => onView?.(submission)}
+							onClick={handleView}
 							className="size-10 rounded-full bg-white text-black flex items-center justify-center hover:bg-[var(--sf-primary)] hover:text-white transition-all transform hover:scale-110"
-							aria-label="View analytics"
+							aria-label="View"
 						>
-							<BarChart3 className="h-5 w-5" />
+							<Eye className="h-5 w-5" />
 						</button>
 						<button
 							className="size-10 rounded-full bg-white text-black flex items-center justify-center hover:bg-[var(--sf-primary)] hover:text-white transition-all transform hover:scale-110"
-							aria-label="Share"
+							onClick={handleShare}
+						aria-label="Share"
 						>
 							<Share2 className="h-5 w-5" />
 						</button>
@@ -125,7 +163,7 @@ export function SubmissionCard({
 					// Non-published items: view, edit, delete
 					<>
 						<button
-							onClick={() => onView?.(submission)}
+							onClick={handleView}
 							className="size-10 rounded-full bg-white text-black flex items-center justify-center hover:bg-[var(--sf-primary)] hover:text-white transition-all transform hover:scale-110"
 							aria-label="View"
 						>
@@ -167,6 +205,45 @@ export function SubmissionCard({
 				</div>
 				<p className="text-white/60 text-[11px]">{getTimeText()}</p>
 			</div>
+
+			{/* Preview Dialog */}
+			<Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+				<DialogContent className="max-w-lg p-0 overflow-hidden bg-black border-none gap-0">
+					<VisuallyHidden><DialogTitle>Preview</DialogTitle></VisuallyHidden>
+					<button
+						onClick={() => setPreviewOpen(false)}
+						className="absolute right-3 top-3 z-10 size-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 transition-colors"
+						aria-label="Close"
+					>
+						<X className="h-4 w-4" />
+					</button>
+					{hasValidUrl && (
+						<img
+							src={submission.mediaUrl}
+							alt={submission.title || 'Submission'}
+							className="w-full max-h-[80vh] object-contain"
+						/>
+					)}
+					<div className="p-4 bg-black">
+						<div className="flex items-center justify-between">
+							<div className="flex items-center gap-2">
+								<SfStatusBadge status={status} size="sm" />
+								<span className="text-white/60 text-xs">{getTimeText()}</span>
+							</div>
+							<button
+								onClick={handleShare}
+								className="size-8 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20 transition-colors"
+								aria-label="Share"
+							>
+								<Share2 className="h-4 w-4" />
+							</button>
+						</div>
+						{submission.caption && (
+							<p className="text-white text-sm mt-3 line-clamp-3">{submission.caption}</p>
+						)}
+					</div>
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }
