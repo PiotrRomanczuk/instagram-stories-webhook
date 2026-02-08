@@ -10,10 +10,13 @@ interface StatsCardProps {
 	icon: React.ReactNode;
 	iconBgColor?: string;
 	description?: string;
+	descriptionClassName?: string;
 	trend?: {
 		value: number;
 		isPositive: boolean;
 	};
+	progress?: number;
+	progressColor?: string;
 	className?: string;
 }
 
@@ -23,9 +26,14 @@ export function StatsCard({
 	icon,
 	iconBgColor = 'bg-primary/10',
 	description,
+	descriptionClassName,
 	trend,
+	progress,
+	progressColor = 'bg-emerald-500',
 	className,
 }: StatsCardProps) {
+	const isZero = value === 0 || value === '0';
+
 	return (
 		<Card className={cn('', className)}>
 			<CardContent className="p-4 sm:p-6">
@@ -33,7 +41,14 @@ export function StatsCard({
 					<div className="space-y-2">
 						<p className="text-sm font-medium text-muted-foreground">{label}</p>
 						<div className="flex items-baseline gap-2">
-							<p className="text-2xl sm:text-3xl font-bold tracking-tight">{value}</p>
+							<p
+								className={cn(
+									'text-2xl sm:text-3xl font-bold tracking-tight',
+									isZero && 'text-muted-foreground/50'
+								)}
+							>
+								{value}
+							</p>
 							{trend && (
 								<span
 									className={cn(
@@ -45,8 +60,18 @@ export function StatsCard({
 								</span>
 							)}
 						</div>
+						{progress !== undefined && (
+							<div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
+								<div
+									className={cn('h-full rounded-full transition-all', progressColor)}
+									style={{ width: `${Math.min(progress, 100)}%` }}
+								/>
+							</div>
+						)}
 						{description && (
-							<p className="text-xs text-muted-foreground">{description}</p>
+							<p className={cn('text-xs text-muted-foreground', descriptionClassName)}>
+								{description}
+							</p>
 						)}
 					</div>
 					<div className={cn('rounded-lg p-2 sm:p-3', iconBgColor)}>{icon}</div>

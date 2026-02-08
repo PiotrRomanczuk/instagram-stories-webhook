@@ -105,9 +105,9 @@ export function QuotaUsageCard() {
                             <div className="flex items-end justify-between">
                                 <div>
                                     <p className="text-3xl font-black text-slate-800 tracking-tight">
-                                        {used} <span className="text-lg text-slate-400 font-medium">/ {total}</span>
+                                        {used} <span className="text-lg text-slate-400 font-medium">/ {total} used</span>
                                     </p>
-                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">Posts Used Today</p>
+                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">{total - used} posts remaining in 24h window</p>
                                 </div>
                                 <div className={`p-3 rounded-2xl bg-white border border-slate-100 shadow-sm ${colorClass}`}>
                                     <Icon className="w-8 h-8" />

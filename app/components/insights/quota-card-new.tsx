@@ -109,7 +109,10 @@ export function QuotaCardNew() {
 						<Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
 					</div>
 				) : !quota ? (
-					<p className="text-sm text-muted-foreground">Usage data unavailable.</p>
+					<div className="text-center py-2 space-y-2">
+						<p className="text-sm text-muted-foreground">Connect Instagram to track API usage.</p>
+						<p className="text-xs text-muted-foreground/60">Meta allows 100 posts per 24h rolling window.</p>
+					</div>
 				) : (
 					<div className="space-y-4">
 						<div className="flex items-end justify-between">
@@ -117,11 +120,11 @@ export function QuotaCardNew() {
 								<p className="text-3xl font-bold">
 									{used}{' '}
 									<span className="text-lg text-muted-foreground font-normal">
-										/ {total}
+										/ {total} used
 									</span>
 								</p>
 								<p className="text-xs text-muted-foreground mt-1">
-									Posts Used Today
+									{total - used} posts remaining in 24h window
 								</p>
 							</div>
 							<div className={cn('p-2 rounded-lg bg-muted', statusColor)}>

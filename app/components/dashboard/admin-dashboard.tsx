@@ -7,7 +7,6 @@ import {
 	Send,
 	AlertCircle,
 	Users,
-	Gauge,
 	ClipboardCheck,
 	Settings,
 	ArrowRight,
@@ -18,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/ca
 import { Badge } from '@/app/components/ui/badge';
 import { StatsCard, StatsCardSkeleton } from './stats-card';
 import { TokenStatusCard } from './token-status-card';
+import { QuotaCardNew } from '@/app/components/insights/quota-card-new';
 import { ContentItem } from '@/lib/types';
 import { useTour } from '@/app/hooks/use-tour';
 
@@ -26,7 +26,21 @@ interface AdminDashboardProps {
 	isDeveloper?: boolean;
 }
 
+interface QuotaResponse {
+	limit?: {
+		config?: { quota_total: number };
+		quota_usage: number;
+	};
+}
+
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
+function useQuota() {
+	const { data, isLoading } = useSWR<QuotaResponse>('/api/schedule/quota', fetcher);
+	const total = data?.limit?.config?.quota_total || 100;
+	const used = data?.limit?.quota_usage ?? 0;
+	return { total, used, isLoading };
+}
 
 export function AdminDashboard({ userName, isDeveloper }: AdminDashboardProps) {
 	// Fetch content items for stats
@@ -40,6 +54,9 @@ export function AdminDashboard({ userName, isDeveloper }: AdminDashboardProps) {
 		'/api/users',
 		fetcher
 	);
+
+	// Fetch real quota from Meta API (single source of truth)
+	const { total: quotaTotal, used: quotaUsed, isLoading: quotaLoading } = useQuota();
 
 	const items = contentData?.items || [];
 	const users = usersData?.users || [];
@@ -60,17 +77,13 @@ export function AdminDashboard({ userName, isDeveloper }: AdminDashboardProps) {
 				i.scheduledTime >= todayTimestamp &&
 				i.scheduledTime < todayTimestamp + 86400000
 		).length,
-		publishedToday: items.filter(
-			(i) =>
-				i.publishingStatus === 'published' &&
-				i.publishedAt &&
-				new Date(i.publishedAt).getTime() >= todayTimestamp
-		).length,
 		failed: items.filter((i) => i.publishingStatus === 'failed').length,
 		totalUsers: users.length,
 	};
 
-	const isLoading = contentLoading || usersLoading;
+	const isLoading = contentLoading || usersLoading || quotaLoading;
+
+	const quotaPercent = quotaTotal > 0 ? (quotaUsed / quotaTotal) * 100 : 0;
 
 	// Initialize tour with stats
 	const { startTour } = useTour({
@@ -103,6 +116,7 @@ export function AdminDashboard({ userName, isDeveloper }: AdminDashboardProps) {
 			label: 'Manage Users',
 			href: '/users',
 			icon: Users,
+			badge: stats.totalUsers > 0 ? `${stats.totalUsers} users` : undefined,
 			color: 'text-purple-600',
 			bgColor: 'bg-purple-50 hover:bg-purple-100',
 			dataTour: 'admin-action-users',
@@ -116,6 +130,7 @@ export function AdminDashboard({ userName, isDeveloper }: AdminDashboardProps) {
 						color: 'text-slate-600',
 						bgColor: 'bg-slate-50 hover:bg-slate-100',
 						dataTour: undefined,
+						badge: undefined,
 					},
 			  ]
 			: []),
@@ -157,16 +172,16 @@ export function AdminDashboard({ userName, isDeveloper }: AdminDashboardProps) {
 				</Card>
 			)}
 
-			{/* Stats Grid */}
+			{/* Stats Grid — 4 cards on desktop, 2x2 on mobile */}
 			{isLoading ? (
-				<div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-6">
-					{Array.from({ length: 6 }).map((_, i) => (
+				<div className="grid grid-cols-2 gap-3 sm:gap-4">
+					{Array.from({ length: 4 }).map((_, i) => (
 						<StatsCardSkeleton key={i} />
 					))}
 				</div>
 			) : (
 				<div
-					className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-6"
+					className="grid grid-cols-2 gap-3 sm:gap-4"
 					data-tour="admin-stats-grid"
 				>
 					<div data-tour="admin-stat-pending">
@@ -175,6 +190,7 @@ export function AdminDashboard({ userName, isDeveloper }: AdminDashboardProps) {
 							value={stats.pendingReview}
 							icon={<Clock className="h-5 w-5 text-yellow-600" />}
 							iconBgColor="bg-yellow-100"
+							className={stats.pendingReview > 5 ? 'border-amber-200 bg-amber-50' : ''}
 						/>
 					</div>
 					<StatsCard
@@ -183,35 +199,29 @@ export function AdminDashboard({ userName, isDeveloper }: AdminDashboardProps) {
 						icon={<Calendar className="h-5 w-5 text-blue-600" />}
 						iconBgColor="bg-blue-100"
 					/>
-					<StatsCard
-						label="Published Today"
-						value={stats.publishedToday}
-						icon={<Send className="h-5 w-5 text-green-600" />}
-						iconBgColor="bg-green-100"
-					/>
+					<div data-tour="admin-stat-quota">
+						<StatsCard
+							label="Published (24h)"
+							value={quotaUsed}
+							icon={<Send className={`h-5 w-5 ${quotaPercent > 95 ? 'text-red-600' : quotaPercent > 80 ? 'text-amber-600' : 'text-green-600'}`} />}
+							iconBgColor={quotaPercent > 95 ? 'bg-red-100' : quotaPercent > 80 ? 'bg-amber-100' : 'bg-green-100'}
+							progress={quotaPercent}
+							progressColor={quotaPercent > 95 ? 'bg-red-500' : quotaPercent > 80 ? 'bg-amber-500' : 'bg-emerald-500'}
+							description={`${quotaTotal - quotaUsed} of ${quotaTotal} remaining`}
+							descriptionClassName="hidden sm:block"
+						/>
+					</div>
 					<StatsCard
 						label="Failed"
 						value={stats.failed}
 						icon={<AlertCircle className="h-5 w-5 text-red-600" />}
 						iconBgColor="bg-red-100"
-					/>
-					<StatsCard
-						label="Total Users"
-						value={stats.totalUsers}
-						icon={<Users className="h-5 w-5 text-purple-600" />}
-						iconBgColor="bg-purple-100"
-					/>
-					<StatsCard
-						label="API Quota"
-						value="OK"
-						icon={<Gauge className="h-5 w-5 text-emerald-600" />}
-						iconBgColor="bg-emerald-100"
-						description="Within limits"
+						className={stats.failed > 0 ? 'border-red-200 bg-red-50' : ''}
 					/>
 				</div>
 			)}
 
-			{/* Quick Actions + Token Status */}
+			{/* Quick Actions + Token Status + Quota */}
 			<div className="grid gap-6 lg:grid-cols-3">
 				<Card className="lg:col-span-2">
 					<CardHeader>
@@ -249,9 +259,14 @@ export function AdminDashboard({ userName, isDeveloper }: AdminDashboardProps) {
 					</CardContent>
 				</Card>
 
-				{/* Token Status */}
-				<div data-tour="admin-token-status">
-					<TokenStatusCard />
+				<div className="space-y-6">
+					{/* Token Status */}
+					<div data-tour="admin-token-status">
+						<TokenStatusCard />
+					</div>
+
+					{/* API Quota Detail */}
+					<QuotaCardNew />
 				</div>
 			</div>
 		</div>
