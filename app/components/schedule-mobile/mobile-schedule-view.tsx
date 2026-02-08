@@ -202,7 +202,7 @@ export function MobileScheduleView({
 			{/* Week Strip Header */}
 			<section className="flex flex-col shrink-0 bg-white shadow-sm z-10 dark:bg-[#1a1f2e]">
 				{/* Month nav */}
-				<div className="flex items-center justify-between px-4 py-2.5">
+				<div data-tour="schedule-date-nav" className="flex items-center justify-between px-4 py-2.5">
 					<div className="flex items-center gap-1.5">
 						<button onClick={() => onDateChange(addDays(currentDate, -1))} className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 min-h-[44px] min-w-[44px] flex items-center justify-center">
 							<ChevronLeft className="h-5 w-5" />
@@ -227,7 +227,7 @@ export function MobileScheduleView({
 				</div>
 
 				{/* V4: Week strip with snap scrolling and adjacent week navigation */}
-				<div className="flex items-center px-1 pb-2">
+				<div data-tour="schedule-week-strip" className="flex items-center px-1 pb-2">
 					<button
 						onClick={() => onDateChange(addDays(currentDate, -7))}
 						className="p-1.5 shrink-0 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 dark:text-gray-500 min-h-[44px] min-w-[44px] flex items-center justify-center"
@@ -327,7 +327,7 @@ export function MobileScheduleView({
 			</section>
 
 			{/* L3: Status filter chips - horizontally scrollable */}
-			<div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#1a1f2e] border-t border-gray-100 dark:border-gray-800 overflow-x-auto scrollbar-hide">
+			<div data-tour="schedule-status-filters" className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#1a1f2e] border-t border-gray-100 dark:border-gray-800 overflow-x-auto scrollbar-hide">
 				{STATUS_FILTERS.map(({ key, label }) => {
 					const isActive = statusFilter === key;
 					const count = key === 'all' ? dayItems.length : dayItems.filter(i => i.publishingStatus === key).length;
@@ -349,7 +349,7 @@ export function MobileScheduleView({
 			</div>
 
 			{/* Timeline with V3 day-switch animation */}
-			<main className="flex-1 overflow-y-auto relative pb-28">
+			<main data-tour="schedule-timeline" className="flex-1 overflow-y-auto relative pb-28">
 				<div
 					className={cn(
 						'flex flex-col py-3 gap-0 transition-opacity duration-150',
@@ -494,7 +494,7 @@ export function MobileScheduleView({
 			</main>
 
 			{/* L4: Floating buttons - safe-area aware positioning */}
-			<div className="fixed bottom-20 left-0 right-0 px-4 pb-[env(safe-area-inset-bottom)] flex justify-between items-end gap-3 pointer-events-none z-20 lg:hidden">
+			<div data-tour="schedule-ready-button" className="fixed bottom-20 left-0 right-0 px-4 pb-[env(safe-area-inset-bottom)] flex justify-between items-end gap-3 pointer-events-none z-20 lg:hidden">
 				{failedCount > 0 ? (
 					<button className="pointer-events-auto shadow-lg shadow-red-500/20 bg-red-600 text-white rounded-full px-4 py-2.5 flex items-center gap-2 active:scale-95 transition min-h-[44px]">
 						<AlertCircle className="h-4 w-4" />

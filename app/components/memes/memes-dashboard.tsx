@@ -27,6 +27,9 @@ import { MemePreviewModal } from './meme-preview-modal';
 import { MemeQueueBuilder } from './meme-queue-builder';
 import { useUserMemes } from './use-user-memes';
 import { logError } from '@/lib/actions/log';
+import { usePageTour } from '@/app/hooks/use-page-tour';
+import { userMemesTourSteps } from '@/lib/tour/user-memes-tour';
+import { TourTriggerButton } from '@/app/components/tour/tour-trigger-button';
 
 type ViewMode = 'card' | 'list';
 type TabMode = 'memes' | 'queue';
@@ -60,6 +63,11 @@ export function MemesDashboard() {
 	const [bulkRejectionReason, setBulkRejectionReason] = useState('');
 	const [bulkScheduleModalOpen, setBulkScheduleModalOpen] = useState(false);
 	const [bulkScheduleDate, setBulkScheduleDate] = useState('');
+
+	const { startTour } = usePageTour({
+		page: 'user-memes',
+		steps: userMemesTourSteps,
+	});
 
 	const { memes, pagination, isLoading, refresh } = useUserMemes({
 		search,
@@ -330,14 +338,17 @@ export function MemesDashboard() {
 		<div className='space-y-12'>
 			{/* Header Section with View Toggle */}
 			<div className='flex flex-col md:flex-row md:items-center justify-between gap-6'>
-				<div className='flex items-center gap-4'>
+				<div data-tour="memes-heading" className='flex items-center gap-4'>
 					<div className='p-3 bg-white rounded-2xl shadow-sm border border-slate-100'>
 						<LayoutGrid className='w-6 h-6 text-indigo-600' />
 					</div>
 					<div>
-						<h2 className='text-2xl font-black text-slate-900 tracking-tight'>
-							{isAdmin ? 'Meme Dashboard' : 'Your Submissions'}
-						</h2>
+						<div className='flex items-center gap-2'>
+							<h2 className='text-2xl font-black text-slate-900 tracking-tight'>
+								{isAdmin ? 'Meme Dashboard' : 'Your Submissions'}
+							</h2>
+							<TourTriggerButton onStartTour={startTour} />
+						</div>
 						<p className='text-sm font-medium text-slate-500'>
 							{isAdmin
 								? 'Review and manage all community submissions'
@@ -348,7 +359,7 @@ export function MemesDashboard() {
 
 				<div className='flex items-center gap-3'>
 					{/* View Mode Toggle */}
-					<div className='flex items-center gap-1 p-1 bg-slate-100 rounded-xl'>
+					<div data-tour="memes-view-toggle" className='flex items-center gap-1 p-1 bg-slate-100 rounded-xl'>
 						<button
 							onClick={() => setViewMode('card')}
 							className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all ${
@@ -375,6 +386,7 @@ export function MemesDashboard() {
 
 					{/* Submit Button */}
 					<button
+						data-tour="memes-submit-new"
 						onClick={() => setShowForm(!showForm)}
 						className={`inline-flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all duration-300 shadow-lg ${
 							showForm
@@ -445,6 +457,7 @@ export function MemesDashboard() {
 
 			{/* Search & Filter Section */}
 			{activeTab === 'memes' && !showForm && memes.length > 0 && (
+				<div data-tour="memes-filters">
 				<MemeAdvancedFilters
 					query={search}
 					status={status}
@@ -458,6 +471,7 @@ export function MemesDashboard() {
 				onUserFilterChange={isAdmin ? handleUserFilterChange : undefined}
 				isAdmin={isAdmin}
 				/>
+				</div>
 			)}
 
 			{/* Admin Bulk Actions Toolbar */}

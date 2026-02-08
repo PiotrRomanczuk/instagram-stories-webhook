@@ -35,6 +35,9 @@ import { MobileScheduleView } from '../schedule-mobile/mobile-schedule-view';
 import { MobileReadyToPost } from '../schedule-mobile/mobile-ready-to-post';
 import { FailedPostsBulkActions } from '../schedule/failed-posts-bulk-actions';
 import { useMediaQuery } from '@/app/hooks/use-media-query';
+import { usePageTour } from '@/app/hooks/use-page-tour';
+import { adminScheduleTourSteps } from '@/lib/tour/admin-schedule-tour';
+import { TourTriggerButton } from '@/app/components/tour/tour-trigger-button';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -245,11 +248,22 @@ export function ScheduleCalendarLayout() {
 
 	const isMobile = useMediaQuery('(max-width: 1023px)');
 
+	// Page tour for mobile schedule view
+	const { startTour: startScheduleTour } = usePageTour({
+		page: 'admin-schedule',
+		steps: adminScheduleTourSteps,
+		autoStart: isMobile,
+	});
+
 	// Mobile: show Stitch-based mobile schedule view
 	if (isMobile) {
 		return (
 			<>
 				<div className="flex h-[calc(100vh-4rem)] w-full overflow-hidden text-gray-900 dark:text-slate-100">
+					{/* Tour replay button - fixed position */}
+					<div className="fixed top-3 right-3 z-30">
+						<TourTriggerButton onStartTour={startScheduleTour} />
+					</div>
 					<MobileScheduleView
 						scheduledItems={displayItems}
 						currentDate={currentDate}

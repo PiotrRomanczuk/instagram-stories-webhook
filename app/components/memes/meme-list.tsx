@@ -57,14 +57,15 @@ export function MemeList({
 
 	return (
 		<div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
-			{memes.map((meme) => (
-				<MemeCard
-					key={meme.id}
-					meme={meme}
-					onEdit={onEdit}
-					onDelete={onDelete}
-					onPreview={onPreview}
-				/>
+			{memes.map((meme, index) => (
+				<div key={meme.id} {...(index === 0 ? { 'data-tour': 'memes-card' } : {})}>
+					<MemeCard
+						meme={meme}
+						onEdit={onEdit}
+						onDelete={onDelete}
+						onPreview={onPreview}
+					/>
+				</div>
 			))}
 		</div>
 	);

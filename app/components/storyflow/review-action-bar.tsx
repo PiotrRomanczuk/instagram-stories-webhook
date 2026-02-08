@@ -29,7 +29,7 @@ export function ReviewActionBar({
 	return (
 		<div className={cn('w-full flex flex-col items-center', className)}>
 			{/* Primary Action Buttons */}
-			<div className="mt-6 sm:mt-10 flex items-center gap-3 sm:gap-6 w-full max-w-sm px-2 sm:px-0">
+			<div data-tour="review-action-bar" className="mt-6 sm:mt-10 flex items-center gap-3 sm:gap-6 w-full max-w-sm px-2 sm:px-0">
 				{/* Reject Button */}
 				<button
 					onClick={onReject}
@@ -76,7 +76,7 @@ export function ReviewActionBar({
 			</div>
 
 			{/* Navigation Buttons */}
-			<div className="mt-4 sm:mt-8 flex gap-4">
+			<div data-tour="review-navigation" className="mt-4 sm:mt-8 flex gap-4">
 				<button
 					onClick={onPrevious}
 					disabled={!hasPrevious || disabled}

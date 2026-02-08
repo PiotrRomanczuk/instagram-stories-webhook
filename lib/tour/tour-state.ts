@@ -6,6 +6,52 @@ export interface TourStatus {
 	lastTourDate?: string;
 }
 
+// --- Page-specific tour tracking (localStorage) ---
+
+const PAGE_TOUR_KEY = 'page-tours-v1';
+
+function getPageTourMap(): Record<string, boolean> {
+	if (typeof window === 'undefined') return {};
+	try {
+		const raw = localStorage.getItem(PAGE_TOUR_KEY);
+		return raw ? JSON.parse(raw) : {};
+	} catch {
+		return {};
+	}
+}
+
+function savePageTourMap(map: Record<string, boolean>): void {
+	try {
+		localStorage.setItem(PAGE_TOUR_KEY, JSON.stringify(map));
+	} catch {
+		// localStorage may be unavailable
+	}
+}
+
+export function isPageTourCompleted(page: string): boolean {
+	return getPageTourMap()[page] === true;
+}
+
+export function completePageTour(page: string): void {
+	const map = getPageTourMap();
+	map[page] = true;
+	savePageTourMap(map);
+}
+
+export function resetPageTour(page: string): void {
+	const map = getPageTourMap();
+	delete map[page];
+	savePageTourMap(map);
+}
+
+export function resetAllPageTours(): void {
+	try {
+		localStorage.removeItem(PAGE_TOUR_KEY);
+	} catch {
+		// localStorage may be unavailable
+	}
+}
+
 /**
  * Check if user should see the tour
  * @param status - Tour status from API

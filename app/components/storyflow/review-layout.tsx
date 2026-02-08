@@ -10,8 +10,11 @@ import { ReviewDetailsSidebar } from './review-details-sidebar';
 import { ReviewActionBar } from './review-action-bar';
 import { useKeyboardNav } from '../story-review/use-keyboard-nav';
 import { Button } from '@/app/components/ui/button';
+import { TourTriggerButton } from '@/app/components/tour/tour-trigger-button';
 import { cn } from '@/lib/utils';
 import { ContentItem } from '@/lib/types';
+import { usePageTour } from '@/app/hooks/use-page-tour';
+import { adminReviewTourSteps } from '@/lib/tour/admin-review-tour';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -147,6 +150,12 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 		}
 	};
 
+	// Page tour
+	const { startTour } = usePageTour({
+		page: 'admin-review',
+		steps: adminReviewTourSteps,
+	});
+
 	// Keyboard navigation
 	useKeyboardNav({
 		onNext: goToNext,
@@ -208,8 +217,11 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 			<main className="flex-1 flex flex-col bg-slate-50 dark:bg-black/20 overflow-y-auto">
 				<div className="max-w-4xl mx-auto w-full px-3 py-4 sm:p-8 flex flex-col items-center">
 					{/* Header */}
-					<div className="mb-4 sm:mb-6 text-center">
-						<h1 className="text-lg sm:text-2xl font-bold text-slate-900 dark:text-white mb-1">Story Review Queue</h1>
+					<div data-tour="review-header" className="mb-4 sm:mb-6 text-center">
+						<div className="flex items-center justify-center gap-2 mb-1">
+							<h1 className="text-lg sm:text-2xl font-bold text-slate-900 dark:text-white">Story Review Queue</h1>
+							<TourTriggerButton onStartTour={startTour} />
+						</div>
 						<p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm">
 							{remainingCount} {remainingCount === 1 ? 'story' : 'stories'} pending review
 							{reviewedCount > 0 && (
@@ -221,12 +233,14 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 					</div>
 
 					{/* Phone Preview */}
-					<PhonePreview
-						item={currentItem}
-						onImageError={() => {
-							// Handle image error gracefully - the component handles this internally
-						}}
-					/>
+					<div data-tour="review-phone-preview">
+						<PhonePreview
+							item={currentItem}
+							onImageError={() => {
+								// Handle image error gracefully - the component handles this internally
+							}}
+						/>
+					</div>
 
 					{/* Action Buttons */}
 					<ReviewActionBar
@@ -243,6 +257,7 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 					{/* Mobile Details Section (visible below lg) */}
 					<div className="w-full mt-4 lg:hidden">
 						<button
+							data-tour="review-mobile-details"
 							onClick={() => setShowMobileDetails(!showMobileDetails)}
 							className={cn(
 								'w-full flex items-center justify-center gap-2',

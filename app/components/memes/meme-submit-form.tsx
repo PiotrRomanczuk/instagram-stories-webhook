@@ -30,6 +30,9 @@ import { Input } from '@/app/components/ui/input';
 import { Button } from '@/app/components/ui/button';
 import { Progress } from '@/app/components/ui/progress';
 import Image from 'next/image';
+import { usePageTour } from '@/app/hooks/use-page-tour';
+import { userSubmitTourSteps } from '@/lib/tour/user-submit-tour';
+import { TourTriggerButton } from '@/app/components/tour/tour-trigger-button';
 
 interface MemeSubmitFormProps {
 	onSubmitted?: () => void;
@@ -58,6 +61,11 @@ export function MemeSubmitForm({ onSubmitted }: MemeSubmitFormProps) {
 	});
 
 	const mediaUrl = watch('mediaUrl');
+
+	const { startTour } = usePageTour({
+		page: 'user-submit',
+		steps: userSubmitTourSteps,
+	});
 
 	const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0];
@@ -208,13 +216,14 @@ export function MemeSubmitForm({ onSubmitted }: MemeSubmitFormProps) {
 	};
 
 	return (
+		<div data-tour="submit-heading">
 		<Panel
 			title='Submit New Meme'
 			icon={<ImageIcon className='w-5 h-5 text-indigo-600' />}
 		>
 			<form onSubmit={handleSubmit(onSubmit)} className='space-y-6'>
 				{/* Media Upload Area */}
-				<div className='space-y-4'>
+				<div data-tour="submit-upload" className='space-y-4'>
 					<Label className='font-bold text-slate-700'>
 						Meme Media
 					</Label>
@@ -318,7 +327,7 @@ export function MemeSubmitForm({ onSubmitted }: MemeSubmitFormProps) {
 				</div>
 
 				<div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-					<div>
+					<div data-tour="submit-title">
 						<Label className='font-bold text-slate-700 mb-2 flex items-center gap-2'>
 							<Type className='w-4 h-4 text-slate-400' /> Meme Title
 						</Label>
@@ -335,7 +344,7 @@ export function MemeSubmitForm({ onSubmitted }: MemeSubmitFormProps) {
 						)}
 					</div>
 
-					<div>
+					<div data-tour="submit-caption">
 						<Label className='font-bold text-slate-700 mb-2 flex items-center gap-2'>
 							<MessageSquare className='w-4 h-4 text-slate-400' /> IG Caption
 						</Label>
@@ -353,7 +362,7 @@ export function MemeSubmitForm({ onSubmitted }: MemeSubmitFormProps) {
 					</div>
 				</div>
 
-				<div className='pt-2'>
+				<div data-tour="submit-button" className='pt-2'>
 					<Button
 						type='submit'
 						disabled={isSubmitting || uploading || !mediaUrl}
@@ -378,5 +387,6 @@ export function MemeSubmitForm({ onSubmitted }: MemeSubmitFormProps) {
 				</div>
 			</form>
 		</Panel>
+		</div>
 	);
 }
