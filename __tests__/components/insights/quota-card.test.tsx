@@ -38,7 +38,7 @@ describe('QuotaCardNew', () => {
 
 		await waitFor(() => {
 			expect(screen.getByText('10')).toBeInTheDocument();
-			expect(screen.getByText('/ 25')).toBeInTheDocument();
+			expect(screen.getByText(/\/ 25 used/)).toBeInTheDocument();
 		});
 	});
 

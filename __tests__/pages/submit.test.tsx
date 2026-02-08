@@ -44,6 +44,21 @@ vi.mock('sonner', () => ({
 	},
 }));
 
+/**
+ * Helper: the form renders submit button twice (mobile + desktop).
+ * In jsdom both are in the DOM since CSS doesn't apply.
+ */
+function getSubmitButton() {
+	return screen.getAllByRole('button', { name: /Submit for Review/i })[0];
+}
+
+/**
+ * Helper: URL input is hidden behind a "Use URL instead" toggle.
+ */
+async function openUrlInput(user: ReturnType<typeof userEvent.setup>) {
+	await user.click(screen.getByRole('button', { name: /Use URL instead/i }));
+}
+
 describe('SubmitForm', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -53,12 +68,13 @@ describe('SubmitForm', () => {
 	it('should render the submit form with all elements', () => {
 		render(<SubmitForm />);
 
-		// Check for image label
-		expect(screen.getByText('Image')).toBeInTheDocument();
-		// Check for caption label
-		expect(screen.getByText('Caption')).toBeInTheDocument();
-		// Check for submit button
-		expect(screen.getByRole('button', { name: /Submit for Review/i })).toBeInTheDocument();
+		// Check for image label (includes step badge)
+		expect(screen.getByText(/Image/)).toBeInTheDocument();
+		// Check for caption label (includes step badge)
+		expect(screen.getByText(/Caption/)).toBeInTheDocument();
+		// Check for submit button (mobile + desktop both rendered)
+		const submitButtons = screen.getAllByRole('button', { name: /Submit for Review/i });
+		expect(submitButtons.length).toBeGreaterThan(0);
 	});
 
 	it('should render image uploader with drop zone', () => {
@@ -95,19 +111,26 @@ describe('SubmitForm', () => {
 	it('should have disabled submit button when no image is uploaded', () => {
 		render(<SubmitForm />);
 
-		const submitButton = screen.getByRole('button', { name: /Submit for Review/i });
+		const submitButton = getSubmitButton();
 		expect(submitButton).toBeDisabled();
 	});
 
-	it('should render URL input field for alternative upload', () => {
+	it('should render URL input field for alternative upload', async () => {
+		const user = userEvent.setup();
 		render(<SubmitForm />);
 
-		expect(screen.getByPlaceholderText('Or paste image URL...')).toBeInTheDocument();
+		// URL input is behind a "Use URL instead" toggle
+		await openUrlInput(user);
+
+		expect(screen.getByPlaceholderText('Paste image URL...')).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: 'Load' })).toBeInTheDocument();
 	});
 
-	it('should have disabled Load button when URL input is empty', () => {
+	it('should have disabled Load button when URL input is empty', async () => {
+		const user = userEvent.setup();
 		render(<SubmitForm />);
+
+		await openUrlInput(user);
 
 		const loadButton = screen.getByRole('button', { name: 'Load' });
 		expect(loadButton).toBeDisabled();
@@ -117,7 +140,9 @@ describe('SubmitForm', () => {
 		const user = userEvent.setup();
 		render(<SubmitForm />);
 
-		const urlInput = screen.getByPlaceholderText('Or paste image URL...');
+		await openUrlInput(user);
+
+		const urlInput = screen.getByPlaceholderText('Paste image URL...');
 		await user.type(urlInput, 'https://example.com/image.jpg');
 
 		const loadButton = screen.getByRole('button', { name: 'Load' });
@@ -135,7 +160,9 @@ describe('SubmitForm', () => {
 
 		render(<SubmitForm />);
 
-		const urlInput = screen.getByPlaceholderText('Or paste image URL...');
+		await openUrlInput(user);
+
+		const urlInput = screen.getByPlaceholderText('Paste image URL...');
 		await user.type(urlInput, 'https://example.com/image.jpg');
 
 		const loadButton = screen.getByRole('button', { name: 'Load' });
@@ -222,8 +249,9 @@ describe('SubmitForm - Form Submission', () => {
 
 		render(<SubmitForm />);
 
-		// Load image via URL first
-		const urlInput = screen.getByPlaceholderText('Or paste image URL...');
+		// Load image via URL first (toggle URL input visibility)
+		await openUrlInput(user);
+		const urlInput = screen.getByPlaceholderText('Paste image URL...');
 		await user.type(urlInput, 'https://example.com/image.jpg');
 
 		const loadButton = screen.getByRole('button', { name: 'Load' });
@@ -235,13 +263,20 @@ describe('SubmitForm - Form Submission', () => {
 			expect(img).toBeInTheDocument();
 		});
 
-		// Find submit button specifically by type
-		const submitButton = screen.getByRole('button', { name: /Submit for Review/i });
-		await user.click(submitButton);
-
-		// Button should show submitting state
+		// Wait for submit button to become enabled then submit the form
 		await waitFor(() => {
-			expect(screen.getByText(/Submitting/)).toBeInTheDocument();
+			const btn = getSubmitButton();
+			expect(btn).not.toBeDisabled();
+		});
+
+		// Submit the form directly (userEvent.click on submit button doesn't
+		// reliably trigger form submission in jsdom)
+		const form = document.querySelector('form')!;
+		fireEvent.submit(form);
+
+		// Button should show submitting state (mobile + desktop both render)
+		await waitFor(() => {
+			expect(screen.getAllByText(/Submitting/)[0]).toBeInTheDocument();
 		});
 	});
 
@@ -261,7 +296,8 @@ describe('SubmitForm - Form Submission', () => {
 		render(<SubmitForm />);
 
 		// Load image via URL
-		const urlInput = screen.getByPlaceholderText('Or paste image URL...');
+		await openUrlInput(user);
+		const urlInput = screen.getByPlaceholderText('Paste image URL...');
 		await user.type(urlInput, 'https://example.com/image.jpg');
 
 		const loadButton = screen.getByRole('button', { name: 'Load' });
@@ -279,7 +315,7 @@ describe('SubmitForm - Form Submission', () => {
 		await user.type(textarea, 'Test caption');
 
 		// Find and click submit button
-		const submitButton = screen.getByRole('button', { name: /Submit for Review/i });
+		const submitButton = getSubmitButton();
 		await user.click(submitButton);
 
 		// Verify API was called
@@ -308,7 +344,8 @@ describe('SubmitForm - Form Submission', () => {
 		render(<SubmitForm />);
 
 		// Load image via URL
-		const urlInput = screen.getByPlaceholderText('Or paste image URL...');
+		await openUrlInput(user);
+		const urlInput = screen.getByPlaceholderText('Paste image URL...');
 		await user.type(urlInput, 'https://example.com/image.jpg');
 
 		const loadButton = screen.getByRole('button', { name: 'Load' });
@@ -321,7 +358,7 @@ describe('SubmitForm - Form Submission', () => {
 		});
 
 		// Submit form
-		const submitButton = screen.getByRole('button', { name: /Submit for Review/i });
+		const submitButton = getSubmitButton();
 		await user.click(submitButton);
 
 		// Verify success toast
@@ -347,7 +384,8 @@ describe('SubmitForm - Form Submission', () => {
 		render(<SubmitForm />);
 
 		// Load image via URL
-		const urlInput = screen.getByPlaceholderText('Or paste image URL...');
+		await openUrlInput(user);
+		const urlInput = screen.getByPlaceholderText('Paste image URL...');
 		await user.type(urlInput, 'https://example.com/image.jpg');
 
 		const loadButton = screen.getByRole('button', { name: 'Load' });
@@ -360,7 +398,7 @@ describe('SubmitForm - Form Submission', () => {
 		});
 
 		// Submit form
-		const submitButton = screen.getByRole('button', { name: /Submit for Review/i });
+		const submitButton = getSubmitButton();
 		await user.click(submitButton);
 
 		// Verify error toast
@@ -401,19 +439,23 @@ describe('SubmitForm - Accessibility', () => {
 	it('should have proper label associations', () => {
 		render(<SubmitForm />);
 
-		// Caption should be labeled
-		const captionLabel = screen.getByText('Caption');
-		expect(captionLabel).toBeInTheDocument();
+		// Caption should be labeled (includes step badge)
+		expect(screen.getByText(/Caption/)).toBeInTheDocument();
 
-		// Image should be labeled
-		const imageLabel = screen.getByText('Image');
-		expect(imageLabel).toBeInTheDocument();
+		// Image should be labeled (includes step badge)
+		expect(screen.getByText(/Image/)).toBeInTheDocument();
 	});
 
-	it('should have proper button text for screen readers', () => {
+	it('should have proper button text for screen readers', async () => {
+		const user = userEvent.setup();
 		render(<SubmitForm />);
 
-		expect(screen.getByRole('button', { name: /Submit for Review/i })).toBeInTheDocument();
+		// Submit button (mobile + desktop both rendered)
+		const submitButtons = screen.getAllByRole('button', { name: /Submit for Review/i });
+		expect(submitButtons.length).toBeGreaterThan(0);
+
+		// Show URL input to check Load button
+		await openUrlInput(user);
 		expect(screen.getByRole('button', { name: 'Load' })).toBeInTheDocument();
 	});
 });

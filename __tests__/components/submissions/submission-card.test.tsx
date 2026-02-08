@@ -127,10 +127,10 @@ describe('SubmissionCard', () => {
 		expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument();
 	});
 
-	it('should show analytics button for published submissions', () => {
+	it('should show view button for published submissions', () => {
 		const submission = createMockSubmission({ publishingStatus: 'published' });
 		render(<SubmissionCard submission={submission} />);
 
-		expect(screen.getByRole('button', { name: 'View analytics' })).toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'View' })).toBeInTheDocument();
 	});
 });

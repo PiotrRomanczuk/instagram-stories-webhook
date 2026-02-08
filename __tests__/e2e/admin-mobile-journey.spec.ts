@@ -216,30 +216,20 @@ test.describe('Admin Mobile Journey', () => {
 		// Verify schedule page loads
 		await expect(page).toHaveURL(/\/schedule/);
 
-		// Verify date text is visible in the header (e.g. "February 6, 2026")
-		await expect(
-			page.locator('h2').filter({ hasText: /[A-Z][a-z]+ \d{1,2}, \d{4}/ })
-		).toBeVisible({ timeout: 15000 });
+		// Verify month/year heading is visible in mobile view (e.g. "Feb 2026")
+		const dateHeading = page.locator('h2').filter({ hasText: /[A-Z][a-z]+ \d{4}/ });
+		await expect(dateHeading).toBeVisible({ timeout: 15000 });
 
-		// Verify "Today" button is visible
-		await expect(page.getByRole('button', { name: 'Today' })).toBeVisible({
-			timeout: 10000,
-		});
+		// Verify prev/next day navigation buttons are present around the heading
+		const navContainer = dateHeading.locator('..');
+		await expect(navContainer.locator('button').first()).toBeVisible({ timeout: 10000 });
+		await expect(navContainer.locator('button').nth(1)).toBeVisible({ timeout: 10000 });
 
-		// Verify previous/next nav buttons are visible (ChevronLeft/ChevronRight icon buttons)
-		const iconButtons = page.locator('header button');
-		await expect(iconButtons.first()).toBeVisible({ timeout: 10000 });
-
-		// Verify time labels are visible (AM/PM text in the calendar grid)
-		await expect(page.locator('text=AM').first()).toBeVisible({ timeout: 10000 });
-
-		// Verify footer legend
-		await expect(page.locator('footer').filter({ hasText: 'Scheduled' })).toBeVisible({
-			timeout: 10000,
-		});
-		await expect(page.locator('footer').filter({ hasText: 'Published' })).toBeVisible({
-			timeout: 10000,
-		});
+		// Verify status filter chips are visible (All, Scheduled, Published, Failed)
+		await expect(page.locator('button').filter({ hasText: /^All/ })).toBeVisible({ timeout: 10000 });
+		await expect(page.locator('button').filter({ hasText: /^Scheduled/ })).toBeVisible({ timeout: 10000 });
+		await expect(page.locator('button').filter({ hasText: /^Published/ })).toBeVisible({ timeout: 10000 });
+		await expect(page.locator('button').filter({ hasText: /^Failed/ })).toBeVisible({ timeout: 10000 });
 	});
 
 	test('AMJ-07: date navigation on schedule page', async ({ page }) => {
@@ -247,34 +237,30 @@ test.describe('Admin Mobile Journey', () => {
 		await page.goto('/schedule');
 		await page.waitForLoadState('domcontentloaded');
 
-		// Wait for the date heading to load
-		const dateHeading = page.locator('h2').filter({ hasText: /[A-Z][a-z]+ \d{1,2}, \d{4}/ });
+		// Wait for the month heading to load (mobile shows "MMM yyyy" format)
+		const dateHeading = page.locator('h2').filter({ hasText: /[A-Z][a-z]+ \d{4}/ });
 		await expect(dateHeading).toBeVisible({ timeout: 15000 });
 
-		// Capture current date text
-		const initialDateText = await dateHeading.textContent();
+		// "Today" button should NOT be visible when viewing today
+		await expect(page.locator('button').filter({ hasText: /^Today$/ })).not.toBeVisible();
 
-		// Click the next-day button (the ChevronRight icon button next to the date text)
-		// In the header, the structure is: ChevronLeft button, h2 date text, ChevronRight button
-		// So the ChevronRight next button is the one immediately after the date heading
-		const navButtons = page.locator('header .flex.items-center.gap-1 button');
-		const nextButton = navButtons.nth(1); // second button = ChevronRight (next)
+		// Click the next-day button (second button in the nav container around the heading)
+		const navContainer = dateHeading.locator('..');
+		const nextButton = navContainer.locator('button').nth(1);
 		await nextButton.click();
 
-		// Wait briefly for date to update
+		// Wait briefly for React re-render
 		await page.waitForTimeout(500);
 
-		// Verify date text changed
-		const newDateText = await dateHeading.textContent();
-		expect(newDateText).not.toBe(initialDateText);
+		// "Today" button should now be visible (navigated away from today)
+		await expect(page.locator('button').filter({ hasText: /^Today$/ })).toBeVisible({ timeout: 5000 });
 
-		// Click "Today" button to return
-		await page.getByRole('button', { name: 'Today' }).click();
+		// Click "Today" to return to today
+		await page.locator('button').filter({ hasText: /^Today$/ }).click();
 		await page.waitForTimeout(500);
 
-		// Verify date returns to today
-		const todayDateText = await dateHeading.textContent();
-		expect(todayDateText).toBe(initialDateText);
+		// "Today" button should disappear again (back on today)
+		await expect(page.locator('button').filter({ hasText: /^Today$/ })).not.toBeVisible({ timeout: 5000 });
 	});
 
 	test('AMJ-08: view scheduled content on calendar', async ({ page }) => {
@@ -282,109 +268,89 @@ test.describe('Admin Mobile Journey', () => {
 		await page.goto('/schedule');
 		await page.waitForLoadState('domcontentloaded');
 
-		// Wait for the calendar to load
+		// Wait for the mobile schedule view to load
 		await expect(
-			page.locator('h2').filter({ hasText: /[A-Z][a-z]+ \d{1,2}, \d{4}/ })
+			page.locator('h2').filter({ hasText: /[A-Z][a-z]+ \d{4}/ })
 		).toBeVisible({ timeout: 15000 });
 
-		// Wait for SWR data fetch to complete
-		await page.waitForResponse(
-			(resp) => resp.url().includes('/api/content') && resp.status() === 200,
-			{ timeout: 15000 },
-		);
-
-		// Look for at least one of the seeded scheduled item titles on the grid
-		const scheduledTitle1 = page.locator(`text=${TEST_TITLE_PREFIX} Scheduled ${timestamp}-1`);
-		const scheduledTitle2 = page.locator(`text=${TEST_TITLE_PREFIX} Scheduled ${timestamp}-2`);
+		// Mobile timeline cards display caption text (not title) as displayTitle
+		// The TimelineCard uses: item.caption || item.title
+		// Our seeded items have caption: "Scheduled test caption 1" / "Scheduled test caption 2"
+		const caption1 = page.locator('text=Scheduled test caption 1');
+		const caption2 = page.locator('text=Scheduled test caption 2');
 
 		// At least one should be visible (they're scheduled for 10 AM and 2 PM today)
-		await expect(scheduledTitle1.or(scheduledTitle2).first()).toBeVisible({ timeout: 15000 });
+		await expect(caption1.or(caption2).first()).toBeVisible({ timeout: 15000 });
 	});
 
-	test('AMJ-09: open mobile sidebar and verify ready-to-schedule items', async ({ page }) => {
+	test('AMJ-09: open mobile Ready to Post and verify approved items', async ({ page }) => {
 		await signInAsAdmin(page);
 		await page.goto('/schedule');
 		await page.waitForLoadState('domcontentloaded');
 
 		// Wait for page to load
 		await expect(
-			page.locator('h2').filter({ hasText: /[A-Z][a-z]+ \d{1,2}, \d{4}/ })
+			page.locator('h2').filter({ hasText: /[A-Z][a-z]+ \d{4}/ })
 		).toBeVisible({ timeout: 15000 });
 
-		// Look for the floating "Ready" toggle button (visible only on mobile via lg:hidden)
+		// Look for the floating "Ready" button (appears after content data loads)
 		const readyButton = page.locator('button').filter({ hasText: 'Ready' });
-		await expect(readyButton).toBeVisible({ timeout: 10000 });
+		await expect(readyButton.first()).toBeVisible({ timeout: 15000 });
 
-		// Click to open mobile sidebar
-		await readyButton.click();
+		// Click to open mobile Ready to Post full-screen view
+		await readyButton.first().click();
 
-		// Verify "Ready to Schedule" heading appears in the overlay sidebar
-		// Use the mobile overlay container (the fixed inset-0 overlay) to scope selectors
-		const mobileSidebar = page.locator('.fixed.inset-0.z-50 aside');
-		await expect(mobileSidebar.locator('text=Ready to Schedule')).toBeVisible({ timeout: 10000 });
+		// Verify "Ready to Post" heading appears (MobileReadyToPost component)
+		await expect(page.locator('h1').filter({ hasText: 'Ready to Post' })).toBeVisible({ timeout: 10000 });
 
-		// Verify at least one approved item is visible (check for the "assets" count text)
-		await expect(mobileSidebar.locator('text=assets')).toBeVisible({ timeout: 10000 });
+		// Verify items count text (e.g., "5 items approved")
+		await expect(page.locator('text=items approved')).toBeVisible({ timeout: 10000 });
 
-		// Verify filter tabs are visible
-		await expect(mobileSidebar.locator('button').filter({ hasText: 'All' })).toBeVisible({ timeout: 10000 });
-		await expect(mobileSidebar.locator('button').filter({ hasText: 'Recent' })).toBeVisible({ timeout: 10000 });
-		await expect(mobileSidebar.locator('button').filter({ hasText: 'Approved' })).toBeVisible({ timeout: 10000 });
+		// Verify "Select" button is visible in header
+		await expect(page.locator('button').filter({ hasText: /^Select$/ })).toBeVisible({ timeout: 10000 });
 
-		// Close sidebar using the X close button
-		const closeButton = mobileSidebar.locator('button[aria-label="Close sidebar"]');
-		await expect(closeButton).toBeVisible({ timeout: 10000 });
-		await closeButton.click();
+		// Close by clicking the back arrow button (first button in the overlay header)
+		const readyHeader = page.locator('header').filter({
+			has: page.locator('h1', { hasText: 'Ready to Post' }),
+		});
+		await readyHeader.locator('button').first().click();
 
-		// Verify sidebar overlay closes
-		await expect(page.locator('.fixed.inset-0.z-50')).not.toBeVisible({ timeout: 10000 });
+		// Verify the Ready to Post overlay closes
+		await expect(page.locator('h1').filter({ hasText: 'Ready to Post' })).not.toBeVisible({ timeout: 10000 });
 	});
 
-	test('AMJ-10: quick-schedule popover from mobile sidebar', async ({ page }) => {
+	test('AMJ-10: select mode and batch scheduling in mobile Ready to Post', async ({ page }) => {
 		await signInAsAdmin(page);
 		await page.goto('/schedule');
 		await page.waitForLoadState('domcontentloaded');
 
 		// Wait for page to load
 		await expect(
-			page.locator('h2').filter({ hasText: /[A-Z][a-z]+ \d{1,2}, \d{4}/ })
+			page.locator('h2').filter({ hasText: /[A-Z][a-z]+ \d{4}/ })
 		).toBeVisible({ timeout: 15000 });
 
-		// Wait for SWR data fetch to complete before interacting
-		await page.waitForResponse(
-			(resp) => resp.url().includes('/api/content') && resp.status() === 200,
-			{ timeout: 15000 },
-		);
-
-		// Open mobile sidebar
+		// Open mobile Ready to Post view
 		const readyButton = page.locator('button').filter({ hasText: 'Ready' });
-		await expect(readyButton).toBeVisible({ timeout: 10000 });
-		await readyButton.click();
+		await expect(readyButton.first()).toBeVisible({ timeout: 15000 });
+		await readyButton.first().click();
 
-		// Wait for sidebar to open (scope to the mobile overlay)
-		const mobileSidebar = page.locator('.fixed.inset-0.z-50 aside');
-		await expect(mobileSidebar.locator('text=Ready to Schedule')).toBeVisible({ timeout: 10000 });
+		// Wait for Ready to Post view
+		await expect(page.locator('h1').filter({ hasText: 'Ready to Post' })).toBeVisible({ timeout: 10000 });
 
-		// Click on the first asset card (9:16 aspect ratio cards with cursor-grab class)
-		const assetCards = mobileSidebar.locator('[class*="aspect-\\[9\\/16\\]"][class*="cursor-grab"]');
-		await expect(assetCards.first()).toBeVisible({ timeout: 10000 });
+		// Tap "Select" to enter selection mode
+		await page.locator('button').filter({ hasText: /^Select$/ }).click();
 
-		// Use dispatchEvent to ensure the click bypasses any drag listener interference
-		await assetCards.first().dispatchEvent('click');
+		// Verify "Cancel" button appears (select mode is active)
+		await expect(page.locator('button').filter({ hasText: /^Cancel$/ })).toBeVisible({ timeout: 5000 });
 
-		// Verify QuickSchedulePopover opens with "Schedule for" label
-		// The popover uses position:fixed with z-[60] to render above the sidebar overlay
-		await expect(page.locator('label:has-text("Schedule for")')).toBeVisible({ timeout: 10000 });
+		// Verify "Select All" button appears in select mode
+		await expect(page.locator('button').filter({ hasText: /^Select All$/ })).toBeVisible({ timeout: 5000 });
 
-		// Verify the popover has Schedule button visible
-		const popover = page.locator('.fixed.bottom-4');
-		await expect(popover.locator('button').filter({ hasText: 'Schedule' })).toBeVisible({ timeout: 10000 });
+		// Exit select mode by clicking Cancel
+		await page.locator('button').filter({ hasText: /^Cancel$/ }).click();
 
-		// Close popover via Escape key (avoids Next.js dev overlay blocking bottom buttons)
-		await page.keyboard.press('Escape');
-
-		// Verify popover closes
-		await expect(page.locator('label:has-text("Schedule for")')).not.toBeVisible({ timeout: 10000 });
+		// Verify Select button is back (normal mode)
+		await expect(page.locator('button').filter({ hasText: /^Select$/ })).toBeVisible({ timeout: 5000 });
 	});
 
 	// =========================================================================

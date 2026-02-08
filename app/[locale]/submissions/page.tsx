@@ -67,9 +67,9 @@ export default function SubmissionsPage() {
 	const handleSave = useCallback(
 		async (submission: ContentItem, caption: string) => {
 			const response = await fetch(`/api/content/${submission.id}`, {
-				method: 'PUT',
+				method: 'PATCH',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ caption }),
+				body: JSON.stringify({ caption, version: submission.version }),
 			});
 
 			if (!response.ok) {

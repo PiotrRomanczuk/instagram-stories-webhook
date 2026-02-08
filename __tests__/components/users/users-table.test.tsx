@@ -43,9 +43,10 @@ describe('UsersTable', () => {
 			/>
 		);
 
-		expect(screen.getByText('user1@example.com')).toBeInTheDocument();
-		expect(screen.getByText('admin@example.com')).toBeInTheDocument();
-		expect(screen.getByText('dev@example.com')).toBeInTheDocument();
+		// Both mobile cards and desktop table render in DOM (CSS not applied in jsdom)
+		expect(screen.getAllByText('user1@example.com').length).toBeGreaterThan(0);
+		expect(screen.getAllByText('admin@example.com').length).toBeGreaterThan(0);
+		expect(screen.getAllByText('dev@example.com').length).toBeGreaterThan(0);
 	});
 
 	it('should show empty state when no users', () => {
@@ -102,9 +103,10 @@ describe('UsersTable', () => {
 			/>
 		);
 
-		expect(screen.getByText('User')).toBeInTheDocument();
-		expect(screen.getByText('Admin')).toBeInTheDocument();
-		expect(screen.getByText('Developer')).toBeInTheDocument();
+		// Both mobile and desktop views render, so roles appear multiple times
+		expect(screen.getAllByText('User').length).toBeGreaterThan(0);
+		expect(screen.getAllByText('Admin').length).toBeGreaterThan(0);
+		expect(screen.getAllByText('Developer').length).toBeGreaterThan(0);
 	});
 
 	it('should display display names when provided', () => {
@@ -130,7 +132,8 @@ describe('UsersTable', () => {
 			/>
 		);
 
-		expect(screen.getByText('You')).toBeInTheDocument();
+		// "You" badge appears in both mobile and desktop views
+		expect(screen.getAllByText('You').length).toBeGreaterThan(0);
 	});
 
 	it('should disable actions for current user', () => {
@@ -163,8 +166,9 @@ describe('UsersTable', () => {
 			/>
 		);
 
-		expect(screen.getByText('Jan 15, 2024')).toBeInTheDocument();
-		expect(screen.getByText('Jan 10, 2024')).toBeInTheDocument();
-		expect(screen.getByText('Jan 1, 2024')).toBeInTheDocument();
+		// Dates appear in both mobile and desktop views
+		expect(screen.getAllByText('Jan 15, 2024').length).toBeGreaterThan(0);
+		expect(screen.getAllByText('Jan 10, 2024').length).toBeGreaterThan(0);
+		expect(screen.getAllByText('Jan 1, 2024').length).toBeGreaterThan(0);
 	});
 });

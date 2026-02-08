@@ -14,6 +14,15 @@ vi.mock('@/i18n/routing', () => ({
 	),
 }));
 
+// Mock components that make fetch calls
+vi.mock('@/app/components/dashboard/token-status-card', () => ({
+	TokenStatusCard: () => <div data-testid="token-status-card">Token Status</div>,
+}));
+
+vi.mock('@/app/components/insights/quota-card-new', () => ({
+	QuotaCardNew: () => <div data-testid="quota-card-new">Quota Card</div>,
+}));
+
 describe('AdminDashboard', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -55,10 +64,8 @@ describe('AdminDashboard', () => {
 
 		expect(screen.getByText('Pending Review')).toBeInTheDocument();
 		expect(screen.getByText('Scheduled Today')).toBeInTheDocument();
-		expect(screen.getByText('Published Today')).toBeInTheDocument();
+		expect(screen.getByText('Published (24h)')).toBeInTheDocument();
 		expect(screen.getByText('Failed')).toBeInTheDocument();
-		expect(screen.getByText('Total Users')).toBeInTheDocument();
-		expect(screen.getByText('API Quota')).toBeInTheDocument();
 	});
 
 	it('should render quick actions', async () => {

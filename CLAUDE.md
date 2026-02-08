@@ -585,6 +585,7 @@ meme_submissions: id, user_id, media_url, status (pending/approved/rejected)
 | Tests | `.test.ts` suffix | `__tests__/lib/validate.test.ts` |
 | API Routes | kebab-case | `app/api/schedule/route.ts` |
 | Env Vars | SCREAMING_SNAKE_CASE | `WEBHOOK_SECRET` |
+| Documentation | `/docs` folder + `YYYY-MM-DD_name.md` | `docs/2024-03-15_feature-timeline-integration.md` |
 
 ## Deployment
 

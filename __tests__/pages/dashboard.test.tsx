@@ -21,6 +21,11 @@ vi.mock('@/app/components/dashboard/token-status-card', () => ({
 	TokenStatusCard: () => <div data-testid="token-status-card">Token Status</div>,
 }));
 
+// Mock quota card to prevent fetch calls
+vi.mock('@/app/components/insights/quota-card-new', () => ({
+	QuotaCardNew: () => <div data-testid="quota-card-new">Quota Card</div>,
+}));
+
 describe('Dashboard Page Integration', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -42,10 +47,8 @@ describe('Dashboard Page Integration', () => {
 			// Stats cards
 			expect(screen.getByText('Pending Review')).toBeInTheDocument();
 			expect(screen.getByText('Scheduled Today')).toBeInTheDocument();
-			expect(screen.getByText('Published Today')).toBeInTheDocument();
+			expect(screen.getByText('Published (24h)')).toBeInTheDocument();
 			expect(screen.getByText('Failed')).toBeInTheDocument();
-			expect(screen.getByText('Total Users')).toBeInTheDocument();
-			expect(screen.getByText('API Quota')).toBeInTheDocument();
 
 			// Quick actions
 			expect(screen.getByText('Quick Actions')).toBeInTheDocument();
@@ -375,9 +378,8 @@ describe('Dashboard Stats Calculations', () => {
 
 		render(<AdminDashboard userName="Admin" />);
 
-		// Total Users should show 3
-		const threes = screen.getAllByText('3');
-		expect(threes.length).toBeGreaterThan(0);
+		// Total Users shown as badge on "Manage Users" quick action
+		expect(screen.getByText('3 users')).toBeInTheDocument();
 	});
 });
 
