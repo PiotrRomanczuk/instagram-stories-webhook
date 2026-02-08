@@ -31,6 +31,8 @@ import {
 	Trash2,
 } from 'lucide-react';
 import { ConfirmationDialog } from '../ui/confirmation-dialog';
+import { getFriendlyError } from '@/lib/utils/friendly-error';
+import { toast } from 'sonner';
 
 /**
  * Format creator name - handles UUID fallback gracefully
@@ -237,6 +239,7 @@ export function ContentPreviewModal({
 	const [showConfirmPublish, setShowConfirmPublish] = useState(false);
 	const [showConfirmDelete, setShowConfirmDelete] = useState(false);
 	const [isPublishing, setIsPublishing] = useState(false);
+	const [isRetrying, setIsRetrying] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
 	const [isReviewing, setIsReviewing] = useState(false);
 	const [showRejectDialog, setShowRejectDialog] = useState(false);
@@ -309,6 +312,28 @@ export function ContentPreviewModal({
 		}
 	};
 
+	const handleRetry = async () => {
+		try {
+			setIsRetrying(true);
+			const response = await fetch(`/api/content/${item.id}/retry`, {
+				method: 'POST',
+			});
+			if (response.ok) {
+				toast.success('Post queued for retry');
+				onRefresh();
+				onClose();
+			} else {
+				const data = await response.json();
+				toast.error(data.error || 'Failed to retry');
+			}
+		} catch (err) {
+			console.error('Failed to retry', err);
+			toast.error('Failed to retry post');
+		} finally {
+			setIsRetrying(false);
+		}
+	};
+
 	const handleApprove = async () => {
 		try {
 			setIsReviewing(true);
@@ -352,7 +377,7 @@ export function ContentPreviewModal({
 	const handleDelete = async () => {
 		try {
 			setIsDeleting(true);
-			const response = await fetch(`/api/memes/${item.id}`, {
+			const response = await fetch(`/api/content/${item.id}`, {
 				method: 'DELETE',
 			});
 			if (response.ok) {
@@ -367,8 +392,10 @@ export function ContentPreviewModal({
 		}
 	};
 
+	// Only show approve/reject for pending submissions that haven't entered the publishing pipeline
+	const hasBeenProcessed = ['scheduled', 'processing', 'published', 'failed'].includes(item.publishingStatus);
 	const isPendingSubmission =
-		item.source === 'submission' && item.submissionStatus === 'pending';
+		item.source === 'submission' && item.submissionStatus === 'pending' && !hasBeenProcessed;
 
 	return (
 		<>
@@ -651,21 +678,37 @@ export function ContentPreviewModal({
 										</div>
 									)}
 
-									{item.error && (
-										<div className='flex gap-4 relative z-10'>
-											<div className='w-8 h-8 rounded-full bg-red-50 border-4 border-white flex items-center justify-center text-red-500 shadow-sm'>
-												<AlertCircle className='h-4 w-4' />
+									{item.error && (() => {
+										const errorInfo = getFriendlyError(item.error);
+										return (
+											<div className='flex gap-4 relative z-10'>
+												<div className='w-8 h-8 rounded-full bg-red-50 border-4 border-white flex items-center justify-center text-red-500 shadow-sm'>
+													<AlertCircle className='h-4 w-4' />
+												</div>
+												<div>
+													<p className='text-xs font-black text-red-900 leading-tight'>
+														Publication Failed
+														{item.retryCount !== undefined && item.retryCount > 0 && (
+															<span className='ml-1.5 text-[10px] font-bold text-red-400'>
+																({item.retryCount} {item.retryCount === 1 ? 'attempt' : 'attempts'})
+															</span>
+														)}
+													</p>
+													<p className='text-[10px] text-red-500/60 font-bold max-w-[250px]'>
+														{errorInfo.message}
+													</p>
+													{errorInfo.action && errorInfo.actionHref && (
+														<a
+															href={errorInfo.actionHref}
+															className='inline-block mt-1 text-[10px] font-black text-red-600 underline underline-offset-2 hover:text-red-700'
+														>
+															{errorInfo.action} &rarr;
+														</a>
+													)}
+												</div>
 											</div>
-											<div>
-												<p className='text-xs font-black text-red-900 leading-tight'>
-													Publication Failed
-												</p>
-												<p className='text-[10px] text-red-500/60 font-bold max-w-[200px]'>
-													{item.error}
-												</p>
-											</div>
-										</div>
-									)}
+										);
+									})()}
 								</div>
 							</section>
 
@@ -772,25 +815,35 @@ export function ContentPreviewModal({
 								</div>
 							)}
 
-							{/* Publish/Schedule buttons for non-pending items */}
-							{item.publishingStatus !== 'published' && !isPendingSubmission && (
+							{/* Retry button for failed posts */}
+							{item.publishingStatus === 'failed' && isAdmin && (
+								<div className='flex gap-2'>
+									<button
+										onClick={handleRetry}
+										disabled={isRetrying}
+										className='flex-1 h-14 bg-orange-500 text-white rounded-2xl hover:bg-orange-600 active:scale-[0.98] transition-all font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl shadow-orange-200 disabled:opacity-50'
+									>
+										{isRetrying ? (
+											<Loader2 className='h-4 w-4 animate-spin' />
+										) : (
+											<RefreshCw className='h-4 w-4' />
+										)}
+										Retry
+									</button>
+								</div>
+							)}
+
+							{/* Publish/Schedule buttons for non-pending, non-failed items */}
+							{item.publishingStatus !== 'published' && item.publishingStatus !== 'failed' && !isPendingSubmission && (
 								<div className='flex gap-2'>
 									{(item.source !== 'submission' ||
 										item.submissionStatus === 'approved') && (
 										<button
 											onClick={() => setShowConfirmPublish(true)}
-											className={`flex-1 h-14 text-white rounded-2xl active:scale-[0.98] transition-all font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl ${
-												item.publishingStatus === 'failed'
-													? 'bg-orange-500 hover:bg-orange-600 shadow-orange-200'
-													: 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-200'
-											}`}
+											className='flex-1 h-14 bg-emerald-500 text-white rounded-2xl hover:bg-emerald-600 active:scale-[0.98] transition-all font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl shadow-emerald-200'
 										>
-											{item.publishingStatus === 'failed' ? (
-												<RefreshCw className='h-4 w-4' />
-											) : (
-												<Send className='h-4 w-4' />
-											)}
-											{item.publishingStatus === 'failed' ? 'Retry' : 'Publish Now'}
+											<Send className='h-4 w-4' />
+											Publish Now
 										</button>
 									)}
 									<button

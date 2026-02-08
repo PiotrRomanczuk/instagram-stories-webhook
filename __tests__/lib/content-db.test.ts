@@ -1297,7 +1297,7 @@ describe('content-db', () => {
 
 			const result = await deleteContentItem('1', true);
 			expect(result).toBe(true);
-			expect(mockQuery.in).toHaveBeenCalledWith('publishing_status', ['draft', 'scheduled']);
+			expect(mockQuery.in).toHaveBeenCalledWith('publishing_status', ['draft', 'scheduled', 'failed']);
 		});
 
 		it('should only delete draft/pending without force', async () => {

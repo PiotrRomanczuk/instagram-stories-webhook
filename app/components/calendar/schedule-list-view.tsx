@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { ContentItem } from '@/lib/types/posts';
 import Image from 'next/image';
 import { useState } from 'react';
+import { getFriendlyErrorShort } from '@/lib/utils/friendly-error';
 
 interface ScheduleListViewProps {
 	currentDate: Date;
@@ -36,6 +37,7 @@ function ListItem({ item, onItemClick }: { item: ContentItem; onItemClick?: (ite
 	const status = item.publishingStatus || 'draft';
 	const config = statusConfig[status] || statusConfig.draft;
 	const borderColor = statusBorderColors[status] || statusBorderColors.draft;
+	const isFailed = status === 'failed';
 
 	return (
 		<button
@@ -82,11 +84,21 @@ function ListItem({ item, onItemClick }: { item: ContentItem; onItemClick?: (ite
 					{/* Status badge */}
 					<span className={cn('rounded-full px-2 py-0.5 text-[10px] font-bold', config.color, config.bg)}>
 						{config.label}
+						{isFailed && item.retryCount !== undefined && item.retryCount > 0 && (
+							<span className="ml-1 opacity-70">
+								({item.retryCount}x)
+							</span>
+						)}
 					</span>
 				</div>
 				<p className="mt-0.5 truncate text-sm text-gray-600 dark:text-slate-400">
 					{item.caption || 'No caption'}
 				</p>
+				{isFailed && item.error && (
+					<p className="mt-0.5 truncate text-xs text-red-500 dark:text-red-400">
+						{getFriendlyErrorShort(item.error)}
+					</p>
+				)}
 			</div>
 
 			{/* Right side - engagement or warning */}
@@ -101,7 +113,7 @@ function ListItem({ item, onItemClick }: { item: ContentItem; onItemClick?: (ite
 						</span>
 					</div>
 				)}
-				{status === 'failed' && (
+				{isFailed && (
 					<AlertCircle className="h-4 w-4 text-red-500" />
 				)}
 			</div>

@@ -33,6 +33,7 @@ import { TimelineLayout, groupPostsByTime } from '../schedule-mobile/timeline-la
 import type { TimelineCardPost } from '../schedule-mobile/timeline-card';
 import { MobileScheduleView } from '../schedule-mobile/mobile-schedule-view';
 import { MobileReadyToPost } from '../schedule-mobile/mobile-ready-to-post';
+import { FailedPostsBulkActions } from '../schedule/failed-posts-bulk-actions';
 import { useMediaQuery } from '@/app/hooks/use-media-query';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -354,12 +355,20 @@ export function ScheduleCalendarLayout() {
 						)}
 
 						{scheduleViewType === 'list' && (
-							<ScheduleListView
-								currentDate={currentDate}
-								scheduledItems={displayItems}
-								onItemClick={handleOpenPreview}
-								showAllDates={statusFilter === 'failed'}
-							/>
+							<div className="flex flex-1 flex-col overflow-hidden">
+								{statusFilter === 'failed' && (
+									<FailedPostsBulkActions
+										failedItems={displayItems.filter((i) => i.publishingStatus === 'failed')}
+										onRefresh={mutate}
+									/>
+								)}
+								<ScheduleListView
+									currentDate={currentDate}
+									scheduledItems={displayItems}
+									onItemClick={handleOpenPreview}
+									showAllDates={statusFilter === 'failed'}
+								/>
+							</div>
 						)}
 
 						{/* Ready to Schedule Sidebar - hidden on mobile, visible on lg+ */}

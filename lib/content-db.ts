@@ -443,8 +443,8 @@ export async function deleteContentItem(id: string, force: boolean = false): Pro
 			.eq('id', id);
 
 		if (force) {
-			// Force delete: allow deleting scheduled posts (for admins rejecting overdue)
-			query = query.in('publishing_status', ['draft', 'scheduled']);
+			// Force delete: allow deleting scheduled/failed posts (for admins)
+			query = query.in('publishing_status', ['draft', 'scheduled', 'failed']);
 		} else {
 			// Normal delete: only draft or pending submissions
 			query = query

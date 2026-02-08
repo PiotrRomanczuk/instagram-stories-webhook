@@ -6,13 +6,15 @@ import {
 	ChevronLeft, ChevronRight, Clock, CheckCircle2,
 	AlertTriangle, RotateCcw, MoreHorizontal, AlertCircle,
 	Video, ImageIcon, Layers, ChevronDown, ChevronUp,
-	Calendar,
+	Calendar, Trash2, Loader2, RefreshCw,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ContentItem } from '@/lib/types/posts';
 import {
 	format, startOfWeek, addDays, isSameDay, getHours, getMinutes,
 } from 'date-fns';
+import { getFriendlyError } from '@/lib/utils/friendly-error';
+import { toast } from 'sonner';
 
 interface MobileScheduleViewProps {
 	scheduledItems: ContentItem[];
@@ -63,25 +65,9 @@ function getDayDots(items: ContentItem[]): string[] {
 	return dots.slice(0, 3);
 }
 
-// C3: Map raw API errors to friendly labels
+// C3: Map raw API errors to friendly labels (uses shared utility)
 function friendlyError(raw: string): string {
-	const lower = raw.toLowerCase();
-	if (lower.includes('facebook connection') || lower.includes('link your account')) {
-		return 'Connection lost \u2014 reconnect account';
-	}
-	if (lower.includes('token')) {
-		return 'Token expired \u2014 re-authenticate';
-	}
-	if (lower.includes('rate limit') || lower.includes('368')) {
-		return 'Rate limited \u2014 try later';
-	}
-	if (lower.includes('timeout')) {
-		return 'Timed out \u2014 retry';
-	}
-	if (raw.length > 60) {
-		return raw.slice(0, 57) + '...';
-	}
-	return raw;
+	return getFriendlyError(raw).message;
 }
 
 const STATUS_FILTERS = [
@@ -574,22 +560,41 @@ export function MobileScheduleView({
 									<p className="text-xs text-gray-500 dark:text-gray-400">{menuTime}</p>
 								</div>
 							</div>
-							{/* Actions */}
+							{/* Actions - context-aware for failed vs scheduled */}
 							<div className="px-5 pb-3 flex flex-col gap-2">
-								<button
-									onClick={() => { setMenuOpen(null); onItemClick?.(menuItem); }}
-									className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-50 dark:bg-slate-800 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700 transition active:scale-[0.98] min-h-[48px]"
-								>
-									<Clock className="h-5 w-5 text-blue-500" />
-									Reschedule
-								</button>
-								<button
-									onClick={() => { setMenuOpen(null); onRefresh?.(); }}
-									className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-50 dark:bg-slate-800 text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition active:scale-[0.98] min-h-[48px]"
-								>
-									<AlertCircle className="h-5 w-5" />
-									Cancel Schedule
-								</button>
+								{menuItem.publishingStatus === 'failed' ? (
+									<>
+										<ActionSheetRetryButton
+											itemId={menuItem.id}
+											onDone={() => { setMenuOpen(null); onRefresh?.(); }}
+										/>
+										<button
+											onClick={() => { setMenuOpen(null); onItemClick?.(menuItem); }}
+											className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-50 dark:bg-slate-800 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700 transition active:scale-[0.98] min-h-[48px]"
+										>
+											<Clock className="h-5 w-5 text-blue-500" />
+											View Details
+										</button>
+										<ActionSheetDeleteButton
+											itemId={menuItem.id}
+											onDone={() => { setMenuOpen(null); onRefresh?.(); }}
+										/>
+									</>
+								) : (
+									<>
+										<button
+											onClick={() => { setMenuOpen(null); onItemClick?.(menuItem); }}
+											className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-50 dark:bg-slate-800 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700 transition active:scale-[0.98] min-h-[48px]"
+										>
+											<Clock className="h-5 w-5 text-blue-500" />
+											Reschedule
+										</button>
+										<ActionSheetDeleteButton
+											itemId={menuItem.id}
+											onDone={() => { setMenuOpen(null); onRefresh?.(); }}
+										/>
+									</>
+								)}
 							</div>
 							{/* Dismiss button */}
 							<div className="px-5 pt-1 pb-24">
@@ -608,6 +613,70 @@ export function MobileScheduleView({
 	);
 }
 
+/* ── Action sheet helpers ── */
+
+function ActionSheetRetryButton({ itemId, onDone }: { itemId: string; onDone: () => void }) {
+	const [loading, setLoading] = useState(false);
+	const handleRetry = async () => {
+		setLoading(true);
+		try {
+			const res = await fetch(`/api/content/${itemId}/retry`, { method: 'POST' });
+			if (res.ok) {
+				toast.success('Post queued for retry');
+				onDone();
+			} else {
+				const data = await res.json();
+				toast.error(data.error || 'Failed to retry');
+			}
+		} catch {
+			toast.error('Failed to retry');
+		} finally {
+			setLoading(false);
+		}
+	};
+	return (
+		<button
+			onClick={handleRetry}
+			disabled={loading}
+			className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-orange-50 dark:bg-orange-900/10 text-sm font-semibold text-orange-600 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-900/20 transition active:scale-[0.98] min-h-[48px] disabled:opacity-50"
+		>
+			{loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <RefreshCw className="h-5 w-5" />}
+			Retry Post
+		</button>
+	);
+}
+
+function ActionSheetDeleteButton({ itemId, onDone }: { itemId: string; onDone: () => void }) {
+	const [loading, setLoading] = useState(false);
+	const handleDelete = async () => {
+		setLoading(true);
+		try {
+			const res = await fetch(`/api/content/${itemId}`, { method: 'DELETE' });
+			if (res.ok) {
+				toast.success('Post deleted');
+				onDone();
+			} else {
+				const data = await res.json();
+				toast.error(data.error || 'Failed to delete');
+			}
+		} catch {
+			toast.error('Failed to delete');
+		} finally {
+			setLoading(false);
+		}
+	};
+	return (
+		<button
+			onClick={handleDelete}
+			disabled={loading}
+			className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-50 dark:bg-slate-800 text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition active:scale-[0.98] min-h-[48px] disabled:opacity-50"
+		>
+			{loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Trash2 className="h-5 w-5" />}
+			Delete Post
+		</button>
+	);
+}
+
 /* ── Individual timeline card ── */
 
 function TimelineCard({ item, onClick, onRefresh, menuOpen, onMenuToggle, onItemClick }: {
@@ -620,6 +689,7 @@ function TimelineCard({ item, onClick, onRefresh, menuOpen, onMenuToggle, onItem
 }) {
 	// P2: Per-card image error state
 	const [imgError, setImgError] = useState(false);
+	const [isRetrying, setIsRetrying] = useState(false);
 
 	const isFailed = item.publishingStatus === 'failed';
 	const isPublished = item.publishingStatus === 'published';
@@ -629,6 +699,25 @@ function TimelineCard({ item, onClick, onRefresh, menuOpen, onMenuToggle, onItem
 	// C4: Fallback title
 	const displayTitle = item.caption || item.title
 		|| `${item.mediaType === 'VIDEO' ? 'Video' : 'Image'} \u00b7 ${time}`;
+
+	const handleRetry = async (e: React.MouseEvent) => {
+		e.stopPropagation();
+		try {
+			setIsRetrying(true);
+			const response = await fetch(`/api/content/${item.id}/retry`, { method: 'POST' });
+			if (response.ok) {
+				toast.success('Post queued for retry');
+				onRefresh?.();
+			} else {
+				const data = await response.json();
+				toast.error(data.error || 'Failed to retry');
+			}
+		} catch {
+			toast.error('Failed to retry post');
+		} finally {
+			setIsRetrying(false);
+		}
+	};
 
 	return (
 		<div
@@ -683,14 +772,16 @@ function TimelineCard({ item, onClick, onRefresh, menuOpen, onMenuToggle, onItem
 			{/* Content - B1: min-w-0 to constrain flex child */}
 			<div className="flex-1 min-w-0">
 				<div className="flex items-center gap-1.5 mb-0.5 min-w-0 flex-wrap">
-					<span className={cn(
-						'text-[11px] font-mono font-semibold px-1.5 py-0.5 rounded shrink-0',
-						isFailed
-							? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20'
-							: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
-					)}>
-						{time}
-					</span>
+					{time && (
+						<span className={cn(
+							'text-[11px] font-mono font-semibold px-1.5 py-0.5 rounded shrink-0',
+							isFailed
+								? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20'
+								: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
+						)}>
+							{time}
+						</span>
+					)}
 					{/* Compact status pill */}
 					<span className={cn(
 						'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide shrink-0',
@@ -707,6 +798,11 @@ function TimelineCard({ item, onClick, onRefresh, menuOpen, onMenuToggle, onItem
 							item.publishingStatus === 'scheduled' && 'bg-blue-500',
 						)} />
 						{item.publishingStatus}
+						{isFailed && item.retryCount !== undefined && item.retryCount > 0 && (
+							<span className="text-red-400 dark:text-red-500">
+								\u00b7 {item.retryCount}x
+							</span>
+						)}
 					</span>
 				</div>
 				{/* C5: line-clamp-2 title */}
@@ -727,14 +823,20 @@ function TimelineCard({ item, onClick, onRefresh, menuOpen, onMenuToggle, onItem
 				{isPublished && <CheckCircle2 className="h-5 w-5 text-green-500" />}
 				{isFailed && (
 					<button
-						onClick={(e) => { e.stopPropagation(); onRefresh?.(); }}
-						className="text-gray-400 dark:text-gray-600 hover:text-gray-600 dark:hover:text-gray-300 px-2"
+						onClick={handleRetry}
+						disabled={isRetrying}
+						className="text-orange-500 dark:text-orange-400 hover:text-orange-600 dark:hover:text-orange-300 min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-50"
+						title="Retry"
 					>
-						<RotateCcw className="h-5 w-5" />
+						{isRetrying ? (
+							<Loader2 className="h-5 w-5 animate-spin" />
+						) : (
+							<RefreshCw className="h-5 w-5" />
+						)}
 					</button>
 				)}
-				{/* C6: MoreHorizontal button */}
-				{!isPublished && !isFailed && (
+				{/* C6: MoreHorizontal button - show for scheduled AND failed */}
+				{!isPublished && (
 					<button
 						onClick={(e) => {
 							e.stopPropagation();
