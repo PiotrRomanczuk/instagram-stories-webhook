@@ -32,6 +32,7 @@ export function ImageUploader({
 	const [isDragging, setIsDragging] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
 	const [urlInput, setUrlInput] = useState('');
+	const [showUrlInput, setShowUrlInput] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [aspectInfo, setAspectInfo] = useState<AspectRatioInfo | null>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
@@ -220,34 +221,58 @@ export function ImageUploader({
 				)}
 			</div>
 
-			{/* URL input */}
-			<div className="flex items-center gap-2">
-				<div className="relative flex-1">
-					<LinkIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-					<Input
-						type="url"
-						placeholder="Or paste image URL..."
-						value={urlInput}
-						onChange={(e) => setUrlInput(e.target.value)}
-						className="pl-10"
-						disabled={disabled || isLoading}
-						onKeyDown={(e) => {
-							if (e.key === 'Enter') {
-								e.preventDefault();
-								handleUrlSubmit();
-							}
-						}}
-					/>
-				</div>
-				<Button
+			{/* URL input toggle */}
+			{!showUrlInput ? (
+				<button
 					type="button"
-					variant="secondary"
-					onClick={handleUrlSubmit}
-					disabled={disabled || isLoading || !urlInput.trim()}
+					className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+					onClick={() => setShowUrlInput(true)}
+					disabled={disabled}
 				>
-					{isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Load'}
-				</Button>
-			</div>
+					<LinkIcon className="h-3.5 w-3.5" />
+					Use URL instead
+				</button>
+			) : (
+				<div className="space-y-2">
+					<div className="flex items-center gap-2">
+						<div className="relative flex-1">
+							<LinkIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+							<Input
+								type="url"
+								placeholder="Paste image URL..."
+								value={urlInput}
+								onChange={(e) => setUrlInput(e.target.value)}
+								className="pl-10"
+								disabled={disabled || isLoading}
+								onKeyDown={(e) => {
+									if (e.key === 'Enter') {
+										e.preventDefault();
+										handleUrlSubmit();
+									}
+								}}
+							/>
+						</div>
+						<Button
+							type="button"
+							variant="secondary"
+							onClick={handleUrlSubmit}
+							disabled={disabled || isLoading || !urlInput.trim()}
+						>
+							{isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Load'}
+						</Button>
+					</div>
+					<button
+						type="button"
+						className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+						onClick={() => {
+							setShowUrlInput(false);
+							setUrlInput('');
+						}}
+					>
+						Cancel
+					</button>
+				</div>
+			)}
 
 			{error && (
 				<p className="text-sm text-destructive">{error}</p>

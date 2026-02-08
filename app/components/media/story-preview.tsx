@@ -7,9 +7,34 @@ interface StoryPreviewProps {
 	imageUrl: string | null;
 	alt?: string;
 	className?: string;
+	compact?: boolean;
 }
 
-export function StoryPreview({ imageUrl, alt = 'Story preview', className }: StoryPreviewProps) {
+export function StoryPreview({ imageUrl, alt = 'Story preview', className, compact }: StoryPreviewProps) {
+	if (compact) {
+		return (
+			<div className={cn('inline-block', className)}>
+				<div
+					className="overflow-hidden rounded-lg bg-black"
+					style={{ width: 80, height: 142 }}
+				>
+					{imageUrl ? (
+						<img
+							src={imageUrl}
+							alt={alt}
+							className="h-full w-full object-contain"
+							style={{ backgroundColor: '#000' }}
+						/>
+					) : (
+						<div className="flex h-full w-full items-center justify-center text-muted-foreground">
+							<Smartphone className="h-6 w-6" />
+						</div>
+					)}
+				</div>
+			</div>
+		);
+	}
+
 	// Story dimensions in 9:16 ratio
 	const frameWidth = 270;
 	const frameHeight = 480;

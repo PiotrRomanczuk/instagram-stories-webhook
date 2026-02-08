@@ -71,14 +71,33 @@ export function SubmitForm() {
 	const isValid = imageUrl !== null;
 	const captionLength = caption.length;
 
+	const submitButton = (
+		<Button type="submit" disabled={!isValid || isSubmitting} size="lg">
+			{isSubmitting ? (
+				<>
+					<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+					Submitting...
+				</>
+			) : (
+				<>
+					<Send className="mr-2 h-4 w-4" />
+					Submit for Review
+				</>
+			)}
+		</Button>
+	);
+
 	return (
-		<form onSubmit={handleSubmit} className="space-y-6">
+		<form onSubmit={handleSubmit} className="space-y-6 pb-24 lg:pb-0">
 			<div className="grid gap-6 lg:grid-cols-2">
 				{/* Left: Upload & Caption */}
 				<div className="space-y-6">
 					{/* Image Upload */}
 					<div className="space-y-2">
-						<Label htmlFor="image">Image</Label>
+						<Label htmlFor="image">
+							<span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">1</span>
+							{' '}Image
+						</Label>
 						<ImageUploader
 							value={imageUrl}
 							onChange={handleImageChange}
@@ -100,7 +119,10 @@ export function SubmitForm() {
 					{/* Caption */}
 					<div className="space-y-2">
 						<div className="flex items-center justify-between">
-							<Label htmlFor="caption">Caption</Label>
+							<Label htmlFor="caption">
+								<span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">2</span>
+								{' '}Caption
+							</Label>
 							<span
 								className={`text-xs ${
 									captionLength > MAX_CAPTION_LENGTH
@@ -121,29 +143,30 @@ export function SubmitForm() {
 							disabled={isSubmitting}
 						/>
 					</div>
+
+					{/* Mobile Submit Button */}
+					<div className="flex justify-end lg:hidden">
+						{submitButton}
+					</div>
+
+					{/* Mobile Compact Preview */}
+					{imageUrl && (
+						<div className="flex items-center gap-3 lg:hidden">
+							<StoryPreview imageUrl={imageUrl} compact />
+							<span className="text-xs text-muted-foreground">Preview</span>
+						</div>
+					)}
 				</div>
 
-				{/* Right: Preview */}
-				<div className="flex justify-center lg:justify-end">
+				{/* Right: Full Preview (desktop only) */}
+				<div className="hidden lg:flex justify-center lg:justify-end">
 					<StoryPreview imageUrl={imageUrl} />
 				</div>
 			</div>
 
-			{/* Submit Button */}
-			<div className="flex justify-end">
-				<Button type="submit" disabled={!isValid || isSubmitting} size="lg">
-					{isSubmitting ? (
-						<>
-							<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-							Submitting...
-						</>
-					) : (
-						<>
-							<Send className="mr-2 h-4 w-4" />
-							Submit for Review
-						</>
-					)}
-				</Button>
+			{/* Desktop Submit Button */}
+			<div className="hidden lg:flex justify-end">
+				{submitButton}
 			</div>
 		</form>
 	);

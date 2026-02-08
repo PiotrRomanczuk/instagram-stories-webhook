@@ -2,7 +2,7 @@
 
 import { Link, usePathname } from '@/i18n/routing';
 import { useSession } from 'next-auth/react';
-import { Home, Calendar, Plus, BarChart3, User } from 'lucide-react';
+import { Home, Calendar, Plus, Check, BarChart3, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UserRole } from '@/lib/types';
 
@@ -41,16 +41,36 @@ export function BottomNav() {
 					const active = isActive(tab.href);
 
 					if (tab.isFab) {
+						const FabIcon = active ? Check : Icon;
 						return (
 							<Link
 								key={tab.href}
 								href={tab.href}
 								className="relative -mt-5 flex flex-col items-center"
 							>
-								<div className="flex h-14 w-14 items-center justify-center rounded-full bg-[#2b6cee] shadow-lg shadow-[#2b6cee]/30 transition-transform active:scale-95">
-									<Icon className="h-6 w-6 text-white" />
+								<div
+									className={cn(
+										'flex h-14 w-14 items-center justify-center rounded-full transition-transform active:scale-95',
+										active
+											? 'bg-white ring-2 ring-[#2b6cee] dark:bg-slate-800'
+											: 'bg-[#2b6cee] shadow-lg shadow-[#2b6cee]/30'
+									)}
+								>
+									<FabIcon
+										className={cn(
+											'h-6 w-6',
+											active ? 'text-[#2b6cee]' : 'text-white'
+										)}
+									/>
 								</div>
-								<span className="mt-0.5 text-[10px] font-medium text-gray-500 dark:text-slate-400">
+								<span
+									className={cn(
+										'mt-0.5 text-[10px] font-medium',
+										active
+											? 'text-[#2b6cee]'
+											: 'text-gray-500 dark:text-slate-400'
+									)}
+								>
 									{tab.label}
 								</span>
 							</Link>
