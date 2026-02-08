@@ -8,12 +8,9 @@ import {
 	Send,
 	ClipboardCheck,
 	Calendar,
-	Users,
 	Menu,
 	Languages,
 } from 'lucide-react';
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { UserRole } from '@/lib/types';
 import { useTranslations, useLocale } from 'next-intl';
 import { Button } from '@/app/components/ui/button';
@@ -23,8 +20,6 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from '@/app/components/ui/dropdown-menu';
-import { Separator } from '@/app/components/ui/separator';
-import { cn } from '@/lib/utils';
 import { UserMenu } from './user-menu';
 import { NotificationBell } from './notification-bell';
 
@@ -41,8 +36,6 @@ export function Navbar() {
 	const router = useRouter();
 	const { data: session, status } = useSession();
 	const pathname = usePathname();
-	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
 	// Don't show navbar on signin page
 	if (pathname === '/auth/signin') return null;
 
@@ -76,12 +69,6 @@ export function Navbar() {
 			href: '/schedule',
 			label: t('schedule') || 'Schedule',
 			icon: Calendar,
-			roles: ['admin', 'developer'],
-		},
-		{
-			href: '/users',
-			label: t('users'),
-			icon: Users,
 			roles: ['admin', 'developer'],
 		},
 	];
@@ -190,90 +177,9 @@ export function Navbar() {
 							</Button>
 						)}
 
-						{/* Mobile Menu Button - hidden when bottom nav is active */}
-						<button
-							className="hidden max-md:flex max-lg:hidden relative h-10 w-10 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
-							onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-							aria-label="Toggle menu"
-						>
-							<div className="flex h-5 w-5 flex-col items-center justify-center">
-								<motion.span
-									animate={isMobileMenuOpen ? { rotate: 45, y: 0 } : { rotate: 0, y: -4 }}
-									transition={{ duration: 0.2 }}
-									className="absolute h-[2px] w-5 rounded-full bg-current"
-								/>
-								<motion.span
-									animate={isMobileMenuOpen ? { opacity: 0, scaleX: 0 } : { opacity: 1, scaleX: 1 }}
-									transition={{ duration: 0.15 }}
-									className="absolute h-[2px] w-5 rounded-full bg-current"
-								/>
-								<motion.span
-									animate={isMobileMenuOpen ? { rotate: -45, y: 0 } : { rotate: 0, y: 4 }}
-									transition={{ duration: 0.2 }}
-									className="absolute h-[2px] w-5 rounded-full bg-current"
-								/>
-							</div>
-						</button>
 					</div>
 				</div>
 			</div>
-
-			{/* Mobile Menu */}
-			<AnimatePresence>
-				{isMobileMenuOpen && (
-					<motion.div
-						initial={{ height: 0, opacity: 0 }}
-						animate={{ height: 'auto', opacity: 1 }}
-						exit={{ height: 0, opacity: 0 }}
-						transition={{ duration: 0.2, ease: 'easeInOut' }}
-						className="overflow-hidden border-t bg-background md:hidden"
-					>
-						<div className="space-y-1 px-4 py-4">
-							{visibleNavItems.map((item, index) => {
-								const Icon = item.icon;
-								return (
-									<motion.div
-										key={item.href}
-										initial={{ opacity: 0, x: -12 }}
-										animate={{ opacity: 1, x: 0 }}
-										transition={{ delay: index * 0.03, duration: 0.2 }}
-									>
-										<Button
-											variant={isActive(item.href) ? 'secondary' : 'ghost'}
-											className="w-full justify-start gap-3"
-											asChild
-											onClick={() => setIsMobileMenuOpen(false)}
-										>
-											<Link href={item.href}>
-												<Icon className="h-5 w-5" />
-												{item.label}
-											</Link>
-										</Button>
-									</motion.div>
-								);
-							})}
-							<Separator className="my-2" />
-							<motion.div
-								initial={{ opacity: 0, x: -12 }}
-								animate={{ opacity: 1, x: 0 }}
-								transition={{ delay: visibleNavItems.length * 0.03, duration: 0.2 }}
-							>
-								<Button
-									variant="ghost"
-									className="w-full justify-start gap-3"
-									onClick={() => {
-										toggleLocale();
-										setIsMobileMenuOpen(false);
-									}}
-								>
-									<Languages className="h-5 w-5" />
-									Language: {locale.toUpperCase()}
-								</Button>
-							</motion.div>
-						</div>
-					</motion.div>
-				)}
-			</AnimatePresence>
 		</nav>
 	);
 }

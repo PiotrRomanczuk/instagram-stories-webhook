@@ -1,7 +1,7 @@
 'use client';
 
 import { signOut } from 'next-auth/react';
-import { User, LogOut, Settings, Instagram } from 'lucide-react';
+import { User, LogOut, Settings, Instagram, Users } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/app/components/ui/avatar';
 import {
 	DropdownMenu,
@@ -80,17 +80,23 @@ export function UserMenu({ user }: UserMenuProps) {
 					</div>
 				</DropdownMenuLabel>
 				<DropdownMenuSeparator />
-				{user.role === 'developer' && (
-					<>
-						<DropdownMenuItem asChild>
-							<Link href="/settings" className="cursor-pointer">
-								<Settings className="mr-2 h-4 w-4" />
-								<span>Settings</span>
-							</Link>
-						</DropdownMenuItem>
-						<DropdownMenuSeparator />
-					</>
+				{isAdminOrDev && (
+					<DropdownMenuItem asChild>
+						<Link href="/users" className="cursor-pointer">
+							<Users className="mr-2 h-4 w-4" />
+							<span>Manage Users</span>
+						</Link>
+					</DropdownMenuItem>
 				)}
+				{user.role === 'developer' && (
+					<DropdownMenuItem asChild>
+						<Link href="/settings" className="cursor-pointer">
+							<Settings className="mr-2 h-4 w-4" />
+							<span>Settings</span>
+						</Link>
+					</DropdownMenuItem>
+				)}
+				<DropdownMenuSeparator />
 				<DropdownMenuItem
 					className="cursor-pointer text-destructive focus:text-destructive"
 					onClick={() => signOut({ callbackUrl: '/auth/signin' })}
