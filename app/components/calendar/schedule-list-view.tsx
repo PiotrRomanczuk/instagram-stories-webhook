@@ -11,6 +11,7 @@ interface ScheduleListViewProps {
 	currentDate: Date;
 	scheduledItems: ContentItem[];
 	onItemClick?: (item: ContentItem) => void;
+	showAllDates?: boolean;
 }
 
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
@@ -108,10 +109,11 @@ function ListItem({ item, onItemClick }: { item: ContentItem; onItemClick?: (ite
 	);
 }
 
-export function ScheduleListView({ currentDate, scheduledItems, onItemClick }: ScheduleListViewProps) {
-	// Filter items for the selected date
+export function ScheduleListView({ currentDate, scheduledItems, onItemClick, showAllDates }: ScheduleListViewProps) {
+	// Filter items - show all when showAllDates is true, otherwise filter by selected date
 	const dayItems = scheduledItems
 		.filter((item) => {
+			if (showAllDates) return true;
 			if (!item.scheduledTime) return false;
 			return isSameDay(new Date(item.scheduledTime), currentDate);
 		})
@@ -121,15 +123,21 @@ export function ScheduleListView({ currentDate, scheduledItems, onItemClick }: S
 		return (
 			<div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
 				<div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 dark:bg-slate-800">
-					<Clock className="h-7 w-7 text-gray-400 dark:text-slate-500" />
+					{showAllDates ? (
+						<AlertCircle className="h-7 w-7 text-gray-400 dark:text-slate-500" />
+					) : (
+						<Clock className="h-7 w-7 text-gray-400 dark:text-slate-500" />
+					)}
 				</div>
 				<div>
 					<p className="font-semibold text-gray-900 dark:text-white">
-						No stories scheduled
+						{showAllDates ? 'No failed posts' : 'No stories scheduled'}
 					</p>
-					<p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
-						{format(currentDate, 'EEEE, MMMM d')}
-					</p>
+					{!showAllDates && (
+						<p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
+							{format(currentDate, 'EEEE, MMMM d')}
+						</p>
+					)}
 				</div>
 			</div>
 		);

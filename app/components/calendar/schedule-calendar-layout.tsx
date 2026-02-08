@@ -5,9 +5,9 @@
  * Uses the standard app navbar and integrates with the main layout
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent } from '@dnd-kit/core';
 import { toast } from 'sonner';
@@ -40,12 +40,16 @@ const fetcher = (url: string) => fetch(url).then((r) => r.json());
 export function ScheduleCalendarLayout() {
 	const { data: session } = useSession();
 	const router = useRouter();
+	const searchParams = useSearchParams();
+	const statusFilter = searchParams.get('filter');
 
 	// Calendar state - day view only
 	const [currentDate, setCurrentDate] = useState(new Date());
 	const [searchQuery, setSearchQuery] = useState('');
 	const [granularity, setGranularity] = useState<Granularity>(15);
-	const [scheduleViewType, setScheduleViewType] = useState<ScheduleViewType>('calendar');
+	const [scheduleViewType, setScheduleViewType] = useState<ScheduleViewType>(
+		statusFilter === 'failed' ? 'list' : 'calendar'
+	);
 
 	const increaseGranularity = useCallback(() => {
 		const idx = GRANULARITY_LEVELS.indexOf(granularity);
@@ -111,6 +115,14 @@ export function ScheduleCalendarLayout() {
 			return isApproved && notPublished && notScheduled && notArchived;
 		});
 	}, [allItems]);
+
+	// When filter=failed, show all failed items regardless of scheduledTime
+	const displayItems = useMemo(() => {
+		if (statusFilter === 'failed') {
+			return allItems.filter((item) => item.publishingStatus === 'failed');
+		}
+		return scheduledItems;
+	}, [statusFilter, allItems, scheduledItems]);
 
 	// Convert ContentItems to TimelineCardPosts for timeline view
 	const timelinePosts: TimelineCardPost[] = useMemo(() => {
@@ -238,13 +250,14 @@ export function ScheduleCalendarLayout() {
 			<>
 				<div className="flex h-[calc(100vh-4rem)] w-full overflow-hidden text-gray-900 dark:text-slate-100">
 					<MobileScheduleView
-						scheduledItems={scheduledItems}
+						scheduledItems={displayItems}
 						currentDate={currentDate}
 						onDateChange={setCurrentDate}
 						onItemClick={handleOpenPreview}
 						onRefresh={mutate}
 						readyCount={readyItems.length}
 						onReadyClick={() => setShowMobileSidebar(true)}
+						statusFilter={statusFilter}
 					/>
 				</div>
 
@@ -343,8 +356,9 @@ export function ScheduleCalendarLayout() {
 						{scheduleViewType === 'list' && (
 							<ScheduleListView
 								currentDate={currentDate}
-								scheduledItems={scheduledItems}
+								scheduledItems={displayItems}
 								onItemClick={handleOpenPreview}
+								showAllDates={statusFilter === 'failed'}
 							/>
 						)}
 

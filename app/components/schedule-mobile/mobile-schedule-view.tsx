@@ -22,6 +22,7 @@ interface MobileScheduleViewProps {
 	onRefresh?: () => void;
 	readyCount?: number;
 	onReadyClick?: () => void;
+	statusFilter?: string | null;
 }
 
 // Group items into 30-min slots
@@ -92,12 +93,12 @@ const STATUS_FILTERS = [
 
 export function MobileScheduleView({
 	scheduledItems, currentDate, onDateChange, onItemClick, onRefresh,
-	readyCount = 0, onReadyClick,
+	readyCount = 0, onReadyClick, statusFilter: urlStatusFilter,
 }: MobileScheduleViewProps) {
 	// L1: Collapsible frequency chart (default collapsed)
 	const [freqOpen, setFreqOpen] = useState(false);
-	// L3: Status filter
-	const [statusFilter, setStatusFilter] = useState<string>('all');
+	// L3: Status filter - initialize from URL param if present
+	const [statusFilter, setStatusFilter] = useState<string>(urlStatusFilter || 'all');
 	// L5: Expanded time slots (for +N more)
 	const [expandedSlots, setExpandedSlots] = useState<Set<string>>(new Set());
 	// C6: Dropdown menu state
@@ -138,11 +139,12 @@ export function MobileScheduleView({
 		}
 	}, [currentDate, displayDate]);
 
-	// Items for selected day
-	const dayItems = useMemo(() =>
-		scheduledItems.filter(item => item.scheduledTime && isSameDay(new Date(item.scheduledTime), currentDate)),
-		[scheduledItems, currentDate]
-	);
+	// Items for selected day - when URL filter is 'failed', show all failed items across all dates
+	const showAllDates = urlStatusFilter === 'failed';
+	const dayItems = useMemo(() => {
+		if (showAllDates) return scheduledItems;
+		return scheduledItems.filter(item => item.scheduledTime && isSameDay(new Date(item.scheduledTime), currentDate));
+	}, [scheduledItems, currentDate, showAllDates]);
 
 	// L3: Filtered items
 	const filteredDayItems = useMemo(() => {
@@ -151,6 +153,12 @@ export function MobileScheduleView({
 	}, [dayItems, statusFilter]);
 
 	const timeSlots = useMemo(() => groupByTimeSlots(filteredDayItems), [filteredDayItems]);
+
+	// Items without scheduledTime (e.g. failed posts that were never scheduled)
+	const untimedItems = useMemo(() =>
+		filteredDayItems.filter(item => !item.scheduledTime),
+		[filteredDayItems]
+	);
 
 	// Hourly frequency (always based on all dayItems, not filtered)
 	const hourlyFreq = useMemo(() => {
@@ -384,7 +392,7 @@ export function MobileScheduleView({
 								</div>
 							))}
 						</div>
-					) : timeSlots.length === 0 ? (
+					) : timeSlots.length === 0 && untimedItems.length === 0 ? (
 						/* L2: Compact empty state */
 						<div className="flex flex-col items-center justify-center py-12 px-6 text-center">
 							<div className="w-14 h-14 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-3">
@@ -470,6 +478,31 @@ export function MobileScheduleView({
 							);
 						})
 					)}
+
+					{/* Untimed items (failed posts without scheduledTime) */}
+					{untimedItems.length > 0 && (
+						<div className="px-4 mt-2">
+							{timeSlots.length > 0 && (
+								<div className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">
+									No scheduled time
+								</div>
+							)}
+							<div className="flex flex-col gap-2">
+								{untimedItems.map((item) => (
+									<TimelineCard
+										key={item.id}
+										item={item}
+										onClick={() => onItemClick?.(item)}
+										onRefresh={onRefresh}
+										menuOpen={menuOpen === item.id}
+										onMenuToggle={(id) => setMenuOpen(prev => prev === id ? null : id)}
+										onItemClick={onItemClick}
+									/>
+								))}
+							</div>
+						</div>
+					)}
+
 					<div className="h-20" />
 				</div>
 			</main>
