@@ -495,6 +495,82 @@ export function MobileScheduleView({
 					<div />
 				)}
 			</div>
+
+			{/* C6: Action sheet for card menu - rendered at top level to avoid overflow clipping */}
+			{menuOpen && (() => {
+				const menuItem = scheduledItems.find(i => i.id === menuOpen);
+				if (!menuItem) return null;
+				const menuTime = menuItem.scheduledTime ? format(new Date(menuItem.scheduledTime), 'h:mm a') : '';
+				const menuTitle = menuItem.caption || menuItem.title
+					|| `${menuItem.mediaType === 'VIDEO' ? 'Video' : 'Image'} \u00b7 ${menuTime}`;
+				return (
+					<div
+						className="fixed inset-0 z-[60]"
+						onClick={() => setMenuOpen(null)}
+					>
+						<div className="absolute inset-0 bg-black/40" />
+						<div
+							className="absolute bottom-0 left-0 right-0 max-w-lg mx-auto rounded-t-2xl bg-white dark:bg-[#1a1f2e] shadow-2xl animate-in slide-in-from-bottom duration-200"
+							onClick={(e) => e.stopPropagation()}
+						>
+							{/* Handle */}
+							<div className="flex justify-center pt-3 pb-1">
+								<div className="h-1 w-10 rounded-full bg-gray-300 dark:bg-slate-600" />
+							</div>
+							{/* Item preview */}
+							<div className="flex items-center gap-3 px-5 pb-3">
+								<div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-700">
+									{menuItem.mediaUrl ? (
+										<Image
+											src={menuItem.mediaUrl}
+											alt={menuTitle}
+											fill
+											className="object-cover"
+											unoptimized
+										/>
+									) : (
+										<div className="flex h-full w-full items-center justify-center">
+											{menuItem.mediaType === 'VIDEO'
+												? <Video className="h-5 w-5 text-gray-400" />
+												: <ImageIcon className="h-5 w-5 text-gray-400" />}
+										</div>
+									)}
+								</div>
+								<div className="min-w-0 flex-1">
+									<p className="text-sm font-bold text-gray-900 dark:text-white truncate">{menuTitle}</p>
+									<p className="text-xs text-gray-500 dark:text-gray-400">{menuTime}</p>
+								</div>
+							</div>
+							{/* Actions */}
+							<div className="px-5 pb-3 flex flex-col gap-2">
+								<button
+									onClick={() => { setMenuOpen(null); onItemClick?.(menuItem); }}
+									className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-50 dark:bg-slate-800 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700 transition active:scale-[0.98] min-h-[48px]"
+								>
+									<Clock className="h-5 w-5 text-blue-500" />
+									Reschedule
+								</button>
+								<button
+									onClick={() => { setMenuOpen(null); onRefresh?.(); }}
+									className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-50 dark:bg-slate-800 text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition active:scale-[0.98] min-h-[48px]"
+								>
+									<AlertCircle className="h-5 w-5" />
+									Cancel Schedule
+								</button>
+							</div>
+							{/* Dismiss button */}
+							<div className="px-5 pt-1 pb-24">
+								<button
+									onClick={() => setMenuOpen(null)}
+									className="w-full py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-semibold text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 transition active:scale-[0.98] min-h-[48px]"
+								>
+									Close
+								</button>
+							</div>
+						</div>
+					</div>
+				);
+			})()}
 		</div>
 	);
 }
@@ -614,7 +690,7 @@ function TimelineCard({ item, onClick, onRefresh, menuOpen, onMenuToggle, onItem
 			</div>
 
 			{/* Right action */}
-			<div className="shrink-0 relative">
+			<div className="shrink-0">
 				{isPublished && <CheckCircle2 className="h-5 w-5 text-green-500" />}
 				{isFailed && (
 					<button
@@ -624,44 +700,17 @@ function TimelineCard({ item, onClick, onRefresh, menuOpen, onMenuToggle, onItem
 						<RotateCcw className="h-5 w-5" />
 					</button>
 				)}
-				{/* C6: MoreHorizontal button with dropdown */}
+				{/* C6: MoreHorizontal button */}
 				{!isPublished && !isFailed && (
-					<>
-						<button
-							onClick={(e) => {
-								e.stopPropagation();
-								onMenuToggle(item.id);
-							}}
-							className="text-gray-400 dark:text-gray-600 hover:text-gray-600 dark:hover:text-gray-300"
-						>
-							<MoreHorizontal className="h-5 w-5" />
-						</button>
-						{menuOpen && (
-							<div
-								className="absolute right-0 top-8 z-30 bg-white dark:bg-[#1f2229] border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1 min-w-[140px]"
-								onClick={(e) => e.stopPropagation()}
-							>
-								<button
-									onClick={() => {
-										onMenuToggle(item.id);
-										onItemClick?.(item);
-									}}
-									className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-								>
-									Reschedule
-								</button>
-								<button
-									onClick={() => {
-										onMenuToggle(item.id);
-										onRefresh?.();
-									}}
-									className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-800"
-								>
-									Cancel
-								</button>
-							</div>
-						)}
-					</>
+					<button
+						onClick={(e) => {
+							e.stopPropagation();
+							onMenuToggle(item.id);
+						}}
+						className="text-gray-400 dark:text-gray-600 hover:text-gray-600 dark:hover:text-gray-300 min-h-[44px] min-w-[44px] flex items-center justify-center"
+					>
+						<MoreHorizontal className="h-5 w-5" />
+					</button>
 				)}
 			</div>
 		</div>

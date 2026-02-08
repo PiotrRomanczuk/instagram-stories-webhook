@@ -285,42 +285,17 @@ export function MobileReadyToPost({ items, scheduledItems = [], onBack, onItemCl
 							</button>
 						);
 					})()}
-					<div className="relative">
-						<button
-							onClick={() => setShowSortMenu(prev => !prev)}
-							className={cn(
-								'rounded-full p-2 transition',
-								showSortMenu
-									? 'bg-blue-50 text-blue-500 dark:bg-blue-900/20'
-									: 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
-							)}
-						>
-							<Filter className="h-6 w-6" />
-						</button>
-						{showSortMenu && (
-							<div className="absolute right-0 top-full z-50 mt-1 w-40 rounded-xl border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-[#1f2229]">
-								{([
-									['newest', 'Newest First'],
-									['oldest', 'Oldest First'],
-									['type', 'By Media Type'],
-								] as const).map(([value, label]) => (
-									<button
-										key={value}
-										onClick={() => { setSortMode(value); setShowSortMenu(false); }}
-										className={cn(
-											'flex w-full items-center px-4 py-2.5 text-sm transition',
-											sortMode === value
-												? 'font-semibold text-blue-500 bg-blue-50 dark:bg-blue-900/20'
-												: 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800'
-										)}
-									>
-										{label}
-										{sortMode === value && <Check className="ml-auto h-4 w-4" />}
-									</button>
-								))}
-							</div>
+					<button
+						onClick={() => setShowSortMenu(prev => !prev)}
+						className={cn(
+							'rounded-full p-2 transition',
+							showSortMenu
+								? 'bg-blue-50 text-blue-500 dark:bg-blue-900/20'
+								: 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
 						)}
-					</div>
+					>
+						<Filter className="h-6 w-6" />
+					</button>
 				</div>
 			</header>
 
@@ -433,6 +408,57 @@ export function MobileReadyToPost({ items, scheduledItems = [], onBack, onItemCl
 					onConfirm={handleConfirmSchedule}
 					onCancel={() => setPendingScheduleItem(null)}
 				/>
+			)}
+
+			{/* Sort/Filter Action Sheet */}
+			{showSortMenu && (
+				<div
+					className="fixed inset-0 z-[60]"
+					onClick={() => setShowSortMenu(false)}
+				>
+					<div className="absolute inset-0 bg-black/40" />
+					<div
+						className="absolute bottom-0 left-0 right-0 max-w-lg mx-auto rounded-t-2xl bg-white dark:bg-[#1a1f2e] shadow-2xl animate-in slide-in-from-bottom duration-200"
+						onClick={(e) => e.stopPropagation()}
+					>
+						{/* Handle */}
+						<div className="flex justify-center pt-3 pb-1">
+							<div className="h-1 w-10 rounded-full bg-gray-300 dark:bg-slate-600" />
+						</div>
+						<div className="px-5 pb-2">
+							<h3 className="text-sm font-bold text-gray-900 dark:text-white">Sort By</h3>
+						</div>
+						<div className="px-5 pb-3 flex flex-col gap-2">
+							{([
+								['newest', 'Newest First'],
+								['oldest', 'Oldest First'],
+								['type', 'By Media Type'],
+							] as const).map(([value, label]) => (
+								<button
+									key={value}
+									onClick={() => { setSortMode(value); setShowSortMenu(false); }}
+									className={cn(
+										'w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition active:scale-[0.98] min-h-[48px]',
+										sortMode === value
+											? 'bg-blue-50 dark:bg-blue-900/20 text-blue-500'
+											: 'bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700'
+									)}
+								>
+									{label}
+									{sortMode === value && <Check className="h-5 w-5" />}
+								</button>
+							))}
+						</div>
+						<div className="px-5 pt-1 pb-24">
+							<button
+								onClick={() => setShowSortMenu(false)}
+								className="w-full py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-semibold text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 transition active:scale-[0.98] min-h-[48px]"
+							>
+								Close
+							</button>
+						</div>
+					</div>
+				</div>
 			)}
 
 			{/* Edit Modal */}
