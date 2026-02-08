@@ -48,6 +48,7 @@ export function TimelineCardSwipeable({
 }: TimelineCardSwipeableProps) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const hasFiredHaptic = useRef(false);
+	const hasShownPeek = useRef(false);
 
 	// Motion value for card translation
 	const x = useMotionValue(0);
@@ -60,6 +61,18 @@ export function TimelineCardSwipeable({
 
 	// Check if mobile
 	const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
+	// Peek hint: briefly show swipe affordance on first mount
+	useEffect(() => {
+		if (!isMobile || hasShownPeek.current || isOpen) return;
+		hasShownPeek.current = true;
+		const timer = setTimeout(() => {
+			x.set(-30);
+			setTimeout(() => x.set(0), 300);
+		}, 800);
+		return () => clearTimeout(timer);
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [isMobile]);
 
 	// Sync isOpen state with x position
 	useEffect(() => {
@@ -215,6 +228,9 @@ export function TimelineCardSwipeable({
 					</button>
 				)}
 			</div>
+
+			{/* Swipe peek indicator - subtle edge gradient */}
+			<div className="absolute right-0 top-0 bottom-0 w-1 bg-gradient-to-l from-blue-400/30 to-transparent pointer-events-none z-20 rounded-r-xl" />
 
 			{/* Card Wrapper */}
 			<motion.div

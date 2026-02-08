@@ -376,15 +376,14 @@ export function ContentPreviewModal({
 				className='fixed inset-0 z-[80] bg-black/70 backdrop-blur-md transition-all'
 				onClick={onClose}
 			/>
-			<div className='fixed inset-0 z-[90] flex items-center justify-center p-4 sm:p-6'>
-				{/* Navigation Arrows */}
+			<div className='fixed inset-0 z-[90] flex items-end md:items-center justify-center md:p-6'>
+				{/* Navigation Arrows - hidden on mobile */}
 				{hasNavigation && (
 					<>
-						{/* Previous Button */}
 						<button
 							onClick={goToPrevious}
 							disabled={!canGoPrevious}
-							className={`fixed left-4 md:left-8 top-1/2 -translate-y-1/2 z-[95] p-4 rounded-full bg-white/90 backdrop-blur shadow-2xl transition-all ${
+							className={`hidden md:flex fixed left-4 md:left-8 top-1/2 -translate-y-1/2 z-[95] p-4 rounded-full bg-white/90 backdrop-blur shadow-2xl transition-all ${
 								canGoPrevious
 									? 'hover:bg-white hover:scale-110 text-gray-700'
 									: 'opacity-30 cursor-not-allowed text-gray-400'
@@ -394,11 +393,10 @@ export function ContentPreviewModal({
 							<ChevronLeft className='h-6 w-6' />
 						</button>
 
-						{/* Next Button */}
 						<button
 							onClick={goToNext}
 							disabled={!canGoNext}
-							className={`fixed right-4 md:right-8 top-1/2 -translate-y-1/2 z-[95] p-4 rounded-full bg-white/90 backdrop-blur shadow-2xl transition-all ${
+							className={`hidden md:flex fixed right-4 md:right-8 top-1/2 -translate-y-1/2 z-[95] p-4 rounded-full bg-white/90 backdrop-blur shadow-2xl transition-all ${
 								canGoNext
 									? 'hover:bg-white hover:scale-110 text-gray-700'
 									: 'opacity-30 cursor-not-allowed text-gray-400'
@@ -409,15 +407,47 @@ export function ContentPreviewModal({
 						</button>
 
 						{/* Position Indicator */}
-						<div className='fixed bottom-4 left-1/2 -translate-x-1/2 z-[95] bg-black/60 backdrop-blur-md text-white px-4 py-2 rounded-full text-xs font-bold tracking-wider'>
+						<div className='fixed bottom-4 left-1/2 -translate-x-1/2 z-[95] bg-black/60 backdrop-blur-md text-white px-4 py-2 rounded-full text-xs font-bold tracking-wider hidden md:block'>
 							{currentIndex + 1} / {items.length}
 						</div>
 					</>
 				)}
 
-				<div className='relative max-h-[92vh] w-full max-w-6xl overflow-hidden rounded-[2.5rem] bg-white shadow-2xl ring-1 ring-black/5 flex flex-col md:flex-row animate-in fade-in zoom-in duration-300'>
+				{/* Mobile: full-screen bottom sheet / Desktop: centered card */}
+				<div className='relative h-[100dvh] md:h-auto md:max-h-[92vh] w-full max-w-6xl overflow-hidden rounded-t-3xl md:rounded-[2.5rem] bg-white shadow-2xl ring-1 ring-black/5 flex flex-col md:flex-row animate-in slide-in-from-bottom-4 md:fade-in md:zoom-in duration-300'>
+					{/* Mobile close button - always visible on mobile */}
+					<button
+						onClick={onClose}
+						className='absolute top-4 right-4 z-50 md:hidden p-2 bg-black/30 backdrop-blur-sm text-white rounded-full hover:bg-black/50 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center'
+					>
+						<X className='h-5 w-5' />
+					</button>
+
+					{/* Mobile navigation buttons */}
+					{hasNavigation && (
+						<div className='absolute bottom-4 left-1/2 -translate-x-1/2 z-50 md:hidden flex items-center gap-3 bg-black/40 backdrop-blur-md rounded-full px-2 py-1.5'>
+							<button
+								onClick={goToPrevious}
+								disabled={!canGoPrevious}
+								className={`p-2 rounded-full transition ${canGoPrevious ? 'text-white' : 'text-white/30'}`}
+							>
+								<ChevronLeft className='h-5 w-5' />
+							</button>
+							<span className='text-white/80 text-xs font-bold min-w-[40px] text-center'>
+								{currentIndex + 1}/{items.length}
+							</span>
+							<button
+								onClick={goToNext}
+								disabled={!canGoNext}
+								className={`p-2 rounded-full transition ${canGoNext ? 'text-white' : 'text-white/30'}`}
+							>
+								<ChevronRight className='h-5 w-5' />
+							</button>
+						</div>
+					)}
+
 					{/* Left Side: Media Deep Dive */}
-					<div className='flex-1 bg-gray-950 relative flex items-center justify-center overflow-hidden min-h-[400px] md:min-h-0'>
+					<div className='flex-1 bg-gray-950 relative flex items-center justify-center overflow-hidden min-h-[280px] md:min-h-0'>
 						{showStoryFrame ? (
 							<div className='h-full w-full aspect-[9/16] max-h-full flex items-center justify-center relative overflow-hidden'>
 								{/* Blurred Background */}
@@ -535,9 +565,9 @@ export function ContentPreviewModal({
 					{/* Right Side: Insights & Controls */}
 					<div className='md:w-[450px] bg-white flex flex-col'>
 						{/* Header */}
-						<div className='p-8 border-b border-gray-100 flex items-center justify-between'>
-							<div>
-								<h2 className='text-2xl font-black text-gray-900 leading-tight truncate max-w-[280px]'>
+						<div className='p-4 md:p-8 border-b border-gray-100 flex items-center justify-between'>
+							<div className='min-w-0'>
+								<h2 className='text-lg md:text-2xl font-black text-gray-900 leading-tight truncate max-w-[240px] md:max-w-[280px]'>
 									{item.title || 'Post Insights'}
 								</h2>
 								<div className='flex items-center gap-2 mt-1'>
@@ -549,14 +579,14 @@ export function ContentPreviewModal({
 							</div>
 							<button
 								onClick={onClose}
-								className='p-3 bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-900 rounded-2xl transition-all active:scale-[0.9]'
+								className='hidden md:flex p-3 bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-900 rounded-2xl transition-all active:scale-[0.9]'
 							>
 								<X className='h-6 w-6' />
 							</button>
 						</div>
 
 						{/* Scrollable Content */}
-						<div className='flex-1 overflow-y-auto p-8 space-y-10'>
+						<div className='flex-1 overflow-y-auto p-4 md:p-8 space-y-6 md:space-y-10'>
 							{/* Status Section */}
 							<section className='space-y-4'>
 								<div className='flex items-center justify-between'>
@@ -710,7 +740,7 @@ export function ContentPreviewModal({
 						</div>
 
 						{/* Footer Actions */}
-						<div className='p-8 pt-0 flex flex-col gap-3'>
+						<div className='p-4 md:p-8 pt-0 flex flex-col gap-3 pb-[env(safe-area-inset-bottom)]'>
 							{/* Approval buttons for pending submissions */}
 							{isAdmin && isPendingSubmission && (
 								<div className='flex gap-2'>

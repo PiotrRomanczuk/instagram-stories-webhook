@@ -5,7 +5,7 @@ import Image from 'next/image';
 import {
 	ChevronLeft, ChevronRight, Clock, CheckCircle2,
 	AlertTriangle, RotateCcw, MoreHorizontal, AlertCircle,
-	Video, ImageIcon, Layers, X, ChevronDown, ChevronUp,
+	Video, ImageIcon, Layers, ChevronDown, ChevronUp,
 	Calendar,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -105,6 +105,19 @@ export function MobileScheduleView({
 	// V3: Day-switch animation
 	const [dayVisible, setDayVisible] = useState(true);
 	const [displayDate, setDisplayDate] = useState(currentDate);
+	// Loading state for skeleton
+	const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+	// Clear initial load after first render with data
+	useEffect(() => {
+		if (scheduledItems.length > 0 || !isInitialLoad) {
+			const timer = setTimeout(() => setIsInitialLoad(false), 300);
+			return () => clearTimeout(timer);
+		}
+		// Auto-dismiss skeleton after 2s even if empty
+		const timer = setTimeout(() => setIsInitialLoad(false), 2000);
+		return () => clearTimeout(timer);
+	}, [scheduledItems.length, isInitialLoad]);
 
 	// V4: Week navigation
 	const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
@@ -195,55 +208,69 @@ export function MobileScheduleView({
 			{/* Week Strip Header */}
 			<section className="flex flex-col shrink-0 bg-white shadow-sm z-10 dark:bg-[#1a1f2e]">
 				{/* Month nav */}
-				<div className="flex items-center justify-between px-4 py-3">
-					<div className="flex items-center gap-2">
-						<button onClick={() => onDateChange(addDays(currentDate, -1))} className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400">
+				<div className="flex items-center justify-between px-4 py-2.5">
+					<div className="flex items-center gap-1.5">
+						<button onClick={() => onDateChange(addDays(currentDate, -1))} className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 min-h-[44px] min-w-[44px] flex items-center justify-center">
 							<ChevronLeft className="h-5 w-5" />
 						</button>
-						<h2 className="text-lg font-bold text-gray-800 dark:text-white">
+						<h2 className="text-base font-bold text-gray-800 dark:text-white">
 							{format(currentDate, 'MMM yyyy')}
 						</h2>
-						<button onClick={() => onDateChange(addDays(currentDate, 1))} className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400">
+						<button onClick={() => onDateChange(addDays(currentDate, 1))} className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 min-h-[44px] min-w-[44px] flex items-center justify-center">
 							<ChevronRight className="h-5 w-5" />
 						</button>
 					</div>
-					<button className="group flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/20 text-blue-500 dark:text-blue-400 rounded-full text-xs font-bold border border-blue-100 dark:border-blue-500/20 transition-all">
-						<Clock className="h-4 w-4 group-hover:rotate-180 transition-transform duration-500" />
-						<span>Time Shift</span>
-					</button>
+					<div className="flex items-center gap-2">
+						{!isSameDay(currentDate, new Date()) && (
+							<button
+								onClick={() => onDateChange(new Date())}
+								className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full text-xs font-bold transition-all min-h-[36px]"
+							>
+								Today
+							</button>
+						)}
+					</div>
 				</div>
 
-				{/* V4: Week strip with adjacent week navigation */}
+				{/* V4: Week strip with snap scrolling and adjacent week navigation */}
 				<div className="flex items-center px-1 pb-2">
 					<button
 						onClick={() => onDateChange(addDays(currentDate, -7))}
-						className="p-1 shrink-0 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 dark:text-gray-500"
+						className="p-1.5 shrink-0 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 dark:text-gray-500 min-h-[44px] min-w-[44px] flex items-center justify-center"
 					>
 						<ChevronLeft className="h-4 w-4" />
 					</button>
-					<div className="flex items-center justify-between flex-1">
+					<div className="flex items-center justify-between flex-1 overflow-x-auto snap-x snap-mandatory scrollbar-hide">
 						{weekDays.map((day) => {
 							const isSelected = isSameDay(day, currentDate);
+							const isToday = isSameDay(day, new Date());
 							const key = format(day, 'yyyy-MM-dd');
 							const dots = getDayDots(itemsByDate.get(key) || []);
+							const dayItemCount = (itemsByDate.get(key) || []).length;
 							return (
 								<button key={key} onClick={() => onDateChange(day)} className={cn(
-									'flex flex-col items-center gap-1 flex-1 transition',
-									isSelected ? 'scale-105' : 'opacity-50 hover:opacity-100'
+									'flex flex-col items-center gap-0.5 flex-1 snap-center transition min-w-[48px] min-h-[44px] py-1',
+									isSelected ? 'scale-105' : 'opacity-60 hover:opacity-100'
 								)}>
-									<span className={cn('text-xs uppercase', isSelected ? 'font-bold text-blue-500 dark:text-blue-400' : 'font-medium text-gray-400 dark:text-gray-500')}>
+									<span className={cn('text-[10px] uppercase leading-none', isSelected ? 'font-bold text-blue-500 dark:text-blue-400' : 'font-medium text-gray-400 dark:text-gray-500')}>
 										{format(day, 'EEE')}
 									</span>
 									<div className={cn(
-										'w-10 h-10 flex items-center justify-center rounded-full font-semibold',
-										isSelected ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30 font-bold' : 'text-gray-700 dark:text-gray-300'
+										'w-9 h-9 flex items-center justify-center rounded-full font-semibold text-sm relative',
+										isSelected ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30 font-bold' : 'text-gray-700 dark:text-gray-300',
+										isToday && !isSelected && 'ring-2 ring-blue-300 dark:ring-blue-600'
 									)}>
 										{format(day, 'd')}
+										{dayItemCount > 0 && !isSelected && (
+											<span className="absolute -top-0.5 -right-0.5 bg-blue-500 text-white text-[8px] font-bold rounded-full w-3.5 h-3.5 flex items-center justify-center">
+												{dayItemCount > 9 ? '9+' : dayItemCount}
+											</span>
+										)}
 									</div>
-									<div className="flex gap-0.5 mt-0.5 h-1.5">
+									<div className="flex gap-0.5 h-1.5">
 										{dots.length > 0 ? dots.map((d, i) => (
-											<div key={i} className={cn('h-1.5 w-1.5 rounded-full', d)} />
-										)) : <div className="h-1.5 w-1.5 rounded-full bg-transparent" />}
+											<div key={i} className={cn('h-1 w-1 rounded-full', d)} />
+										)) : <div className="h-1 w-1 rounded-full bg-transparent" />}
 									</div>
 								</button>
 							);
@@ -251,7 +278,7 @@ export function MobileScheduleView({
 					</div>
 					<button
 						onClick={() => onDateChange(addDays(currentDate, 7))}
-						className="p-1 shrink-0 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 dark:text-gray-500"
+						className="p-1.5 shrink-0 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 dark:text-gray-500 min-h-[44px] min-w-[44px] flex items-center justify-center"
 					>
 						<ChevronRight className="h-4 w-4" />
 					</button>
@@ -305,8 +332,8 @@ export function MobileScheduleView({
 				)}
 			</section>
 
-			{/* L3: Status filter chips */}
-			<div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#1a1f2e] border-t border-gray-100 dark:border-gray-800">
+			{/* L3: Status filter chips - horizontally scrollable */}
+			<div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#1a1f2e] border-t border-gray-100 dark:border-gray-800 overflow-x-auto scrollbar-hide">
 				{STATUS_FILTERS.map(({ key, label }) => {
 					const isActive = statusFilter === key;
 					const count = key === 'all' ? dayItems.length : dayItems.filter(i => i.publishingStatus === key).length;
@@ -315,9 +342,9 @@ export function MobileScheduleView({
 							key={key}
 							onClick={() => setStatusFilter(key)}
 							className={cn(
-								'px-3 py-1 rounded-full text-xs font-medium transition',
+								'shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition min-h-[32px]',
 								isActive
-									? 'bg-blue-500 text-white'
+									? 'bg-blue-500 text-white shadow-sm'
 									: 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
 							)}
 						>
@@ -331,37 +358,61 @@ export function MobileScheduleView({
 			<main className="flex-1 overflow-y-auto relative pb-28">
 				<div
 					className={cn(
-						'flex flex-col py-4 gap-0 transition-opacity duration-150',
+						'flex flex-col py-3 gap-0 transition-opacity duration-150',
 						dayVisible ? 'opacity-100' : 'opacity-0'
 					)}
 				>
-					{timeSlots.length === 0 ? (
-						/* L2: Improved empty state */
-						<div className="flex flex-col items-center justify-center py-20 px-8 text-center">
-							<Calendar className="h-12 w-12 text-gray-300 dark:text-gray-600 mb-4" />
-							<h3 className="text-lg font-bold text-gray-700 dark:text-gray-300 mb-1">
+					{/* Skeleton loading state */}
+					{isInitialLoad ? (
+						<div className="flex flex-col gap-2 px-4 py-2">
+							{[1, 2, 3].map((i) => (
+								<div key={i} className="flex gap-3 animate-pulse">
+									<div className="w-14 text-right pr-2 pt-2 shrink-0">
+										<div className="h-4 w-10 bg-gray-200 dark:bg-gray-700 rounded ml-auto" />
+									</div>
+									<div className="flex-1 rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-[#1f2229] p-2.5 flex items-center gap-3">
+										<div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-200 dark:bg-gray-700 rounded-lg shrink-0" />
+										<div className="flex-1 space-y-2">
+											<div className="flex gap-2">
+												<div className="h-5 w-16 bg-gray-200 dark:bg-gray-700 rounded-md" />
+												<div className="h-5 w-20 bg-gray-200 dark:bg-gray-700 rounded-md" />
+											</div>
+											<div className="h-3 w-full bg-gray-100 dark:bg-gray-800 rounded" />
+											<div className="h-3 w-2/3 bg-gray-100 dark:bg-gray-800 rounded" />
+										</div>
+									</div>
+								</div>
+							))}
+						</div>
+					) : timeSlots.length === 0 ? (
+						/* L2: Compact empty state */
+						<div className="flex flex-col items-center justify-center py-12 px-6 text-center">
+							<div className="w-14 h-14 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-3">
+								<Calendar className="h-7 w-7 text-gray-300 dark:text-gray-600" />
+							</div>
+							<h3 className="text-base font-bold text-gray-700 dark:text-gray-300 mb-1">
 								{statusFilter !== 'all'
 									? `No ${statusFilter} posts`
 									: 'No posts scheduled'}
 							</h3>
 							{readyCount > 0 && onReadyClick ? (
 								<>
-									<p className="text-sm text-gray-400 dark:text-gray-500 mb-4">
-										You have content ready to schedule for {format(currentDate, 'MMM d')}
+									<p className="text-xs text-gray-400 dark:text-gray-500 mb-3">
+										{readyCount} item{readyCount !== 1 ? 's' : ''} ready for {format(currentDate, 'MMM d')}
 									</p>
 									<button
 										onClick={onReadyClick}
-										className="flex items-center gap-2 px-5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-full font-bold text-sm shadow-lg shadow-blue-500/20 active:scale-95 transition"
+										className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full font-bold text-sm shadow-lg shadow-blue-500/20 active:scale-95 transition min-h-[44px]"
 									>
 										<Layers className="h-4 w-4" />
-										Schedule from Ready ({readyCount} item{readyCount !== 1 ? 's' : ''})
+										Schedule from Ready
 									</button>
 								</>
 							) : (
-								<p className="text-sm text-gray-400 dark:text-gray-500">
+								<p className="text-xs text-gray-400 dark:text-gray-500">
 									{statusFilter !== 'all'
 										? `No ${statusFilter} posts for ${format(currentDate, 'MMM d')}`
-										: `No posts scheduled for ${format(currentDate, 'MMM d')}`}
+										: `Tap Ready to add content`}
 								</p>
 							)}
 						</div>
@@ -376,10 +427,10 @@ export function MobileScheduleView({
 								: slot.items;
 
 							return (
-								<div key={slotKey} className="flex group min-h-[100px] mb-2">
-									{/* Time label - B3: consistent 12h format already in slot.label */}
-									<div className="w-16 text-right pr-3 pt-2 text-xs font-medium text-gray-400 dark:text-gray-500 shrink-0">
-										<div className="font-bold text-gray-800 dark:text-gray-300">{slot.label}</div>
+								<div key={slotKey} className="flex group min-h-[80px] mb-1.5">
+									{/* Time label */}
+									<div className="w-14 text-right pr-2 pt-2 text-[11px] font-medium text-gray-400 dark:text-gray-500 shrink-0">
+										<div className="font-bold text-gray-700 dark:text-gray-300">{slot.label}</div>
 									</div>
 									{/* Cards */}
 									<div className="flex-1 min-w-0 pr-4 pb-2 border-l-2 border-transparent border-dashed pl-4 relative">
@@ -423,23 +474,22 @@ export function MobileScheduleView({
 				</div>
 			</main>
 
-			{/* L4: Floating buttons - fixed positioning with gap */}
-			<div className="fixed bottom-24 left-0 right-0 px-4 flex justify-between items-end gap-3 pointer-events-none z-20 lg:hidden">
+			{/* L4: Floating buttons - safe-area aware positioning */}
+			<div className="fixed bottom-20 left-0 right-0 px-4 pb-[env(safe-area-inset-bottom)] flex justify-between items-end gap-3 pointer-events-none z-20 lg:hidden">
 				{failedCount > 0 ? (
-					<button className="pointer-events-auto shadow-lg shadow-red-500/20 bg-red-600 text-white rounded-full px-4 py-2 flex items-center gap-2 active:scale-95 transition">
+					<button className="pointer-events-auto shadow-lg shadow-red-500/20 bg-red-600 text-white rounded-full px-4 py-2.5 flex items-center gap-2 active:scale-95 transition min-h-[44px]">
 						<AlertCircle className="h-4 w-4" />
 						<span className="text-sm font-bold">{failedCount} Issue{failedCount !== 1 ? 's' : ''}</span>
-						<X className="h-3.5 w-3.5 opacity-70 ml-1" />
 					</button>
 				) : (
 					<div />
 				)}
 				{readyCount > 0 && onReadyClick ? (
-					<button onClick={onReadyClick} className="pointer-events-auto shadow-lg shadow-blue-500/30 bg-blue-500 hover:bg-blue-600 text-white rounded-full pl-5 pr-4 py-2.5 flex items-center gap-2 active:scale-95 transition">
+					<button onClick={onReadyClick} className="pointer-events-auto shadow-lg shadow-blue-500/30 bg-blue-500 hover:bg-blue-600 text-white rounded-full pl-4 pr-3 py-2.5 flex items-center gap-2 active:scale-95 transition min-h-[44px]">
 						<Layers className="h-5 w-5" />
 						<span className="text-sm font-bold">Ready</span>
 						<div className="bg-white/20 px-2 py-0.5 rounded-full text-xs font-bold">{readyCount}</div>
-						<ChevronRight className="h-4 w-4 ml-1" />
+						<ChevronRight className="h-4 w-4" />
 					</button>
 				) : (
 					<div />
@@ -476,7 +526,7 @@ function TimelineCard({ item, onClick, onRefresh, menuOpen, onMenuToggle, onItem
 			onClick={onClick}
 			className={cn(
 				// B1: max-w-full + overflow-hidden for horizontal containment
-				'max-w-full rounded-xl shadow-sm border p-2 flex items-center gap-3 overflow-hidden cursor-pointer transition active:scale-[0.98] relative',
+				'max-w-full rounded-xl shadow-sm border p-2 flex items-center gap-2.5 overflow-hidden cursor-pointer transition active:scale-[0.98] relative',
 				// V2: Failed cards get red background
 				isFailed
 					? 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-900/30'
@@ -486,9 +536,9 @@ function TimelineCard({ item, onClick, onRefresh, menuOpen, onMenuToggle, onItem
 			{/* Red left stripe for failed */}
 			{isFailed && <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-500 rounded-l-xl" />}
 
-			{/* C1: Larger thumbnail (w-20 h-20 = 80px) */}
+			{/* Responsive thumbnail: 64px on small, 80px on sm+ */}
 			<div className={cn(
-				'w-20 h-20 bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden shrink-0 relative',
+				'w-16 h-16 sm:w-20 sm:h-20 bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden shrink-0 relative',
 				isFailed && 'ml-1'
 			)}>
 				{item.mediaUrl && !imgError ? (
@@ -523,26 +573,43 @@ function TimelineCard({ item, onClick, onRefresh, menuOpen, onMenuToggle, onItem
 
 			{/* Content - B1: min-w-0 to constrain flex child */}
 			<div className="flex-1 min-w-0">
-				<div className="flex items-baseline gap-2 mb-0.5 min-w-0">
+				<div className="flex items-center gap-1.5 mb-0.5 min-w-0 flex-wrap">
 					<span className={cn(
-						'text-xs font-mono font-medium px-1.5 py-0.5 rounded shrink-0',
+						'text-[11px] font-mono font-semibold px-1.5 py-0.5 rounded shrink-0',
 						isFailed
 							? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20'
 							: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
 					)}>
 						{time}
 					</span>
-					{/* C5: line-clamp-2 instead of truncate */}
-					<h3 className="text-sm font-bold text-gray-900 dark:text-white line-clamp-2 min-w-0">
-						{displayTitle}
-					</h3>
+					{/* Compact status pill */}
+					<span className={cn(
+						'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide shrink-0',
+						item.publishingStatus === 'published' && 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400',
+						item.publishingStatus === 'failed' && 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400',
+						item.publishingStatus === 'processing' && 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400',
+						item.publishingStatus === 'scheduled' && 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400',
+					)}>
+						<span className={cn(
+							'w-1.5 h-1.5 rounded-full',
+							item.publishingStatus === 'published' && 'bg-emerald-500',
+							item.publishingStatus === 'failed' && 'bg-red-500',
+							item.publishingStatus === 'processing' && 'bg-amber-500 animate-pulse',
+							item.publishingStatus === 'scheduled' && 'bg-blue-500',
+						)} />
+						{item.publishingStatus}
+					</span>
 				</div>
-				{/* B1: Error text properly truncated with max-w-full */}
+				{/* C5: line-clamp-2 title */}
+				<h3 className="text-[13px] font-semibold text-gray-900 dark:text-white line-clamp-2 min-w-0 leading-snug mb-0.5">
+					{displayTitle}
+				</h3>
+				{/* B1: Error text or subtitle */}
 				<p className={cn(
-					'text-xs truncate max-w-full',
-					isFailed ? 'text-red-500 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'
+					'text-[11px] truncate max-w-full',
+					isFailed ? 'text-red-500 dark:text-red-400' : 'text-gray-400 dark:text-gray-500'
 				)}>
-					{isFailed ? friendlyError(item.error || 'Publishing failed') : 'Scheduled via Instagram'}
+					{isFailed ? friendlyError(item.error || 'Publishing failed') : (item.mediaType === 'VIDEO' ? 'Video story' : 'Image story')}
 				</p>
 			</div>
 

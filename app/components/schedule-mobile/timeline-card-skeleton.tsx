@@ -11,31 +11,24 @@ export function TimelineCardSkeleton() {
 	return (
 		<div
 			data-testid="timeline-card-skeleton"
-			className="relative bg-[#1a1f2e] rounded-xl overflow-hidden shadow-lg min-h-[48px]"
-			style={{
-				borderLeft: '4px solid #2a2f3e',
-			}}
+			className="rounded-xl overflow-hidden border border-gray-100 dark:border-gray-800 bg-white dark:bg-[#1f2229] p-2.5 flex items-center gap-2.5 animate-pulse"
 		>
 			{/* Media Thumbnail Skeleton */}
-			<div className="relative w-20 h-[142px] float-left mr-3">
-				<div className="w-full h-full bg-[#2a2f3e] skeleton-shimmer" />
-			</div>
+			<div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-200 dark:bg-gray-700 rounded-lg shrink-0" />
 
 			{/* Content Skeleton */}
-			<div className="p-3 pl-0">
-				{/* Time Badge Skeleton */}
-				<div className="flex items-center gap-2 mb-2">
-					<div className="h-6 w-20 bg-[#2a2f3e] rounded-lg skeleton-shimmer" />
+			<div className="flex-1 space-y-2">
+				{/* Time + Status badges */}
+				<div className="flex items-center gap-2">
+					<div className="h-5 w-14 bg-gray-200 dark:bg-gray-700 rounded-md" />
+					<div className="h-4 w-16 bg-gray-100 dark:bg-gray-800 rounded-full" />
 				</div>
 
-				{/* Caption Lines Skeleton */}
-				<div className="space-y-2">
-					<div className="h-4 bg-[#2a2f3e] rounded skeleton-shimmer w-full" />
-					<div className="h-4 bg-[#2a2f3e] rounded skeleton-shimmer w-3/4" />
-				</div>
+				{/* Caption Lines */}
+				<div className="h-3.5 bg-gray-100 dark:bg-gray-800 rounded w-full" />
+				<div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-2/3" />
 			</div>
 
-			{/* Screen reader only text */}
 			<span className="sr-only">Loading scheduled post...</span>
 		</div>
 	);

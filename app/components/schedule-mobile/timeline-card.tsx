@@ -148,15 +148,15 @@ export function TimelineCard({ post, item, onClick, onUpdate }: TimelineCardProp
 			onMouseEnter={() => isDesktop && setIsHovered(true)}
 			onMouseLeave={() => isDesktop && setIsHovered(false)}
 			className={cn(
-				'relative flex gap-3 rounded-xl border-l-4 p-3',
+				'relative flex gap-2.5 rounded-xl border-l-4 p-2.5 lg:p-3',
 				'bg-white shadow-sm hover:shadow-md',
 				'dark:bg-[#1a1f2e] dark:shadow-lg dark:hover:shadow-xl',
 				'transition-all duration-200 hover:-translate-y-0.5 cursor-pointer group',
 				borderColor
 			)}
 		>
-			{/* Thumbnail */}
-			<div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100 dark:bg-slate-800">
+			{/* Thumbnail - responsive sizing */}
+			<div className="relative h-16 w-16 sm:h-20 sm:w-20 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100 dark:bg-slate-800">
 				{post.mediaType === 'VIDEO' ? (
 					<div className="flex h-full w-full items-center justify-center bg-gray-100 dark:bg-slate-800">
 						<video
@@ -205,8 +205,8 @@ export function TimelineCard({ post, item, onClick, onUpdate }: TimelineCardProp
 						</span>
 					</div>
 
-					{/* Status badge */}
-					<span className={cn('inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-bold', status.text, status.bg)}>
+					{/* Compact status pill */}
+					<span className={cn('inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold', status.text, status.bg)}>
 						<span className={cn('h-1.5 w-1.5 rounded-full', status.dot)} />
 						{status.label}
 					</span>

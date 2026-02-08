@@ -13,6 +13,7 @@ import { AnimatePresence } from 'framer-motion';
 import { SwipeableReadyCard } from './swipeable-ready-card';
 import { useSwipeManager } from '@/app/hooks/use-swipe-manager';
 import { ContentEditModal } from '../content/content-edit-modal';
+import { ScheduleTimeSheet } from './schedule-time-sheet';
 import { getNextAvailableSlot } from '@/lib/utils/schedule-time';
 import type { SwipeDirection } from '@/app/hooks/use-swipe-manager';
 
@@ -31,6 +32,7 @@ export function MobileReadyToPost({ items, scheduledItems = [], onBack, onItemCl
 	const [isScheduling, setIsScheduling] = useState(false);
 	const [dismissingCards, setDismissingCards] = useState<Set<string>>(new Set());
 	const [editItem, setEditItem] = useState<ContentItem | null>(null);
+	const [pendingScheduleItem, setPendingScheduleItem] = useState<ContentItem | null>(null);
 	const [sortMode, setSortMode] = useState<'newest' | 'oldest' | 'type'>('newest');
 	const [showSortMenu, setShowSortMenu] = useState(false);
 
@@ -98,22 +100,31 @@ export function MobileReadyToPost({ items, scheduledItems = [], onBack, onItemCl
 		}
 	}, [selectMode, toggleSelect, onItemClick]);
 
-	// Swipe-to-schedule handler
-	const handleSwipeSchedule = useCallback(async (item: ContentItem) => {
-		// Mark card as dismissing for exit animation
+	// Swipe-to-schedule handler: opens time picker instead of auto-scheduling
+	const handleSwipeSchedule = useCallback((item: ContentItem) => {
+		swipeManager.closeCard();
+		setPendingScheduleItem(item);
+	}, [swipeManager]);
+
+	// Suggested initial time for the picker
+	const suggestedTime = useMemo(() => {
+		const existingTimes = scheduledItems
+			.filter(i => i.scheduledTime)
+			.map(i => i.scheduledTime!);
+		return new Date(getNextAvailableSlot(existingTimes));
+	}, [scheduledItems]);
+
+	// Confirm schedule after user picks a time
+	const handleConfirmSchedule = useCallback(async (item: ContentItem, scheduledTime: Date) => {
+		setPendingScheduleItem(null);
 		setDismissingCards(prev => new Set(prev).add(item.id));
 
 		try {
-			const existingTimes = scheduledItems
-				.filter(i => i.scheduledTime)
-				.map(i => i.scheduledTime!);
-			const scheduledTime = getNextAvailableSlot(existingTimes);
-
 			const response = await fetch(`/api/content/${item.id}`, {
 				method: 'PATCH',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
-					scheduledTime,
+					scheduledTime: scheduledTime.getTime(),
 					publishingStatus: 'scheduled',
 					version: item.version,
 				}),
@@ -124,9 +135,8 @@ export function MobileReadyToPost({ items, scheduledItems = [], onBack, onItemCl
 				throw new Error(responseData.error || 'Failed to schedule');
 			}
 
-			toast.success(`Scheduled for ${format(new Date(scheduledTime), 'h:mm a')}`);
+			toast.success(`Scheduled for ${format(scheduledTime, 'h:mm a')}`);
 
-			// Wait for exit animation, then refresh
 			setTimeout(() => {
 				setDismissingCards(prev => {
 					const next = new Set(prev);
@@ -136,7 +146,6 @@ export function MobileReadyToPost({ items, scheduledItems = [], onBack, onItemCl
 				onRefresh?.();
 			}, 350);
 		} catch (err) {
-			// Undo dismiss on error
 			setDismissingCards(prev => {
 				const next = new Set(prev);
 				next.delete(item.id);
@@ -144,7 +153,7 @@ export function MobileReadyToPost({ items, scheduledItems = [], onBack, onItemCl
 			});
 			toast.error(err instanceof Error ? err.message : 'Failed to schedule');
 		}
-	}, [scheduledItems, onRefresh]);
+	}, [onRefresh]);
 
 	// Swipe-to-archive handler
 	const handleSwipeArchive = useCallback(async (item: ContentItem) => {
@@ -408,6 +417,16 @@ export function MobileReadyToPost({ items, scheduledItems = [], onBack, onItemCl
 						</div>
 					</div>
 				</div>
+			)}
+
+			{/* Schedule Time Picker */}
+			{pendingScheduleItem && (
+				<ScheduleTimeSheet
+					item={pendingScheduleItem}
+					initialDate={suggestedTime}
+					onConfirm={handleConfirmSchedule}
+					onCancel={() => setPendingScheduleItem(null)}
+				/>
 			)}
 
 			{/* Edit Modal */}

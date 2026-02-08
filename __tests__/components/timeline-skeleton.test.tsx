@@ -24,25 +24,22 @@ describe('TimelineCardSkeleton', () => {
 		expect(screen.getByText('Loading scheduled post...')).toBeInTheDocument();
 	});
 
-	it('applies shimmer animation class', () => {
-		const { container } = render(<TimelineCardSkeleton />);
+	it('applies pulse animation class', () => {
+		render(<TimelineCardSkeleton />);
 
-		const shimmerElements = container.querySelectorAll('.skeleton-shimmer');
-		expect(shimmerElements.length).toBeGreaterThan(0);
+		const skeleton = screen.getByTestId('timeline-card-skeleton');
+		expect(skeleton).toHaveClass('animate-pulse');
 	});
 
 	it('matches TimelineCard dimensions', () => {
 		const { container } = render(<TimelineCardSkeleton />);
 
-		// Thumbnail should be 80px × 142px (9:16 aspect ratio)
-		const thumbnail = container.querySelector('.w-20.h-\\[142px\\]');
+		// Thumbnail should be responsive (w-16 h-16 sm:w-20 sm:h-20)
+		const thumbnail = container.querySelector('.w-16');
 		expect(thumbnail).toBeInTheDocument();
 
-		// Should have 4px left border
-		const card = screen.getByTestId('timeline-card-skeleton');
-		expect(card).toHaveStyle({ borderLeft: '4px solid #2a2f3e' });
-
 		// Should have rounded corners
+		const card = screen.getByTestId('timeline-card-skeleton');
 		expect(card).toHaveClass('rounded-xl');
 	});
 });
@@ -104,10 +101,9 @@ describe('Skeleton Integration', () => {
 
 		// Verify key dimension classes that match TimelineCard
 		const skeleton = skeletonContainer.querySelector('[data-testid="timeline-card-skeleton"]');
-		expect(skeleton).toHaveClass('bg-[#1a1f2e]');
 		expect(skeleton).toHaveClass('rounded-xl');
-		expect(skeleton).toHaveClass('shadow-lg');
-		expect(skeleton).toHaveClass('min-h-[48px]');
+		expect(skeleton).toHaveClass('bg-white');
+		expect(skeleton).toHaveClass('animate-pulse');
 	});
 
 	it('skeleton grid matches timeline layout structure', () => {

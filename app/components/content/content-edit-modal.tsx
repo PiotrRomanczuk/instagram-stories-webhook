@@ -138,9 +138,14 @@ export function ContentEditModal({
 				className='fixed inset-0 z-[60] bg-black/60 backdrop-blur-md transition-all'
 				onClick={onClose}
 			/>
-			<div className='fixed inset-0 z-[70] flex items-center justify-center p-4 sm:p-6'>
-				<div className='relative w-full max-w-4xl rounded-3xl bg-white overflow-hidden shadow-2xl ring-1 ring-black/5 flex flex-col md:flex-row max-h-[90vh] animate-in fade-in zoom-in duration-300'>
-					{/* Left Side: Phone Preview */}
+			<div className='fixed inset-0 z-[70] flex items-end md:items-center justify-center md:p-6'>
+				<div className='relative w-full max-w-4xl rounded-t-3xl md:rounded-3xl bg-white overflow-hidden shadow-2xl ring-1 ring-black/5 flex flex-col md:flex-row h-[95dvh] md:h-auto md:max-h-[90vh] animate-in slide-in-from-bottom-4 md:fade-in md:zoom-in duration-300'>
+					{/* Mobile drag handle */}
+					<div className='md:hidden flex justify-center pt-3 pb-1 shrink-0'>
+						<div className='w-10 h-1 rounded-full bg-gray-300' />
+					</div>
+
+					{/* Left Side: Phone Preview - hidden on mobile */}
 					<div className='hidden md:flex md:w-2/5 bg-gray-50 dark:bg-[#101622] flex-col border-r border-gray-100 dark:border-slate-800'>
 						<div className='p-6 border-b border-gray-100 dark:border-slate-800 flex items-center gap-2'>
 							<Calendar className='h-5 w-5 text-indigo-600' />
@@ -154,25 +159,25 @@ export function ContentEditModal({
 					{/* Right Side: Configuration */}
 					<div className='flex-1 flex flex-col overflow-hidden'>
 						{/* Header */}
-						<div className='flex items-center justify-between border-b p-6 bg-white'>
+						<div className='flex items-center justify-between border-b p-4 md:p-6 bg-white'>
 							<div>
-								<h2 className='text-2xl font-black text-gray-900 tracking-tight'>
+								<h2 className='text-lg md:text-2xl font-black text-gray-900 tracking-tight'>
 									Configure Post
 								</h2>
-								<p className='text-sm text-gray-500 font-medium'>
+								<p className='text-xs md:text-sm text-gray-500 font-medium'>
 									Finalize details and set publishing time
 								</p>
 							</div>
 							<button
 								onClick={onClose}
-								className='text-gray-400 hover:text-gray-900 p-2 rounded-full hover:bg-gray-100 transition-colors'
+								className='text-gray-400 hover:text-gray-900 p-2 rounded-full hover:bg-gray-100 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center'
 							>
 								<X className='h-6 w-6' />
 							</button>
 						</div>
 
 						{/* Scrollable Content */}
-						<div className='flex-1 overflow-y-auto p-8 space-y-8 bg-white'>
+						<div className='flex-1 overflow-y-auto p-4 md:p-8 space-y-6 md:space-y-8 bg-white'>
 							{/* Scheduling Section */}
 							<section className='space-y-4'>
 								<div className='flex items-center gap-2 mb-2'>
@@ -266,12 +271,12 @@ export function ContentEditModal({
 							)}
 						</div>
 
-						{/* Sticky Footer */}
-						<div className='p-6 border-t bg-gray-50 flex flex-col sm:flex-row gap-4'>
+						{/* Sticky Footer - safe-area aware */}
+						<div className='p-4 md:p-6 border-t bg-gray-50 flex flex-col sm:flex-row gap-3 pb-[max(1rem,env(safe-area-inset-bottom))]'>
 							<button
 								onClick={onClose}
 								disabled={isSaving}
-								className='px-6 py-3 text-gray-500 font-bold hover:text-gray-900 transition-colors'
+								className='hidden sm:block px-6 py-3 text-gray-500 font-bold hover:text-gray-900 transition-colors'
 							>
 								Cancel
 							</button>
