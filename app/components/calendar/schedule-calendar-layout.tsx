@@ -285,8 +285,8 @@ export function ScheduleCalendarLayout() {
 						onEdit={(item) => { setPreviewItem(null); setEditItem(item); }}
 						onRefresh={mutate}
 						isAdmin={isAdmin}
-						items={allItems}
-						currentIndex={allItems.findIndex((i) => i.id === previewItem.id)}
+						items={displayItems}
+						currentIndex={displayItems.findIndex((i) => i.id === previewItem.id)}
 						onNavigate={(item) => setPreviewItem(item)}
 					/>
 				)}
@@ -460,8 +460,8 @@ export function ScheduleCalendarLayout() {
 					}}
 					onRefresh={mutate}
 					isAdmin={isAdmin}
-					items={allItems}
-					currentIndex={allItems.findIndex((i) => i.id === previewItem.id)}
+					items={displayItems}
+					currentIndex={displayItems.findIndex((i) => i.id === previewItem.id)}
 					onNavigate={(item) => setPreviewItem(item)}
 				/>
 			)}

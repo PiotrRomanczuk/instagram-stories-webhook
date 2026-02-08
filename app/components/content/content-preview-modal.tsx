@@ -568,10 +568,16 @@ export function ContentPreviewModal({
 						<div className='p-4 md:p-8 border-b border-gray-100 flex items-center justify-between'>
 							<div className='min-w-0'>
 								<h2 className='text-lg md:text-2xl font-black text-gray-900 leading-tight truncate max-w-[240px] md:max-w-[280px]'>
-									{item.title || 'Post Insights'}
+									{item.title || item.caption || 'Post Details'}
 								</h2>
 								<div className='flex items-center gap-2 mt-1'>
-									<span className='inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse' />
+									<span className={`inline-block w-2 h-2 rounded-full ${
+										item.publishingStatus === 'failed' ? 'bg-red-500' :
+										item.publishingStatus === 'published' ? 'bg-emerald-500 animate-pulse' :
+										item.publishingStatus === 'processing' ? 'bg-amber-500 animate-pulse' :
+										item.publishingStatus === 'scheduled' ? 'bg-blue-500' :
+										'bg-gray-400'
+									}`} />
 									<p className='text-[11px] text-gray-400 font-bold uppercase tracking-widest'>
 										{item.source} • {item.mediaType}
 									</p>
@@ -737,10 +743,9 @@ export function ContentPreviewModal({
 									)}
 								</div>
 							</section>
-						</div>
 
-						{/* Footer Actions */}
-						<div className='p-4 md:p-8 pt-0 flex flex-col gap-3 pb-[env(safe-area-inset-bottom)]'>
+							{/* Footer Actions */}
+							<div className='flex flex-col gap-3 pt-4 pb-32 md:pb-0'>
 							{/* Approval buttons for pending submissions */}
 							{isAdmin && isPendingSubmission && (
 								<div className='flex gap-2'>
@@ -814,6 +819,7 @@ export function ContentPreviewModal({
 						</div>
 					</div>
 				</div>
+			</div>
 			</div>
 
 			<ConfirmationDialog
