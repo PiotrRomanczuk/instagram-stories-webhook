@@ -4,6 +4,12 @@ import { useState } from 'react';
 import useSWR from 'swr';
 import { FileText, ChevronDown } from 'lucide-react';
 import { Panel } from '@/app/components/ui/panel';
+import { Tabs, TabsList, TabsTrigger } from '@/app/components/ui/tabs';
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/app/components/ui/select';
+import { Skeleton } from '@/app/components/ui/skeleton';
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/app/components/ui/collapsible';
+import { Badge } from '@/app/components/ui/badge';
+import { Button } from '@/app/components/ui/button';
 
 interface SystemLog {
 	id: string;
@@ -69,7 +75,7 @@ export function LogsViewer() {
 	if (error) {
 		return (
 			<Panel
-				title="📋 Recent Logs"
+				title="Recent Logs"
 				icon={<FileText className="w-6 h-6" />}
 			>
 				<div className="text-center py-4 text-red-600">
@@ -80,59 +86,44 @@ export function LogsViewer() {
 	}
 
 	return (
-		<Panel title="📋 Recent Logs" icon={<FileText className="w-6 h-6" />}>
+		<Panel title="Recent Logs" icon={<FileText className="w-6 h-6" />}>
 			<div className="mb-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-				<div className="flex gap-3">
-					<button
-						onClick={() => {
-							setLogType('system');
-							setOffset(0);
-						}}
-						className={`px-4 py-2 rounded-lg font-bold text-sm transition ${
-							logType === 'system'
-								? 'bg-indigo-600 text-white'
-								: 'bg-slate-200 text-slate-700 hover:bg-slate-300'
-						}`}
-					>
-						System Logs
-					</button>
-					<button
-						onClick={() => {
-							setLogType('publishing');
-							setOffset(0);
-						}}
-						className={`px-4 py-2 rounded-lg font-bold text-sm transition ${
-							logType === 'publishing'
-								? 'bg-indigo-600 text-white'
-								: 'bg-slate-200 text-slate-700 hover:bg-slate-300'
-						}`}
-					>
-						Publishing Logs
-					</button>
-				</div>
+				<Tabs
+					value={logType}
+					onValueChange={(value) => {
+						setLogType(value as 'system' | 'publishing');
+						setOffset(0);
+					}}
+				>
+					<TabsList>
+						<TabsTrigger value="system">System Logs</TabsTrigger>
+						<TabsTrigger value="publishing">Publishing Logs</TabsTrigger>
+					</TabsList>
+				</Tabs>
 
-				<select
+				<Select
 					value={hours}
-					onChange={(e) => {
-						setHours(e.target.value);
+					onValueChange={(value) => {
+						setHours(value);
 						setOffset(0);
 						mutate();
 					}}
-					className="px-3 py-2 border border-slate-300 rounded-lg text-sm font-medium"
 				>
-					<option value="1">Last 1 hour</option>
-					<option value="6">Last 6 hours</option>
-					<option value="24">Last 24 hours</option>
-				</select>
+					<SelectTrigger className="w-[160px]">
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="1">Last 1 hour</SelectItem>
+						<SelectItem value="6">Last 6 hours</SelectItem>
+						<SelectItem value="24">Last 24 hours</SelectItem>
+					</SelectContent>
+				</Select>
 			</div>
 
 			{isLoading || !data ? (
 				<div className="space-y-2">
 					{[1, 2, 3].map((i) => (
-						<div
-							key={i}
-							className="h-12 bg-slate-200 rounded-lg animate-pulse"
-						></div>
+						<Skeleton key={i} className="h-12 w-full rounded-lg" />
 					))}
 				</div>
 			) : data.logs.length === 0 ? (
@@ -151,110 +142,116 @@ export function LogsViewer() {
 							const isExpanded = expandedId === id;
 
 							return (
-								<div
+								<Collapsible
 									key={id}
-									className="border border-slate-200 rounded-lg overflow-hidden"
+									open={isExpanded}
+									onOpenChange={(open) =>
+										setExpandedId(open ? id : null)
+									}
 								>
-									<button
-										onClick={() =>
-											setExpandedId(isExpanded ? null : id)
-										}
-										className="w-full p-3 hover:bg-slate-50 transition flex items-start gap-3 text-left"
-									>
-										<ChevronDown
-											className={`w-4 h-4 mt-1 flex-shrink-0 transition ${
-												isExpanded
-													? 'rotate-180'
-													: ''
-											}`}
-										/>
-										<div className="flex-1 min-w-0">
-											{isSystemLog ? (
-												<>
-													<div className="flex items-center gap-2 mb-1">
-														<span
-															className={`px-2 py-0.5 rounded text-xs font-bold ${
-																(log as SystemLog)
-																	.level ===
-																'error'
-																	? 'bg-rose-100 text-rose-700'
-																	: (log as SystemLog)
+									<div className="border border-slate-200 rounded-lg overflow-hidden">
+										<CollapsibleTrigger asChild>
+											<button
+												className="w-full p-3 hover:bg-slate-50 transition flex items-start gap-3 text-left"
+											>
+												<ChevronDown
+													className={`w-4 h-4 mt-1 flex-shrink-0 transition ${
+														isExpanded
+															? 'rotate-180'
+															: ''
+													}`}
+												/>
+												<div className="flex-1 min-w-0">
+													{isSystemLog ? (
+														<>
+															<div className="flex items-center gap-2 mb-1">
+																<Badge
+																	variant="outline"
+																	className={
+																		(log as SystemLog)
 																			.level ===
-																		  'warn'
-																	? 'bg-amber-100 text-amber-700'
-																	: 'bg-emerald-100 text-emerald-700'
-															}`}
-														>
-															{(
-																log as SystemLog
-															).level.toUpperCase()}
-														</span>
-														<span className="text-xs text-slate-600">
-															{(
-																log as SystemLog
-															).module}
-														</span>
-														<span className="text-xs text-slate-500">
-															{new Date(
-																(log as SystemLog)
-																	.created_at,
-															).toLocaleTimeString()}
-														</span>
-													</div>
-													<p className="text-sm text-slate-900 line-clamp-2">
-														{(log as SystemLog).message}
-													</p>
-												</>
-											) : (
-												<>
-													<div className="flex items-center gap-2 mb-1">
-														<span
-															className={`px-2 py-0.5 rounded text-xs font-bold ${
-																(log as PublishingLog)
-																	.status ===
-																'SUCCESS'
-																	? 'bg-emerald-100 text-emerald-700'
-																	: 'bg-rose-100 text-rose-700'
-															}`}
-														>
-															{(log as PublishingLog).status}
-														</span>
-														<span className="text-xs text-slate-600">
-															{(log as PublishingLog)
-																.post_type}
-														</span>
-														<span className="text-xs text-slate-500">
-															{new Date(
-																(log as PublishingLog)
-																	.created_at,
-															).toLocaleTimeString()}
-														</span>
-													</div>
-													<p className="text-sm text-slate-900">
-														{(log as PublishingLog)
-															.error_message ||
-															`Published successfully`}
-													</p>
-												</>
-											)}
-										</div>
-									</button>
+																		'error'
+																			? 'bg-rose-100 text-rose-700 border-rose-200'
+																			: (log as SystemLog)
+																					.level ===
+																				  'warn'
+																			? 'bg-amber-100 text-amber-700 border-amber-200'
+																			: 'bg-emerald-100 text-emerald-700 border-emerald-200'
+																	}
+																>
+																	{(
+																		log as SystemLog
+																	).level.toUpperCase()}
+																</Badge>
+																<span className="text-xs text-slate-600">
+																	{(
+																		log as SystemLog
+																	).module}
+																</span>
+																<span className="text-xs text-slate-500">
+																	{new Date(
+																		(log as SystemLog)
+																			.created_at,
+																	).toLocaleTimeString()}
+																</span>
+															</div>
+															<p className="text-sm text-slate-900 line-clamp-2">
+																{(log as SystemLog).message}
+															</p>
+														</>
+													) : (
+														<>
+															<div className="flex items-center gap-2 mb-1">
+																<Badge
+																	variant="outline"
+																	className={
+																		(log as PublishingLog)
+																			.status ===
+																		'SUCCESS'
+																			? 'bg-emerald-100 text-emerald-700 border-emerald-200'
+																			: 'bg-rose-100 text-rose-700 border-rose-200'
+																	}
+																>
+																	{(log as PublishingLog).status}
+																</Badge>
+																<span className="text-xs text-slate-600">
+																	{(log as PublishingLog)
+																		.post_type}
+																</span>
+																<span className="text-xs text-slate-500">
+																	{new Date(
+																		(log as PublishingLog)
+																			.created_at,
+																	).toLocaleTimeString()}
+																</span>
+															</div>
+															<p className="text-sm text-slate-900">
+																{(log as PublishingLog)
+																	.error_message ||
+																	`Published successfully`}
+															</p>
+														</>
+													)}
+												</div>
+											</button>
+										</CollapsibleTrigger>
 
-									{isExpanded && (
-										<div className="p-3 bg-slate-50 border-t border-slate-200">
-											<pre className="text-xs text-slate-700 overflow-auto max-h-48 font-mono whitespace-pre-wrap break-words">
-												{isSystemLog
-													? JSON.stringify(
-															(log as SystemLog)
-																.details,
-															null,
-															2,
-														)
-													: JSON.stringify(log, null, 2)}
-											</pre>
-										</div>
-									)}
-								</div>
+										<CollapsibleContent>
+											<div className="p-3 bg-slate-50 border-t border-slate-200">
+												<pre className="text-xs text-slate-700 overflow-auto max-h-48 font-mono whitespace-pre-wrap break-words">
+													{isSystemLog
+														? JSON.stringify(
+																(log as SystemLog)
+																	.details,
+																null,
+																2,
+															)
+														: JSON.stringify(log, null, 2)}
+												</pre>
+											</div>
+										</CollapsibleContent>
+									</div>
+								</Collapsible>
 							);
 						})}
 					</div>
@@ -266,23 +263,25 @@ export function LogsViewer() {
 							{Math.min(offset + 50, data.total)} of {data.total}
 						</div>
 						<div className="flex gap-2">
-							<button
+							<Button
 								onClick={handlePrevious}
 								disabled={offset === 0}
-								className="px-4 py-2 rounded-lg bg-slate-200 text-slate-700 font-bold text-sm hover:bg-slate-300 disabled:opacity-50 transition"
+								variant="outline"
+								size="sm"
 							>
-								← Previous
-							</button>
-							<button
+								Previous
+							</Button>
+							<Button
 								onClick={handleNext}
 								disabled={
 									!data ||
 									offset + 50 >= data.total
 								}
-								className="px-4 py-2 rounded-lg bg-slate-200 text-slate-700 font-bold text-sm hover:bg-slate-300 disabled:opacity-50 transition"
+								variant="outline"
+								size="sm"
 							>
-								Next →
-							</button>
+								Next
+							</Button>
 						</div>
 					</div>
 				</div>

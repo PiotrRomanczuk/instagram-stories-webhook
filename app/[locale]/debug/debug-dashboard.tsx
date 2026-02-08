@@ -7,6 +7,8 @@ import { PermissionsPanel } from '../../components/debug/permissions-panel';
 import { PagesPanel } from '../../components/debug/pages-panel';
 import { UserProfilePanel } from '../../components/debug/user-profile-panel';
 import { LoadingSpinner } from '../../components/ui/loading-spinner';
+import { Alert, AlertDescription } from '@/app/components/ui/alert';
+import { Button } from '@/app/components/ui/button';
 
 export function DebugDashboard() {
 	const { data, loading, error, refresh } = useDebugData();
@@ -15,15 +17,15 @@ export function DebugDashboard() {
 
 	if (error) {
 		return (
-			<div className='p-8 text-center bg-rose-50 rounded-3xl border border-rose-100'>
-				<p className='text-rose-600 font-bold mb-4'>Error: {error}</p>
-				<button
+			<Alert variant="destructive" className="p-8 rounded-3xl bg-rose-50 border-rose-100 text-center flex flex-col items-center">
+				<AlertDescription className="text-rose-600 font-bold mb-4">Error: {error}</AlertDescription>
+				<Button
 					onClick={refresh}
-					className='px-6 py-2 bg-rose-600 text-white rounded-xl font-bold hover:bg-rose-700 transition'
+					className="bg-rose-600 text-white rounded-xl font-bold hover:bg-rose-700"
 				>
 					Retry Connection
-				</button>
-			</div>
+				</Button>
+			</Alert>
 		);
 	}
 
@@ -41,13 +43,14 @@ export function DebugDashboard() {
 						Real-time health check of your Meta API connection.
 					</p>
 				</div>
-				<button
+				<Button
+					variant="outline"
 					onClick={refresh}
-					className='group flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-2xl text-xs font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition shadow-sm'
+					className="group rounded-2xl text-xs font-black uppercase tracking-widest text-slate-600 shadow-sm"
 				>
 					<RefreshCw className='w-4 h-4 group-hover:rotate-180 transition-transform duration-500' />
 					Refresh Stats
-				</button>
+				</Button>
 			</div>
 
 			<div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>

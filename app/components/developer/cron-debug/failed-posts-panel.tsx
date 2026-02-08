@@ -5,6 +5,11 @@ import { useState } from 'react';
 import { Loader, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { Panel } from '@/app/components/ui/panel';
+import { Skeleton } from '@/app/components/ui/skeleton';
+import { Card } from '@/app/components/ui/card';
+import { Badge } from '@/app/components/ui/badge';
+import { Button } from '@/app/components/ui/button';
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/app/components/ui/collapsible';
 
 interface FailedPost {
 	id: string;
@@ -59,7 +64,7 @@ export function FailedPostsPanel() {
 
 	if (error) {
 		return (
-			<Panel title="❌ Failed Posts" icon={<XCircle className="w-6 h-6" />}>
+			<Panel title="Failed Posts" icon={<XCircle className="w-6 h-6" />}>
 				<div className="text-center py-4 text-red-600">
 					Failed to load failed posts
 				</div>
@@ -69,14 +74,14 @@ export function FailedPostsPanel() {
 
 	if (isLoading || !data) {
 		return (
-			<Panel title="❌ Failed Posts" icon={<XCircle className="w-6 h-6" />}>
-				<div className="animate-pulse h-32 bg-slate-200 rounded-lg"></div>
+			<Panel title="Failed Posts" icon={<XCircle className="w-6 h-6" />}>
+				<Skeleton className="h-32 w-full rounded-lg" />
 			</Panel>
 		);
 	}
 
 	return (
-		<Panel title="❌ Failed Posts" icon={<XCircle className="w-6 h-6" />}>
+		<Panel title="Failed Posts" icon={<XCircle className="w-6 h-6" />}>
 			{data.count === 0 ? (
 				<div className="text-center py-8 text-slate-600">
 					<p className="font-semibold">No failed posts</p>
@@ -89,9 +94,9 @@ export function FailedPostsPanel() {
 					</p>
 					<div className="space-y-3">
 						{data.posts.map((post) => (
-							<div
+							<Card
 								key={post.id}
-								className="rounded-lg border border-slate-200 bg-white p-4"
+								className="p-4"
 							>
 								<div className="flex items-start justify-between mb-2">
 									<div className="flex-1">
@@ -104,49 +109,45 @@ export function FailedPostsPanel() {
 										</p>
 									</div>
 									<div className="flex items-center gap-2">
-										<span className="px-2 py-1 bg-rose-100 text-rose-700 rounded text-xs font-bold">
+										<Badge variant="destructive" className="bg-rose-100 text-rose-700 border-rose-200">
 											{post.retry_count}/3
-										</span>
-										<button
+										</Badge>
+										<Button
 											onClick={() => handleRetry(post.id)}
 											disabled={
 												retryingId === post.id ||
 												post.retry_count >= 3
 											}
-											className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg font-bold text-sm hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2 transition"
+											size="sm"
 										>
 											{retryingId === post.id ? (
 												<Loader className="w-4 h-4 animate-spin" />
 											) : null}
 											Retry
-										</button>
+										</Button>
 									</div>
 								</div>
 
 								{post.error && (
-									<div className="mt-2">
-										<button
-											onClick={() =>
-												setExpandedId(
-													expandedId === post.id
-														? null
-														: post.id,
-												)
-											}
-											className="text-xs font-semibold text-rose-600 hover:text-rose-700"
-										>
+									<Collapsible
+										open={expandedId === post.id}
+										onOpenChange={(open) =>
+											setExpandedId(open ? post.id : null)
+										}
+									>
+										<CollapsibleTrigger className="text-xs font-semibold text-rose-600 hover:text-rose-700 mt-2">
 											{expandedId === post.id
 												? '▼ Hide error'
 												: '▶ Show error'}
-										</button>
-										{expandedId === post.id && (
+										</CollapsibleTrigger>
+										<CollapsibleContent>
 											<pre className="mt-2 p-2 bg-slate-100 rounded text-xs text-slate-700 overflow-auto max-h-32">
 												{post.error}
 											</pre>
-										)}
-									</div>
+										</CollapsibleContent>
+									</Collapsible>
 								)}
-							</div>
+							</Card>
 						))}
 					</div>
 				</div>

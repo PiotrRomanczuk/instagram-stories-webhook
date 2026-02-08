@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { CheckCircle, Loader } from 'lucide-react';
+import { Button } from '@/app/components/ui/button';
 
 interface ProcessButtonProps {
     onProcessed: () => void;
@@ -28,12 +29,13 @@ export function ProcessButton({ onProcessed }: ProcessButtonProps) {
     };
 
     return (
-        <button
+        <Button
             onClick={handleProcessNow}
             disabled={processing}
-            className="px-4 py-2 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm"
+            className="bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 shadow-sm"
+            size="sm"
         >
             {processing ? <><Loader className="w-4 h-4 animate-spin" /> Processing...</> : <><CheckCircle className="w-4 h-4" /> Process Now</>}
-        </button>
+        </Button>
     );
 }

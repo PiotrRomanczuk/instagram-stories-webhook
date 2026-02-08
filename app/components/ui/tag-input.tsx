@@ -2,6 +2,9 @@
 
 import { useState } from 'react';
 import { X } from 'lucide-react';
+import { Badge } from '@/app/components/ui/badge';
+import { Button } from '@/app/components/ui/button';
+import { Input } from '@/app/components/ui/input';
 
 interface TagInputProps {
     tags: string[];
@@ -47,31 +50,34 @@ export function TagInput({ tags, onChange, placeholder = '@username', maxTags = 
             <div className="flex flex-wrap gap-2 p-3 bg-white rounded-xl border border-gray-200 focus-within:border-indigo-500 transition min-h-12">
                 {/* Tag Pills */}
                 {tags.map((tag, index) => (
-                    <div
+                    <Badge
                         key={index}
-                        className="flex items-center gap-1.5 px-3 py-1 bg-indigo-50 text-indigo-700 rounded-lg border border-indigo-200 text-sm font-medium"
+                        variant="outline"
+                        className="gap-1.5 px-3 py-1 bg-indigo-50 text-indigo-700 rounded-lg border-indigo-200 text-sm font-medium"
                     >
                         <span>{tag}</span>
-                        <button
+                        <Button
                             type="button"
+                            variant="ghost"
+                            size="icon-xs"
                             onClick={() => handleRemoveTag(index)}
-                            className="p-0.5 hover:bg-indigo-200 rounded transition"
+                            className="p-0.5 h-auto w-auto hover:bg-indigo-200 rounded"
                             title="Remove tag"
                         >
                             <X className="w-3 h-3" />
-                        </button>
-                    </div>
+                        </Button>
+                    </Badge>
                 ))}
 
                 {/* Input Field */}
-                <input
+                <Input
                     type="text"
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder={placeholder}
                     disabled={tags.length >= maxTags}
-                    className="flex-1 min-w-[120px] outline-none bg-transparent text-sm text-gray-900"
+                    className="flex-1 min-w-[120px] h-auto border-0 shadow-none bg-transparent text-sm text-gray-900 focus-visible:ring-0 focus-visible:border-0 p-0"
                 />
             </div>
 

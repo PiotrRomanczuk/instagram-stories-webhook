@@ -3,6 +3,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { BarChart3, Eye, Users, Reply, ArrowRight, ArrowLeft, LogOut, Loader2, AlertCircle } from 'lucide-react';
 import { MediaInsight } from '@/lib/types';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/app/components/ui/dialog';
+import { Button } from '@/app/components/ui/button';
+import { Alert, AlertTitle, AlertDescription } from '@/app/components/ui/alert';
 
 interface InsightsPanelProps {
     postId: string;
@@ -39,8 +42,6 @@ export function InsightsPanel({ postId, isOpen, onClose }: InsightsPanelProps) {
         }
     }, [isOpen, fetchInsights]);
 
-    if (!isOpen) return null;
-
     const getIcon = (name: string) => {
         switch (name) {
             case 'impressions': return <Eye className="w-4 h-4 text-blue-500" />;
@@ -60,23 +61,16 @@ export function InsightsPanel({ postId, isOpen, onClose }: InsightsPanelProps) {
     };
 
     return (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-300">
-            {/* Backdrop */}
-            <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-md" onClick={onClose} />
+        <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+            <DialogContent className="max-w-xl rounded-[2.5rem] p-0 overflow-hidden">
+                <DialogHeader className="px-8 pt-8 pb-4 bg-slate-50/50">
+                    <DialogTitle className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+                        <BarChart3 className="w-7 h-7 text-indigo-600" />
+                        Performance <span className="text-indigo-600">Insights</span>
+                    </DialogTitle>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Real-time stats from Instagram</p>
+                </DialogHeader>
 
-            <div className="relative bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl shadow-black/20 overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
-                {/* Header */}
-                <div className="px-8 pt-8 pb-4 flex items-center justify-between bg-slate-50/50">
-                    <div>
-                        <h2 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-                            <BarChart3 className="w-7 h-7 text-indigo-600" />
-                            Performance <span className="text-indigo-600">Insights</span>
-                        </h2>
-                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Real-time stats from Instagram</p>
-                    </div>
-                </div>
-
-                {/* Content */}
                 <div className="p-8 flex-1 overflow-y-auto min-h-[400px]">
                     {loading ? (
                         <div className="h-full flex flex-col items-center justify-center gap-4">
@@ -84,17 +78,17 @@ export function InsightsPanel({ postId, isOpen, onClose }: InsightsPanelProps) {
                             <p className="text-sm font-bold text-slate-400">Loading metrics...</p>
                         </div>
                     ) : error ? (
-                        <div className="h-full flex flex-col items-center justify-center text-center p-6 bg-rose-50 rounded-3xl border border-rose-100">
+                        <Alert variant="destructive" className="rounded-3xl bg-rose-50 border-rose-100 p-6 flex flex-col items-center text-center">
                             <AlertCircle className="w-12 h-12 text-rose-500 mb-4" />
-                            <h3 className="text-rose-900 font-bold mb-2">Could not load insights</h3>
-                            <p className="text-rose-600 text-sm">{error}</p>
-                            <button
+                            <AlertTitle className="text-rose-900 font-bold mb-2">Could not load insights</AlertTitle>
+                            <AlertDescription className="text-rose-600 text-sm">{error}</AlertDescription>
+                            <Button
                                 onClick={fetchInsights}
-                                className="mt-6 px-6 py-2 bg-rose-600 text-white rounded-xl font-bold hover:bg-rose-700 transition"
+                                className="mt-6 bg-rose-600 text-white rounded-xl font-bold hover:bg-rose-700"
                             >
                                 Try Again
-                            </button>
-                        </div>
+                            </Button>
+                        </Alert>
                     ) : (
                         <div className="grid grid-cols-2 gap-4">
                             {insights.map((insight) => (
@@ -117,16 +111,16 @@ export function InsightsPanel({ postId, isOpen, onClose }: InsightsPanelProps) {
                     )}
                 </div>
 
-                {/* Footer */}
-                <div className="p-8 pt-4">
-                    <button
+                <DialogFooter className="p-8 pt-4">
+                    <Button
                         onClick={onClose}
-                        className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition shadow-lg shadow-slate-200"
+                        className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 shadow-lg shadow-slate-200"
+                        size="lg"
                     >
                         Close View
-                    </button>
-                </div>
-            </div>
-        </div>
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 }

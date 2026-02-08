@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
+import { Button } from '@/app/components/ui/button';
+import { Spinner } from '@/app/components/ui/spinner';
 
 interface ConnectFacebookButtonProps {
     isConnected: boolean;
@@ -24,16 +26,17 @@ export function ConnectFacebookButton({ isConnected }: ConnectFacebookButtonProp
     };
 
     return (
-        <button
+        <Button
             onClick={handleConnect}
             disabled={isLoading}
-            className={`px-8 py-4 rounded-2xl font-bold text-sm transition shadow-xl flex items-center justify-center gap-3 group disabled:opacity-70 ${isConnected
-                ? 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 shadow-slate-100'
+            variant={isConnected ? 'outline' : 'default'}
+            className={`px-8 py-4 h-auto rounded-2xl font-bold text-sm shadow-xl group ${isConnected
+                ? 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 shadow-slate-100'
                 : 'bg-slate-900 text-white hover:bg-slate-800 shadow-slate-200'
                 }`}
         >
             {isLoading ? (
-                <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                <Spinner className="w-5 h-5" />
             ) : (
                 <>
                     {isConnected ? (
@@ -49,6 +52,6 @@ export function ConnectFacebookButton({ isConnected }: ConnectFacebookButtonProp
                     <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                 </>
             )}
-        </button>
+        </Button>
     );
 }

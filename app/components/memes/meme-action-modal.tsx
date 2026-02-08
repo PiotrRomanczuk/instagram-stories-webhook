@@ -1,8 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Calendar, CheckCircle, Send, Ban } from 'lucide-react';
-import { Loader } from 'lucide-react';
+import { Calendar, CheckCircle, Send, Ban } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/app/components/ui/dialog';
+import { Input } from '@/app/components/ui/input';
+import { Textarea } from '@/app/components/ui/textarea';
+import { Label } from '@/app/components/ui/label';
+import { Button } from '@/app/components/ui/button';
+import { Spinner } from '@/app/components/ui/spinner';
 
 export type ActionType = 'publish' | 'schedule' | 'reject' | 'approve';
 
@@ -17,8 +22,6 @@ interface MemeActionModalProps {
 export function MemeActionModal({ isOpen, onClose, onConfirm, action, isProcessing }: MemeActionModalProps) {
     const [scheduleTime, setScheduleTime] = useState('');
     const [rejectionReason, setRejectionReason] = useState('');
-
-    if (!isOpen) return null;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -71,97 +74,88 @@ export function MemeActionModal({ isOpen, onClose, onConfirm, action, isProcessi
         }
     };
 
-    const current = config[action] || config.approve; // Fallback
+    const current = config[action] || config.approve;
     const Icon = current.icon;
 
-    // ... (rest of the component remains similar, kept short for reliability)
-
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="w-full max-w-md bg-white dark:bg-[#18181b] rounded-2xl shadow-2xl border border-slate-200 dark:border-white/10 overflow-hidden animate-in zoom-in-95 duration-200 scale-100">
-                <div className="p-6">
-                    <div className="flex items-start justify-between mb-6">
-                        <div className="flex items-center gap-4">
-                            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${current.bg}`}>
-                                <Icon className={`w-6 h-6 ${current.color}`} />
-                            </div>
-                            <div>
-                                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                                    {current.title}
-                                </h3>
-                                <p className="text-sm text-slate-500 dark:text-slate-400">
-                                    {action}
-                                </p>
-                            </div>
+        <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <div className="flex items-center gap-4">
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center ${current.bg}`}>
+                            <Icon className={`w-6 h-6 ${current.color}`} />
                         </div>
-                        <button onClick={onClose} className="text-slate-400 hover:text-slate-500 transition-colors">
-                            <X className="w-5 h-5" />
-                        </button>
+                        <div>
+                            <DialogTitle className="text-lg font-bold">
+                                {current.title}
+                            </DialogTitle>
+                            <p className="text-sm text-slate-500 dark:text-slate-400">
+                                {action}
+                            </p>
+                        </div>
                     </div>
+                </DialogHeader>
 
-                    <p className="text-slate-600 dark:text-slate-300 mb-6">
-                        {current.description}
-                    </p>
+                <p className="text-slate-600 dark:text-slate-300">
+                    {current.description}
+                </p>
 
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        {action === 'schedule' && (
-                            <div className="space-y-2">
-                                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                                    Publication Time
-                                </label>
-                                <input
-                                    type="datetime-local"
-                                    value={scheduleTime}
-                                    min={minDate}
-                                    onChange={(e) => setScheduleTime(e.target.value)}
-                                    required
-                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
-                                />
-                            </div>
-                        )}
-
-                        {action === 'reject' && (
-                            <div className="space-y-2">
-                                <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                                    Reason (Optional)
-                                </label>
-                                <textarea
-                                    value={rejectionReason}
-                                    onChange={(e) => setRejectionReason(e.target.value)}
-                                    placeholder="Why is it being rejected?"
-                                    rows={3}
-                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-red-500 outline-none resize-none"
-                                />
-                            </div>
-                        )}
-
-                        <div className="flex gap-3 pt-2">
-                            <button
-                                type="button"
-                                onClick={onClose}
-                                disabled={isProcessing}
-                                className="flex-1 px-4 py-3 rounded-xl font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={isProcessing}
-                                className={`flex-1 px-4 py-3 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-colors ${current.btnColor}`}
-                            >
-                                {isProcessing ? (
-                                    <>
-                                        <Loader className="w-4 h-4 animate-spin" />
-                                        Processing...
-                                    </>
-                                ) : (
-                                    'Confirm'
-                                )}
-                            </button>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    {action === 'schedule' && (
+                        <div className="space-y-2">
+                            <Label className="font-semibold">
+                                Publication Time
+                            </Label>
+                            <Input
+                                type="datetime-local"
+                                value={scheduleTime}
+                                min={minDate}
+                                onChange={(e) => setScheduleTime(e.target.value)}
+                                required
+                            />
                         </div>
-                    </form>
-                </div>
-            </div>
-        </div>
+                    )}
+
+                    {action === 'reject' && (
+                        <div className="space-y-2">
+                            <Label className="font-semibold">
+                                Reason (Optional)
+                            </Label>
+                            <Textarea
+                                value={rejectionReason}
+                                onChange={(e) => setRejectionReason(e.target.value)}
+                                placeholder="Why is it being rejected?"
+                                rows={3}
+                            />
+                        </div>
+                    )}
+
+                    <DialogFooter className="gap-3 pt-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={onClose}
+                            disabled={isProcessing}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            type="submit"
+                            disabled={isProcessing}
+                            className={`font-bold text-white ${current.btnColor}`}
+                        >
+                            {isProcessing ? (
+                                <>
+                                    <Spinner className="size-4" />
+                                    Processing...
+                                </>
+                            ) : (
+                                'Confirm'
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
     );
 }

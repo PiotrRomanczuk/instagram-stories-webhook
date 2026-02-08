@@ -25,6 +25,10 @@ import {
 	type SubmitMemeInput,
 } from '@/lib/validations/meme.schema';
 import { Panel } from '../ui/panel';
+import { Label } from '@/app/components/ui/label';
+import { Input } from '@/app/components/ui/input';
+import { Button } from '@/app/components/ui/button';
+import { Progress } from '@/app/components/ui/progress';
 import Image from 'next/image';
 
 interface MemeSubmitFormProps {
@@ -82,7 +86,7 @@ export function MemeSubmitForm({ onSubmitted }: MemeSubmitFormProps) {
 			setUploadProgress(30);
 
 			const { error } = await supabase.storage
-				.from('stories') // Using 'stories' bucket as per existing media pattern
+				.from('stories')
 				.upload(filePath, file, {
 					cacheControl: '3600',
 					upsert: false,
@@ -101,7 +105,6 @@ export function MemeSubmitForm({ onSubmitted }: MemeSubmitFormProps) {
 			setValue('storagePath', filePath);
 			setMediaType(isVideo ? 'VIDEO' : 'IMAGE');
 
-			// Register pending upload for cleanup tracking
 			await fetch('/api/uploads/pending', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
@@ -175,7 +178,6 @@ export function MemeSubmitForm({ onSubmitted }: MemeSubmitFormProps) {
 				reset();
 				if (onSubmitted) onSubmitted();
 
-				// Cleanup pending upload record on success
 				if (data.storagePath) {
 					await fetch(
 						`/api/uploads/pending?storagePath=${encodeURIComponent(data.storagePath)}`,
@@ -213,9 +215,9 @@ export function MemeSubmitForm({ onSubmitted }: MemeSubmitFormProps) {
 			<form onSubmit={handleSubmit(onSubmit)} className='space-y-6'>
 				{/* Media Upload Area */}
 				<div className='space-y-4'>
-					<label className='block text-sm font-bold text-slate-700'>
+					<Label className='font-bold text-slate-700'>
 						Meme Media
-					</label>
+					</Label>
 
 					{!mediaUrl ? (
 						<div
@@ -232,12 +234,7 @@ export function MemeSubmitForm({ onSubmitted }: MemeSubmitFormProps) {
 
 							{uploading ? (
 								<div className='flex flex-col items-center gap-4 w-full max-w-xs'>
-									<div className='w-full bg-slate-100 rounded-full h-2.5 overflow-hidden'>
-										<div
-											className='bg-gradient-to-r from-indigo-500 to-purple-500 h-full transition-all duration-300'
-											style={{ width: `${uploadProgress}%` }}
-										/>
-									</div>
+									<Progress value={uploadProgress} className='h-2.5' />
 									<span className='text-sm font-bold text-slate-600 animate-pulse'>
 										Uploading Meme...
 									</span>
@@ -251,7 +248,7 @@ export function MemeSubmitForm({ onSubmitted }: MemeSubmitFormProps) {
 										Drop your meme here or browse
 									</p>
 									<p className='text-xs text-slate-400 mt-2'>
-										MP4, JPEG, PNG • Up to 50MB
+										MP4, JPEG, PNG - Up to 50MB
 									</p>
 								</>
 							)}
@@ -277,13 +274,15 @@ export function MemeSubmitForm({ onSubmitted }: MemeSubmitFormProps) {
 									</div>
 								)}
 								<div className='absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-4'>
-									<button
+									<Button
 										type='button'
+										variant='ghost'
+										size='icon'
 										onClick={handleClearMedia}
-										className='p-4 bg-white/20 backdrop-blur-md rounded-2xl text-white hover:bg-red-500 transition-all duration-300'
+										className='p-4 bg-white/20 backdrop-blur-md rounded-2xl text-white hover:bg-red-500 h-auto w-auto'
 									>
 										<X className='w-6 h-6' />
-									</button>
+									</Button>
 									<div className='p-4 bg-green-500 rounded-2xl text-white shadow-lg shadow-green-200'>
 										<CheckCircle2 className='w-6 h-6' />
 									</div>
@@ -320,14 +319,14 @@ export function MemeSubmitForm({ onSubmitted }: MemeSubmitFormProps) {
 
 				<div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
 					<div>
-						<label className='block text-sm font-bold text-slate-700 mb-2 flex items-center gap-2'>
+						<Label className='font-bold text-slate-700 mb-2 flex items-center gap-2'>
 							<Type className='w-4 h-4 text-slate-400' /> Meme Title
-						</label>
-						<input
+						</Label>
+						<Input
 							type='text'
 							{...register('title')}
 							placeholder='A catchy title...'
-							className='w-full px-5 py-3.5 rounded-2xl border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-sm font-medium'
+							className='rounded-2xl'
 						/>
 						{errors.title && (
 							<p className='text-red-500 text-xs mt-1.5 font-bold'>
@@ -337,14 +336,14 @@ export function MemeSubmitForm({ onSubmitted }: MemeSubmitFormProps) {
 					</div>
 
 					<div>
-						<label className='block text-sm font-bold text-slate-700 mb-2 flex items-center gap-2'>
+						<Label className='font-bold text-slate-700 mb-2 flex items-center gap-2'>
 							<MessageSquare className='w-4 h-4 text-slate-400' /> IG Caption
-						</label>
-						<input
+						</Label>
+						<Input
 							type='text'
 							{...register('caption')}
 							placeholder='Add a fun caption...'
-							className='w-full px-5 py-3.5 rounded-2xl border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-sm font-medium'
+							className='rounded-2xl'
 						/>
 						{errors.caption && (
 							<p className='text-red-500 text-xs mt-1.5 font-bold'>
@@ -355,10 +354,10 @@ export function MemeSubmitForm({ onSubmitted }: MemeSubmitFormProps) {
 				</div>
 
 				<div className='pt-2'>
-					<button
+					<Button
 						type='submit'
 						disabled={isSubmitting || uploading || !mediaUrl}
-						className='w-full px-8 py-5 bg-indigo-600 text-white rounded-[1.5rem] font-black text-sm uppercase tracking-widest hover:bg-slate-900 transition-all duration-300 shadow-xl shadow-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 group'
+						className='w-full px-8 py-5 bg-indigo-600 rounded-[1.5rem] font-black text-sm uppercase tracking-widest hover:bg-slate-900 shadow-xl shadow-indigo-200 h-auto group'
 					>
 						{isSubmitting ? (
 							<>
@@ -370,7 +369,7 @@ export function MemeSubmitForm({ onSubmitted }: MemeSubmitFormProps) {
 								Submit Meme for Review
 							</>
 						)}
-					</button>
+					</Button>
 					{!mediaUrl && (
 						<p className='text-center text-[11px] text-slate-400 mt-4 flex items-center justify-center gap-1.5 font-bold uppercase tracking-wider'>
 							<AlertCircle className='w-3.5 h-3.5' /> Upload media to submit

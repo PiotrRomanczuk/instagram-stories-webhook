@@ -1,8 +1,8 @@
 'use client';
 
-import { X, ExternalLink } from 'lucide-react';
-import { useEffect } from 'react';
+import { ExternalLink } from 'lucide-react';
 import Image from 'next/image';
+import { Dialog, DialogContent } from './dialog';
 
 interface MediaModalProps {
     isOpen: boolean;
@@ -12,32 +12,14 @@ interface MediaModalProps {
 }
 
 export function MediaModal({ isOpen, onClose, url, type }: MediaModalProps) {
-    useEffect(() => {
-        if (isOpen) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = 'unset';
-        }
-        return () => {
-            document.body.style.overflow = 'unset';
-        };
-    }, [isOpen]);
-
-    if (!isOpen) return null;
-
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-300">
-            {/* Backdrop */}
-            <div
-                className="absolute inset-0 bg-slate-950/90 backdrop-blur-xl cursor-zoom-out"
-                onClick={onClose}
-            />
-
-            {/* Content Container */}
-            <div className="relative w-full max-w-5xl max-h-full flex flex-col items-center justify-center animate-in zoom-in-95 duration-300">
-
+        <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+            <DialogContent
+                showCloseButton={true}
+                className="bg-transparent border-none shadow-none max-w-5xl p-0 gap-0 [&>button[data-slot=dialog-close]]:text-white [&>button[data-slot=dialog-close]]:opacity-70 [&>button[data-slot=dialog-close]]:hover:opacity-100"
+            >
                 {/* Header/Actions */}
-                <div className="absolute -top-12 left-0 right-0 flex items-center justify-between text-white px-2">
+                <div className="flex items-center justify-between text-white px-2 mb-2">
                     <div className="flex items-center gap-3">
                         <span className="text-xs font-black uppercase tracking-widest opacity-50">{type} Preview</span>
                     </div>
@@ -51,17 +33,11 @@ export function MediaModal({ isOpen, onClose, url, type }: MediaModalProps) {
                         >
                             <ExternalLink className="w-5 h-5" />
                         </a>
-                        <button
-                            onClick={onClose}
-                            className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-transform hover:rotate-90"
-                        >
-                            <X className="w-6 h-6" />
-                        </button>
                     </div>
                 </div>
 
                 {/* Media Element */}
-                <div className="relative rounded-3xl overflow-hidden shadow-2xl shadow-black/50 bg-black flex items-center justify-center min-h-[300px] w-full max-w-[90vw] md:max-w-none">
+                <div className="relative rounded-3xl overflow-hidden shadow-2xl shadow-black/50 bg-black flex items-center justify-center min-h-[300px]">
                     {type === 'VIDEO' ? (
                         <video
                             src={url}
@@ -87,7 +63,7 @@ export function MediaModal({ isOpen, onClose, url, type }: MediaModalProps) {
                         {url}
                     </p>
                 </div>
-            </div>
-        </div>
+            </DialogContent>
+        </Dialog>
     );
 }

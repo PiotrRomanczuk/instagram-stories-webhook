@@ -2,6 +2,10 @@
 
 import { AlertTriangle, CheckCircle, Info, Loader2, ImageIcon } from 'lucide-react';
 import type { AspectRatioInfo, MediaDimensions } from '@/lib/types';
+import { Badge } from '@/app/components/ui/badge';
+import { Alert, AlertTitle, AlertDescription } from '@/app/components/ui/alert';
+import { Button } from '@/app/components/ui/button';
+import { Spinner } from '@/app/components/ui/spinner';
 
 interface AspectRatioIndicatorProps {
     aspectInfo: AspectRatioInfo | null;
@@ -22,7 +26,7 @@ export function AspectRatioIndicator({
     if (isLoading) {
         return (
             <div className="flex items-center gap-2 text-sm text-gray-500">
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Spinner className="w-4 h-4" />
                 <span>Analyzing image...</span>
             </div>
         );
@@ -62,32 +66,31 @@ export function AspectRatioIndicator({
 
     if (compact) {
         return (
-            <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor()}`}>
+            <Badge variant="outline" className={`gap-1.5 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor()}`}>
                 {getIcon()}
-                <span>{aspectInfo.recommendation === 'perfect' ? '9:16' : `${dimensions.width}×${dimensions.height}`}</span>
-            </div>
+                <span>{aspectInfo.recommendation === 'perfect' ? '9:16' : `${dimensions.width}x${dimensions.height}`}</span>
+            </Badge>
         );
     }
 
     return (
-        <div className={`flex items-start gap-3 p-3 rounded-xl border ${getStatusColor()}`}>
-            <div className="mt-0.5">
-                {getIcon()}
-            </div>
-            <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-medium text-sm">
-                        {dimensions.width} × {dimensions.height}
-                    </span>
-                    <span className="text-xs opacity-70">
-                        (Ratio: {aspectInfo.ratio.toFixed(2)})
-                    </span>
-                </div>
+        <Alert className={`rounded-xl ${getStatusColor()}`}>
+            {getIcon()}
+            <AlertTitle>
+                <span className="font-medium text-sm">
+                    {dimensions.width} x {dimensions.height}
+                </span>
+                {' '}
+                <span className="text-xs opacity-70">
+                    (Ratio: {aspectInfo.ratio.toFixed(2)})
+                </span>
+            </AlertTitle>
+            <AlertDescription>
                 <p className="text-xs mt-1 opacity-80">
                     {aspectInfo.message}
                 </p>
-            </div>
-        </div>
+            </AlertDescription>
+        </Alert>
     );
 }
 
@@ -116,27 +119,29 @@ export function ProcessingPrompt({ aspectInfo, onProcess, isProcessing = false }
                         This image doesn&apos;t fit the 9:16 Story format. We can automatically adjust it.
                     </p>
                     <div className="flex gap-2 mt-3">
-                        <button
+                        <Button
                             onClick={() => onProcess({ blurBackground: false })}
                             disabled={isProcessing}
-                            className="px-3 py-1.5 text-xs font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition disabled:opacity-50"
+                            size="sm"
+                            className="bg-gray-900 text-white hover:bg-gray-800 text-xs"
                         >
                             {isProcessing ? (
                                 <span className="flex items-center gap-1.5">
-                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                    <Spinner className="w-3 h-3" />
                                     Processing...
                                 </span>
                             ) : (
                                 'Black Background'
                             )}
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                             onClick={() => onProcess({ blurBackground: true })}
                             disabled={isProcessing}
-                            className="px-3 py-1.5 text-xs font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 transition disabled:opacity-50"
+                            size="sm"
+                            className="bg-indigo-600 text-white hover:bg-indigo-500 text-xs"
                         >
                             Blurred Background
-                        </button>
+                        </Button>
                     </div>
                 </div>
             </div>

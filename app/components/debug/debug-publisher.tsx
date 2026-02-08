@@ -4,6 +4,11 @@ import { useState, useRef } from 'react';
 import Image from 'next/image';
 import { Upload, Send, Loader, CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '@/lib/config/supabase';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/app/components/ui/card';
+import { Input } from '@/app/components/ui/input';
+import { Button } from '@/app/components/ui/button';
+import { Alert, AlertTitle, AlertDescription } from '@/app/components/ui/alert';
+import { Label } from '@/app/components/ui/label';
 
 interface LogEntry {
     timestamp: string;
@@ -117,34 +122,35 @@ export function DebugPublisher() {
     };
 
     return (
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-gray-100">
-                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+        <Card className="rounded-2xl shadow-sm overflow-hidden">
+            <CardHeader className="border-b border-gray-100">
+                <CardTitle className="text-lg font-bold text-gray-900 flex items-center gap-2">
                     <Send className="w-5 h-5 text-indigo-600" />
                     Debug Publisher
-                </h2>
-                <p className="text-sm text-gray-500 mt-1">
+                </CardTitle>
+                <CardDescription>
                     Direct Instagram publish - bypasses scheduler completely
-                </p>
-            </div>
+                </CardDescription>
+            </CardHeader>
 
-            <div className="p-6 space-y-4">
+            <CardContent className="space-y-4">
                 {/* Image Upload Section */}
                 <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">Image</label>
+                    <Label>Image</Label>
 
                     <div className="flex gap-2">
-                        <input
+                        <Input
                             type="text"
                             value={imageUrl}
                             onChange={(e) => setImageUrl(e.target.value)}
                             placeholder="Paste image URL or upload..."
-                            className="flex-1 px-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            className="flex-1 rounded-xl"
                         />
-                        <button
+                        <Button
+                            variant="secondary"
                             onClick={() => fileInputRef.current?.click()}
                             disabled={isUploading}
-                            className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl flex items-center gap-2 text-sm font-medium transition disabled:opacity-50"
+                            className="rounded-xl"
                         >
                             {isUploading ? (
                                 <Loader className="w-4 h-4 animate-spin" />
@@ -152,7 +158,7 @@ export function DebugPublisher() {
                                 <Upload className="w-4 h-4" />
                             )}
                             Upload
-                        </button>
+                        </Button>
                         <input
                             ref={fileInputRef}
                             type="file"
@@ -177,10 +183,11 @@ export function DebugPublisher() {
                 </div>
 
                 {/* Publish Button */}
-                <button
+                <Button
                     onClick={handlePublish}
                     disabled={!imageUrl || isPublishing}
-                    className="w-full px-4 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl font-bold"
+                    size="lg"
                 >
                     {isPublishing ? (
                         <>
@@ -193,44 +200,44 @@ export function DebugPublisher() {
                             Publish to Instagram Now
                         </>
                     )}
-                </button>
+                </Button>
 
                 {/* Result Badge */}
                 {result && (
-                    <div className={`p-4 rounded-xl flex items-center gap-3 ${result.success
-                        ? 'bg-emerald-50 border border-emerald-200'
-                        : 'bg-rose-50 border border-rose-200'
+                    <Alert className={`rounded-xl ${result.success
+                        ? 'bg-emerald-50 border-emerald-200'
+                        : 'bg-rose-50 border-rose-200'
                         }`}>
                         {result.success ? (
                             <CheckCircle className="w-6 h-6 text-emerald-600" />
                         ) : (
                             <XCircle className="w-6 h-6 text-rose-600" />
                         )}
-                        <div>
-                            <p className={`font-bold ${result.success ? 'text-emerald-700' : 'text-rose-700'}`}>
-                                {result.success ? 'Published Successfully!' : 'Publish Failed'}
-                            </p>
-                            <p className="text-sm text-gray-600">
-                                {result.success
-                                    ? `Media ID: ${result.result?.id} (${result.duration}ms)`
-                                    : result.error
-                                }
-                            </p>
-                        </div>
-                    </div>
+                        <AlertTitle className={`font-bold ${result.success ? 'text-emerald-700' : 'text-rose-700'}`}>
+                            {result.success ? 'Published Successfully!' : 'Publish Failed'}
+                        </AlertTitle>
+                        <AlertDescription className="text-sm text-gray-600">
+                            {result.success
+                                ? `Media ID: ${result.result?.id} (${result.duration}ms)`
+                                : result.error
+                            }
+                        </AlertDescription>
+                    </Alert>
                 )}
-            </div>
+            </CardContent>
 
             {/* Logs Section */}
             <div className="border-t border-gray-100">
                 <div className="p-4 flex items-center justify-between bg-gray-50">
                     <h3 className="text-sm font-bold text-gray-700">Debug Logs</h3>
-                    <button
+                    <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={clearLogs}
                         className="text-xs text-gray-500 hover:text-gray-700"
                     >
                         Clear
-                    </button>
+                    </Button>
                 </div>
                 <div className="max-h-64 overflow-y-auto bg-gray-900 text-gray-100 font-mono text-xs p-4">
                     {logs.length === 0 ? (
@@ -245,6 +252,6 @@ export function DebugPublisher() {
                     )}
                 </div>
             </div>
-        </div>
+        </Card>
     );
 }

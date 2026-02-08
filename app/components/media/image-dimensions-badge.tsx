@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Maximize2, AlertTriangle, CheckCircle } from 'lucide-react';
 import { analyzeAspectRatio } from '@/lib/media/validator';
 import type { AspectRatioInfo, MediaDimensions } from '@/lib/types';
+import { Badge } from '@/app/components/ui/badge';
 
 interface ImageDimensionsBadgeProps {
     imageUrl: string;
@@ -76,19 +77,19 @@ export function ImageDimensionsBadge({ imageUrl, compact = false }: ImageDimensi
 
     if (compact) {
         return (
-            <div className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold backdrop-blur-sm ${getStatusColor()}`}>
+            <Badge className={`gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-bold backdrop-blur-sm border-transparent ${getStatusColor()}`}>
                 {getIcon()}
                 <span>{getRatioLabel()}</span>
-            </div>
+            </Badge>
         );
     }
 
     return (
-        <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-bold backdrop-blur-sm ${getStatusColor()}`}>
+        <Badge className={`gap-1.5 px-2 py-1 rounded-lg text-[10px] font-bold backdrop-blur-sm border-transparent ${getStatusColor()}`}>
             {getIcon()}
-            <span>{dimensions.width}×{dimensions.height}</span>
+            <span>{dimensions.width}x{dimensions.height}</span>
             <span className="opacity-70">({getRatioLabel()})</span>
-        </div>
+        </Badge>
     );
 }
 
@@ -144,10 +145,10 @@ export function AspectRatioOverlay({ imageUrl, type }: AspectRatioOverlayProps) 
                     {/* Right crop indicator */}
                     <div className="absolute right-0 top-0 bottom-0 w-[15%] bg-gradient-to-l from-red-500/30 to-transparent border-l-2 border-red-400/50 border-dashed" />
                     {/* Warning label */}
-                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-amber-500/90 text-white text-[9px] font-bold rounded-full backdrop-blur-sm flex items-center gap-1">
+                    <Badge className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-amber-500/90 text-white text-[9px] font-bold rounded-full backdrop-blur-sm border-transparent">
                         <AlertTriangle className="w-3 h-3" />
                         Sides will be cropped
-                    </div>
+                    </Badge>
                 </>
             )}
 

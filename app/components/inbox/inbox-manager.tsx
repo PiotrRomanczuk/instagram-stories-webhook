@@ -5,6 +5,10 @@ import { ConversationList } from './conversation-list';
 import { MessageThread } from './message-thread';
 import type { InstagramConversation } from '@/lib/types/messaging';
 import { RefreshCw } from 'lucide-react';
+import { Spinner } from '@/app/components/ui/spinner';
+import { Alert, AlertDescription } from '@/app/components/ui/alert';
+import { Button } from '@/app/components/ui/button';
+import { Card } from '@/app/components/ui/card';
 
 export function InboxManager() {
     const [conversations, setConversations] = useState<InstagramConversation[]>([]);
@@ -13,7 +17,6 @@ export function InboxManager() {
     const [isSyncing, setIsSyncing] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Fetch conversations on mount
     useEffect(() => {
         fetchConversations();
     }, []);
@@ -57,14 +60,14 @@ export function InboxManager() {
 
     const handleBackToList = () => {
         setSelectedConversation(null);
-        fetchConversations(); // Refresh to update unread counts
+        fetchConversations();
     };
 
     if (isLoading) {
         return (
             <div className="flex items-center justify-center py-24">
                 <div className="text-center space-y-4">
-                    <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto"></div>
+                    <Spinner className="mx-auto" />
                     <p className="text-slate-500 font-medium">Loading inbox...</p>
                 </div>
             </div>
@@ -73,32 +76,35 @@ export function InboxManager() {
 
     if (error) {
         return (
-            <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center">
-                <p className="text-red-600 font-semibold">{error}</p>
-                <button
+            <Alert variant="destructive" className="rounded-2xl p-6 text-center">
+                <AlertDescription className="font-semibold">{error}</AlertDescription>
+                <Button
                     onClick={() => fetchConversations()}
-                    className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors"
+                    variant="destructive"
+                    className="mt-4"
                 >
                     Try Again
-                </button>
-            </div>
+                </Button>
+            </Alert>
         );
     }
 
     return (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <Card className="rounded-2xl overflow-hidden">
             <div className="border-b border-slate-100 px-6 py-4 flex items-center justify-between">
                 <h2 className="text-lg font-black text-slate-900 uppercase tracking-widest">
                     {selectedConversation ? 'Conversation' : 'Conversations'}
                 </h2>
-                <button
+                <Button
                     onClick={handleSync}
                     disabled={isSyncing}
-                    className="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-lg text-sm font-semibold hover:bg-indigo-100 transition-colors disabled:opacity-50"
+                    variant="ghost"
+                    size="sm"
+                    className="text-indigo-600 hover:bg-indigo-100"
                 >
                     <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
                     {isSyncing ? 'Syncing...' : 'Sync'}
-                </button>
+                </Button>
             </div>
 
             {selectedConversation ? (
@@ -112,6 +118,6 @@ export function InboxManager() {
                     onSelectConversation={handleSelectConversation}
                 />
             )}
-        </div>
+        </Card>
     );
 }

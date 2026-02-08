@@ -5,6 +5,9 @@ import { useState } from 'react';
 import { Loader, AlertTriangle, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import { Panel } from '@/app/components/ui/panel';
+import { Skeleton } from '@/app/components/ui/skeleton';
+import { Alert, AlertDescription, AlertTitle } from '@/app/components/ui/alert';
+import { Button } from '@/app/components/ui/button';
 
 interface StuckPost {
 	id: string;
@@ -58,7 +61,7 @@ export function StuckLocksPanel() {
 
 	if (error) {
 		return (
-			<Panel title="🔓 Stuck Locks" icon={<Lock className="w-6 h-6" />}>
+			<Panel title="Stuck Locks" icon={<Lock className="w-6 h-6" />}>
 				<div className="text-center py-4 text-red-600">
 					Failed to load stuck locks
 				</div>
@@ -69,12 +72,12 @@ export function StuckLocksPanel() {
 	const isHealthy = !data || data.count === 0;
 
 	return (
-		<Panel title="🔓 Stuck Locks" icon={<Lock className="w-6 h-6" />}>
+		<Panel title="Stuck Locks" icon={<Lock className="w-6 h-6" />}>
 			{isLoading || !data ? (
-				<div className="animate-pulse h-24 bg-slate-200 rounded-lg"></div>
+				<Skeleton className="h-24 w-full rounded-lg" />
 			) : isHealthy ? (
 				<div className="text-center py-8">
-					<div className="text-4xl mb-2">✅</div>
+					<div className="text-4xl mb-2">&#10003;</div>
 					<p className="text-slate-600 font-semibold">
 						No stuck locks detected
 					</p>
@@ -84,18 +87,16 @@ export function StuckLocksPanel() {
 				</div>
 			) : (
 				<div>
-					<div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-lg flex items-start gap-2">
-						<AlertTriangle className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
-						<div>
-							<p className="font-semibold text-rose-900">
-								{data.count} post{data.count !== 1 ? 's' : ''} stuck in processing
-							</p>
-							<p className="text-sm text-rose-700 mt-1">
-								Posts stuck for more than 5 minutes. Consider releasing locks if this
-								persists.
-							</p>
-						</div>
-					</div>
+					<Alert variant="destructive" className="mb-4">
+						<AlertTriangle className="h-5 w-5" />
+						<AlertTitle>
+							{data.count} post{data.count !== 1 ? 's' : ''} stuck in processing
+						</AlertTitle>
+						<AlertDescription>
+							Posts stuck for more than 5 minutes. Consider releasing locks if this
+							persists.
+						</AlertDescription>
+					</Alert>
 
 					<div className="space-y-3">
 						{data.stuck.map((post) => (
@@ -112,16 +113,17 @@ export function StuckLocksPanel() {
 											Stuck for: <span className="font-bold text-rose-700">{post.stuckForMinutes} minutes</span>
 										</p>
 									</div>
-									<button
+									<Button
 										onClick={() => handleReleaseLock(post.id)}
 										disabled={releasingId === post.id}
-										className="px-3 py-1.5 bg-rose-600 text-white rounded-lg font-bold text-sm hover:bg-rose-700 disabled:opacity-50 flex items-center gap-2 transition"
+										variant="destructive"
+										size="sm"
 									>
 										{releasingId === post.id ? (
 											<Loader className="w-4 h-4 animate-spin" />
 										) : null}
 										Release
-									</button>
+									</Button>
 								</div>
 								{post.caption && (
 									<p className="text-xs text-slate-600 truncate mt-2">

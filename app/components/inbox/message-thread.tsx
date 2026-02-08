@@ -4,6 +4,9 @@ import { useState, useEffect, useRef } from 'react';
 import type { InstagramConversation, InstagramMessage } from '@/lib/types/messaging';
 import { MessageComposer } from './message-composer';
 import { ChevronLeft, RefreshCw } from 'lucide-react';
+import { Button } from '@/app/components/ui/button';
+import { Spinner } from '@/app/components/ui/spinner';
+import { Avatar, AvatarImage, AvatarFallback } from '@/app/components/ui/avatar';
 
 interface MessageThreadProps {
     conversation: InstagramConversation;
@@ -63,7 +66,6 @@ export function MessageThread({ conversation, onBack }: MessageThreadProps) {
     };
 
     const handleMessageSent = () => {
-        // Refresh messages after sending
         fetchMessages();
     };
 
@@ -79,23 +81,22 @@ export function MessageThread({ conversation, onBack }: MessageThreadProps) {
             {/* Header */}
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <button
+                    <Button
                         onClick={onBack}
-                        className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                        variant="ghost"
+                        size="icon"
                     >
                         <ChevronLeft className="w-5 h-5 text-slate-600" />
-                    </button>
-                    {conversation.participantProfilePic ? (
-                        <img
-                            src={conversation.participantProfilePic}
+                    </Button>
+                    <Avatar className="w-10 h-10">
+                        <AvatarImage
+                            src={conversation.participantProfilePic || undefined}
                             alt={conversation.participantUsername || 'User'}
-                            className="w-10 h-10 rounded-full object-cover"
                         />
-                    ) : (
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-black">
+                        <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-500 text-white font-black">
                             {(conversation.participantUsername || 'U')[0].toUpperCase()}
-                        </div>
-                    )}
+                        </AvatarFallback>
+                    </Avatar>
                     <div>
                         <h3 className="font-black text-slate-900">
                             @{conversation.participantUsername || conversation.participantIgId}
@@ -103,21 +104,23 @@ export function MessageThread({ conversation, onBack }: MessageThreadProps) {
                         <p className="text-xs text-slate-500">Instagram User</p>
                     </div>
                 </div>
-                <button
+                <Button
                     onClick={handleSync}
                     disabled={isSyncing}
-                    className="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-lg text-sm font-semibold hover:bg-indigo-100 transition-colors disabled:opacity-50"
+                    variant="ghost"
+                    size="sm"
+                    className="text-indigo-600 hover:bg-indigo-100"
                 >
                     <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
                     {isSyncing ? 'Syncing...' : 'Sync'}
-                </button>
+                </Button>
             </div>
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
                 {isLoading ? (
                     <div className="flex items-center justify-center h-full">
-                        <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+                        <Spinner />
                     </div>
                 ) : error ? (
                     <div className="flex items-center justify-center h-full">

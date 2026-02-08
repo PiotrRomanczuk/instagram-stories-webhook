@@ -20,6 +20,12 @@ import {
 } from "lucide-react";
 import { AppConfig } from "@/lib/types";
 import { defaultConfig } from "@/lib/config";
+import { Button } from "@/app/components/ui/button";
+import { Input } from "@/app/components/ui/input";
+import { Label } from "@/app/components/ui/label";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/app/components/ui/card";
+import { Alert, AlertTitle, AlertDescription } from "@/app/components/ui/alert";
+import { Spinner } from "@/app/components/ui/spinner";
 
 interface ConfigInputProps {
     label: string;
@@ -52,9 +58,9 @@ function ConfigInput({
     return (
         <div className="space-y-2">
             <div className="flex items-center justify-between">
-                <label className="text-sm font-semibold text-slate-700">
+                <Label className="text-sm font-semibold text-slate-700">
                     {label}
-                </label>
+                </Label>
                 {helpLink && (
                     <a
                         href={helpLink}
@@ -67,39 +73,43 @@ function ConfigInput({
                 )}
             </div>
             <div className="relative group">
-                <input
+                <Input
                     type={isSecret && !showSecret ? "password" : "text"}
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                     placeholder={placeholder}
-                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all font-mono text-sm"
+                    className="pr-20 px-4 py-3 h-auto rounded-xl bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 font-mono text-sm"
                 />
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                     {isSecret && (
-                        <button
+                        <Button
                             type="button"
+                            variant="ghost"
+                            size="icon-xs"
                             onClick={() => setShowSecret(!showSecret)}
-                            className="p-2 rounded-lg hover:bg-slate-200 transition-colors"
+                            className="hover:bg-slate-200"
                         >
                             {showSecret ? (
                                 <EyeOff className="w-4 h-4 text-slate-400" />
                             ) : (
                                 <Eye className="w-4 h-4 text-slate-400" />
                             )}
-                        </button>
+                        </Button>
                     )}
                     {value && (
-                        <button
+                        <Button
                             type="button"
+                            variant="ghost"
+                            size="icon-xs"
                             onClick={handleCopy}
-                            className="p-2 rounded-lg hover:bg-slate-200 transition-colors"
+                            className="hover:bg-slate-200"
                         >
                             {copied ? (
                                 <Check className="w-4 h-4 text-emerald-500" />
                             ) : (
                                 <Copy className="w-4 h-4 text-slate-400" />
                             )}
-                        </button>
+                        </Button>
                     )}
                 </div>
             </div>
@@ -206,7 +216,7 @@ export function SettingsForm() {
     if (loading) {
         return (
             <div className="flex items-center justify-center py-20">
-                <RefreshCw className="w-8 h-8 text-indigo-500 animate-spin" />
+                <Spinner className="w-8 h-8 text-indigo-500" />
             </div>
         );
     }
@@ -215,38 +225,36 @@ export function SettingsForm() {
         <div className="space-y-8">
             {/* Status Indicator */}
             {!hasConfig && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-5 flex items-start gap-4">
-                    <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-                    <div>
-                        <h3 className="font-bold text-yellow-900">
-                            Configuration Required
-                        </h3>
-                        <p className="text-sm text-yellow-700 mt-1">
-                            Please fill in all the required fields below to complete the
-                            application setup.
-                        </p>
-                    </div>
-                </div>
+                <Alert className="bg-yellow-50 border-yellow-200 rounded-2xl p-5">
+                    <AlertCircle className="w-5 h-5 text-yellow-600" />
+                    <AlertTitle className="font-bold text-yellow-900">
+                        Configuration Required
+                    </AlertTitle>
+                    <AlertDescription className="text-sm text-yellow-700">
+                        Please fill in all the required fields below to complete the
+                        application setup.
+                    </AlertDescription>
+                </Alert>
             )}
 
             {/* App Settings Section */}
-            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden">
-                <div className="p-6 border-b border-slate-100">
+            <Card className="rounded-[2rem] border-slate-100 shadow-xl shadow-slate-200/50">
+                <CardHeader className="border-b border-slate-100">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
                             <Globe className="w-5 h-5 text-blue-600" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-bold text-slate-900">
+                            <CardTitle className="text-lg font-bold text-slate-900">
                                 Application Settings
-                            </h2>
-                            <p className="text-sm text-slate-500">
+                            </CardTitle>
+                            <CardDescription className="text-sm text-slate-500">
                                 Base URL and admin configuration
-                            </p>
+                            </CardDescription>
                         </div>
                     </div>
-                </div>
-                <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <ConfigInput
                         label="Application URL"
                         value={config.appUrl}
@@ -261,27 +269,27 @@ export function SettingsForm() {
                         placeholder="admin@example.com"
                         helpText="Google email address that can log in to this dashboard."
                     />
-                </div>
-            </div>
+                </CardContent>
+            </Card>
 
             {/* Google OAuth Section */}
-            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden">
-                <div className="p-6 border-b border-slate-100">
+            <Card className="rounded-[2rem] border-slate-100 shadow-xl shadow-slate-200/50">
+                <CardHeader className="border-b border-slate-100">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
                             <Key className="w-5 h-5 text-red-600" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-bold text-slate-900">
+                            <CardTitle className="text-lg font-bold text-slate-900">
                                 Google OAuth
-                            </h2>
-                            <p className="text-sm text-slate-500">
+                            </CardTitle>
+                            <CardDescription className="text-sm text-slate-500">
                                 Used for admin authentication
-                            </p>
+                            </CardDescription>
                         </div>
                     </div>
-                </div>
-                <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <ConfigInput
                         label="Google Client ID"
                         value={config.google.clientId}
@@ -296,27 +304,27 @@ export function SettingsForm() {
                         placeholder="GOCSPX-xxxxxxxx"
                         isSecret
                     />
-                </div>
-            </div>
+                </CardContent>
+            </Card>
 
             {/* Facebook/Meta Section */}
-            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden">
-                <div className="p-6 border-b border-slate-100">
+            <Card className="rounded-[2rem] border-slate-100 shadow-xl shadow-slate-200/50">
+                <CardHeader className="border-b border-slate-100">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
                             <Key className="w-5 h-5 text-indigo-600" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-bold text-slate-900">
+                            <CardTitle className="text-lg font-bold text-slate-900">
                                 Meta / Facebook
-                            </h2>
-                            <p className="text-sm text-slate-500">
+                            </CardTitle>
+                            <CardDescription className="text-sm text-slate-500">
                                 Instagram Business API access
-                            </p>
+                            </CardDescription>
                         </div>
                     </div>
-                </div>
-                <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <ConfigInput
                         label="Facebook App ID"
                         value={config.facebook.appId}
@@ -331,27 +339,27 @@ export function SettingsForm() {
                         placeholder="xxxxxxxxxxxxxxxx"
                         isSecret
                     />
-                </div>
-            </div>
+                </CardContent>
+            </Card>
 
             {/* Supabase Section */}
-            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden">
-                <div className="p-6 border-b border-slate-100">
+            <Card className="rounded-[2rem] border-slate-100 shadow-xl shadow-slate-200/50">
+                <CardHeader className="border-b border-slate-100">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
                             <Database className="w-5 h-5 text-emerald-600" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-bold text-slate-900">
+                            <CardTitle className="text-lg font-bold text-slate-900">
                                 Supabase Database
-                            </h2>
-                            <p className="text-sm text-slate-500">
+                            </CardTitle>
+                            <CardDescription className="text-sm text-slate-500">
                                 Database connection and authentication
-                            </p>
+                            </CardDescription>
                         </div>
                     </div>
-                </div>
-                <div className="p-6 space-y-6">
+                </CardHeader>
+                <CardContent className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <ConfigInput
                             label="Supabase Project URL"
@@ -394,27 +402,28 @@ export function SettingsForm() {
                         isSecret
                         helpText="The password set when creating the Supabase project"
                     />
-                </div>
-            </div>
+                </CardContent>
+            </Card>
 
             {/* Security Secrets Section */}
-            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden">
-                <div className="p-6 border-b border-slate-100">
+            <Card className="rounded-[2rem] border-slate-100 shadow-xl shadow-slate-200/50">
+                <CardHeader className="border-b border-slate-100">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center">
                                 <Shield className="w-5 h-5 text-purple-600" />
                             </div>
                             <div>
-                                <h2 className="text-lg font-bold text-slate-900">
+                                <CardTitle className="text-lg font-bold text-slate-900">
                                     Security Secrets
-                                </h2>
-                                <p className="text-sm text-slate-500">
+                                </CardTitle>
+                                <CardDescription className="text-sm text-slate-500">
                                     Internal authentication tokens
-                                </p>
+                                </CardDescription>
                             </div>
                         </div>
-                        <button
+                        <Button
+                            variant="ghost"
                             onClick={() => {
                                 setConfig((prev) => ({
                                     ...prev,
@@ -425,14 +434,14 @@ export function SettingsForm() {
                                     },
                                 }));
                             }}
-                            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-50 text-purple-600 font-semibold text-sm hover:bg-purple-100 transition-colors"
+                            className="bg-purple-50 text-purple-600 font-semibold text-sm hover:bg-purple-100"
                         >
                             <Sparkles className="w-4 h-4" />
                             Generate All
-                        </button>
+                        </Button>
                     </div>
-                </div>
-                <div className="p-6 grid grid-cols-1 gap-6">
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 gap-6">
                     <ConfigInput
                         label="NextAuth Secret"
                         value={config.security.nextAuthSecret}
@@ -459,8 +468,8 @@ export function SettingsForm() {
                             helpText="Used to authenticate scheduled job triggers."
                         />
                     </div>
-                </div>
-            </div>
+                </CardContent>
+            </Card>
 
             {/* Save Button */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-slate-50 rounded-2xl p-6 border border-slate-100">
@@ -490,25 +499,26 @@ export function SettingsForm() {
                 </div>
                 <div className="flex items-center gap-3">
                     {envContent && (
-                        <button
+                        <Button
+                            variant="outline"
                             onClick={() => setShowEnv(!showEnv)}
-                            className="px-5 py-3 rounded-xl bg-white border border-slate-200 text-slate-700 font-semibold text-sm hover:bg-slate-50 transition-colors"
+                            className="rounded-xl"
                         >
                             {showEnv ? "Hide" : "Show"} .env
-                        </button>
+                        </Button>
                     )}
-                    <button
+                    <Button
                         onClick={handleSave}
                         disabled={saving}
-                        className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold text-sm hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg shadow-indigo-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold text-sm hover:from-indigo-700 hover:to-purple-700 shadow-lg shadow-indigo-500/25"
                     >
                         {saving ? (
-                            <RefreshCw className="w-4 h-4 animate-spin" />
+                            <Spinner className="w-4 h-4" />
                         ) : (
                             <Save className="w-4 h-4" />
                         )}
                         Save Configuration
-                    </button>
+                    </Button>
                 </div>
             </div>
 
@@ -519,13 +529,15 @@ export function SettingsForm() {
                         <span className="text-sm font-semibold text-slate-300">
                             Generated .env.local
                         </span>
-                        <button
+                        <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={downloadEnvFile}
-                            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors text-sm font-medium"
+                            className="bg-slate-800 text-slate-300 hover:bg-slate-700"
                         >
                             <Download className="w-4 h-4" />
                             Download
-                        </button>
+                        </Button>
                     </div>
                     <pre className="p-6 text-sm text-slate-300 overflow-x-auto font-mono">
                         {envContent}

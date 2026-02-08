@@ -1,7 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Panel } from '../ui/panel';
+import { Card, CardHeader, CardTitle, CardContent } from '@/app/components/ui/card';
+import { Button } from '@/app/components/ui/button';
+import { Skeleton } from '@/app/components/ui/skeleton';
+import { Progress } from '@/app/components/ui/progress';
 import { Battery, BatteryCharging, BatteryWarning, RefreshCw, AlertCircle } from 'lucide-react';
 
 interface QuotaData {
@@ -67,58 +70,63 @@ export function QuotaUsageCard() {
     }
 
     return (
-        <Panel
-            title="API Usage Quota"
-            icon={<BatteryCharging className="w-6 h-6" />}
-            className="relative"
-        >
+        <Card className="rounded-3xl p-8 shadow-xl shadow-gray-100/50 border-gray-100 relative">
+            <CardHeader className="p-0 gap-0">
+                <div className="flex items-center gap-3">
+                    <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl">
+                        <BatteryCharging className="w-6 h-6" />
+                    </div>
+                    <CardTitle className="text-2xl font-black text-gray-900">API Usage Quota</CardTitle>
+                </div>
+            </CardHeader>
             <div className="absolute top-8 right-8">
-                <button
+                <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={fetchQuota}
                     disabled={loading}
-                    className={`p-2 hover:bg-gray-100 rounded-xl transition ${loading ? 'animate-spin' : ''}`}
+                    className={`rounded-xl ${loading ? 'animate-spin' : ''}`}
                     title="Refresh Quota"
                 >
                     <RefreshCw className="w-4 h-4 text-gray-400" />
-                </button>
+                </Button>
             </div>
-
-            <div className="p-4">
-                {loading && !quota ? (
-                    <div className="animate-pulse space-y-3">
-                        <div className="h-4 bg-slate-100 rounded w-1/3"></div>
-                        <div className="h-8 bg-slate-100 rounded w-full"></div>
-                    </div>
-                ) : !quota ? (
-                    <p className="text-sm text-slate-400">Usage data unavailable.</p>
-                ) : (
-                    <div className="space-y-4">
-                        <div className="flex items-end justify-between">
-                            <div>
-                                <p className="text-3xl font-black text-slate-800 tracking-tight">
-                                    {used} <span className="text-lg text-slate-400 font-medium">/ {total}</span>
-                                </p>
-                                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">Posts Used Today</p>
-                            </div>
-                            <div className={`p-3 rounded-2xl bg-white border border-slate-100 shadow-sm ${colorClass}`}>
-                                <Icon className="w-8 h-8" />
-                            </div>
+            <CardContent className="p-0">
+                <div className="p-4">
+                    {loading && !quota ? (
+                        <div className="space-y-3">
+                            <Skeleton className="h-4 w-1/3" />
+                            <Skeleton className="h-8 w-full" />
                         </div>
+                    ) : !quota ? (
+                        <p className="text-sm text-slate-400">Usage data unavailable.</p>
+                    ) : (
+                        <div className="space-y-4">
+                            <div className="flex items-end justify-between">
+                                <div>
+                                    <p className="text-3xl font-black text-slate-800 tracking-tight">
+                                        {used} <span className="text-lg text-slate-400 font-medium">/ {total}</span>
+                                    </p>
+                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">Posts Used Today</p>
+                                </div>
+                                <div className={`p-3 rounded-2xl bg-white border border-slate-100 shadow-sm ${colorClass}`}>
+                                    <Icon className="w-8 h-8" />
+                                </div>
+                            </div>
 
-                        {/* Progress Bar */}
-                        <div className="relative w-full h-4 bg-slate-100 rounded-full overflow-hidden">
-                            <div
-                                className={`absolute top-0 left-0 h-full ${bgClass} transition-all duration-1000 ease-out`}
-                                style={{ width: `${percentUsed}%` }}
+                            {/* Progress Bar */}
+                            <Progress
+                                value={percentUsed}
+                                className={`h-4 ${bgClass.replace('bg-', '[&>[data-slot=progress-indicator]]:bg-')}`}
                             />
-                        </div>
 
-                        <p className="text-xs text-slate-400 text-center">
-                            Rolling 24-hour window. Usage drops 24h after each post.
-                        </p>
-                    </div>
-                )}
-            </div>
-        </Panel>
+                            <p className="text-xs text-slate-400 text-center">
+                                Rolling 24-hour window. Usage drops 24h after each post.
+                            </p>
+                        </div>
+                    )}
+                </div>
+            </CardContent>
+        </Card>
     );
 }

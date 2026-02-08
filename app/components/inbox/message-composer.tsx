@@ -2,6 +2,9 @@
 
 import { useState } from 'react';
 import { Send } from 'lucide-react';
+import { Textarea } from '@/app/components/ui/textarea';
+import { Button } from '@/app/components/ui/button';
+import { Alert, AlertDescription } from '@/app/components/ui/alert';
 
 interface MessageComposerProps {
     conversationId: string;
@@ -37,7 +40,6 @@ export function MessageComposer({ conversationId, onMessageSent }: MessageCompos
             if (!response.ok) {
                 const errorData = await response.json();
 
-                // Handle rate limit error
                 if (response.status === 429) {
                     throw new Error(errorData.error || 'Rate limit exceeded. Please wait before sending more messages.');
                 }
@@ -45,7 +47,6 @@ export function MessageComposer({ conversationId, onMessageSent }: MessageCompos
                 throw new Error(errorData.error || 'Failed to send message');
             }
 
-            // Clear input and notify parent
             setMessageText('');
             onMessageSent();
         } catch (err) {
@@ -53,7 +54,6 @@ export function MessageComposer({ conversationId, onMessageSent }: MessageCompos
             setError(errorMessage);
             console.error('Error sending message:', err);
 
-            // Auto-clear error after 5 seconds
             setTimeout(() => setError(null), 5000);
         } finally {
             setIsSending(false);
@@ -70,14 +70,14 @@ export function MessageComposer({ conversationId, onMessageSent }: MessageCompos
     return (
         <div className="space-y-2">
             {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm text-red-600 font-medium">
-                    {error}
-                </div>
+                <Alert variant="destructive">
+                    <AlertDescription>{error}</AlertDescription>
+                </Alert>
             )}
 
             <form onSubmit={handleSend} className="flex items-end gap-2">
                 <div className="flex-grow">
-                    <textarea
+                    <Textarea
                         value={messageText}
                         onChange={(e) => setMessageText(e.target.value)}
                         onKeyDown={handleKeyPress}
@@ -85,25 +85,24 @@ export function MessageComposer({ conversationId, onMessageSent }: MessageCompos
                         rows={2}
                         maxLength={1000}
                         disabled={isSending}
-                        className="w-full px-4 py-2 border border-slate-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="resize-none"
                     />
                     <p className="text-xs text-slate-400 mt-1">
                         {messageText.length}/1000 characters
                     </p>
                 </div>
 
-                <button
+                <Button
                     type="submit"
                     disabled={!messageText.trim() || isSending}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                     <Send className="w-4 h-4" />
                     {isSending ? 'Sending...' : 'Send'}
-                </button>
+                </Button>
             </form>
 
             <p className="text-xs text-slate-400">
-                💡 Rate limit: 200 messages per hour per Instagram account
+                Rate limit: 200 messages per hour per Instagram account
             </p>
         </div>
     );

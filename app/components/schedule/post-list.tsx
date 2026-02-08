@@ -21,6 +21,11 @@ import { ScheduledPostWithUser } from '@/lib/types';
 import { PostCard } from './post-card';
 import { Calendar, Search, X } from 'lucide-react';
 import { EmptyState } from '../ui/empty-state';
+import { Button } from '@/app/components/ui/button';
+import { Badge } from '@/app/components/ui/badge';
+import { Input } from '@/app/components/ui/input';
+import { Label } from '@/app/components/ui/label';
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/app/components/ui/select';
 
 interface PostListProps {
     posts: ScheduledPostWithUser[];
@@ -125,27 +130,31 @@ export function PostList({ posts, onCancel, onReschedule, onReorder, onUpdateTag
             {/* Filter Bar */}
             <div className="flex flex-col gap-4">
                 <div className="flex items-center gap-2">
-                    <button
+                    <Button
+                        variant="outline"
                         onClick={() => setShowFilters(!showFilters)}
-                        className="flex items-center gap-2 px-4 py-2 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 transition text-sm font-medium text-gray-700"
+                        className="rounded-lg"
+                        size="sm"
                     >
                         <Search className="w-4 h-4" />
                         {showFilters ? 'Hide' : 'Show'} Filters
-                        {hasActiveFilters && <span className="ml-1 px-2 py-0.5 bg-indigo-100 text-indigo-600 rounded text-xs font-bold">Active</span>}
-                    </button>
+                        {hasActiveFilters && <Badge className="ml-1 bg-indigo-100 text-indigo-600">Active</Badge>}
+                    </Button>
                     {hasActiveFilters && (
-                        <button
+                        <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => {
                                 setSearchText('');
                                 setStatusFilter('all');
                                 setDateFromFilter('');
                                 setDateToFilter('');
                             }}
-                            className="flex items-center gap-1 px-3 py-2 text-xs font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition"
+                            className="text-xs"
                         >
                             <X className="w-3 h-3" />
                             Clear
-                        </button>
+                        </Button>
                     )}
                     {totalFiltered < posts.length && (
                         <span className="text-xs font-medium text-gray-500 ml-auto">
@@ -157,44 +166,48 @@ export function PostList({ posts, onCancel, onReschedule, onReorder, onUpdateTag
                 {showFilters && (
                     <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div>
-                            <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Search Caption</label>
-                            <input
+                            <Label className="text-xs font-bold text-gray-700 uppercase mb-1.5">Search Caption</Label>
+                            <Input
                                 type="text"
                                 value={searchText}
                                 onChange={(e) => setSearchText(e.target.value)}
                                 placeholder="Search..."
-                                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 bg-white focus:border-indigo-500 outline-none"
+                                className="rounded-lg"
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase">Status</label>
-                            <select
+                            <Label className="text-xs font-bold text-gray-700 uppercase mb-1.5">Status</Label>
+                            <Select
                                 value={statusFilter}
-                                onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
-                                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 bg-white focus:border-indigo-500 outline-none"
+                                onValueChange={(value) => setStatusFilter(value as typeof statusFilter)}
                             >
-                                <option value="all">All Statuses</option>
-                                <option value="pending">Pending</option>
-                                <option value="published">Published</option>
-                                <option value="failed">Failed</option>
-                            </select>
+                                <SelectTrigger className="w-full rounded-lg">
+                                    <SelectValue placeholder="All Statuses" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Statuses</SelectItem>
+                                    <SelectItem value="pending">Pending</SelectItem>
+                                    <SelectItem value="published">Published</SelectItem>
+                                    <SelectItem value="failed">Failed</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase">From Date</label>
-                            <input
+                            <Label className="text-xs font-bold text-gray-700 uppercase mb-1.5">From Date</Label>
+                            <Input
                                 type="date"
                                 value={dateFromFilter}
                                 onChange={(e) => setDateFromFilter(e.target.value)}
-                                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 bg-white focus:border-indigo-500 outline-none"
+                                className="rounded-lg"
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase">To Date</label>
-                            <input
+                            <Label className="text-xs font-bold text-gray-700 uppercase mb-1.5">To Date</Label>
+                            <Input
                                 type="date"
                                 value={dateToFilter}
                                 onChange={(e) => setDateToFilter(e.target.value)}
-                                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 bg-white focus:border-indigo-500 outline-none"
+                                className="rounded-lg"
                             />
                         </div>
                     </div>

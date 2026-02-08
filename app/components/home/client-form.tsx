@@ -3,6 +3,10 @@
 import { useState } from 'react';
 import { Copy, CheckCircle2, Send } from 'lucide-react';
 import { toast } from 'sonner';
+import { Button } from '@/app/components/ui/button';
+import { Input } from '@/app/components/ui/input';
+import { Label } from '@/app/components/ui/label';
+import { Spinner } from '@/app/components/ui/spinner';
 
 export function ClientTestForm() {
     const [url, setUrl] = useState('');
@@ -51,11 +55,13 @@ export function ClientTestForm() {
         <div className="space-y-6">
             <div>
                 <div className="flex items-center justify-between mb-2">
-                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Target Image URL</label>
-                    <button
+                    <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Target Image URL</Label>
+                    <Button
                         type="button"
+                        variant="outline"
+                        size="xs"
                         onClick={handleCopySampleUrl}
-                        className="flex items-center gap-1.5 px-3 py-1 bg-slate-100 border border-slate-200 text-slate-500 rounded-lg text-[10px] font-bold hover:bg-slate-200 hover:text-slate-900 transition-all"
+                        className="text-[10px] font-bold"
                     >
                         {copied ? (
                             <>
@@ -68,31 +74,31 @@ export function ClientTestForm() {
                                 Use Sample
                             </>
                         )}
-                    </button>
+                    </Button>
                 </div>
                 <div className="relative group">
-                    <input
+                    <Input
                         type="url"
                         required
                         placeholder="https://example.com/image.jpg"
                         value={url}
                         onChange={(e) => setUrl(e.target.value)}
-                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 outline-none text-sm text-slate-900 placeholder-slate-400 transition-all font-mono shadow-inner"
+                        className="px-4 py-3 h-auto bg-slate-50 border-slate-200 rounded-xl focus-visible:ring-indigo-500/50 focus-visible:border-indigo-500/50 text-sm text-slate-900 placeholder-slate-400 font-mono shadow-inner"
                     />
                     <div className="absolute inset-x-0 -bottom-px h-px bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-0 group-focus-within:opacity-100 transition-opacity" />
                 </div>
             </div>
 
-            <button
+            <Button
                 onClick={handleSubmit}
                 disabled={loading}
-                className="w-full relative overflow-hidden group bg-slate-900 text-white py-4 rounded-xl text-sm font-bold hover:shadow-lg hover:shadow-indigo-500/20 disabled:opacity-50 transition-all active:scale-[0.98]"
+                className="w-full relative overflow-hidden group bg-slate-900 text-white py-4 h-auto rounded-xl text-sm font-bold hover:shadow-lg hover:shadow-indigo-500/20 active:scale-[0.98]"
             >
                 <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
                 <div className="relative flex items-center justify-center gap-2">
                     {loading ? (
                         <>
-                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            <Spinner className="w-4 h-4 text-white" />
                             <span>Publishing...</span>
                         </>
                     ) : (
@@ -102,7 +108,7 @@ export function ClientTestForm() {
                         </>
                     )}
                 </div>
-            </button>
+            </Button>
 
             <p className="text-center text-[10px] text-slate-400">
                 Webhook secret will be loaded from environment variables.

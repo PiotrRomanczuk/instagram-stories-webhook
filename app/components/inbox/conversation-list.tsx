@@ -2,6 +2,8 @@
 
 import type { InstagramConversation } from '@/lib/types/messaging';
 import { MessageCircle, Clock } from 'lucide-react';
+import { Avatar, AvatarImage, AvatarFallback } from '@/app/components/ui/avatar';
+import { Badge } from '@/app/components/ui/badge';
 
 interface ConversationListProps {
     conversations: InstagramConversation[];
@@ -49,17 +51,15 @@ export function ConversationList({ conversations, onSelectConversation }: Conver
                 >
                     {/* Profile Picture */}
                     <div className="flex-shrink-0">
-                        {conversation.participantProfilePic ? (
-                            <img
-                                src={conversation.participantProfilePic}
+                        <Avatar className="w-12 h-12">
+                            <AvatarImage
+                                src={conversation.participantProfilePic || undefined}
                                 alt={conversation.participantUsername || 'User'}
-                                className="w-12 h-12 rounded-full object-cover"
                             />
-                        ) : (
-                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-black text-lg">
+                            <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-500 text-white font-black text-lg">
                                 {(conversation.participantUsername || 'U')[0].toUpperCase()}
-                            </div>
-                        )}
+                            </AvatarFallback>
+                        </Avatar>
                     </div>
 
                     {/* Conversation Info */}
@@ -81,9 +81,9 @@ export function ConversationList({ conversations, onSelectConversation }: Conver
                     {/* Unread Badge */}
                     {conversation.unreadCount > 0 && (
                         <div className="flex-shrink-0">
-                            <div className="bg-indigo-600 text-white text-xs font-black rounded-full w-6 h-6 flex items-center justify-center">
+                            <Badge className="bg-indigo-600 text-white text-xs font-black rounded-full w-6 h-6 flex items-center justify-center p-0">
                                 {conversation.unreadCount > 9 ? '9+' : conversation.unreadCount}
-                            </div>
+                            </Badge>
                         </div>
                     )}
                 </button>

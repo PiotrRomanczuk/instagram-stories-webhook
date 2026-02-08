@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { ArrowRight, CheckCircle2, ShieldAlert } from 'lucide-react';
 import { ExtendTokenButton } from '../auth/extend-token-button';
 import { ConnectFacebookButton } from '../auth/connect-facebook-button';
+import { Alert, AlertTitle, AlertDescription } from '@/app/components/ui/alert';
+import { Badge } from '@/app/components/ui/badge';
 
 interface StatusSectionProps {
     isConnected: boolean;
@@ -28,30 +30,31 @@ export function StatusSection({ isConnected }: StatusSectionProps) {
                         </Link>
                     </div>
                 ) : (
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-300">Awaiting Auth</span>
+                    <Badge variant="secondary" className="text-[10px] font-black uppercase tracking-widest text-slate-300 bg-transparent">Awaiting Auth</Badge>
                 )}
             </div>
 
-            <div className={`p-6 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-6 transition-all duration-500 ${isConnected ? 'bg-emerald-50/50 border border-emerald-100 ring-4 ring-emerald-50/30' : 'bg-rose-50/50 border border-rose-100 ring-4 ring-rose-50/30'}`}>
-                <div className="flex items-center gap-5">
+            <Alert className={`p-6 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-6 transition-all duration-500 border ${isConnected ? 'bg-emerald-50/50 border-emerald-100 ring-4 ring-emerald-50/30' : 'bg-rose-50/50 border-rose-100 ring-4 ring-rose-50/30'}`}>
+                {isConnected ? <CheckCircle2 className="w-8 h-8" /> : <ShieldAlert className="w-8 h-8" />}
+                <div className="flex items-center gap-5 flex-1">
                     <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner ${isConnected ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'}`}>
                         {isConnected ? <CheckCircle2 className="w-8 h-8" /> : <ShieldAlert className="w-8 h-8" />}
                     </div>
                     <div>
-                        <span className={`text-xl font-black ${isConnected ? 'text-emerald-900' : 'text-rose-900'}`}>
+                        <AlertTitle className={`text-xl font-black ${isConnected ? 'text-emerald-900' : 'text-rose-900'}`}>
                             {isConnected ? 'Fully Authenticated' : 'Disconnected'}
-                        </span>
-                        <p className={`text-sm font-medium ${isConnected ? 'text-emerald-700/70' : 'text-rose-700/70'}`}>
+                        </AlertTitle>
+                        <AlertDescription className={`text-sm font-medium ${isConnected ? 'text-emerald-700/70' : 'text-rose-700/70'}`}>
                             {isConnected ? 'Tokens are active and ready for use.' : 'Connect your Facebook account to begin.'}
-                        </p>
+                        </AlertDescription>
                     </div>
                 </div>
 
-                <div className="flex flex-col gap-3 w-full md:w-auto">
+                <div className="flex flex-col gap-3 w-full md:w-auto col-start-2">
                     <ConnectFacebookButton isConnected={isConnected} />
                     {isConnected && <ExtendTokenButton />}
                 </div>
-            </div>
+            </Alert>
         </div>
     );
 }

@@ -1,4 +1,4 @@
-import React from 'react';
+import { Badge } from './badge';
 
 type StatusType = 'pending' | 'processing' | 'published' | 'failed' | 'cancelled';
 
@@ -7,19 +7,19 @@ interface StatusBadgeProps {
 }
 
 const statusConfig = {
-    pending: { bg: 'bg-blue-50', text: 'text-blue-700', label: 'Pending' },
-    processing: { bg: 'bg-indigo-50', text: 'text-indigo-700', label: 'Processing' },
-    published: { bg: 'bg-green-50', text: 'text-green-700', label: 'Published' },
-    failed: { bg: 'bg-red-50', text: 'text-red-700', label: 'Failed' },
-    cancelled: { bg: 'bg-gray-50', text: 'text-gray-700', label: 'Cancelled' },
+    pending: { className: 'bg-blue-50 text-blue-700 border-transparent', label: 'Pending' },
+    processing: { className: 'bg-indigo-50 text-indigo-700 border-transparent', label: 'Processing' },
+    published: { className: 'bg-green-50 text-green-700 border-transparent', label: 'Published' },
+    failed: { className: 'bg-red-50 text-red-700 border-transparent', label: 'Failed' },
+    cancelled: { className: 'bg-gray-50 text-gray-700 border-transparent', label: 'Cancelled' },
 };
 
 export function StatusBadge({ status }: StatusBadgeProps) {
     const config = statusConfig[status] || statusConfig.pending;
 
     return (
-        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${config.bg} ${config.text}`}>
+        <Badge className={`text-[10px] px-2 py-0.5 font-bold uppercase ${config.className}`}>
             {config.label}
-        </span>
+        </Badge>
     );
 }

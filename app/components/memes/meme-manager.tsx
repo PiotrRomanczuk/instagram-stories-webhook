@@ -10,6 +10,17 @@ import { useState } from 'react';
 import { MemeSubmission } from '@/lib/types';
 import { logError } from '@/lib/actions/log';
 import { toast } from 'sonner';
+import { Button } from '@/app/components/ui/button';
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from '@/app/components/ui/alert-dialog';
 
 export function MemeManager() {
 	const [showForm, setShowForm] = useState(false);
@@ -17,6 +28,7 @@ export function MemeManager() {
 	const [status, setStatus] = useState('');
 	const [page, setPage] = useState(1);
 	const [editingMeme, setEditingMeme] = useState<MemeSubmission | null>(null);
+	const [deletingMemeId, setDeletingMemeId] = useState<string | null>(null);
 
 	const { memes, pagination, isLoading, refresh } = useUserMemes({
 		search,
@@ -62,14 +74,13 @@ export function MemeManager() {
 			if (!response.ok) {
 				const error = await response.json();
 
-				// Handle conflict (concurrent edit detected)
 				if (response.status === 409 || error.code === 'CONFLICT') {
 					toast.error(
 						'This meme was modified in another tab or session. Please refresh to see the latest version.',
 						{ duration: 5000 },
 					);
 					setEditingMeme(null);
-					refresh(); // Refresh the list to show latest data
+					refresh();
 					return;
 				}
 
@@ -88,11 +99,14 @@ export function MemeManager() {
 	};
 
 	const handleDeleteMeme = async (id: string) => {
-		if (!confirm('Are you sure you want to delete this meme submission?'))
-			return;
+		setDeletingMemeId(id);
+	};
+
+	const confirmDeleteMeme = async () => {
+		if (!deletingMemeId) return;
 
 		try {
-			const response = await fetch(`/api/memes/${id}`, {
+			const response = await fetch(`/api/memes/${deletingMemeId}`, {
 				method: 'DELETE',
 			});
 
@@ -108,6 +122,8 @@ export function MemeManager() {
 				error instanceof Error ? error.message : 'Failed to delete meme';
 			toast.error(message);
 			logError('meme-manager:delete', message, error);
+		} finally {
+			setDeletingMemeId(null);
 		}
 	};
 
@@ -129,12 +145,13 @@ export function MemeManager() {
 					</div>
 				</div>
 
-				<button
+				<Button
 					onClick={() => setShowForm(!showForm)}
-					className={`inline-flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all duration-300 shadow-lg ${
+					variant={showForm ? 'secondary' : 'default'}
+					className={`rounded-2xl font-black text-xs uppercase tracking-widest ${
 						showForm
-							? 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-							: 'bg-indigo-600 text-white hover:bg-slate-900 shadow-indigo-100'
+							? ''
+							: 'bg-indigo-600 hover:bg-slate-900 shadow-lg shadow-indigo-100'
 					}`}
 				>
 					{showForm ? (
@@ -144,7 +161,7 @@ export function MemeManager() {
 							<Plus className='w-4 h-4' /> Submit New Meme
 						</>
 					)}
-				</button>
+				</Button>
 			</div>
 
 			{/* Form Section */}
@@ -186,27 +203,26 @@ export function MemeManager() {
 				{/* Pagination Controls */}
 				{!showForm && memes.length > 0 && (
 					<div className='flex items-center justify-center gap-4 mt-8'>
-						<button
+						<Button
 							onClick={() => setPage((p) => Math.max(1, p - 1))}
 							disabled={page === 1 || isLoading}
-							className='inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
+							variant='outline'
 						>
 							<ChevronLeft className='w-4 h-4' />
 							Previous
-						</button>
+						</Button>
 
 						<div className='text-sm font-medium text-slate-600'>
 							Page <span className='font-black text-indigo-600'>{page}</span>
 						</div>
 
-						<button
+						<Button
 							onClick={() => setPage((p) => p + 1)}
 							disabled={!pagination.hasMore || isLoading}
-							className='inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
 						>
 							Next
 							<ChevronRight className='w-4 h-4' />
-						</button>
+						</Button>
 					</div>
 				)}
 			</div>
@@ -220,6 +236,24 @@ export function MemeManager() {
 					onSave={handleSaveEdit}
 				/>
 			)}
+
+			{/* Delete Confirmation Dialog */}
+			<AlertDialog open={!!deletingMemeId} onOpenChange={(open) => { if (!open) setDeletingMemeId(null); }}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Delete Meme Submission</AlertDialogTitle>
+						<AlertDialogDescription>
+							Are you sure you want to delete this meme submission? This action cannot be undone.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>Cancel</AlertDialogCancel>
+						<AlertDialogAction onClick={confirmDeleteMeme} className="bg-red-600 hover:bg-red-700">
+							Delete
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</div>
 	);
 }

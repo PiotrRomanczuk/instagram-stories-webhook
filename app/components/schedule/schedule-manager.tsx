@@ -7,15 +7,16 @@ import { useSchedulePosts } from './use-schedule-posts';
 import { ScheduleForm } from './schedule-form';
 import { PostList } from './post-list';
 import { ProcessButton } from './process-button';
-import { Panel } from '../ui/panel';
+import { Card, CardHeader, CardTitle, CardContent } from '@/app/components/ui/card';
+import { Button } from '@/app/components/ui/button';
 import { LoadingSpinner } from '../ui/loading-spinner';
 import { UserRole } from '@/lib/types';
 
 export function ScheduleManager() {
     const { data: session } = useSession();
-    const isAdmin = (session?.user as { role?: UserRole })?.role === 'admin' || 
+    const isAdmin = (session?.user as { role?: UserRole })?.role === 'admin' ||
                     (session?.user as { role?: UserRole })?.role === 'developer';
-    
+
     const { posts, loading, fetchPosts } = useSchedulePosts({ showAll: isAdmin });
 
     const handleCancel = async (id: string) => {
@@ -170,36 +171,43 @@ export function ScheduleManager() {
         <div className="space-y-8">
             <ScheduleForm onScheduled={fetchPosts} />
 
-            <Panel
-                title="Scheduled Posts"
-                icon={<Clock className="w-6 h-6" />}
-                className="relative"
-            >
+            <Card className="rounded-3xl p-8 shadow-xl shadow-gray-100/50 border-gray-100 relative">
+                <CardHeader className="p-0 gap-0">
+                    <div className="flex items-center gap-3">
+                        <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl">
+                            <Clock className="w-6 h-6" />
+                        </div>
+                        <CardTitle className="text-2xl font-black text-gray-900">Scheduled Posts</CardTitle>
+                    </div>
+                </CardHeader>
                 <div className="absolute top-8 right-8 flex items-center gap-2">
                     <ProcessButton onProcessed={fetchPosts} />
-                    <button
+                    <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={fetchPosts}
-                        className="p-2 hover:bg-gray-100 rounded-xl transition"
+                        className="rounded-xl"
                         title="Refresh"
                     >
                         <RefreshCw className="w-5 h-5 text-gray-600" />
-                    </button>
+                    </Button>
                 </div>
-
-                {loading ? (
-                    <LoadingSpinner />
-                ) : (
-                    <PostList
-                        posts={posts}
-                        onCancel={handleCancel}
-                        onReschedule={handleReschedule}
-                        onReorder={handleReorder}
-                        onUpdateTags={handleUpdateTags}
-                        onPostImmediately={handlePostImmediately}
-                        onDuplicate={handleDuplicate}
-                    />
-                )}
-            </Panel>
+                <CardContent className="p-0">
+                    {loading ? (
+                        <LoadingSpinner />
+                    ) : (
+                        <PostList
+                            posts={posts}
+                            onCancel={handleCancel}
+                            onReschedule={handleReschedule}
+                            onReorder={handleReorder}
+                            onUpdateTags={handleUpdateTags}
+                            onPostImmediately={handlePostImmediately}
+                            onDuplicate={handleDuplicate}
+                        />
+                    )}
+                </CardContent>
+            </Card>
         </div>
     );
 }

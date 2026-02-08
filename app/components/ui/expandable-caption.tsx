@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import { Button } from '@/app/components/ui/button';
 
 interface ExpandableCaptionProps {
     caption: string;
@@ -54,9 +55,11 @@ export function ExpandableCaption({
 
             {/* Expand/Collapse button */}
             {needsExpansion && (
-                <button
+                <Button
+                    variant="link"
+                    size="xs"
                     onClick={() => setIsExpanded(!isExpanded)}
-                    className="mt-2 flex items-center gap-1 text-indigo-600 hover:text-indigo-700 font-medium text-xs transition"
+                    className="mt-2 h-auto p-0 text-indigo-600 hover:text-indigo-700 font-medium text-xs no-underline hover:no-underline"
                 >
                     {isExpanded ? (
                         <>
@@ -69,7 +72,7 @@ export function ExpandableCaption({
                             <ChevronDown className="w-3 h-3" />
                         </>
                     )}
-                </button>
+                </Button>
             )}
 
             {/* Character count badge */}

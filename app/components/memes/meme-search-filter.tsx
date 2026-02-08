@@ -2,6 +2,9 @@
 
 import { Search, X } from 'lucide-react';
 import { useState, useCallback } from 'react';
+import { Input } from '@/app/components/ui/input';
+import { Button } from '@/app/components/ui/button';
+import { ToggleGroup, ToggleGroupItem } from '@/app/components/ui/toggle-group';
 
 interface MemeSearchFilterProps {
 	onSearchChange: (query: string) => void;
@@ -36,26 +39,37 @@ export function MemeSearchFilter({
 			{/* Search Input */}
 			<div className='relative'>
 				<Search className='absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400' />
-				<input
+				<Input
 					type='text'
 					placeholder='Search by title or caption...'
 					value={localQuery}
 					onChange={(e) => handleSearchChange(e.target.value)}
-					className='w-full pl-12 pr-10 py-3 rounded-xl border border-slate-200 bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all'
+					className='pl-12 pr-10 py-3 rounded-xl'
 					data-testid='search-input'
 				/>
 				{localQuery && (
-					<button
+					<Button
+						variant='ghost'
+						size='icon'
 						onClick={handleClear}
-						className='absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 transition-colors'
+						className='absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8'
 					>
 						<X className='w-5 h-5' />
-					</button>
+					</Button>
 				)}
 			</div>
 
 			{/* Status Filter */}
-			<div className='flex flex-wrap gap-2'>
+			<ToggleGroup
+				type='single'
+				value={status === '' ? 'all' : status}
+				onValueChange={(value) => {
+					if (value) {
+						onStatusChange(value === 'all' ? '' : value);
+					}
+				}}
+				className='flex flex-wrap gap-2 justify-start'
+			>
 				{[
 					'all',
 					'pending',
@@ -64,19 +78,15 @@ export function MemeSearchFilter({
 					'rejected',
 					'scheduled',
 				].map((s) => (
-					<button
+					<ToggleGroupItem
 						key={s}
-						onClick={() => onStatusChange(s === 'all' ? '' : s)}
-						className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-							(status === '' && s === 'all') || status === s
-								? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100'
-								: 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-						}`}
+						value={s}
+						className='px-4 py-2 rounded-lg text-sm font-medium data-[state=on]:bg-indigo-600 data-[state=on]:text-white data-[state=on]:shadow-lg data-[state=on]:shadow-indigo-100'
 					>
 						{s.charAt(0).toUpperCase() + s.slice(1)}
-					</button>
+					</ToggleGroupItem>
 				))}
-			</div>
+			</ToggleGroup>
 		</div>
 	);
 }

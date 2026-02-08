@@ -1,8 +1,10 @@
 'use client';
 
 import useSWR from 'swr';
-import { AlertCircle, CheckCircle2, Clock, TrendingDown } from 'lucide-react';
+import { AlertCircle, CheckCircle2, TrendingDown } from 'lucide-react';
 import { Panel } from '@/app/components/ui/panel';
+import { Skeleton } from '@/app/components/ui/skeleton';
+import { Card, CardContent } from '@/app/components/ui/card';
 
 interface Metrics {
 	postsInQueue: number;
@@ -28,7 +30,7 @@ export function HealthMetrics() {
 
 	if (error) {
 		return (
-			<Panel title="📊 System Health" icon={<TrendingDown className="w-6 h-6" />}>
+			<Panel title="System Health" icon={<TrendingDown className="w-6 h-6" />}>
 				<div className="text-center py-4 text-red-600">
 					Failed to load metrics. Please try again.
 				</div>
@@ -38,10 +40,10 @@ export function HealthMetrics() {
 
 	if (isLoading || !metrics) {
 		return (
-			<Panel title="📊 System Health" icon={<TrendingDown className="w-6 h-6" />}>
-				<div className="animate-pulse grid grid-cols-2 md:grid-cols-4 gap-4">
+			<Panel title="System Health" icon={<TrendingDown className="w-6 h-6" />}>
+				<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
 					{[1, 2, 3, 4].map((i) => (
-						<div key={i} className="h-20 bg-slate-200 rounded-lg"></div>
+						<Skeleton key={i} className="h-20 w-full rounded-lg" />
 					))}
 				</div>
 			</Panel>
@@ -55,82 +57,90 @@ export function HealthMetrics() {
 	};
 
 	const healthStatus = getHealthStatus();
-	const healthColor = {
-		healthy: 'emerald',
-		warning: 'amber',
-		critical: 'rose',
+	const healthStyles = {
+		healthy: { card: 'bg-emerald-50 border-emerald-200', text: 'text-emerald-700' },
+		warning: { card: 'bg-amber-50 border-amber-200', text: 'text-amber-700' },
+		critical: { card: 'bg-rose-50 border-rose-200', text: 'text-rose-700' },
 	}[healthStatus];
 
 	return (
 		<Panel
-			title="📊 System Health"
+			title="System Health"
 			icon={<TrendingDown className="w-6 h-6" />}
 		>
 			<div className="grid grid-cols-2 md:grid-cols-5 gap-4">
 				{/* Status Badge */}
-				<div
-					className={`rounded-2xl p-4 bg-${healthColor}-50 border border-${healthColor}-200`}
+				<Card
+					className={healthStyles.card}
 				>
-					<div className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-1">
-						Status
-					</div>
-					<div
-						className={`text-2xl font-black text-${healthColor}-700 flex items-center gap-2`}
-					>
-						{healthStatus === 'healthy' ? (
-							<CheckCircle2 className="w-6 h-6" />
-						) : healthStatus === 'warning' ? (
-							<AlertCircle className="w-6 h-6" />
-						) : (
-							<AlertCircle className="w-6 h-6" />
-						)}
-						<span className="capitalize">{healthStatus}</span>
-					</div>
-				</div>
+					<CardContent className="p-4">
+						<div className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-1">
+							Status
+						</div>
+						<div
+							className={`text-2xl font-black ${healthStyles.text} flex items-center gap-2`}
+						>
+							{healthStatus === 'healthy' ? (
+								<CheckCircle2 className="w-6 h-6" />
+							) : (
+								<AlertCircle className="w-6 h-6" />
+							)}
+							<span className="capitalize">{healthStatus}</span>
+						</div>
+					</CardContent>
+				</Card>
 
 				{/* Queued */}
-				<div className="rounded-2xl p-4 bg-indigo-50 border border-indigo-200">
-					<div className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-1">
-						In Queue
-					</div>
-					<div className="text-3xl font-black text-indigo-700">
-						{metrics.postsInQueue}
-					</div>
-					<div className="text-xs text-slate-600 mt-1">pending posts</div>
-				</div>
+				<Card className="bg-indigo-50 border-indigo-200">
+					<CardContent className="p-4">
+						<div className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-1">
+							In Queue
+						</div>
+						<div className="text-3xl font-black text-indigo-700">
+							{metrics.postsInQueue}
+						</div>
+						<div className="text-xs text-slate-600 mt-1">pending posts</div>
+					</CardContent>
+				</Card>
 
 				{/* Stuck */}
-				<div className="rounded-2xl p-4 bg-rose-50 border border-rose-200">
-					<div className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-1">
-						Stuck
-					</div>
-					<div className="text-3xl font-black text-rose-700">
-						{metrics.postsStuck}
-					</div>
-					<div className="text-xs text-slate-600 mt-1">processing {'\u003E'} 5m</div>
-				</div>
+				<Card className="bg-rose-50 border-rose-200">
+					<CardContent className="p-4">
+						<div className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-1">
+							Stuck
+						</div>
+						<div className="text-3xl font-black text-rose-700">
+							{metrics.postsStuck}
+						</div>
+						<div className="text-xs text-slate-600 mt-1">processing {'\u003E'} 5m</div>
+					</CardContent>
+				</Card>
 
 				{/* Failed */}
-				<div className="rounded-2xl p-4 bg-amber-50 border border-amber-200">
-					<div className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-1">
-						Failed 24h
-					</div>
-					<div className="text-3xl font-black text-amber-700">
-						{metrics.failedLast24h}
-					</div>
-					<div className="text-xs text-slate-600 mt-1">posts</div>
-				</div>
+				<Card className="bg-amber-50 border-amber-200">
+					<CardContent className="p-4">
+						<div className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-1">
+							Failed 24h
+						</div>
+						<div className="text-3xl font-black text-amber-700">
+							{metrics.failedLast24h}
+						</div>
+						<div className="text-xs text-slate-600 mt-1">posts</div>
+					</CardContent>
+				</Card>
 
 				{/* Success Rate */}
-				<div className="rounded-2xl p-4 bg-emerald-50 border border-emerald-200">
-					<div className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-1">
-						Success Rate
-					</div>
-					<div className="text-3xl font-black text-emerald-700">
-						{100 - metrics.errorRate}%
-					</div>
-					<div className="text-xs text-slate-600 mt-1">last 24h</div>
-				</div>
+				<Card className="bg-emerald-50 border-emerald-200">
+					<CardContent className="p-4">
+						<div className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-1">
+							Success Rate
+						</div>
+						<div className="text-3xl font-black text-emerald-700">
+							{100 - metrics.errorRate}%
+						</div>
+						<div className="text-xs text-slate-600 mt-1">last 24h</div>
+					</CardContent>
+				</Card>
 			</div>
 		</Panel>
 	);
