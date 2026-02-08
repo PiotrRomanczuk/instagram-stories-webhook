@@ -423,31 +423,9 @@ export function ContentPreviewModal({
 						<X className='h-5 w-5' />
 					</button>
 
-					{/* Mobile navigation buttons */}
-					{hasNavigation && (
-						<div className='absolute bottom-4 left-1/2 -translate-x-1/2 z-50 md:hidden flex items-center gap-3 bg-black/40 backdrop-blur-md rounded-full px-2 py-1.5'>
-							<button
-								onClick={goToPrevious}
-								disabled={!canGoPrevious}
-								className={`p-2 rounded-full transition ${canGoPrevious ? 'text-white' : 'text-white/30'}`}
-							>
-								<ChevronLeft className='h-5 w-5' />
-							</button>
-							<span className='text-white/80 text-xs font-bold min-w-[40px] text-center'>
-								{currentIndex + 1}/{items.length}
-							</span>
-							<button
-								onClick={goToNext}
-								disabled={!canGoNext}
-								className={`p-2 rounded-full transition ${canGoNext ? 'text-white' : 'text-white/30'}`}
-							>
-								<ChevronRight className='h-5 w-5' />
-							</button>
-						</div>
-					)}
-
+	
 					{/* Left Side: Media Deep Dive */}
-					<div className='flex-1 bg-gray-950 relative flex items-center justify-center overflow-hidden min-h-[280px] md:min-h-0'>
+					<div className='h-[280px] flex-shrink-0 md:h-auto md:flex-1 bg-gray-950 relative flex items-center justify-center overflow-hidden'>
 						{showStoryFrame ? (
 							<div className='h-full w-full aspect-[9/16] max-h-full flex items-center justify-center relative overflow-hidden'>
 								{/* Blurred Background */}
@@ -563,11 +541,11 @@ export function ContentPreviewModal({
 					</div>
 
 					{/* Right Side: Insights & Controls */}
-					<div className='md:w-[450px] bg-white flex flex-col'>
+					<div className='flex-1 min-h-0 md:flex-none md:w-[450px] bg-white flex flex-col'>
 						{/* Header */}
-						<div className='p-4 md:p-8 border-b border-gray-100 flex items-center justify-between'>
-							<div className='min-w-0'>
-								<h2 className='text-lg md:text-2xl font-black text-gray-900 leading-tight truncate max-w-[240px] md:max-w-[280px]'>
+						<div className='p-4 md:p-8 border-b border-gray-100 flex items-center justify-between gap-2'>
+							<div className='min-w-0 flex-1'>
+								<h2 className='text-lg md:text-2xl font-black text-gray-900 leading-tight truncate'>
 									{item.title || item.caption || 'Post Details'}
 								</h2>
 								<div className='flex items-center gap-2 mt-1'>
@@ -583,6 +561,28 @@ export function ContentPreviewModal({
 									</p>
 								</div>
 							</div>
+							{/* Mobile navigation */}
+							{hasNavigation && (
+								<div className='flex items-center gap-1 md:hidden'>
+									<button
+										onClick={goToPrevious}
+										disabled={!canGoPrevious}
+										className={`p-1.5 rounded-lg transition ${canGoPrevious ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-300'}`}
+									>
+										<ChevronLeft className='h-4 w-4' />
+									</button>
+									<span className='text-[11px] text-gray-400 font-bold min-w-[36px] text-center'>
+										{currentIndex + 1}/{items.length}
+									</span>
+									<button
+										onClick={goToNext}
+										disabled={!canGoNext}
+										className={`p-1.5 rounded-lg transition ${canGoNext ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-300'}`}
+									>
+										<ChevronRight className='h-4 w-4' />
+									</button>
+								</div>
+							)}
 							<button
 								onClick={onClose}
 								className='hidden md:flex p-3 bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-900 rounded-2xl transition-all active:scale-[0.9]'
@@ -626,7 +626,7 @@ export function ContentPreviewModal({
 											</div>
 											<div>
 												<p className='text-xs font-black text-gray-900 uppercase'>
-													Queued for Reveal
+													Scheduled For
 												</p>
 												<p className='text-[10px] text-amber-600 font-black'>
 													{new Date(item.scheduledTime).toLocaleString()}
@@ -779,10 +779,18 @@ export function ContentPreviewModal({
 										item.submissionStatus === 'approved') && (
 										<button
 											onClick={() => setShowConfirmPublish(true)}
-											className='flex-1 h-14 bg-emerald-500 text-white rounded-2xl hover:bg-emerald-600 active:scale-[0.98] transition-all font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl shadow-emerald-200'
+											className={`flex-1 h-14 text-white rounded-2xl active:scale-[0.98] transition-all font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl ${
+												item.publishingStatus === 'failed'
+													? 'bg-orange-500 hover:bg-orange-600 shadow-orange-200'
+													: 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-200'
+											}`}
 										>
-											<Send className='h-4 w-4' />
-											Publish Now
+											{item.publishingStatus === 'failed' ? (
+												<RefreshCw className='h-4 w-4' />
+											) : (
+												<Send className='h-4 w-4' />
+											)}
+											{item.publishingStatus === 'failed' ? 'Retry' : 'Publish Now'}
 										</button>
 									)}
 									<button
