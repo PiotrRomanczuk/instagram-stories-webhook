@@ -12,13 +12,9 @@
 import { test, expect } from '@playwright/test';
 import { signInAsUser } from './helpers/auth';
 import { cleanupTestContentByPattern } from './helpers/seed';
-import path from 'path';
-import fs from 'fs';
+import { getRandomMeme } from './helpers/test-assets';
 
-const MEMES_DIR = path.join(process.cwd(), 'memes');
-const memeFiles = fs.readdirSync(MEMES_DIR).filter((f) => f.endsWith('.jpg'));
-const randomMeme = memeFiles[Math.floor(Math.random() * memeFiles.length)];
-const TEST_IMAGE_PATH = path.join(MEMES_DIR, randomMeme);
+const TEST_IMAGE_PATH = getRandomMeme();
 const TEST_CAPTION_PREFIX = 'E2E Full Journey';
 
 test.use({

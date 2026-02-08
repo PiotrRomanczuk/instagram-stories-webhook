@@ -1,7 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { signInAsRealIG } from './helpers/auth';
-import path from 'path';
-import fs from 'fs';
+import { getRandomMeme } from './helpers/test-assets';
 
 /**
  * Admin Publishing E2E Test with Verification
@@ -10,14 +9,6 @@ import fs from 'fs';
  *
  * Run with: ENABLE_REAL_IG_TESTS=true ENABLE_LIVE_IG_PUBLISH=true npx playwright test admin-publish
  */
-
-const MEMES_DIR = '/home/piotr/Desktop/instagram-stories-webhook/memes';
-
-function getRandomMeme(): string {
-	const memes = fs.readdirSync(MEMES_DIR).filter(f => f.endsWith('.jpg'));
-	const randomMeme = memes[Math.floor(Math.random() * memes.length)];
-	return path.join(MEMES_DIR, randomMeme);
-}
 
 test.describe('Admin Publishing (Real Instagram)', () => {
 	// Skip in CI

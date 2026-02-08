@@ -162,6 +162,39 @@ npm run lint && npx tsc && npm run test
 3. **MUST PASS**: Lint, TypeScript, Tests, Build
 4. If failed: Fix locally, re-test, push, re-verify
 
+## Versioning (MANDATORY)
+
+This project uses **Semantic Versioning** ([semver.org](https://semver.org/)) via the `version` field in `package.json`.
+
+**Bump the version in `package.json` when committing feature work:**
+
+| Change Type | Version Bump | Example | When to Use |
+|-------------|-------------|---------|-------------|
+| **Bug fix** | `PATCH` (0.1.0 → 0.1.1) | `npm version patch --no-git-tag-version` | Backwards-compatible bug fixes |
+| **New feature** | `MINOR` (0.1.0 → 0.2.0) | `npm version minor --no-git-tag-version` | New functionality, backwards-compatible |
+| **Breaking change** | `MAJOR` (0.2.0 → 1.0.0) | `npm version major --no-git-tag-version` | Incompatible API/schema changes |
+
+### Rules
+
+1. **Every feature branch** must bump the version before merging
+2. Use `--no-git-tag-version` to avoid auto-commit — version bump goes in your feature commit
+3. If multiple features merge in the same cycle, the highest bump wins (e.g., minor > patch)
+4. Pre-1.0: breaking changes can use MINOR bumps (0.x.0)
+5. Include the version bump in your commit: `feat: add dark mode (0.2.0 → 0.3.0)`
+
+### Workflow
+
+```bash
+# After finishing feature work, before committing:
+npm version minor --no-git-tag-version   # or patch/major
+
+# Verify it updated package.json
+grep '"version"' package.json
+
+# Include package.json in your commit
+git add package.json
+```
+
 ## Architecture
 
 ### Authentication

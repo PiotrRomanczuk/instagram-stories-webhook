@@ -11,16 +11,12 @@
 import { test, expect } from '@playwright/test';
 import { signInAsUser, signInAsAdmin } from './helpers/auth';
 import { cleanupTestContentByPattern } from './helpers/seed';
-import path from 'path';
-import fs from 'fs';
+import { getRandomMeme } from './helpers/test-assets';
 
 const TEST_TITLE_PREFIX = 'E2E Mobile Test';
 
-// Pick a random meme from the /memes folder to avoid phash duplicate detection
-const MEMES_DIR = path.join(process.cwd(), 'memes');
-const memeFiles = fs.readdirSync(MEMES_DIR).filter((f) => f.endsWith('.jpg'));
-const randomMeme = memeFiles[Math.floor(Math.random() * memeFiles.length)];
-const TEST_IMAGE_PATH = path.join(MEMES_DIR, randomMeme);
+// Pick a random meme (falls back to fixture images in CI)
+const TEST_IMAGE_PATH = getRandomMeme();
 
 test.use({
 	viewport: { width: 390, height: 844 },

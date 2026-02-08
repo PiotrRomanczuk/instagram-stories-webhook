@@ -3,12 +3,27 @@ import * as fs from 'fs';
 import type { APIRequestContext } from '@playwright/test';
 
 const MEMES_DIR = path.join(process.cwd(), 'memes');
+const FIXTURE_IMAGES_DIR = path.join(process.cwd(), '__tests__/e2e/fixtures/test-images');
 const TEST_VIDEO_PATH = path.join(process.cwd(), '__tests__/fixtures/test-video.mp4');
 
+/**
+ * Returns the directory containing test images.
+ * Prefers /memes (local dev with real memes) but falls back to
+ * __tests__/e2e/fixtures/test-images/ (always available in CI).
+ */
+function getImagesDir(): string {
+  if (fs.existsSync(MEMES_DIR)) return MEMES_DIR;
+  if (fs.existsSync(FIXTURE_IMAGES_DIR)) return FIXTURE_IMAGES_DIR;
+  throw new Error(
+    `No test images found. Either add memes to ${MEMES_DIR} or generate fixtures with: npx tsx __tests__/e2e/fixtures/generate-test-images.ts`
+  );
+}
+
 export function getAllMemes(): string[] {
-  return fs.readdirSync(MEMES_DIR)
+  const dir = getImagesDir();
+  return fs.readdirSync(dir)
     .filter(f => f.endsWith('.jpg'))
-    .map(f => path.join(MEMES_DIR, f));
+    .map(f => path.join(dir, f));
 }
 
 export function getRandomMeme(): string {
