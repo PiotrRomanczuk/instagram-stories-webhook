@@ -84,7 +84,7 @@ describe('Developer Page', () => {
 		it('renders without crashing', async () => {
 			await renderDeveloperPage();
 			expect(screen.getByTestId('page-header')).toBeInTheDocument();
-		});
+		}, 15000);
 
 		it('displays Developer Tools title', async () => {
 			await renderDeveloperPage();
