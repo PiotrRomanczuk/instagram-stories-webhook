@@ -100,12 +100,15 @@ export function ScheduleCalendarLayout() {
 		);
 	}, [allItems]);
 
-	// Filter ready items (approved but not scheduled)
+	// Filter ready items (approved but not yet scheduled/published/archived)
 	const readyItems = useMemo(() => {
 		return allItems.filter((item) => {
 			const isApproved =
 				item.submissionStatus === 'approved' || item.source === 'direct';
-			return isApproved;
+			const notPublished = item.publishingStatus !== 'published';
+			const notScheduled = !item.scheduledTime || item.publishingStatus === 'draft';
+			const notArchived = !item.archivedAt;
+			return isApproved && notPublished && notScheduled && notArchived;
 		});
 	}, [allItems]);
 

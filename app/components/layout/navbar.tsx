@@ -17,6 +17,7 @@ import {
 	LineChart,
 } from 'lucide-react';
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { UserRole } from '@/lib/types';
 import { useTranslations, useLocale } from 'next-intl';
 import { Button } from '@/app/components/ui/button';
@@ -218,55 +219,89 @@ export function Navbar() {
 						)}
 
 						{/* Mobile Menu Button - hidden when bottom nav is active */}
-						<Button
-							variant="ghost"
-							size="icon"
-							className="hidden max-md:block max-lg:hidden"
+						<button
+							className="hidden max-md:flex max-lg:hidden relative h-10 w-10 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
 							onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+							aria-label="Toggle menu"
 						>
-							<Menu className="h-5 w-5" />
-							<span className="sr-only">Toggle menu</span>
-						</Button>
+							<div className="flex h-5 w-5 flex-col items-center justify-center">
+								<motion.span
+									animate={isMobileMenuOpen ? { rotate: 45, y: 0 } : { rotate: 0, y: -4 }}
+									transition={{ duration: 0.2 }}
+									className="absolute h-[2px] w-5 rounded-full bg-current"
+								/>
+								<motion.span
+									animate={isMobileMenuOpen ? { opacity: 0, scaleX: 0 } : { opacity: 1, scaleX: 1 }}
+									transition={{ duration: 0.15 }}
+									className="absolute h-[2px] w-5 rounded-full bg-current"
+								/>
+								<motion.span
+									animate={isMobileMenuOpen ? { rotate: -45, y: 0 } : { rotate: 0, y: 4 }}
+									transition={{ duration: 0.2 }}
+									className="absolute h-[2px] w-5 rounded-full bg-current"
+								/>
+							</div>
+						</button>
 					</div>
 				</div>
 			</div>
 
 			{/* Mobile Menu */}
-			{isMobileMenuOpen && (
-				<div className="border-t bg-background md:hidden">
-					<div className="space-y-1 px-4 py-4">
-						{visibleNavItems.map((item) => {
-							const Icon = item.icon;
-							return (
+			<AnimatePresence>
+				{isMobileMenuOpen && (
+					<motion.div
+						initial={{ height: 0, opacity: 0 }}
+						animate={{ height: 'auto', opacity: 1 }}
+						exit={{ height: 0, opacity: 0 }}
+						transition={{ duration: 0.2, ease: 'easeInOut' }}
+						className="overflow-hidden border-t bg-background md:hidden"
+					>
+						<div className="space-y-1 px-4 py-4">
+							{visibleNavItems.map((item, index) => {
+								const Icon = item.icon;
+								return (
+									<motion.div
+										key={item.href}
+										initial={{ opacity: 0, x: -12 }}
+										animate={{ opacity: 1, x: 0 }}
+										transition={{ delay: index * 0.03, duration: 0.2 }}
+									>
+										<Button
+											variant={isActive(item.href) ? 'secondary' : 'ghost'}
+											className="w-full justify-start gap-3"
+											asChild
+											onClick={() => setIsMobileMenuOpen(false)}
+										>
+											<Link href={item.href}>
+												<Icon className="h-5 w-5" />
+												{item.label}
+											</Link>
+										</Button>
+									</motion.div>
+								);
+							})}
+							<Separator className="my-2" />
+							<motion.div
+								initial={{ opacity: 0, x: -12 }}
+								animate={{ opacity: 1, x: 0 }}
+								transition={{ delay: visibleNavItems.length * 0.03, duration: 0.2 }}
+							>
 								<Button
-									key={item.href}
-									variant={isActive(item.href) ? 'secondary' : 'ghost'}
+									variant="ghost"
 									className="w-full justify-start gap-3"
-									asChild
-									onClick={() => setIsMobileMenuOpen(false)}
+									onClick={() => {
+										toggleLocale();
+										setIsMobileMenuOpen(false);
+									}}
 								>
-									<Link href={item.href}>
-										<Icon className="h-5 w-5" />
-										{item.label}
-									</Link>
+									<Languages className="h-5 w-5" />
+									Language: {locale.toUpperCase()}
 								</Button>
-							);
-						})}
-						<Separator className="my-2" />
-						<Button
-							variant="ghost"
-							className="w-full justify-start gap-3"
-							onClick={() => {
-								toggleLocale();
-								setIsMobileMenuOpen(false);
-							}}
-						>
-							<Languages className="h-5 w-5" />
-							Language: {locale.toUpperCase()}
-						</Button>
-					</div>
-				</div>
-			)}
+							</motion.div>
+						</div>
+					</motion.div>
+				)}
+			</AnimatePresence>
 		</nav>
 	);
 }
