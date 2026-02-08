@@ -91,7 +91,11 @@ export function QuickSchedulePopover({
 				onScheduleComplete();
 			} else {
 				const errorData = await response.json();
-				toast.error(errorData.error || 'Failed to schedule');
+				if (response.status === 409) {
+					toast.error(errorData.message || 'Another post is already scheduled at this time');
+				} else {
+					toast.error(errorData.error || 'Failed to schedule');
+				}
 			}
 		} catch (err) {
 			console.error('Failed to schedule:', err);

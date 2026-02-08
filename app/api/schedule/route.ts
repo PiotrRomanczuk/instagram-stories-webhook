@@ -6,6 +6,7 @@ import {
 	deleteScheduledPost,
 	updateScheduledPost,
 } from '@/lib/database/scheduled-posts';
+import { checkScheduleConflict } from '@/lib/database/schedule-conflict';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { isAdmin } from '@/lib/auth-helpers';
@@ -135,6 +136,20 @@ export async function POST(request: NextRequest) {
 
 		const { url, type, postType, caption, scheduledTime, userTags } =
 			validationResult.data;
+
+		// Check for scheduling conflicts in the same minute
+		const conflict = await checkScheduleConflict(scheduledTime);
+		if (conflict.hasConflict) {
+			return NextResponse.json(
+				{
+					error: 'Scheduling conflict',
+					message: `Another post is already scheduled at ${new Date(conflict.conflictingTime!).toLocaleString()}. Please choose a different time.`,
+					conflictingId: conflict.conflictingId,
+					conflictingTime: conflict.conflictingTime,
+				},
+				{ status: 409 },
+			);
+		}
 
 		const post = await addScheduledPost({
 			url,
@@ -297,6 +312,25 @@ export async function PATCH(request: NextRequest) {
 				{ error: 'Post not found or unauthorized' },
 				{ status: 404 },
 			);
+		}
+
+		// Check for scheduling conflicts when time is changing
+		if (updates.scheduledTime) {
+			const conflict = await checkScheduleConflict(updates.scheduledTime, {
+				excludeId: id,
+				excludeTable: 'scheduled_posts',
+			});
+			if (conflict.hasConflict) {
+				return NextResponse.json(
+					{
+						error: 'Scheduling conflict',
+						message: `Another post is already scheduled at ${new Date(conflict.conflictingTime!).toLocaleString()}. Please choose a different time.`,
+						conflictingId: conflict.conflictingId,
+						conflictingTime: conflict.conflictingTime,
+					},
+					{ status: 409 },
+				);
+			}
 		}
 
 		// Log updates for debugging

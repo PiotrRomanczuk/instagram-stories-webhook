@@ -208,7 +208,11 @@ export function ScheduleForm({ onScheduled }: ScheduleFormProps) {
                 onScheduled();
             } else {
                 const errorData = await res.json();
-                toast.error(errorData.error || 'Failed to schedule post');
+                if (res.status === 409) {
+                    toast.error(errorData.message || 'Another post is already scheduled at this time');
+                } else {
+                    toast.error(errorData.error || 'Failed to schedule post');
+                }
             }
         } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : String(error);

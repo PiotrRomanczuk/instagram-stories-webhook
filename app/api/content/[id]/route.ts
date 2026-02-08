@@ -15,6 +15,7 @@ import {
 	updateContentItem,
 	deleteContentItem,
 } from '@/lib/content-db';
+import { checkScheduleConflict } from '@/lib/database/schedule-conflict';
 import { rateLimiter } from '@/lib/middleware/rate-limit';
 
 const API_RATE_LIMIT = { limit: 100, windowMs: 60 * 1000 };
@@ -146,6 +147,25 @@ export async function PATCH(
 			);
 		}
 
+		// Check for scheduling conflicts when time is changing
+		if (scheduledTime && typeof scheduledTime === 'number') {
+			const conflict = await checkScheduleConflict(scheduledTime, {
+				excludeId: id,
+				excludeTable: 'content_items',
+			});
+			if (conflict.hasConflict) {
+				return NextResponse.json(
+					{
+						error: 'Scheduling conflict',
+						message: `Another post is already scheduled at ${new Date(conflict.conflictingTime!).toLocaleString()}. Please choose a different time.`,
+						conflictingId: conflict.conflictingId,
+						conflictingTime: conflict.conflictingTime,
+					},
+					{ status: 409 },
+				);
+			}
+		}
+
 		// Validate caption length
 		if (caption && caption.length > 2200) {
 			return NextResponse.json(
@@ -256,21 +276,23 @@ export async function DELETE(
 			);
 		}
 
-		// Admins can delete scheduled posts (including overdue)
+		// Admins can delete scheduled and failed posts
 		const isAdminRole = role === 'admin' || role === 'developer';
 		const isScheduled = item.publishingStatus === 'scheduled';
+		const isFailed = item.publishingStatus === 'failed';
 		const isDraft = item.publishingStatus === 'draft';
 		const isPendingSubmission = item.source === 'submission' && item.submissionStatus === 'pending';
 
-		if (!isDraft && !isPendingSubmission && !(isAdminRole && isScheduled)) {
+		if (!isDraft && !isPendingSubmission && !(isAdminRole && (isScheduled || isFailed))) {
 			return NextResponse.json(
 				{ error: 'Cannot delete this content item' },
 				{ status: 400 },
 			);
 		}
 
-		// Delete content item (use force delete for scheduled posts)
-		const success = await deleteContentItem(id, isAdminRole && isScheduled);
+		// Delete content item (use force delete for scheduled/failed posts)
+		const needsForce = isAdminRole && (isScheduled || isFailed);
+		const success = await deleteContentItem(id, needsForce);
 
 		if (!success) {
 			return NextResponse.json(

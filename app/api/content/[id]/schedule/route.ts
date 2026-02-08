@@ -8,6 +8,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { getUserRole, getUserId } from '@/lib/auth-helpers';
 import { getContentItemById, updateScheduledTime } from '@/lib/content-db';
+import { checkScheduleConflict } from '@/lib/database/schedule-conflict';
 import { rateLimiter } from '@/lib/middleware/rate-limit';
 
 const API_RATE_LIMIT = { limit: 100, windowMs: 60 * 1000 };
@@ -97,6 +98,23 @@ export async function POST(
 					provided: scheduledTime,
 				},
 				{ status: 400 },
+			);
+		}
+
+		// Check for scheduling conflicts in the same minute
+		const conflict = await checkScheduleConflict(scheduledTime, {
+			excludeId: id,
+			excludeTable: 'content_items',
+		});
+		if (conflict.hasConflict) {
+			return NextResponse.json(
+				{
+					error: 'Scheduling conflict',
+					message: `Another post is already scheduled at ${new Date(conflict.conflictingTime!).toLocaleString()}. Please choose a different time.`,
+					conflictingId: conflict.conflictingId,
+					conflictingTime: conflict.conflictingTime,
+				},
+				{ status: 409 },
 			);
 		}
 

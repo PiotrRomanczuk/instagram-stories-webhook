@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { getMemeSubmission, scheduleMeme } from '@/lib/memes-db';
 import { addScheduledPost } from '@/lib/database/scheduled-posts';
+import { checkScheduleConflict } from '@/lib/database/schedule-conflict';
 import { requireAdmin, getUserId } from '@/lib/auth-helpers';
 import { Logger } from '@/lib/utils/logger';
 
@@ -51,6 +52,20 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             return NextResponse.json(
                 { error: `Cannot schedule: meme is ${meme.status}` },
                 { status: 400 }
+            );
+        }
+
+        // Check for scheduling conflicts in the same minute
+        const conflict = await checkScheduleConflict(scheduled_time);
+        if (conflict.hasConflict) {
+            return NextResponse.json(
+                {
+                    error: 'Scheduling conflict',
+                    message: `Another post is already scheduled at ${new Date(conflict.conflictingTime!).toLocaleString()}. Please choose a different time.`,
+                    conflictingId: conflict.conflictingId,
+                    conflictingTime: conflict.conflictingTime,
+                },
+                { status: 409 },
             );
         }
 
