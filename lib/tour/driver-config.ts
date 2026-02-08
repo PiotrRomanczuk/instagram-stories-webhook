@@ -1,3 +1,5 @@
+export const TOURS_ENABLED = false;
+
 export const TOUR_VERSION = 1;
 
 export const driverConfig = {

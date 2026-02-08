@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { driver, DriveStep, Driver } from 'driver.js';
-import { driverConfig } from '@/lib/tour/driver-config';
+import { driverConfig, TOURS_ENABLED } from '@/lib/tour/driver-config';
 import { adminTourSteps, adminFailedPostsStep } from '@/lib/tour/admin-tour';
 import { userTourSteps, userSubmissionCardStep } from '@/lib/tour/user-tour';
 import { shouldShowTour, completeTour, getTourStatus, TourStatus } from '@/lib/tour/tour-state';
@@ -45,6 +45,7 @@ export function useTour({
 
 	// Function to start the tour
 	const startTour = () => {
+		if (!TOURS_ENABLED) return;
 		// Build steps based on role and conditions
 		let steps: DriveStep[] = [];
 

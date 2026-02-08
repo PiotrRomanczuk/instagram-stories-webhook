@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 import { driver, DriveStep, Driver } from 'driver.js';
-import { driverConfig } from '@/lib/tour/driver-config';
+import { driverConfig, TOURS_ENABLED } from '@/lib/tour/driver-config';
 import {
 	isPageTourCompleted,
 	completePageTour,
@@ -29,6 +29,8 @@ export function usePageTour({
 	const driverRef = useRef<Driver | null>(null);
 
 	const startTour = useCallback(() => {
+		if (!TOURS_ENABLED) return;
+
 		// Filter steps to only those whose elements exist in the DOM
 		const availableSteps = steps.filter((step) => {
 			if (!step.element) return true;
