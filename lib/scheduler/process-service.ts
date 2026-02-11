@@ -194,7 +194,24 @@ export async function processScheduledPosts(
 				);
 
 				// 6. Update status to published with content hash
-				await markContentPublished(item.id, result.id, contentHash || undefined);
+				// BMS-157: Retry DB update to handle publish success + DB failure
+				let dbUpdateSuccess = false;
+				for (let dbAttempt = 0; dbAttempt < 3; dbAttempt++) {
+					dbUpdateSuccess = await markContentPublished(item.id, result.id, contentHash || undefined);
+					if (dbUpdateSuccess) break;
+					await Logger.warn(
+						MODULE,
+						`DB update failed for published post ${item.id}, retrying (${dbAttempt + 1}/3)`,
+					);
+					await new Promise((r) => setTimeout(r, 1000 * (dbAttempt + 1)));
+				}
+
+				if (!dbUpdateSuccess) {
+					await Logger.error(
+						MODULE,
+						`CRITICAL: Post ${item.id} was published to Instagram (ig_media_id=${result.id}) but DB update failed after 3 retries. Manual intervention required.`,
+					);
+				}
 
 				await Logger.info(
 					MODULE,
