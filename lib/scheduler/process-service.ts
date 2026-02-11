@@ -12,8 +12,6 @@ import {
 	ProcessResult,
 	BatchResult,
 	ContentItem,
-	mapContentItemRow,
-	ContentItemRow,
 } from '@/lib/types';
 import {
 	getPendingContentItems,
@@ -24,6 +22,9 @@ import {
 	markContentCancelled,
 	getContentItemForProcessing,
 } from '@/lib/content-db';
+import { parseCronConfig } from '@/lib/validations/cron.schema';
+import { checkPublishingQuota } from '@/lib/scheduler/quota-gate';
+import { generateCronRunId, recordQuotaSnapshot } from '@/lib/scheduler/quota-history';
 
 const MODULE = 'scheduler';
 
@@ -38,11 +39,14 @@ export async function processScheduledPosts(
 	postId?: string,
 	bypassDuplicateCheck: boolean = false,
 ): Promise<BatchResult> {
+	const config = parseCronConfig();
+	const cronRunId = postId ? undefined : generateCronRunId();
+
 	await Logger.info(
 		MODULE,
 		postId
 			? `🚀 Attempting to post ${postId} immediately...${bypassDuplicateCheck ? ' (Bypassing duplicate check)' : ''}`
-			: '🔄 Checking for pending scheduled posts...',
+			: `🔄 Checking for pending scheduled posts (max=${config.maxPostsPerCronRun}, delay=${config.publishDelayMs}ms)...`,
 	);
 
 	try {
@@ -68,7 +72,7 @@ export async function processScheduledPosts(
 			pendingItems = [item];
 		} else {
 			// Standard cron-style processing of due posts from content_items
-			pendingItems = await getPendingContentItems();
+			pendingItems = await getPendingContentItems(config.maxPostsPerCronRun);
 		}
 
 		if (pendingItems.length === 0) {
@@ -80,6 +84,82 @@ export async function processScheduledPosts(
 				failed: 0,
 				results: [],
 			};
+		}
+
+		// Quota gate: only for cron path (not specific postId)
+		let quotaInfo: BatchResult['quotaInfo'] | undefined;
+		let postsSkippedQuota = 0;
+
+		if (!postId && config.quotaCheckEnabled) {
+			const quotaResult = await checkPublishingQuota(pendingItems, config.quotaSafetyMargin);
+			quotaInfo = {
+				quotaTotal: quotaResult.quotaTotal,
+				quotaUsage: quotaResult.quotaUsage,
+				quotaRemaining: quotaResult.quotaRemaining,
+			};
+
+			// Record start snapshot
+			if (cronRunId) {
+				await recordQuotaSnapshot({
+					userId: quotaResult.userId,
+					igUserId: quotaResult.igUserId,
+					quotaTotal: quotaResult.quotaTotal,
+					quotaUsage: quotaResult.quotaUsage,
+					quotaDuration: null,
+					cronRunId,
+					snapshotType: 'cron_start',
+					postsAttempted: pendingItems.length,
+					postsSucceeded: 0,
+					postsFailed: 0,
+					postsSkippedQuota: 0,
+					maxPostsConfig: config.maxPostsPerCronRun,
+					errorMessage: null,
+				});
+			}
+
+			if (!quotaResult.allowed) {
+				await Logger.warn(
+					MODULE,
+					`⚠️ Quota exhausted (${quotaResult.quotaUsage}/${quotaResult.quotaTotal}), skipping all ${pendingItems.length} posts`,
+				);
+
+				if (cronRunId) {
+					await recordQuotaSnapshot({
+						userId: quotaResult.userId,
+						igUserId: quotaResult.igUserId,
+						quotaTotal: quotaResult.quotaTotal,
+						quotaUsage: quotaResult.quotaUsage,
+						quotaDuration: null,
+						cronRunId,
+						snapshotType: 'cron_end',
+						postsAttempted: 0,
+						postsSucceeded: 0,
+						postsFailed: 0,
+						postsSkippedQuota: pendingItems.length,
+						maxPostsConfig: config.maxPostsPerCronRun,
+						errorMessage: 'Quota exhausted',
+					});
+				}
+
+				return {
+					message: `Quota exhausted (${quotaResult.quotaUsage}/${quotaResult.quotaTotal})`,
+					processed: 0,
+					succeeded: 0,
+					failed: 0,
+					results: [],
+					quotaInfo,
+				};
+			}
+
+			// Cap batch to remaining quota
+			if (pendingItems.length > quotaResult.quotaRemaining) {
+				postsSkippedQuota = pendingItems.length - quotaResult.quotaRemaining;
+				await Logger.info(
+					MODULE,
+					`📉 Capping batch from ${pendingItems.length} to ${quotaResult.quotaRemaining} (quota remaining)`,
+				);
+				pendingItems = pendingItems.slice(0, quotaResult.quotaRemaining);
+			}
 		}
 
 		// Only log future count if we are doing a broad sweep
@@ -104,7 +184,8 @@ export async function processScheduledPosts(
 
 		const results: ProcessResult[] = [];
 
-		for (const item of pendingItems) {
+		for (let i = 0; i < pendingItems.length; i++) {
+			const item = pendingItems[i];
 			try {
 				// 1. Acquire processing lock to prevent race conditions
 				const lockAcquired = await acquireContentProcessingLock(item.id);
@@ -218,43 +299,18 @@ export async function processScheduledPosts(
 					`✅ Successfully published scheduled post ${item.id}`,
 				);
 
-				// TODO: Re-enable AI analysis archiving once ai_meme_analysis table is created
-				// This feature saves published memes to a storage bucket for future AI analysis
-				// Requirements:
-				// 1. Create 'ai_meme_analysis' table in Supabase
-				// 2. Create 'ai-analysis' storage bucket in Supabase
-				// See lib/ai-analysis/meme-archiver.ts for implementation
-				/*
-				const urlParts = item.mediaUrl.split('/');
-				const fileName = urlParts[urlParts.length - 1] || `media-${Date.now()}`;
-
-				const analysisRecord = await saveMemeForAnalysis({
-					memeId: item.id,
-					igMediaId: result.id,
-					mediaUrl: item.mediaUrl,
-					fileType: item.mediaType === 'VIDEO' ? 'video' : 'image',
-					fileName,
-				});
-
-				if (analysisRecord) {
-					await Logger.info(MODULE, `📊 Saved to AI analysis bucket`, {
-						analysisId: analysisRecord.id,
-						path: analysisRecord.storagePath,
-					});
-				} else {
-					await Logger.warn(
-						MODULE,
-						`⚠️ Failed to save to AI analysis bucket for post ${item.id}`,
-						{ igMediaId: result.id },
-					);
-				}
-				*/
-
 				results.push({
 					id: item.id,
 					success: true,
 					result,
 				});
+
+				// 7. Inter-publish delay (skip for last item and postId path)
+				const isLastItem = i === pendingItems.length - 1;
+				if (!postId && !isLastItem && config.publishDelayMs > 0) {
+					await Logger.info(MODULE, `⏱️ Waiting ${config.publishDelayMs}ms before next publish...`);
+					await new Promise((r) => setTimeout(r, config.publishDelayMs));
+				}
 			} catch (error: unknown) {
 				const errorMessage =
 					error instanceof Error ? error.message : 'Unknown error';
@@ -308,12 +364,38 @@ export async function processScheduledPosts(
 			`📊 Processed ${results.length} post(s): ${successCount} succeeded, ${failCount} failed`,
 		);
 
+		// Record end snapshot
+		if (cronRunId && quotaInfo) {
+			const userId = pendingItems[0]?.userId;
+			if (userId) {
+				const account = await import('@/lib/database/linked-accounts').then(
+					(m) => m.getLinkedFacebookAccount(userId),
+				);
+				await recordQuotaSnapshot({
+					userId,
+					igUserId: account?.ig_user_id ?? 'unknown',
+					quotaTotal: quotaInfo.quotaTotal,
+					quotaUsage: quotaInfo.quotaUsage,
+					quotaDuration: null,
+					cronRunId,
+					snapshotType: 'cron_end',
+					postsAttempted: results.length,
+					postsSucceeded: successCount,
+					postsFailed: failCount,
+					postsSkippedQuota,
+					maxPostsConfig: config.maxPostsPerCronRun,
+					errorMessage: null,
+				});
+			}
+		}
+
 		return {
 			message: `Processed ${results.length} post(s)`,
 			processed: results.length,
 			succeeded: successCount,
 			failed: failCount,
 			results,
+			quotaInfo,
 		};
 	} catch (error: unknown) {
 		await Logger.error(MODULE, 'Error processing scheduled posts', error);

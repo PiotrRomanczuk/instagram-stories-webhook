@@ -543,14 +543,16 @@ export async function reorderScheduledItems(
  * Get pending content items that are due for publishing
  * Used by the cron job to process scheduled posts
  */
-export async function getPendingContentItems(): Promise<ContentItem[]> {
+export async function getPendingContentItems(maxItems: number = 25): Promise<ContentItem[]> {
 	try {
 		const now = Date.now();
 		const { data, error } = await supabaseAdmin
 			.from('content_items')
 			.select('*')
 			.eq('publishing_status', 'scheduled')
-			.lte('scheduled_time', now);
+			.lte('scheduled_time', now)
+			.order('scheduled_time', { ascending: true })
+			.limit(maxItems);
 
 		if (error) {
 			console.error('Error fetching pending content items:', error);

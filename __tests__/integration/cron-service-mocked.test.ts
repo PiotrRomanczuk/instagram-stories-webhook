@@ -46,6 +46,37 @@ vi.mock('@/lib/content-db', () => ({
 	getContentItemForProcessing: vi.fn(),
 }));
 
+vi.mock('@/lib/validations/cron.schema', () => ({
+	parseCronConfig: vi.fn().mockReturnValue({
+		maxPostsPerCronRun: 3,
+		publishDelayMs: 0, // No delay in tests
+		quotaCheckEnabled: true,
+		quotaSafetyMargin: 2,
+	}),
+}));
+
+vi.mock('@/lib/scheduler/quota-gate', () => ({
+	checkPublishingQuota: vi.fn().mockResolvedValue({
+		allowed: true,
+		quotaTotal: 25,
+		quotaUsage: 5,
+		quotaRemaining: 18,
+		userId: 'user-1',
+		igUserId: 'ig-123',
+	}),
+}));
+
+vi.mock('@/lib/scheduler/quota-history', () => ({
+	generateCronRunId: vi.fn().mockReturnValue('cron_123_abc'),
+	recordQuotaSnapshot: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock('@/lib/database/linked-accounts', () => ({
+	getLinkedFacebookAccount: vi.fn().mockResolvedValue({
+		ig_user_id: 'ig-123',
+	}),
+}));
+
 import { processScheduledPosts, forceProcessPost } from '@/lib/scheduler/process-service';
 import { publishMedia } from '@/lib/instagram';
 import { processAndUploadStoryImage } from '@/lib/media/story-processor';
@@ -59,6 +90,9 @@ import {
 	getContentItemForProcessing,
 } from '@/lib/content-db';
 import { generateContentHash, checkForRecentPublish } from '@/lib/utils/duplicate-detection';
+import { parseCronConfig } from '@/lib/validations/cron.schema';
+import { checkPublishingQuota } from '@/lib/scheduler/quota-gate';
+import { recordQuotaSnapshot } from '@/lib/scheduler/quota-history';
 
 // ── Helper: build a ContentItem with defaults ──────────────────────────
 
@@ -94,6 +128,24 @@ describe('processScheduledPosts (mocked)', () => {
 		vi.mocked(checkForRecentPublish).mockResolvedValue({ isDuplicate: false });
 		vi.mocked(publishMedia).mockResolvedValue({ id: 'ig-media-1' });
 		vi.mocked(processAndUploadStoryImage).mockResolvedValue('https://cdn.example.com/processed.jpg');
+
+		// Default cron config
+		vi.mocked(parseCronConfig).mockReturnValue({
+			maxPostsPerCronRun: 3,
+			publishDelayMs: 0,
+			quotaCheckEnabled: true,
+			quotaSafetyMargin: 2,
+		});
+
+		// Default quota check - allowed
+		vi.mocked(checkPublishingQuota).mockResolvedValue({
+			allowed: true,
+			quotaTotal: 25,
+			quotaUsage: 5,
+			quotaRemaining: 18,
+			userId: 'user-1',
+			igUserId: 'ig-123',
+		});
 	});
 
 	// ── Batch processing (no postId) ──
@@ -257,6 +309,107 @@ describe('processScheduledPosts (mocked)', () => {
 		expect(markContentPublished).toHaveBeenCalledWith('item-1', 'ig-media-1', undefined);
 	});
 
+	// ── Batch limit tests ──
+
+	it('should pass maxPostsPerCronRun to getPendingContentItems', async () => {
+		vi.mocked(parseCronConfig).mockReturnValue({
+			maxPostsPerCronRun: 5,
+			publishDelayMs: 0,
+			quotaCheckEnabled: false,
+			quotaSafetyMargin: 2,
+		});
+		vi.mocked(getPendingContentItems).mockResolvedValue([]);
+
+		await processScheduledPosts();
+
+		expect(getPendingContentItems).toHaveBeenCalledWith(5);
+	});
+
+	// ── Quota gate tests ──
+
+	it('should skip all posts when quota exhausted', async () => {
+		const items = [makeItem({ id: 'item-1' }), makeItem({ id: 'item-2' })];
+		vi.mocked(getPendingContentItems).mockResolvedValue(items);
+		vi.mocked(checkPublishingQuota).mockResolvedValue({
+			allowed: false,
+			quotaTotal: 25,
+			quotaUsage: 25,
+			quotaRemaining: 0,
+			userId: 'user-1',
+			igUserId: 'ig-123',
+		});
+
+		const result = await processScheduledPosts();
+
+		expect(result.processed).toBe(0);
+		expect(result.message).toContain('Quota exhausted');
+		expect(result.quotaInfo).toBeDefined();
+		expect(result.quotaInfo?.quotaRemaining).toBe(0);
+		expect(publishMedia).not.toHaveBeenCalled();
+	});
+
+	it('should cap batch to remaining quota', async () => {
+		const items = [
+			makeItem({ id: 'item-1' }),
+			makeItem({ id: 'item-2' }),
+			makeItem({ id: 'item-3' }),
+		];
+		vi.mocked(getPendingContentItems).mockResolvedValue(items);
+		vi.mocked(checkPublishingQuota).mockResolvedValue({
+			allowed: true,
+			quotaTotal: 25,
+			quotaUsage: 23,
+			quotaRemaining: 1, // Only 1 remaining after safety margin
+			userId: 'user-1',
+			igUserId: 'ig-123',
+		});
+
+		const result = await processScheduledPosts();
+
+		// Only 1 post should be processed (capped by quota)
+		expect(result.processed).toBe(1);
+		expect(result.succeeded).toBe(1);
+		expect(publishMedia).toHaveBeenCalledTimes(1);
+	});
+
+	it('should not quota-check when processing specific postId', async () => {
+		const item = makeItem({ id: 'specific-post' });
+		vi.mocked(getContentItemForProcessing).mockResolvedValue(item);
+
+		await processScheduledPosts('specific-post');
+
+		expect(checkPublishingQuota).not.toHaveBeenCalled();
+	});
+
+	it('should not quota-check when quotaCheckEnabled is false', async () => {
+		vi.mocked(parseCronConfig).mockReturnValue({
+			maxPostsPerCronRun: 3,
+			publishDelayMs: 0,
+			quotaCheckEnabled: false,
+			quotaSafetyMargin: 2,
+		});
+		vi.mocked(getPendingContentItems).mockResolvedValue([makeItem()]);
+
+		await processScheduledPosts();
+
+		expect(checkPublishingQuota).not.toHaveBeenCalled();
+	});
+
+	it('should record quota snapshots for cron runs', async () => {
+		vi.mocked(getPendingContentItems).mockResolvedValue([makeItem()]);
+
+		await processScheduledPosts();
+
+		// Should record start and end snapshots
+		expect(recordQuotaSnapshot).toHaveBeenCalledTimes(2);
+		expect(recordQuotaSnapshot).toHaveBeenCalledWith(
+			expect.objectContaining({ snapshotType: 'cron_start' }),
+		);
+		expect(recordQuotaSnapshot).toHaveBeenCalledWith(
+			expect.objectContaining({ snapshotType: 'cron_end' }),
+		);
+	});
+
 	// ── Specific post processing (with postId) ──
 
 	it('should process a specific post by ID', async () => {
@@ -293,6 +446,22 @@ describe('forceProcessPost (mocked)', () => {
 		vi.mocked(checkForRecentPublish).mockResolvedValue({ isDuplicate: false });
 		vi.mocked(publishMedia).mockResolvedValue({ id: 'ig-media-forced' });
 		vi.mocked(processAndUploadStoryImage).mockResolvedValue('https://cdn.example.com/processed.jpg');
+
+		vi.mocked(parseCronConfig).mockReturnValue({
+			maxPostsPerCronRun: 3,
+			publishDelayMs: 0,
+			quotaCheckEnabled: true,
+			quotaSafetyMargin: 2,
+		});
+
+		vi.mocked(checkPublishingQuota).mockResolvedValue({
+			allowed: true,
+			quotaTotal: 25,
+			quotaUsage: 5,
+			quotaRemaining: 18,
+			userId: 'user-1',
+			igUserId: 'ig-123',
+		});
 	});
 
 	it('should force-process a scheduled post successfully', async () => {
