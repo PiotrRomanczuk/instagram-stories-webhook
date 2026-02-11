@@ -148,6 +148,23 @@ Once the PR is merged, update the Linear issue:
 update_issue(id: "BMS-150", state: "Done")
 ```
 
+### Step 9: Create Release (if version was bumped)
+
+After merging a PR that included a version bump, create a GitHub Release:
+
+```bash
+git checkout master && git pull
+npm run release        # creates + pushes v{version} tag
+npm run release:dry    # preview without creating anything
+```
+
+This runs `scripts/release.sh`, which:
+1. Reads the version from `package.json` and creates tag `v{version}`
+2. Safety checks: must be on master, clean tree, up-to-date with remote, tag doesn't exist
+3. Pushes the tag (with `--no-verify` to bypass the pre-push hook that blocks master pushes)
+
+The `v*` tag triggers `.github/workflows/release.yml`, which auto-creates a GitHub Release with changelog notes generated from merged PRs since the last tag.
+
 ---
 
 ## Linear Integration Rules
