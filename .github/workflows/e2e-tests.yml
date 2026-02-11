@@ -14,7 +14,7 @@ jobs:
   e2e-tests:
     name: E2E Shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -61,11 +61,20 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_JWT_SECRET=${{ secrets.SUPABASE_JWT_SECRET }}
           NEXTAUTH_URL=http://localhost:3000
-          NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET || 'dummy-secret-for-testing-only' }}
+          NEXTAUTH_SECRET=${{ secrets.SUPABASE_JWT_SECRET }}
           ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL || 'admin@test.com' }}
           AUTH_GOOGLE_ID=${{ secrets.AUTH_GOOGLE_ID || 'dummy' }}
           AUTH_GOOGLE_SECRET=${{ secrets.AUTH_GOOGLE_SECRET || 'dummy' }}
+          AUTH_FACEBOOK_ID=${{ secrets.AUTH_FACEBOOK_ID || 'dummy' }}
+          AUTH_FACEBOOK_SECRET=${{ secrets.AUTH_FACEBOOK_SECRET || 'dummy' }}
+          FB_APP_SECRET=${{ secrets.FB_APP_SECRET || 'dummy' }}
+          NEXT_PUBLIC_FB_APP_ID=${{ secrets.NEXT_PUBLIC_FB_APP_ID || 'dummy' }}
+          FB_REDIRECT_URI=${{ secrets.FB_REDIRECT_URI || 'http://localhost:3000/api/auth/link-facebook/callback' }}
+          NEXT_PUBLIC_APP_URL=http://localhost:3000
+          WEBHOOK_SECRET=${{ secrets.WEBHOOK_SECRET || 'test-webhook-secret' }}
+          CRON_SECRET=test-cron-secret
           ENVEOF
           sed -i 's/^[[:space:]]*//' .env.local
 
