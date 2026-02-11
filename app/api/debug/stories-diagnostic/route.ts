@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
 		}
 
 		// 2. Fetch recent stories from Instagram API (last 24 hours)
-		let instagramStories: Array<{ id: string; timestamp: string }> = [];
+		let instagramStories: InstagramStory[] = [];
 		let apiError: string | null = null;
 
 		try {
@@ -123,7 +123,7 @@ interface DiagnosticAnalysis {
 	issues_found: string[];
 }
 
-function analyzeStories(dbLogs: Array<Record<string, unknown>>, igStories: Array<{ id: string; timestamp: string }>): DiagnosticAnalysis {
+function analyzeStories(dbLogs: PublishingLog[], igStories: InstagramStory[]): DiagnosticAnalysis {
 	const now = Date.now();
 	const issues: string[] = [];
 
