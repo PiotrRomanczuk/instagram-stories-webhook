@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
 import { Logger } from '@/lib/utils/logger';
+import { verifyMetaWebhookSignature } from '@/lib/utils/crypto-signing';
 import type {
     InstagramWebhookEvent,
     InstagramMessagingEvent,
@@ -65,9 +66,23 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
     try {
-        await Logger.info(MODULE, '📥 Instagram webhook event received');
+        const rawBody = await request.text();
 
-        const body = await request.json() as InstagramWebhookEvent;
+        // Verify Meta webhook signature (X-Hub-Signature-256)
+        const appSecret = process.env.AUTH_FACEBOOK_SECRET || process.env.FB_APP_SECRET;
+        if (appSecret) {
+            const signatureHeader = request.headers.get('x-hub-signature-256');
+            if (!verifyMetaWebhookSignature(rawBody, signatureHeader, appSecret)) {
+                await Logger.warn(MODULE, 'Invalid webhook signature');
+                return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+            }
+        } else {
+            await Logger.warn(MODULE, 'No app secret configured - skipping signature verification');
+        }
+
+        await Logger.info(MODULE, 'Instagram webhook event received');
+
+        const body = JSON.parse(rawBody) as InstagramWebhookEvent;
 
         // Validate webhook payload structure
         if (body.object !== 'instagram') {

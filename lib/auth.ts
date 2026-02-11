@@ -288,5 +288,5 @@ export const authOptions: AuthOptions = {
 		verifyRequest: '/auth/verify-request',
 	},
 	// Debugging
-	debug: true, // process.env.NODE_ENV === 'development',
+	debug: process.env.NODE_ENV === 'development',
 };

@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
 		const cronSecret = process.env.CRON_SECRET;
 
 		// Allow either cron secret or admin session
-		const isCronJob = authHeader === `Bearer ${cronSecret}`;
+		const isCronJob = cronSecret && authHeader === `Bearer ${cronSecret}`;
 
 		if (!isCronJob) {
 			// Check if admin session
