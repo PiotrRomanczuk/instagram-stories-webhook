@@ -56,7 +56,7 @@ jobs:
 
       - name: Setup test environment variables
         run: |
-          cat > .env.local << 'EOF'
+          cat > .env.local << 'ENVEOF'
           NODE_ENV=test
           NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
@@ -66,7 +66,8 @@ jobs:
           ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL || 'admin@test.com' }}
           AUTH_GOOGLE_ID=${{ secrets.AUTH_GOOGLE_ID || 'dummy' }}
           AUTH_GOOGLE_SECRET=${{ secrets.AUTH_GOOGLE_SECRET || 'dummy' }}
-          EOF
+          ENVEOF
+          sed -i 's/^[[:space:]]*//' .env.local
 
       - name: Run E2E tests (shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})
         run: npx playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
@@ -99,8 +100,9 @@ jobs:
     steps:
       - name: Check shard results
         run: |
-          if [ "${{ needs.e2e-tests.result }}" = "failure" ]; then
-            echo "One or more E2E test shards failed"
+          result="${{ needs.e2e-tests.result }}"
+          if [ "$result" != "success" ]; then
+            echo "E2E test shards result: $result"
             exit 1
           fi
           echo "All E2E test shards passed"
