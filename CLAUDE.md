@@ -27,11 +27,14 @@ npm run lint && npx tsc && npm run test
 ```
 **DO NOT COMMIT** if any command fails. Zero exceptions.
 
-### PR Creation & CI/CD Verification (MANDATORY)
-1. Create PR: `gh pr create --title "..." --body "..."`
-2. Watch checks: `gh pr checks --watch`
-3. **MUST PASS**: Lint, TypeScript, Tests, Build
-4. If failed: Fix locally, re-test, push, re-verify
+### PR Workflow (MANDATORY — never push directly to master)
+1. Create branch: `git checkout -b feature/my-change`
+2. Push branch: `git push -u origin feature/my-change`
+3. Create PR: `gh pr create --title "..." --body "..."`
+4. Watch checks: `gh pr checks --watch`
+5. Review Vercel preview URL (posted as PR comment)
+6. **MUST PASS**: Lint, TypeScript, Tests, Build
+7. Merge PR → Vercel auto-deploys to production
 
 ---
 
@@ -200,7 +203,31 @@ supabase/               # Migrations + seeds
 public/                 # Static assets
 ```
 
-### Deployment
+### Deployment Workflow
+
+**PR-based workflow with Vercel preview deployments. Never push directly to master.**
+
+```
+git checkout -b feature/my-change
+# ... make changes ...
+git push -u origin feature/my-change
+gh pr create
+# Review Vercel preview URL → approve → merge → production deploy
+```
+
+| Step | What happens |
+|------|-------------|
+| Push to feature branch | CI runs (lint, typecheck, tests, build) |
+| PR created | Vercel creates a preview deployment with unique URL |
+| Review | Test the preview URL, verify CI passes |
+| Merge to master | Vercel auto-deploys to production |
+
+**Safety nets:**
+- `.githooks/pre-push` blocks direct pushes to master (bypass: `git push --no-verify`)
+- CI is decoupled from deploy — GitHub Actions runs lint/test/build only, Vercel Git Integration handles all deployments
+- Emergency deploy: `git push --no-verify` or manual Vercel deploy
+
+**Config:**
 - Environment vars: Vercel Dashboard | Security headers: `next.config.ts` | Cron: `vercel.json` | Migrations: Supabase Dashboard
 
 ### Breaking Changes
