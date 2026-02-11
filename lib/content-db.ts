@@ -573,57 +573,49 @@ export async function acquireContentProcessingLock(
 ): Promise<boolean> {
 	const now = new Date();
 	const lockTimeout = 5 * 60 * 1000; // 5 minutes
-	const timeoutThreshold = new Date(Date.now() - lockTimeout);
+	const timeoutThreshold = new Date(Date.now() - lockTimeout).toISOString();
 
 	try {
-		// Step 1: Fetch current state
-		const { data: item, error: fetchError } = await supabaseAdmin
-			.from('content_items')
-			.select('publishing_status, processing_started_at')
-			.eq('id', id)
-			.single();
-
-		if (fetchError || !item) {
-			console.log(`[Lock] Content item ${id} not found`);
-			return false;
-		}
-
-		const status = item.publishing_status;
-		const processingStartedAt = item.processing_started_at
-			? new Date(item.processing_started_at)
-			: null;
-
-		// Step 2: Determine if we can acquire the lock
-		const canAcquire =
-			status === 'scheduled' ||
-			(status === 'processing' &&
-				processingStartedAt &&
-				processingStartedAt < timeoutThreshold);
-
-		if (!canAcquire) {
-			console.log(
-				`[Lock] Cannot acquire lock for content ${id}: status=${status}`,
-			);
-			return false;
-		}
-
-		// Step 3: Acquire the lock
-		const { error: updateError } = await supabaseAdmin
+		// Atomic lock: update only if currently in 'scheduled' status
+		// This eliminates the read-then-write race condition (BMS-143)
+		const { data: scheduled, error: scheduledError } = await supabaseAdmin
 			.from('content_items')
 			.update({
 				publishing_status: 'processing',
 				processing_started_at: now.toISOString(),
 				updated_at: now.toISOString(),
 			})
-			.eq('id', id);
+			.eq('id', id)
+			.eq('publishing_status', 'scheduled')
+			.select('id')
+			.maybeSingle();
 
-		if (updateError) {
-			console.error(`[Lock] Failed to acquire lock for content ${id}:`, updateError);
-			return false;
+		if (!scheduledError && scheduled) {
+			console.log(`[Lock] Acquired lock for content ${id}`);
+			return true;
 		}
 
-		console.log(`[Lock] ✅ Acquired lock for content ${id}`);
-		return true;
+		// Fallback: reclaim stale processing lock (timed out)
+		const { data: stale, error: staleError } = await supabaseAdmin
+			.from('content_items')
+			.update({
+				publishing_status: 'processing',
+				processing_started_at: now.toISOString(),
+				updated_at: now.toISOString(),
+			})
+			.eq('id', id)
+			.eq('publishing_status', 'processing')
+			.lt('processing_started_at', timeoutThreshold)
+			.select('id')
+			.maybeSingle();
+
+		if (!staleError && stale) {
+			console.log(`[Lock] Reclaimed stale lock for content ${id}`);
+			return true;
+		}
+
+		console.log(`[Lock] Cannot acquire lock for content ${id}`);
+		return false;
 	} catch (error) {
 		console.error(`[Lock] Error acquiring lock for content ${id}:`, error);
 		return false;

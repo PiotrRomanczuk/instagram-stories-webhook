@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { processScheduledPosts } from "@/lib/scheduler/process-service";
+import { acquireCronLock, releaseCronLock } from "@/lib/scheduler/cron-lock";
 import { Logger } from "@/lib/utils/logger";
 
 export const maxDuration = 300;
@@ -24,6 +25,14 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ message: "Cron disabled on preview deployment", skipped: true }, { status: 200 });
     }
 
+    // BMS-156: Prevent overlapping cron executions
+    const lockAcquired = await acquireCronLock();
+    if (!lockAcquired) {
+        return NextResponse.json(
+            { message: "Another cron execution is in progress", skipped: true },
+            { status: 200 }
+        );
+    }
 
     try {
         const result = await processScheduledPosts();
@@ -31,5 +40,7 @@ export async function GET(req: NextRequest) {
     } catch (error) {
         await Logger.error("cron", "Cron job failed", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    } finally {
+        await releaseCronLock();
     }
 }

@@ -735,30 +735,15 @@ describe('content-db', () => {
 	});
 
 	describe('acquireContentProcessingLock', () => {
-
-
-		it('should acquire lock for scheduled item', async () => {
-			let callCount = 0;
+		it('should acquire lock for scheduled item via atomic update', async () => {
+			// BMS-143: Now uses atomic conditional update instead of read-then-write
 			const mockQuery = {
-				select: vi.fn().mockReturnThis(),
 				update: vi.fn().mockReturnThis(),
-				eq: vi.fn().mockImplementation(() => {
-					callCount++;
-					if (callCount === 1) {
-						// First call: SELECT query
-						return {
-							single: vi.fn().mockResolvedValue({
-								data: {
-									publishing_status: 'scheduled',
-									processing_started_at: null,
-								},
-								error: null,
-							}),
-						};
-					} else {
-						// Second call: UPDATE query
-						return Promise.resolve({ error: null });
-					}
+				eq: vi.fn().mockReturnThis(),
+				select: vi.fn().mockReturnThis(),
+				maybeSingle: vi.fn().mockResolvedValue({
+					data: { id: '1' },
+					error: null,
 				}),
 			};
 
@@ -768,76 +753,78 @@ describe('content-db', () => {
 			expect(result).toBe(true);
 		});
 
-		it('should return false if already processing recently', async () => {
-			const mockQuery = {
-				select: vi.fn().mockReturnThis(),
-				eq: vi.fn().mockReturnThis(),
-				single: vi.fn().mockResolvedValue({
-					data: {
-						publishing_status: 'processing',
-						processing_started_at: new Date().toISOString(), // Recent
-					},
-					error: null,
-				}),
-			};
-
-			vi.mocked(supabaseAdmin.from).mockReturnValue(mockQuery as any);
+		it('should return false if atomic update matches no rows (already processing)', async () => {
+			let fromCallCount = 0;
+			vi.mocked(supabaseAdmin.from).mockImplementation(() => {
+				fromCallCount++;
+				if (fromCallCount === 1) {
+					// First atomic update attempt (scheduled -> processing): no match
+					return {
+						update: vi.fn().mockReturnThis(),
+						eq: vi.fn().mockReturnThis(),
+						select: vi.fn().mockReturnThis(),
+						maybeSingle: vi.fn().mockResolvedValue({
+							data: null,
+							error: null,
+						}),
+					} as any;
+				} else {
+					// Second attempt (stale lock reclaim): no match either
+					return {
+						update: vi.fn().mockReturnThis(),
+						eq: vi.fn().mockReturnThis(),
+						lt: vi.fn().mockReturnThis(),
+						select: vi.fn().mockReturnThis(),
+						maybeSingle: vi.fn().mockResolvedValue({
+							data: null,
+							error: null,
+						}),
+					} as any;
+				}
+			});
 
 			const result = await acquireContentProcessingLock('1');
 			expect(result).toBe(false);
 		});
 
-		it('should return false if item not found', async () => {
-			const mockQuery = {
-				select: vi.fn().mockReturnThis(),
-				eq: vi.fn().mockReturnThis(),
-				single: vi.fn().mockResolvedValue({
-					data: null,
-					error: new Error('Not found'),
-				}),
-			};
-
-			vi.mocked(supabaseAdmin.from).mockReturnValue(mockQuery as any);
-
-			const result = await acquireContentProcessingLock('1');
-			expect(result).toBe(false);
-		});
-
-		it('should handle update errors', async () => {
-			let callCount = 0;
-			const mockQuery = {
-				select: vi.fn().mockReturnThis(),
-				update: vi.fn().mockReturnThis(),
-				eq: vi.fn().mockImplementation(() => {
-					callCount++;
-					if (callCount === 1) {
-						return {
-							single: vi.fn().mockResolvedValue({
-								data: {
-									publishing_status: 'scheduled',
-									processing_started_at: null,
-								},
-								error: null,
-							}),
-						};
-					} else {
-						return Promise.resolve({ error: new Error('Update failed') });
-					}
-				}),
-			};
-
-			vi.mocked(supabaseAdmin.from).mockReturnValue(mockQuery as any);
+		it('should reclaim stale processing lock', async () => {
+			let fromCallCount = 0;
+			vi.mocked(supabaseAdmin.from).mockImplementation(() => {
+				fromCallCount++;
+				if (fromCallCount === 1) {
+					// First attempt: no scheduled match
+					return {
+						update: vi.fn().mockReturnThis(),
+						eq: vi.fn().mockReturnThis(),
+						select: vi.fn().mockReturnThis(),
+						maybeSingle: vi.fn().mockResolvedValue({
+							data: null,
+							error: null,
+						}),
+					} as any;
+				} else {
+					// Second attempt: stale lock reclaimed
+					return {
+						update: vi.fn().mockReturnThis(),
+						eq: vi.fn().mockReturnThis(),
+						lt: vi.fn().mockReturnThis(),
+						select: vi.fn().mockReturnThis(),
+						maybeSingle: vi.fn().mockResolvedValue({
+							data: { id: '1' },
+							error: null,
+						}),
+					} as any;
+				}
+			});
 
 			const result = await acquireContentProcessingLock('1');
-			expect(result).toBe(false);
+			expect(result).toBe(true);
 		});
 
 		it('should handle exceptions', async () => {
-			const mockQuery = {
-				select: vi.fn().mockRejectedValue(new Error('Network error')),
-			};
-
-			vi.mocked(supabaseAdmin.from).mockReturnValue(mockQuery as any);
+			vi.mocked(supabaseAdmin.from).mockImplementation(() => {
+				throw new Error('Network error');
+			});
 
 			const result = await acquireContentProcessingLock('1');
 			expect(result).toBe(false);
