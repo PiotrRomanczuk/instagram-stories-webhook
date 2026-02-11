@@ -42,7 +42,7 @@ export function KanbanLayout() {
 	// Build API URL - fetch all items for kanban view
 	const apiParams = new URLSearchParams({
 		tab: 'all',
-		limit: '100', // Get more items for kanban view
+		limit: '100',
 		sortBy: 'newest',
 		...(searchQuery && { search: searchQuery }),
 	});
@@ -113,17 +113,15 @@ export function KanbanLayout() {
 
 	// Quick schedule from calendar
 	const handleQuickSchedule = useCallback((date: Date) => {
-		// This would open a modal to create a new scheduled post for the selected date
 		console.log('Quick schedule for:', date);
 	}, []);
 
 	// Create new story
 	const handleCreateStory = useCallback(() => {
-		// This would open a modal to create a new story
 		console.log('Create new story');
 	}, []);
 
-	// Handle view change - redirect to different pages for list/timeline views
+	// Handle view change - navigate to different pages for list/timeline views
 	const handleViewChange = useCallback((view: ViewType) => {
 		if (view === 'list') {
 			router.push('/content?view=list');
