@@ -52,6 +52,7 @@ Semantic Versioning via `version` in `package.json`:
 - Use `--no-git-tag-version` (version bump goes in your feature commit)
 - Include in commit message: `feat: add dark mode (0.2.0 -> 0.3.0)`
 - Pre-1.0: breaking changes can use MINOR bumps
+- **Releases**: After merging, run `npm run release` to tag + create a GitHub Release (see `pr-manager` agent for full workflow)
 
 ---
 

@@ -1,6 +1,6 @@
 {
   "name": "instagram-stories-webhook",
-  "version": "0.4.2",
+  "version": "0.13.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -18,7 +18,9 @@
     "test:coverage": "vitest run --coverage",
     "setup:storage": "tsx scripts/init-storage.ts",
     "setup:ai-analysis": "tsx scripts/setup-ai-analysis.ts",
-    "setup:test-media": "bash __tests__/e2e/fixtures/setup-media.sh"
+    "setup:test-media": "bash __tests__/e2e/fixtures/setup-media.sh",
+    "release": "bash scripts/release.sh",
+    "release:dry": "bash scripts/release.sh --dry-run"
   },
   "dependencies": {
     "@auth/supabase-adapter": "^1.11.1",
