@@ -90,7 +90,8 @@ export function TokenStatusCard() {
 						<span className="text-sm">No token linked. Connect your Instagram account.</span>
 					</div>
 					<Button variant="outline" size="sm" className="mt-3 w-full" asChild>
-						<a href="/api/auth/link-facebook">Connect Instagram</a>
+						{/* eslint-disable-next-line @next/next/no-html-link-for-pages -- OAuth redirect, not client navigation */}
+					<a href="/api/auth/link-facebook">Connect Instagram</a>
 					</Button>
 				</CardContent>
 			</Card>

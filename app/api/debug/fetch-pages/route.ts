@@ -3,6 +3,7 @@ import axios from 'axios';
 import { getServerSession } from "next-auth/next";
 import { getLinkedFacebookAccount } from '@/lib/database/linked-accounts';
 import { authOptions } from "@/lib/auth";
+import { isAdmin } from '@/lib/auth-helpers';
 
 const GRAPH_API_BASE = 'https://graph.facebook.com/v21.0';
 
@@ -12,11 +13,14 @@ export async function GET() {
         return NextResponse.json({ error: 'Not available in production' }, { status: 404 });
     }
 
-    console.log("🔍 Fetching Facebook Pages...");
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!isAdmin(session)) {
+        return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
     const linkedAccount = await getLinkedFacebookAccount(session.user.id);

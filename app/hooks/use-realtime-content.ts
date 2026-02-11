@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { supabase } from '@/lib/config/supabase';
 import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import type { ContentItemRow } from '@/lib/types/posts';
@@ -68,7 +68,7 @@ export function useRealtimeContent(options: UseRealtimeContentOptions) {
 	const channelRef = useRef<RealtimeChannel | null>(null);
 	const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 	const reconnectTimerRef = useRef<NodeJS.Timeout | null>(null);
-	const isConnectedRef = useRef(false);
+	const [isConnected, setIsConnected] = useState(false);
 
 	const debouncedUpdate = useCallback(() => {
 		if (debounceTimerRef.current) {
@@ -126,10 +126,10 @@ export function useRealtimeContent(options: UseRealtimeContentOptions) {
 			.subscribe((status, err) => {
 				if (status === 'SUBSCRIBED') {
 					console.log('[Realtime] Connected to content changes');
-					isConnectedRef.current = true;
+					setIsConnected(true);
 				} else if (status === 'CHANNEL_ERROR') {
 					console.error('[Realtime] Channel error:', err);
-					isConnectedRef.current = false;
+					setIsConnected(false);
 
 					// Auto-reconnect after 5 seconds
 					if (reconnectTimerRef.current) {
@@ -141,10 +141,10 @@ export function useRealtimeContent(options: UseRealtimeContentOptions) {
 					}, 5000);
 				} else if (status === 'TIMED_OUT') {
 					console.error('[Realtime] Connection timed out');
-					isConnectedRef.current = false;
+					setIsConnected(false);
 				} else if (status === 'CLOSED') {
 					console.log('[Realtime] Connection closed');
-					isConnectedRef.current = false;
+					setIsConnected(false);
 				}
 			});
 
@@ -160,11 +160,11 @@ export function useRealtimeContent(options: UseRealtimeContentOptions) {
 				clearTimeout(reconnectTimerRef.current);
 			}
 			channel.unsubscribe();
-			isConnectedRef.current = false;
+			setIsConnected(false);
 		};
 	}, [handleChange, scheduledOnly]);
 
 	return {
-		isConnected: isConnectedRef.current,
+		isConnected,
 	};
 }

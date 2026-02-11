@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
+import { isAdmin } from '@/lib/auth-helpers';
 import { publishMedia } from '@/lib/instagram';
 import { processImageForStory } from '@/lib/media/story-processor';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
@@ -33,10 +34,17 @@ export async function POST(request: NextRequest) {
         const session = await getServerSession(authOptions);
         if (!session?.user?.id) {
             log('❌ Unauthorized - no session');
-            return NextResponse.json({ 
-                error: 'Unauthorized', 
-                logs 
+            return NextResponse.json({
+                error: 'Unauthorized',
+                logs
             }, { status: 401 });
+        }
+        if (!isAdmin(session)) {
+            log('❌ Forbidden - admin access required');
+            return NextResponse.json({
+                error: 'Admin access required',
+                logs
+            }, { status: 403 });
         }
         log(`✅ User authenticated: ${session.user.email} (${session.user.id})`);
 

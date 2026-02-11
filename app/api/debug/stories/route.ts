@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
+import { isAdmin } from '@/lib/auth-helpers';
 import { getFacebookAccessToken, getInstagramUserId } from '@/lib/database/linked-accounts';
 import axios from 'axios';
 
@@ -22,6 +23,9 @@ export async function GET() {
 		const session = await getServerSession(authOptions);
 		if (!session?.user?.id) {
 			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+		}
+		if (!isAdmin(session)) {
+			return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
 		}
 
 		const accessToken = await getFacebookAccessToken(session.user.id);

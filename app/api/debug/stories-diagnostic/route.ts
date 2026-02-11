@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
+import { isAdmin } from '@/lib/auth-helpers';
 import { getRecentStories } from '@/lib/instagram/media';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
 
@@ -20,6 +21,9 @@ export async function GET(request: NextRequest) {
 		const session = await getServerSession(authOptions);
 		if (!session?.user?.id) {
 			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+		}
+		if (!isAdmin(session)) {
+			return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
 		}
 
 		const userId = session.user.id;

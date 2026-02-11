@@ -229,6 +229,11 @@ public/                 # Static assets
 | `database-ops` | Schema changes, migrations, RLS policies, query optimization | Database work, migrations |
 | `pr-manager` | Creates PRs on new branches, links to Linear issues, syncs status | Creating PRs, branch management |
 | `pr-reviewer` | Reviews PRs for code quality, security, testing, Linear tracking | Reviewing pull requests |
+| `deployment-ops` | Vercel deployments, CI/CD, cron health, rollbacks, incident response | Deployments, production issues |
+| `refactoring-specialist` | File splitting, `any` elimination, logging consistency, tech debt | Refactoring, code quality |
+| `observability-engineer` | Monitoring, Sentry, Vercel Analytics, health checks, logging | Monitoring, debugging production |
+| `ui-engineer` | shadcn/ui, Radix UI, responsive design, accessibility | UI components, design system |
+| `linear-coordinator` | Linear project management, sprint planning, issue triage | Project coordination, backlog grooming |
 
 Agent files: `.claude/agents/*.md`
 

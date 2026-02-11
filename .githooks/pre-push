@@ -1,0 +1,23 @@
+#!/bin/bash
+# Prevent direct pushes to master/main - use PRs instead
+
+protected_branches=("master" "main")
+current_branch=$(git symbolic-ref HEAD 2>/dev/null | sed 's|refs/heads/||')
+
+for branch in "${protected_branches[@]}"; do
+  if [ "$current_branch" = "$branch" ]; then
+    echo ""
+    echo "⛔ Direct push to '$branch' is blocked."
+    echo ""
+    echo "Use a PR-based workflow instead:"
+    echo "  git checkout -b feature/my-change"
+    echo "  git push -u origin feature/my-change"
+    echo "  gh pr create"
+    echo ""
+    echo "To bypass (emergency only): git push --no-verify"
+    echo ""
+    exit 1
+  fi
+done
+
+exit 0
