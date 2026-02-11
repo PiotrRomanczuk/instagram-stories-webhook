@@ -16,6 +16,11 @@ import { supabaseAdmin } from '@/lib/config/supabase-admin';
  * - Troubleshooting suggestions
  */
 export async function GET(request: NextRequest) {
+	// Block in production
+	if (process.env.NODE_ENV === 'production') {
+		return NextResponse.json({ error: 'Not available in production' }, { status: 404 });
+	}
+
 	try {
 		// Verify authentication
 		const session = await getServerSession(authOptions);
@@ -43,7 +48,7 @@ export async function GET(request: NextRequest) {
 		}
 
 		// 2. Fetch recent stories from Instagram API (last 24 hours)
-		let instagramStories: any[] = [];
+		let instagramStories: InstagramStory[] = [];
 		let apiError: string | null = null;
 
 		try {
@@ -87,6 +92,18 @@ export async function GET(request: NextRequest) {
 	}
 }
 
+interface PublishingLog {
+	ig_media_id: string;
+	status: string;
+	created_at: string;
+	error_message?: string;
+}
+
+interface InstagramStory {
+	id: string;
+	timestamp: string;
+}
+
 interface DiagnosticAnalysis {
 	stories_in_both: number;
 	stories_in_db_only: Array<{
@@ -106,7 +123,7 @@ interface DiagnosticAnalysis {
 	issues_found: string[];
 }
 
-function analyzeStories(dbLogs: any[], igStories: any[]): DiagnosticAnalysis {
+function analyzeStories(dbLogs: PublishingLog[], igStories: InstagramStory[]): DiagnosticAnalysis {
 	const now = Date.now();
 	const issues: string[] = [];
 

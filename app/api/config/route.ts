@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
+import { isAdmin } from "@/lib/auth-helpers";
 import { promises as fs } from "fs";
 import path from "path";
 import { AppConfig } from "@/lib/types";
@@ -88,6 +89,10 @@ export async function POST(req: NextRequest) {
 
     if (!session?.user?.id) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (!isAdmin(session)) {
+        return NextResponse.json({ error: "Admin access required" }, { status: 403 });
     }
 
     try {

@@ -1,72 +1,63 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/config/supabase';
-import { getTokens } from '@/lib/database/base';
-import { saveLinkedFacebookAccount } from '@/lib/database/linked-accounts';
+import { NextRequest, NextResponse } from "next/server";
+import { supabase } from "@/lib/config/supabase";
+import { getTokens } from "@/lib/database/base";
+import { saveLinkedFacebookAccount } from "@/lib/database/linked-accounts";
 
 /**
  * MIGRATION TOOL: Associates the existing global token with a user.
- * Use this to migrate from the single-user global system to the multi-user account-linking system.
+ * Authentication via Authorization header (not URL parameters).
  */
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
     try {
-        const { searchParams } = new URL(request.url);
-        const email = searchParams.get('email') || process.env.ADMIN_EMAIL?.split(',')[0].trim();
-        const secret = searchParams.get('secret');
+        const authHeader = request.headers.get("authorization");
+        const expectedSecret = process.env.NEXTAUTH_SECRET;
 
-        // Security check
-        if (secret !== process.env.NEXTAUTH_SECRET) {
-            return NextResponse.json({ error: 'Unauthorized. Please provide the NEXTAUTH_SECRET as "secret" parameter.' }, { status: 401 });
+        if (!expectedSecret || authHeader !== `Bearer ${expectedSecret}`) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
+
+        const body = await request.json();
+        const email: string = body.email || process.env.ADMIN_EMAIL?.split(",")[0].trim();
 
         if (!email) {
-            return NextResponse.json({ error: 'No target email provided or found in ADMIN_EMAIL.' }, { status: 400 });
+            return NextResponse.json({ error: "No target email provided." }, { status: 400 });
         }
 
-        console.log(`🚀 Starting migration for user: ${email}`);
-
-        // 1. Get the current global token
         const globalToken = await getTokens();
         if (!globalToken || !globalToken.access_token) {
-            return NextResponse.json({ error: 'No global token found in "tokens" table to migrate.' }, { status: 404 });
+            return NextResponse.json({ error: "No global token found to migrate." }, { status: 404 });
         }
 
-        // 2. Find the user in the next_auth.users table
         const { data: user, error: userError } = await supabase
-            .from('users')
-            .select('id, email')
-            .eq('email', email.toLowerCase())
+            .from("users")
+            .select("id, email")
+            .eq("email", email.toLowerCase())
             .single();
 
         if (userError || !user) {
             return NextResponse.json({
-                error: `User with email "${email}" not found in database.`,
-                details: userError?.message,
-                tip: 'Ensure the user has signed in with Google at least once before running this migration.'
+                error: `User with email "${email}" not found.`,
+                tip: "Ensure the user has signed in with Google at least once."
             }, { status: 404 });
         }
 
-        // 3. Save as linked account for this user
-        // We'll need a provider_account_id. Since we don't have it, we'll try to fetch it or use a placeholder
-        let providerAccountId = globalToken.user_id || 'migrated_user';
-
+        let providerAccountId = globalToken.user_id || "migrated_user";
         try {
             const meRes = await fetch(`https://graph.facebook.com/v21.0/me?access_token=${globalToken.access_token}`);
             const meData = await meRes.json();
             if (meData.id) providerAccountId = meData.id;
         } catch {
-            console.warn('Could not fetch Facebook user ID during migration, using placeholder.');
+            // Could not fetch Facebook user ID
         }
 
         await saveLinkedFacebookAccount({
             user_id: user.id,
-            provider: 'facebook',
+            provider: "facebook",
             provider_account_id: providerAccountId,
             access_token: globalToken.access_token,
             expires_at: globalToken.expires_at,
             ig_user_id: globalToken.user_id
         });
-
-        console.log(`✅ Successfully migrated global token to user ${user.id} (${user.email})`);
 
         return NextResponse.json({
             success: true,
@@ -74,10 +65,8 @@ export async function GET(request: NextRequest) {
             user_id: user.id,
             facebook_id: providerAccountId
         });
-
     } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        console.error('Migration Error:', error);
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
         return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 }
