@@ -92,6 +92,18 @@ export async function GET(request: NextRequest) {
 	}
 }
 
+interface PublishingLog {
+	ig_media_id: string;
+	status: string;
+	created_at: string;
+	error_message?: string;
+}
+
+interface InstagramStory {
+	id: string;
+	timestamp: string;
+}
+
 interface DiagnosticAnalysis {
 	stories_in_both: number;
 	stories_in_db_only: Array<{
