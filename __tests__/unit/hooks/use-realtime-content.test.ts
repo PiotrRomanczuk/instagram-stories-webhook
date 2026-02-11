@@ -64,7 +64,7 @@ describe('useRealtimeContent', () => {
 			expect.objectContaining({
 				event: '*',
 				schema: 'public',
-				table: 'content',
+				table: 'content_items',
 				filter: 'scheduled_time=not.is.null',
 			}),
 			expect.any(Function)
@@ -100,7 +100,7 @@ describe('useRealtimeContent', () => {
 		// Simulate a change event
 		changeHandler({
 			eventType: 'INSERT',
-			table: 'content',
+			table: 'content_items',
 			new: {
 				id: '1',
 				scheduled_time: Date.now(),
@@ -143,7 +143,7 @@ describe('useRealtimeContent', () => {
 		// Simulate INSERT event
 		changeHandler({
 			eventType: 'INSERT',
-			table: 'content',
+			table: 'content_items',
 			new: newData,
 		});
 
@@ -188,7 +188,7 @@ describe('useRealtimeContent', () => {
 
 		changeHandler({
 			eventType: 'UPDATE',
-			table: 'content',
+			table: 'content_items',
 			old: oldData,
 			new: newData,
 		});
@@ -228,7 +228,7 @@ describe('useRealtimeContent', () => {
 
 		changeHandler({
 			eventType: 'DELETE',
-			table: 'content',
+			table: 'content_items',
 			old: oldData,
 		});
 
@@ -255,17 +255,17 @@ describe('useRealtimeContent', () => {
 		// Trigger multiple rapid changes
 		changeHandler({
 			eventType: 'UPDATE',
-			table: 'content',
+			table: 'content_items',
 			new: { id: '1' } as ContentItemRow,
 		});
 		changeHandler({
 			eventType: 'UPDATE',
-			table: 'content',
+			table: 'content_items',
 			new: { id: '2' } as ContentItemRow,
 		});
 		changeHandler({
 			eventType: 'UPDATE',
-			table: 'content',
+			table: 'content_items',
 			new: { id: '3' } as ContentItemRow,
 		});
 
@@ -299,7 +299,7 @@ describe('useRealtimeContent', () => {
 			expect.objectContaining({
 				event: '*',
 				schema: 'public',
-				table: 'content',
+				table: 'content_items',
 			}),
 			expect.any(Function)
 		);
@@ -351,7 +351,7 @@ describe('useRealtimeContent', () => {
 
 		changeHandler({
 			eventType: 'INSERT',
-			table: 'content',
+			table: 'content_items',
 			new: {
 				id: '1',
 				scheduled_time: Date.now(),
@@ -362,7 +362,7 @@ describe('useRealtimeContent', () => {
 			expect.stringContaining('[Realtime] Content changed'),
 			expect.objectContaining({
 				eventType: 'INSERT',
-				table: 'content',
+				table: 'content_items',
 			})
 		);
 

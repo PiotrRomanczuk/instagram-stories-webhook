@@ -8,6 +8,7 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
+import { useRouter } from '@/i18n/routing';
 import useSWR from 'swr';
 import { KanbanHeader, KanbanToolbar } from './kanban-header';
 import { KanbanSidebar } from './kanban-sidebar';
@@ -23,6 +24,7 @@ type ViewType = 'kanban' | 'list' | 'timeline';
 
 export function KanbanLayout() {
 	const { data: session } = useSession();
+	const router = useRouter();
 
 	// View state
 	const [currentView, setCurrentView] = useState<ViewType>('kanban');
@@ -124,15 +126,13 @@ export function KanbanLayout() {
 	// Handle view change - redirect to different pages for list/timeline views
 	const handleViewChange = useCallback((view: ViewType) => {
 		if (view === 'list') {
-			// Could redirect to the original list view
-			window.location.href = '/content?view=list';
+			router.push('/content?view=list');
 		} else if (view === 'timeline') {
-			// Could redirect to schedule/timeline view
-			window.location.href = '/schedule';
+			router.push('/schedule');
 		} else {
 			setCurrentView(view);
 		}
-	}, []);
+	}, [router]);
 
 	return (
 		<div className="h-screen flex flex-col overflow-hidden bg-gray-50 dark:bg-[#101622]">

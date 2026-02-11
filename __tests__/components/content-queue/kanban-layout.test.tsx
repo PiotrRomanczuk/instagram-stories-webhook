@@ -18,6 +18,16 @@ vi.mock('next-auth/react', () => ({
 	})),
 }));
 
+// Mock i18n routing
+const mockPush = vi.fn();
+vi.mock('@/i18n/routing', () => ({
+	useRouter: vi.fn(() => ({
+		push: mockPush,
+		replace: vi.fn(),
+		back: vi.fn(),
+	})),
+}));
+
 // Mock SWR
 vi.mock('swr', () => ({
 	default: vi.fn(),

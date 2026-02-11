@@ -118,7 +118,7 @@ export function useRealtimeContent(options: UseRealtimeContentOptions) {
 				{
 					event: '*',
 					schema: 'public',
-					table: 'content',
+					table: 'content_items',
 					...(filter && { filter }),
 				},
 				handleChange
