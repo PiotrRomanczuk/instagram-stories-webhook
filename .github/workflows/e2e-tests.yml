@@ -12,9 +12,14 @@ env:
 
 jobs:
   e2e-tests:
-    name: Playwright E2E Tests
+    name: E2E Shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        shardIndex: [1, 2, 3, 4]
+        shardTotal: [4]
 
     steps:
       - name: Checkout code
@@ -53,53 +58,60 @@ jobs:
         run: |
           cat > .env.local << 'EOF'
           NODE_ENV=test
-          NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL_TEST || 'http://localhost:54321' }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY_TEST || 'dummy-key' }}
-          SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY_TEST || 'dummy-key' }}
+          NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           NEXTAUTH_URL=http://localhost:3000
           NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET || 'dummy-secret-for-testing-only' }}
-          ADMIN_EMAIL=admin@test.com
+          ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL || 'admin@test.com' }}
           AUTH_GOOGLE_ID=${{ secrets.AUTH_GOOGLE_ID || 'dummy' }}
           AUTH_GOOGLE_SECRET=${{ secrets.AUTH_GOOGLE_SECRET || 'dummy' }}
           EOF
 
-      - name: Run E2E tests
-        run: npm run test:e2e
+      - name: Run E2E tests (shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})
+        run: npx playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
         env:
           CI: true
-
-      - name: Upload Playwright report
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report
-          path: playwright-report/
-          retention-days: 7
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results
+          name: test-results-shard-${{ matrix.shardIndex }}
           path: test-results/
           retention-days: 7
 
-      - name: Upload screenshots
+      - name: Upload Playwright report
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: screenshots
-          path: test-results/**/screenshots/
+          name: playwright-report-shard-${{ matrix.shardIndex }}
+          path: playwright-report/
           retention-days: 7
 
-      - name: Comment PR with test results
+  # Merge results and report status
+  e2e-results:
+    name: Playwright E2E Tests
+    needs: e2e-tests
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check shard results
+        run: |
+          if [ "${{ needs.e2e-tests.result }}" = "failure" ]; then
+            echo "One or more E2E test shards failed"
+            exit 1
+          fi
+          echo "All E2E test shards passed"
+
+      - name: Comment PR on failure
         if: failure() && github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           script: |
-            const fs = require('fs');
             let comment = '## E2E Tests Failed\n\n';
-            comment += 'Please check the [Playwright report](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details.\n\n';
+            comment += 'One or more test shards failed. Check the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details.\n\n';
             comment += 'Common issues:\n';
             comment += '- Authentication failures\n';
             comment += '- Element selectors changed\n';
