@@ -23,6 +23,8 @@ export interface StoriesResponse {
 
 /**
  * Fetches recent stories from Instagram Business Account
+ * BMS-144: Uses /stories endpoint instead of /media, removes redundant 24h filter,
+ * replaces `any` types with Record<string, unknown>.
  * @param userId The user ID to fetch stories for
  * @param limit Number of stories to fetch (default: 10, max: 25)
  * @returns Array of recent stories
@@ -47,9 +49,8 @@ export async function getRecentStories(
 
 		const igUserId = linkedAccount.ig_user_id;
 
-		// Fetch recent media from Instagram
-		// Stories expire after 24 hours, so we filter by timestamp
-		const url = `${GRAPH_API_BASE}/${igUserId}/media`;
+		// BMS-144: Use /stories endpoint (returns only active stories, no client-side filter needed)
+		const url = `${GRAPH_API_BASE}/${igUserId}/stories`;
 		const response = await axios.get(url, {
 			params: {
 				fields: 'id,media_type,media_url,thumbnail_url,permalink,caption,timestamp',
@@ -60,27 +61,20 @@ export async function getRecentStories(
 
 		const allMedia = response.data.data || [];
 
-		// Filter stories (posted within last 24 hours)
-		const now = Date.now();
-		const twentyFourHoursAgo = now - 24 * 60 * 60 * 1000;
-
+		// Stories endpoint already returns only active stories (no 24h client-side filter needed)
 		const recentStories = allMedia
-			.filter((media: any) => {
-				const timestamp = new Date(media.timestamp).getTime();
-				return timestamp > twentyFourHoursAgo;
-			})
-			.map((media: any) => ({
-				id: media.id,
-				media_type: media.media_type,
-				media_url: media.media_url,
-				thumbnail_url: media.thumbnail_url,
-				permalink: media.permalink,
-				caption: media.caption,
-				timestamp: media.timestamp,
+			.map((media: Record<string, unknown>) => ({
+				id: media.id as string,
+				media_type: media.media_type as 'IMAGE' | 'VIDEO',
+				media_url: media.media_url as string,
+				thumbnail_url: media.thumbnail_url as string | undefined,
+				permalink: media.permalink as string | undefined,
+				caption: media.caption as string | undefined,
+				timestamp: media.timestamp as string,
 				username: linkedAccount.ig_username,
 			}));
 
-		await Logger.info(MODULE, `📱 Fetched ${recentStories.length} recent stories for user ${userId}`);
+		await Logger.info(MODULE, `Fetched ${recentStories.length} recent stories for user ${userId}`);
 
 		return {
 			stories: recentStories,
@@ -90,10 +84,10 @@ export async function getRecentStories(
 		let errorMessage = 'Failed to fetch recent stories';
 		if (axios.isAxiosError(error)) {
 			errorMessage = error.response?.data?.error?.message || error.message;
-			await Logger.error(MODULE, `❌ Failed to fetch stories: ${errorMessage}`, error.response?.data);
+			await Logger.error(MODULE, `Failed to fetch stories: ${errorMessage}`, error.response?.data);
 		} else if (error instanceof Error) {
 			errorMessage = error.message;
-			await Logger.error(MODULE, `❌ Failed to fetch stories: ${errorMessage}`, error);
+			await Logger.error(MODULE, `Failed to fetch stories: ${errorMessage}`, error);
 		}
 
 		throw new Error(errorMessage);
@@ -147,7 +141,7 @@ export async function getMediaDetails(
 			errorMessage = error.message;
 		}
 
-		await Logger.error(MODULE, `❌ Failed to fetch media ${mediaId}: ${errorMessage}`, error);
+		await Logger.error(MODULE, `Failed to fetch media ${mediaId}: ${errorMessage}`, error);
 		return null;
 	}
 }
@@ -189,9 +183,9 @@ export async function verifyStoryByUrl(
 		const matchingStory = stories.find(s => s.media_url === mediaUrl);
 
 		if (matchingStory) {
-			await Logger.info(MODULE, `✅ Verified story exists: ${matchingStory.id}`);
+			await Logger.info(MODULE, `Verified story exists: ${matchingStory.id}`);
 		} else {
-			await Logger.warn(MODULE, `⚠️ No story found with URL: ${mediaUrl.substring(0, 50)}...`);
+			await Logger.warn(MODULE, `No story found with URL: ${mediaUrl.substring(0, 50)}...`);
 		}
 
 		return matchingStory || null;

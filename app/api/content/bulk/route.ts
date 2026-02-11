@@ -10,6 +10,7 @@ import { authOptions } from '@/lib/auth';
 import { getUserRole, getUserId } from '@/lib/auth-helpers';
 import {
 	bulkUpdateSubmissionStatus,
+	reorderScheduledItems,
 } from '@/lib/content-db';
 import { rateLimiter } from '@/lib/middleware/rate-limit';
 
@@ -189,9 +190,15 @@ export async function PATCH(req: NextRequest) {
 				}
 			}
 
-			// For now, we would call reorderScheduledItems
-			// This is handled in the content-db module
-			// Return a success response indicating that reordering should be done
+			// BMS-145: Actually call reorderScheduledItems instead of being a no-op
+			const success = await reorderScheduledItems(items);
+			if (!success) {
+				return NextResponse.json(
+					{ error: 'Failed to reorder items' },
+					{ status: 500 },
+				);
+			}
+
 			console.log(`[Bulk] Reorder ${items.length} items by user ${userId}`);
 
 			return NextResponse.json({
