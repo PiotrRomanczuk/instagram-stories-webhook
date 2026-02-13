@@ -1,6 +1,6 @@
 /**
  * Server-side Video Processing for Instagram Stories
- * 
+ *
  * Uses FFmpeg via child_process to convert videos to Instagram Stories standards:
  * - Resolution: 1080x1920 (9:16 aspect ratio)
  * - Codec: H.264 video, AAC audio
@@ -8,6 +8,12 @@
  * - Frame Rate: 30 fps
  * - Bitrate: ~3,500 kbps video, 128 kbps audio
  * - Duration: Max 60 seconds (Instagram splits into 15-sec segments)
+ *
+ * LIMITATION: FFmpeg is NOT available in Vercel serverless functions.
+ * Vercel's runtime does not include system binaries like ffmpeg/ffprobe.
+ * Video processing must be handled by an external service or a custom
+ * Docker-based deployment. All exported functions perform a runtime check
+ * and return a clear error if FFmpeg is unavailable.
  */
 
 import { spawn } from 'child_process';
@@ -53,9 +59,27 @@ export async function checkFfmpegAvailable(): Promise<boolean> {
 }
 
 /**
+ * Assert FFmpeg/FFprobe are available, throwing a descriptive error if not.
+ * Call this at the start of any function that shells out to ffmpeg/ffprobe
+ * so callers get a clear message instead of an opaque ENOENT crash.
+ */
+async function ensureFfmpegAvailable(): Promise<void> {
+    const available = await checkFfmpegAvailable();
+    if (!available) {
+        await Logger.warn(MODULE, 'FFmpeg is not available on this system. Video processing requires FFmpeg and FFprobe binaries. Vercel serverless functions do not include FFmpeg — use an external service or custom Docker deployment.');
+        throw new Error(
+            'FFmpeg is not available on this system. ' +
+            'Video processing requires ffmpeg and ffprobe to be installed. ' +
+            'Note: Vercel serverless functions do not include FFmpeg.'
+        );
+    }
+}
+
+/**
  * Get video metadata using FFprobe
  */
 export async function getVideoMetadata(inputPath: string): Promise<VideoMetadata> {
+    await ensureFfmpegAvailable();
     return new Promise((resolve, reject) => {
         const args = [
             '-v', 'quiet',
@@ -218,6 +242,7 @@ export async function processVideoForStory(
     inputBuffer: Buffer,
     options: VideoProcessingOptions = {}
 ): Promise<VideoProcessingResult> {
+    await ensureFfmpegAvailable();
     const opts = { ...DEFAULT_OPTIONS, ...options };
     const tempDir = os.tmpdir();
     const sessionId = crypto.randomUUID();
