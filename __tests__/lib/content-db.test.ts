@@ -704,7 +704,9 @@ describe('content-db', () => {
 			const mockQuery = {
 				select: vi.fn().mockReturnThis(),
 				eq: vi.fn().mockReturnThis(),
-				lte: vi.fn().mockResolvedValue({
+				lte: vi.fn().mockReturnThis(),
+				order: vi.fn().mockReturnThis(),
+				limit: vi.fn().mockResolvedValue({
 					data: mockData,
 					error: null,
 				}),
@@ -715,13 +717,17 @@ describe('content-db', () => {
 			const result = await getPendingContentItems();
 			expect(result.length).toBe(2);
 			expect(mockQuery.eq).toHaveBeenCalledWith('publishing_status', 'scheduled');
+			expect(mockQuery.order).toHaveBeenCalledWith('scheduled_time', { ascending: true });
+			expect(mockQuery.limit).toHaveBeenCalledWith(25);
 		});
 
 		it('should handle errors and return empty array', async () => {
 			const mockQuery = {
 				select: vi.fn().mockReturnThis(),
 				eq: vi.fn().mockReturnThis(),
-				lte: vi.fn().mockResolvedValue({
+				lte: vi.fn().mockReturnThis(),
+				order: vi.fn().mockReturnThis(),
+				limit: vi.fn().mockResolvedValue({
 					data: null,
 					error: new Error('DB error'),
 				}),

@@ -38,3 +38,19 @@ export interface ContainerData {
     is_carousel_item?: boolean;
     user_tags?: { username: string; x: number; y: number; }[];
 }
+
+export interface QuotaHistoryRecord {
+    userId: string;
+    igUserId: string;
+    quotaTotal: number | null;
+    quotaUsage: number | null;
+    quotaDuration: number | null;
+    cronRunId: string;
+    snapshotType: 'cron_start' | 'cron_end';
+    postsAttempted: number;
+    postsSucceeded: number;
+    postsFailed: number;
+    postsSkippedQuota: number;
+    maxPostsConfig: number;
+    errorMessage: string | null;
+}

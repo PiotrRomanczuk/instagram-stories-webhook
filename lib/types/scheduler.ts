@@ -5,10 +5,17 @@ export interface ProcessResult {
     result?: unknown;
 }
 
+export interface QuotaInfo {
+    quotaTotal: number;
+    quotaUsage: number;
+    quotaRemaining: number;
+}
+
 export interface BatchResult {
     message: string;
     processed: number;
     succeeded: number;
     failed: number;
     results: ProcessResult[];
+    quotaInfo?: QuotaInfo;
 }
