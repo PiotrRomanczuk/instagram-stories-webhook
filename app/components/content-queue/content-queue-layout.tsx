@@ -7,7 +7,7 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
-import useSWR from 'swr';
+import useSWRInfinite from 'swr/infinite';
 import { ContentQueueHeader, ContentQueueStats } from './content-queue-header';
 import { ContentQueueToolbar, ViewMode, StatusFilter } from './content-queue-toolbar';
 import { ContentQueueGrid } from './content-queue-grid';
@@ -23,6 +23,8 @@ interface ContentQueueLayoutProps {
 	initialTab?: 'review' | 'all';
 }
 
+const PAGE_SIZE = 24;
+
 export function ContentQueueLayout({ initialTab = 'review' }: ContentQueueLayoutProps) {
 	const { data: session } = useSession();
 
@@ -31,7 +33,6 @@ export function ContentQueueLayout({ initialTab = 'review' }: ContentQueueLayout
 	const [searchQuery, setSearchQuery] = useState('');
 	const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 	const [creatorFilter, setCreatorFilter] = useState('');
-	const [page, setPage] = useState(1);
 
 	// Selection state
 	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -45,30 +46,43 @@ export function ContentQueueLayout({ initialTab = 'review' }: ContentQueueLayout
 	const userRole = (session?.user as { role?: UserRole })?.role;
 	const isAdmin = userRole === 'admin' || userRole === 'developer';
 
-	// Build API URL with filters
-	const apiParams = new URLSearchParams({
-		tab: initialTab,
-		page: String(page),
-		limit: '24',
-		sortBy: 'newest',
-		...(searchQuery && { search: searchQuery }),
-		...(statusFilter !== 'all' && { submissionStatus: statusFilter }),
-		...(creatorFilter && { creator: creatorFilter }),
-	});
+	// Build SWR infinite key for paginated fetching
+	const getKey = useCallback(
+		(pageIndex: number, previousPageData: { items: ContentItem[]; pagination: { hasMore: boolean } } | null) => {
+			if (previousPageData && !previousPageData.pagination?.hasMore) return null;
+			const params = new URLSearchParams({
+				tab: initialTab,
+				page: String(pageIndex + 1),
+				limit: String(PAGE_SIZE),
+				sortBy: 'newest',
+				...(searchQuery && { search: searchQuery }),
+				...(statusFilter !== 'all' && { submissionStatus: statusFilter }),
+				...(creatorFilter && { creator: creatorFilter }),
+			});
+			return `/api/content?${params.toString()}`;
+		},
+		[initialTab, searchQuery, statusFilter, creatorFilter],
+	);
 
-	// Fetch content items
-	const { data, error, isLoading, mutate } = useSWR(
-		`/api/content?${apiParams.toString()}`,
+	// Fetch content items with infinite loading
+	const { data: pages, isLoading, size, setSize, mutate } = useSWRInfinite(
+		getKey,
 		fetcher,
 		{
 			revalidateOnFocus: false,
 			dedupingInterval: 5000,
+			revalidateFirstPage: false,
 		}
 	);
 
-	const items: ContentItem[] = data?.items || [];
-	const pagination = data?.pagination;
-	const apiStats = data?.stats;
+	const items: ContentItem[] = useMemo(
+		() => (pages ?? []).flatMap((page) => page?.items ?? []),
+		[pages],
+	);
+	const lastPage = pages?.[pages.length - 1];
+	const pagination = lastPage?.pagination;
+	const apiStats = pages?.[0]?.stats;
+	const isLoadingMore = size > 1 && !pages?.[size - 1];
 
 	// Compute stats for header
 	const stats: ContentQueueStats = useMemo(() => {
@@ -172,8 +186,8 @@ export function ContentQueueLayout({ initialTab = 'review' }: ContentQueueLayout
 	}, [mutate]);
 
 	// Pagination
-	const showingFrom = filteredItems.length > 0 ? (page - 1) * 24 + 1 : 0;
-	const showingTo = Math.min(page * 24, pagination?.total || filteredItems.length);
+	const showingFrom = filteredItems.length > 0 ? 1 : 0;
+	const showingTo = filteredItems.length;
 	const totalItems = pagination?.total || filteredItems.length;
 
 	return (
@@ -200,12 +214,12 @@ export function ContentQueueLayout({ initialTab = 'review' }: ContentQueueLayout
 						statusFilter={statusFilter}
 						onStatusFilterChange={(status) => {
 							setStatusFilter(status);
-							setPage(1);
+							setSize(1);
 						}}
 						creatorFilter={creatorFilter}
 						onCreatorFilterChange={(creator) => {
 							setCreatorFilter(creator);
-							setPage(1);
+							setSize(1);
 						}}
 						creators={creators}
 						selectedCount={selectedIds.size}
@@ -230,7 +244,8 @@ export function ContentQueueLayout({ initialTab = 'review' }: ContentQueueLayout
 					isAdmin={isAdmin}
 					isLoading={isLoading}
 					hasMore={pagination?.hasMore}
-					onLoadMore={() => setPage((p) => p + 1)}
+					onLoadMore={() => setSize((s) => s + 1)}
+					isLoadingMore={isLoadingMore}
 				/>
 			</div>
 

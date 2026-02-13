@@ -1,34 +1,32 @@
-'use client';
+import { getServerSession } from 'next-auth/next';
+import { redirect } from 'next/navigation';
+import { authOptions } from '@/lib/auth';
+import { getUserRole } from '@/lib/auth-helpers';
+import { ContentPageClient } from './content-page-client';
 
-/**
- * Content Hub Page
- * StoryFlow Kanban Content Queue Dashboard
- *
- * Features:
- * - Dark theme kanban board with columns: DRAFT, SCHEDULED, PROCESSING, PUBLISHED, FAILED
- * - Left sidebar with views (Kanban, List, Timeline), quick schedule calendar, settings
- * - Top bar with search, nav links, "Create Story" button
- * - Cards show thumbnail, title, creator, status, scheduled time
- */
+interface ContentPageProps {
+	searchParams: Promise<{ view?: string; tab?: string }>;
+}
 
-import { useSearchParams } from 'next/navigation';
-import { KanbanLayout } from '../../components/content-queue/kanban';
-import { ContentQueueLayout } from '../../components/content-queue';
+export default async function ContentPage({ searchParams }: ContentPageProps) {
+	const session = await getServerSession(authOptions);
 
-export default function ContentPage() {
-	const searchParams = useSearchParams();
-	const view = searchParams.get('view');
-	const tab = searchParams.get('tab') as 'review' | 'all' | null;
-
-	// If list view is requested, use the original ContentQueueLayout
-	if (view === 'list') {
-		return (
-			<main className="min-h-screen bg-gray-50 dark:bg-[#101622]">
-				<ContentQueueLayout initialTab={tab === 'review' ? 'review' : 'all'} />
-			</main>
-		);
+	if (!session?.user?.id) {
+		redirect('/auth/signin');
 	}
 
-	// Default to Kanban view
-	return <KanbanLayout />;
+	const role = getUserRole(session);
+
+	if (role !== 'admin' && role !== 'developer') {
+		redirect('/');
+	}
+
+	const params = await searchParams;
+
+	return (
+		<ContentPageClient
+			view={params.view}
+			tab={params.tab as 'review' | 'all' | undefined}
+		/>
+	);
 }
