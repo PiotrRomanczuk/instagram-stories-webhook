@@ -23,6 +23,9 @@ export type {
 
 const MODULE = 'db:memes';
 
+const ALLOWED_USER_COLUMNS = 'id, email, role, display_name, added_by, created_at';
+const MEME_SUBMISSION_COLUMNS = 'id, user_id, user_email, media_url, storage_path, title, caption, status, rejection_reason, created_at, reviewed_at, reviewed_by, scheduled_time, scheduled_post_id, published_at, ig_media_id, phash';
+
 // ============== ALLOWED USERS (WHITELIST) ==============
 
 /**
@@ -86,7 +89,7 @@ export async function getAllowedUserByEmail(
 	try {
 		const { data, error } = await supabaseAdmin
 			.from('email_whitelist')
-			.select('*')
+			.select(ALLOWED_USER_COLUMNS)
 			.eq('email', email.toLowerCase())
 			.single();
 
@@ -145,7 +148,7 @@ export async function getAllowedUsers(): Promise<AllowedUser[]> {
 	try {
 		const { data, error } = await supabaseAdmin
 			.from('email_whitelist')
-			.select('*')
+			.select(ALLOWED_USER_COLUMNS)
 			.order('created_at', { ascending: false });
 
 		if (error) {
@@ -408,7 +411,7 @@ export async function getMemeSubmissions(options?: {
 	userEmail?: string;
 }): Promise<MemeSubmission[]> {
 	try {
-		let query = supabaseAdmin.from('meme_submissions').select('*');
+		let query = supabaseAdmin.from('meme_submissions').select(MEME_SUBMISSION_COLUMNS);
 
 		if (options?.userId) {
 			query = query.eq('user_id', options.userId);
@@ -495,7 +498,7 @@ export async function getMemeSubmission(
 	try {
 		const { data, error } = await supabaseAdmin
 			.from('meme_submissions')
-			.select('*')
+			.select(MEME_SUBMISSION_COLUMNS)
 			.eq('id', id)
 			.single();
 

@@ -15,6 +15,8 @@ import {
 	mapContentItemRow,
 } from './types/posts';
 
+const CONTENT_ITEM_COLUMNS = 'id, user_id, user_email, media_url, media_type, storage_path, dimensions, thumbnail_url, video_duration, video_codec, video_framerate, needs_processing, title, caption, user_tags, hashtags, source, submission_status, publishing_status, rejection_reason, reviewed_at, reviewed_by, scheduled_time, processing_started_at, published_at, ig_media_id, error, content_hash, idempotency_key, retry_count, archived_at, version, created_at, updated_at';
+
 // ============== CONTENT RETRIEVAL ==============
 
 /**
@@ -57,7 +59,7 @@ export async function getContentItems(
 	try {
 		let query = supabaseAdmin
 			.from('content_items')
-			.select('*', { count: 'exact' });
+			.select(CONTENT_ITEM_COLUMNS, { count: 'exact' });
 
 		// Filter out archived items by default
 		if (!includeArchived) query = query.is('archived_at', null);
@@ -123,7 +125,7 @@ export async function getContentItemById(
 	try {
 		const { data, error } = await supabaseAdmin
 			.from('content_items')
-			.select('*')
+			.select(CONTENT_ITEM_COLUMNS)
 			.eq('id', id)
 			.single();
 
@@ -156,7 +158,7 @@ export async function getReviewQueue(
 	try {
 		const { data, error, count } = await supabaseAdmin
 			.from('content_items')
-			.select('*', { count: 'exact' })
+			.select(CONTENT_ITEM_COLUMNS, { count: 'exact' })
 			.eq('source', 'submission')
 			.eq('submission_status', 'pending')
 			.order('created_at', { ascending: false })
@@ -186,7 +188,7 @@ export async function getScheduledItems(
 	try {
 		let query = supabaseAdmin
 			.from('content_items')
-			.select('*')
+			.select(CONTENT_ITEM_COLUMNS)
 			.in('publishing_status', ['scheduled', 'processing'])
 			.order('scheduled_time', { ascending: true });
 
@@ -548,7 +550,7 @@ export async function getPendingContentItems(maxItems: number = 25): Promise<Con
 		const now = Date.now();
 		const { data, error } = await supabaseAdmin
 			.from('content_items')
-			.select('*')
+			.select(CONTENT_ITEM_COLUMNS)
 			.eq('publishing_status', 'scheduled')
 			.lte('scheduled_time', now)
 			.order('scheduled_time', { ascending: true })
@@ -765,7 +767,7 @@ export async function getContentItemForProcessing(
 	try {
 		const { data, error } = await supabaseAdmin
 			.from('content_items')
-			.select('*')
+			.select(CONTENT_ITEM_COLUMNS)
 			.eq('id', id)
 			.or('publishing_status.eq.scheduled,publishing_status.eq.processing')
 			.single();
@@ -821,7 +823,7 @@ export async function getOverdueCount(): Promise<number> {
 		const now = Date.now();
 		const { count, error } = await supabaseAdmin
 			.from('content_items')
-			.select('*', { count: 'exact', head: true })
+			.select('id', { count: 'exact', head: true })
 			.eq('publishing_status', 'scheduled')
 			.lt('scheduled_time', now);
 
@@ -855,39 +857,39 @@ export async function getContentStats(): Promise<{
 		const queries = [
 			supabaseAdmin
 				.from('content_items')
-				.select('*', { count: 'exact', head: true })
+				.select('id', { count: 'exact', head: true })
 				.eq('source', 'submission'),
 			supabaseAdmin
 				.from('content_items')
-				.select('*', { count: 'exact', head: true })
+				.select('id', { count: 'exact', head: true })
 				.eq('source', 'submission')
 				.eq('submission_status', 'pending'),
 			supabaseAdmin
 				.from('content_items')
-				.select('*', { count: 'exact', head: true })
+				.select('id', { count: 'exact', head: true })
 				.eq('source', 'submission')
 				.eq('submission_status', 'approved'),
 			supabaseAdmin
 				.from('content_items')
-				.select('*', { count: 'exact', head: true })
+				.select('id', { count: 'exact', head: true })
 				.eq('source', 'submission')
 				.eq('submission_status', 'rejected'),
 			supabaseAdmin
 				.from('content_items')
-				.select('*', { count: 'exact', head: true })
+				.select('id', { count: 'exact', head: true })
 				.eq('publishing_status', 'scheduled'),
 			supabaseAdmin
 				.from('content_items')
-				.select('*', { count: 'exact', head: true })
+				.select('id', { count: 'exact', head: true })
 				.eq('publishing_status', 'published'),
 			supabaseAdmin
 				.from('content_items')
-				.select('*', { count: 'exact', head: true })
+				.select('id', { count: 'exact', head: true })
 				.eq('publishing_status', 'failed'),
 			// Overdue count: scheduled but past due time
 			supabaseAdmin
 				.from('content_items')
-				.select('*', { count: 'exact', head: true })
+				.select('id', { count: 'exact', head: true })
 				.eq('publishing_status', 'scheduled')
 				.lt('scheduled_time', now),
 		];

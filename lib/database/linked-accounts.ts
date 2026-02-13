@@ -18,7 +18,7 @@ export async function getLinkedFacebookAccount(
 		Logger.debug(MODULE, `🔍 Fetching linked account for user ${userId}`);
 		const { data, error } = await supabaseAdmin
 			.from('linked_accounts')
-			.select('*')
+			.select('id, user_id, provider, provider_account_id, access_token, refresh_token, expires_at, ig_user_id, ig_username, created_at, updated_at')
 			.eq('user_id', userId)
 			.eq('provider', 'facebook')
 			.single();

@@ -20,7 +20,7 @@ export async function GET() {
         // Fetch all meme submissions
         const { data: memes, error: memesError } = await supabaseAdmin
             .from('meme_submissions')
-            .select('*')
+            .select('status, user_email, title, created_at')
             .order('created_at', { ascending: false });
 
         if (memesError) {

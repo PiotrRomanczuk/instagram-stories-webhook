@@ -7,10 +7,12 @@ import {
 	mapScheduledPostRow,
 } from '@/lib/types';
 
+const SCHEDULED_POST_COLUMNS = 'id, url, type, post_type, caption, scheduled_time, status, created_at, published_at, error, ig_media_id, user_tags, user_id, user_email, processing_started_at, content_hash, idempotency_key, meme_id, retry_count';
+
 export async function getScheduledPosts(
 	userId?: string,
 ): Promise<ScheduledPost[]> {
-	let query = supabaseAdmin.from('scheduled_posts').select('*');
+	let query = supabaseAdmin.from('scheduled_posts').select(SCHEDULED_POST_COLUMNS);
 
 	if (userId) {
 		query = query.eq('user_id', userId);
@@ -37,7 +39,7 @@ export async function getAllScheduledPosts(): Promise<ScheduledPost[]> {
 	// First get all posts
 	const { data: posts, error } = await supabaseAdmin
 		.from('scheduled_posts')
-		.select('*')
+		.select(SCHEDULED_POST_COLUMNS)
 		.order('scheduled_time', { ascending: true });
 
 	if (error) {
@@ -189,7 +191,7 @@ export async function getPendingPosts(): Promise<ScheduledPostWithUser[]> {
 	const now = Date.now();
 	const { data, error } = await supabaseAdmin
 		.from('scheduled_posts')
-		.select('*')
+		.select(SCHEDULED_POST_COLUMNS)
 		.eq('status', 'pending')
 		.lte('scheduled_time', now);
 
@@ -209,7 +211,7 @@ export async function getUpcomingPosts(
 	const now = Date.now();
 	let query = supabaseAdmin
 		.from('scheduled_posts')
-		.select('*')
+		.select(SCHEDULED_POST_COLUMNS)
 		.eq('status', 'pending')
 		.gt('scheduled_time', now);
 

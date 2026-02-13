@@ -28,7 +28,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
 		const { data: meme, error: fetchError } = await supabaseAdmin
 			.from('meme_submissions')
-			.select('*')
+			.select('id, user_id, user_email, media_url, storage_path, title, caption, status, rejection_reason, created_at, reviewed_at, reviewed_by, scheduled_time, scheduled_post_id, published_at, ig_media_id')
 			.eq('id', id)
 			.single();
 

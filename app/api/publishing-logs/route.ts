@@ -77,7 +77,7 @@ export async function GET(req: NextRequest) {
 		// Build query
 		let query = supabaseAdmin
 			.from('publishing_logs')
-			.select('*', { count: 'exact' });
+			.select('id, user_id, media_url, media_type, post_type, caption, status, ig_media_id, error_message, created_at', { count: 'exact' });
 
 		// Apply filters
 		// Authorization: Users see their own logs, admins see all logs

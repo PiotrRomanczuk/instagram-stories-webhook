@@ -169,7 +169,7 @@ export async function processScheduledPosts(
 			const oneDayFromNow = now + 24 * 60 * 60 * 1000;
 			const { count: futureCount } = await supabaseAdmin
 				.from('content_items')
-				.select('*', { count: 'exact', head: true })
+				.select('id', { count: 'exact', head: true })
 				.eq('publishing_status', 'scheduled')
 				.gt('scheduled_time', now)
 				.lte('scheduled_time', oneDayFromNow);

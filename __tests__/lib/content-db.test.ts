@@ -1181,7 +1181,7 @@ describe('content-db', () => {
 
 			const count = await getOverdueCount();
 			expect(count).toBe(5);
-			expect(mockQuery.select).toHaveBeenCalledWith('*', { count: 'exact', head: true });
+			expect(mockQuery.select).toHaveBeenCalledWith('id', { count: 'exact', head: true });
 		});
 
 		it('should return 0 on errors', async () => {
