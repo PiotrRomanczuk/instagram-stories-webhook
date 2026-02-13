@@ -140,8 +140,8 @@ function ReadyAssetCard({
 						/>
 					</div>
 				) : (
-					<div className="absolute inset-0 flex items-center justify-center bg-gray-200 dark:bg-slate-800">
-						<span className="text-xs text-gray-500 dark:text-slate-500">
+					<div className="absolute inset-0 flex items-center justify-center bg-gray-200">
+						<span className="text-xs text-gray-500">
 							No preview
 						</span>
 					</div>
@@ -180,11 +180,11 @@ function ReadyAssetCard({
 
 						{/* Dropdown menu */}
 						{showMenu && (
-							<div className="absolute right-0 top-full z-50 mt-1 w-40 rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+							<div className="absolute right-0 top-full z-50 mt-1 w-40 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
 								<button
 									type="button"
 									onClick={handleViewDetails}
-									className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-gray-700 transition hover:bg-gray-100 dark:text-slate-300 dark:hover:bg-slate-800"
+									className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs font-medium text-gray-700 transition hover:bg-gray-100"
 								>
 									<Eye className="h-3.5 w-3.5" />
 									View Full Details
@@ -266,26 +266,26 @@ export function ReadyToScheduleSidebar({
 
 	return (
 		<aside className={cn(
-			'flex h-full w-full lg:w-80 flex-col border-l border-gray-200 bg-white dark:border-slate-800 dark:bg-[#101622]',
+			'flex h-full w-full lg:w-80 flex-col border-l border-gray-200 bg-white',
 			className
 		)}>
 			{/* Header */}
-			<div className="border-b border-gray-200 p-4 dark:border-slate-800">
-				<h3 className="flex items-center justify-between text-sm font-bold text-gray-900 dark:text-white">
+			<div className="border-b border-gray-200 p-4">
+				<h3 className="flex items-center justify-between text-sm font-bold text-gray-900">
 					<span className="flex items-center gap-2">
 						Ready to Schedule
 						{onClose && (
 							<button
 								type="button"
 								onClick={onClose}
-								className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 lg:hidden dark:hover:bg-slate-800 dark:hover:text-slate-300"
+								className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 lg:hidden"
 								aria-label="Close sidebar"
 							>
 								<X className="h-4 w-4" />
 							</button>
 						)}
 					</span>
-					<span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] text-gray-500 dark:bg-slate-800 dark:text-slate-400">
+					<span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] text-gray-500">
 						{readyItems.length} assets
 					</span>
 				</h3>
@@ -300,7 +300,7 @@ export function ReadyToScheduleSidebar({
 								'flex-1 border-b-2 py-1.5 text-[10px] font-bold transition-colors',
 								activeTab === tab.key
 									? 'border-[#2b6cee] text-[#2b6cee]'
-									: 'border-transparent text-gray-500 hover:text-gray-700 dark:text-slate-500 dark:hover:text-slate-300'
+									: 'border-transparent text-gray-500 hover:text-gray-700'
 							)}
 						>
 							{tab.label}
@@ -313,11 +313,11 @@ export function ReadyToScheduleSidebar({
 			<div className="custom-scrollbar flex-1 overflow-y-auto p-4">
 				{filteredItems.length === 0 ? (
 					<div className="flex flex-col items-center justify-center py-12 text-center">
-						<Clock className="mb-3 h-10 w-10 text-gray-400 dark:text-slate-600" />
-						<p className="text-sm font-medium text-gray-500 dark:text-slate-400">
+						<Clock className="mb-3 h-10 w-10 text-gray-400" />
+						<p className="text-sm font-medium text-gray-500">
 							No content ready
 						</p>
-						<p className="mt-1 text-xs text-gray-400 dark:text-slate-500">
+						<p className="mt-1 text-xs text-gray-400">
 							Approved submissions will appear here
 						</p>
 					</div>
@@ -345,9 +345,9 @@ export function ReadyToScheduleSidebar({
 			</div>
 
 			{/* Footer - Density controls */}
-			<div className="border-t border-gray-200 bg-gray-50 p-4 dark:border-slate-800 dark:bg-[#0d1421]">
+			<div className="border-t border-gray-200 bg-gray-50 p-4">
 				<div className="flex items-center justify-between">
-					<span className="text-[10px] font-bold uppercase text-gray-500 dark:text-slate-500">
+					<span className="text-[10px] font-bold uppercase text-gray-500">
 						View Density
 					</span>
 					<div className="flex gap-2">
@@ -356,8 +356,8 @@ export function ReadyToScheduleSidebar({
 							className={cn(
 								'rounded-md p-1.5 transition-colors',
 								viewDensity === 'comfortable'
-									? 'bg-gray-200 text-[#2b6cee] dark:bg-slate-800'
-									: 'text-gray-400 hover:bg-gray-200 dark:text-slate-400 dark:hover:bg-slate-800'
+									? 'bg-gray-200 text-[#2b6cee]'
+									: 'text-gray-400 hover:bg-gray-200'
 							)}
 							title="Comfortable view"
 						>
@@ -368,8 +368,8 @@ export function ReadyToScheduleSidebar({
 							className={cn(
 								'rounded-md p-1.5 transition-colors',
 								viewDensity === 'compact'
-									? 'bg-gray-200 text-[#2b6cee] dark:bg-slate-800'
-									: 'text-gray-400 hover:bg-gray-200 dark:text-slate-400 dark:hover:bg-slate-800'
+									? 'bg-gray-200 text-[#2b6cee]'
+									: 'text-gray-400 hover:bg-gray-200'
 							)}
 							title="Compact view"
 						>

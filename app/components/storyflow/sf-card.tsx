@@ -19,11 +19,11 @@ const paddingClasses = {
 
 const variantClasses = {
 	default:
-		'bg-white dark:bg-[var(--sf-card-dark)] border border-gray-200 dark:border-[var(--sf-border-dark)]',
+		'bg-white border border-gray-200',
 	outlined:
-		'bg-transparent border border-gray-200 dark:border-[var(--sf-border-dark)]',
+		'bg-transparent border border-gray-200',
 	elevated:
-		'bg-white dark:bg-[var(--sf-card-dark)] border border-gray-200 dark:border-[var(--sf-border-dark)] shadow-lg',
+		'bg-white border border-gray-200 shadow-lg',
 };
 
 /**
@@ -47,7 +47,7 @@ export function SfCard({
 				hoverGlow && [
 					'hover:border-[var(--sf-primary)]/50',
 					'hover:shadow-[0_0_20px_rgba(43,108,238,0.15)]',
-					'dark:hover:shadow-[0_0_20px_rgba(43,108,238,0.25)]',
+					'',
 				],
 				className
 			)}
@@ -73,7 +73,7 @@ export function SfCardHeader({
 		<div
 			className={cn(
 				'flex items-center justify-between',
-				bordered && 'border-b border-gray-200 dark:border-[var(--sf-border-dark)] pb-4 mb-4',
+				bordered && 'border-b border-gray-200 pb-4 mb-4',
 				className
 			)}
 			{...props}
@@ -91,7 +91,7 @@ export function SfCardTitle({
 	return (
 		<h3
 			className={cn(
-				'text-lg font-semibold text-slate-900 dark:text-white',
+				'text-lg font-semibold text-slate-900',
 				className
 			)}
 			{...props}
@@ -121,7 +121,7 @@ export function SfCardFooter({
 	return (
 		<div
 			className={cn(
-				'flex items-center pt-4 border-t border-gray-200 dark:border-[var(--sf-border-dark)] mt-4',
+				'flex items-center pt-4 border-t border-gray-200 mt-4',
 				className
 			)}
 			{...props}

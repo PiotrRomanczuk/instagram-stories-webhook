@@ -146,12 +146,12 @@ export function ContentEditModal({
 					</div>
 
 					{/* Left Side: Phone Preview - hidden on mobile */}
-					<div className='hidden md:flex md:w-2/5 bg-gray-50 dark:bg-[#101622] flex-col border-r border-gray-100 dark:border-slate-800'>
-						<div className='p-6 border-b border-gray-100 dark:border-slate-800 flex items-center gap-2'>
+					<div className='hidden md:flex md:w-2/5 bg-gray-50 flex-col border-r border-gray-100'>
+						<div className='p-6 border-b border-gray-100 flex items-center gap-2'>
 							<Calendar className='h-5 w-5 text-indigo-600' />
-							<span className='font-bold text-gray-900 dark:text-white'>Story Preview</span>
+							<span className='font-bold text-gray-900'>Story Preview</span>
 						</div>
-						<div className='flex-1 p-8 flex items-center justify-center bg-gray-100/50 dark:bg-black/20'>
+						<div className='flex-1 p-8 flex items-center justify-center bg-gray-100/50'>
 							<StoryPreview imageUrl={item.mediaUrl} alt={title || 'Story preview'} />
 						</div>
 					</div>

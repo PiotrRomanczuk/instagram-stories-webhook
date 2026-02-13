@@ -84,7 +84,7 @@ export function InstagramConnectionStatus() {
 			<CardContent className="space-y-4">
 				{isConnected ? (
 					<>
-						<Alert variant={isExpired ? 'destructive' : 'default'} className={!isExpired ? 'border-green-200 bg-green-50 dark:bg-green-950/20' : ''}>
+						<Alert variant={isExpired ? 'destructive' : 'default'} className={!isExpired ? 'border-green-200 bg-green-50' : ''}>
 							{isExpired ? (
 								<XCircle className="h-4 w-4" />
 							) : (

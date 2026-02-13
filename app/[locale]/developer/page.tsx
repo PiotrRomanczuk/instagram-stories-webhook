@@ -32,7 +32,7 @@ export default async function DeveloperPage() {
 	const webhookUrl = `${appUrl}/api/webhook/story`;
 
 	return (
-		<main className="min-h-screen bg-gray-50 dark:bg-[#101622] mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+		<main className="min-h-screen bg-gray-50 mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
 			<div className="space-y-6">
 				<PageHeader
 					title="Developer Tools"
@@ -94,7 +94,7 @@ export default async function DeveloperPage() {
 				</div>
 
 				{/* Settings Link */}
-				<Card className="bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800">
+				<Card className="bg-amber-50 border-amber-200">
 					<CardContent className="pt-6">
 						<div className="flex items-center justify-between">
 							<div className="flex items-center gap-4">
@@ -102,10 +102,10 @@ export default async function DeveloperPage() {
 									<Settings className="h-6 w-6 text-white" />
 								</div>
 								<div>
-									<h3 className="font-semibold text-amber-900 dark:text-amber-100">
+									<h3 className="font-semibold text-amber-900">
 										Application Settings
 									</h3>
-									<p className="text-sm text-amber-700 dark:text-amber-300">
+									<p className="text-sm text-amber-700">
 										Configure API keys, credentials, and security tokens
 									</p>
 								</div>

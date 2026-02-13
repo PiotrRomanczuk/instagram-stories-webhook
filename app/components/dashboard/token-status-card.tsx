@@ -116,16 +116,16 @@ export function TokenStatusCard() {
 	const progressPercent = hasExpiryInfo && !isExpired ? Math.min((daysRemaining / maxDays) * 100, 100) : 0;
 
 	let statusColor = 'text-green-600';
-	let statusBg = 'bg-green-100 dark:bg-green-900/30';
+	let statusBg = 'bg-green-100';
 	let StatusIcon = CheckCircle;
 
 	if (isExpired) {
 		statusColor = 'text-red-600';
-		statusBg = 'bg-red-100 dark:bg-red-900/30';
+		statusBg = 'bg-red-100';
 		StatusIcon = XCircle;
 	} else if (isExpiringSoon) {
 		statusColor = 'text-amber-600';
-		statusBg = 'bg-amber-100 dark:bg-amber-900/30';
+		statusBg = 'bg-amber-100';
 		StatusIcon = AlertTriangle;
 	}
 

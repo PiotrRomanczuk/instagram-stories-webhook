@@ -34,7 +34,7 @@ export function BottomNav() {
 	const isActive = (path: string) => pathname === path;
 
 	return (
-		<nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/95 backdrop-blur-lg lg:hidden dark:border-slate-800 dark:bg-[#101622]/95">
+		<nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/95 backdrop-blur-lg lg:hidden">
 			<div className="mx-auto flex h-16 max-w-lg items-center justify-around px-2">
 				{tabs.map((tab) => {
 					const Icon = tab.icon;
@@ -52,7 +52,7 @@ export function BottomNav() {
 									className={cn(
 										'flex h-14 w-14 items-center justify-center rounded-full transition-transform active:scale-95',
 										active
-											? 'bg-white ring-2 ring-[#2b6cee] dark:bg-slate-800'
+											? 'bg-white ring-2 ring-[#2b6cee]'
 											: 'bg-[#2b6cee] shadow-lg shadow-[#2b6cee]/30'
 									)}
 								>
@@ -68,7 +68,7 @@ export function BottomNav() {
 										'mt-0.5 text-[10px] font-medium',
 										active
 											? 'text-[#2b6cee]'
-											: 'text-gray-500 dark:text-slate-400'
+											: 'text-gray-500'
 									)}
 								>
 									{tab.label}
@@ -85,7 +85,7 @@ export function BottomNav() {
 								'flex flex-col items-center gap-0.5 px-3 py-1 transition-colors',
 								active
 									? 'text-[#2b6cee]'
-									: 'text-gray-400 dark:text-slate-500'
+									: 'text-gray-400'
 							)}
 						>
 							<Icon

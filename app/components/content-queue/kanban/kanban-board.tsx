@@ -36,19 +36,19 @@ function KanbanSkeleton() {
 				<div key={col.status} className="kanban-column flex flex-col gap-4 min-w-[280px] max-w-[320px]">
 					{/* Header skeleton */}
 					<div className="flex items-center gap-2 px-1">
-						<div className="h-4 w-20 bg-gray-200 dark:bg-[#2d3a54] rounded animate-pulse" />
-						<div className="h-5 w-5 bg-gray-200 dark:bg-[#2d3a54] rounded-full animate-pulse" />
+						<div className="h-4 w-20 bg-gray-200 rounded animate-pulse" />
+						<div className="h-5 w-5 bg-gray-200 rounded-full animate-pulse" />
 					</div>
 					{/* Card skeletons */}
 					<div className="flex flex-col gap-3">
 						{[1, 2].map((i) => (
 							<div
 								key={i}
-								className="bg-white dark:bg-[#1a2234] border border-gray-200 dark:border-[#2d3a54] rounded-xl p-3 animate-pulse"
+								className="bg-white border border-gray-200 rounded-xl p-3 animate-pulse"
 							>
-								<div className="aspect-[9/16] w-full rounded-lg bg-gray-200 dark:bg-[#2d3a54] mb-3" />
-								<div className="h-4 w-3/4 bg-gray-200 dark:bg-[#2d3a54] rounded mb-2" />
-								<div className="h-3 w-1/2 bg-gray-200 dark:bg-[#2d3a54] rounded" />
+								<div className="aspect-[9/16] w-full rounded-lg bg-gray-200 mb-3" />
+								<div className="h-4 w-3/4 bg-gray-200 rounded mb-2" />
+								<div className="h-3 w-1/2 bg-gray-200 rounded" />
 							</div>
 						))}
 					</div>
@@ -119,11 +119,11 @@ export function KanbanBoard({
 		return (
 			<div className="flex-1 flex items-center justify-center p-6">
 				<div className="text-center">
-					<div className="p-6 bg-gray-100 dark:bg-[#1a2234] rounded-full mb-6 border border-gray-200 dark:border-[#2d3a54] inline-flex">
-						<Loader2 className="h-12 w-12 text-gray-400 dark:text-[#92a4c9]" />
+					<div className="p-6 bg-gray-100 rounded-full mb-6 border border-gray-200 inline-flex">
+						<Loader2 className="h-12 w-12 text-gray-400" />
 					</div>
-					<h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No content yet</h3>
-					<p className="text-gray-500 dark:text-[#92a4c9] max-w-sm">
+					<h3 className="text-xl font-bold text-gray-900 mb-2">No content yet</h3>
+					<p className="text-gray-500 max-w-sm">
 						Create your first story to get started with the content queue.
 					</p>
 					{onAddNew && (

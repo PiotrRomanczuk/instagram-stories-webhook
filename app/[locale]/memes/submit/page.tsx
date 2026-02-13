@@ -13,7 +13,7 @@ export default async function SubmitMemePage() {
     }
 
     return (
-        <main className="min-h-screen bg-gray-50 dark:bg-[#101622] p-4 md:p-8 lg:p-12">
+        <main className="min-h-screen bg-gray-50 p-4 md:p-8 lg:p-12">
             <div className="max-w-2xl mx-auto">
                 {/* Header */}
                 <div className="mb-8">
@@ -30,10 +30,10 @@ export default async function SubmitMemePage() {
                             <Sparkles className="w-6 h-6 text-white" />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-black text-gray-900 dark:text-white">
+                            <h1 className="text-3xl font-black text-gray-900">
                                 Submit a Meme
                             </h1>
-                            <p className="text-gray-500 dark:text-[#92a4c9]">
+                            <p className="text-gray-500">
                                 Share your best memes with us
                             </p>
                         </div>
@@ -41,7 +41,7 @@ export default async function SubmitMemePage() {
                 </div>
 
                 {/* Form Card */}
-                <div className="bg-white dark:bg-[#1a2332] rounded-3xl p-6 md:p-8 shadow-xl border border-gray-200 dark:border-[#232f48]">
+                <div className="bg-white rounded-3xl p-6 md:p-8 shadow-xl border border-gray-200">
                     <MemeSubmitForm />
                 </div>
             </div>

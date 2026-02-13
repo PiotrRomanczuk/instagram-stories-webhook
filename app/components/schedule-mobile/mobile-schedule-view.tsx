@@ -61,7 +61,7 @@ function getDayDots(items: ContentItem[]): string[] {
 	if (items.some(i => i.publishingStatus === 'scheduled')) dots.push('bg-blue-500');
 	if (items.some(i => i.publishingStatus === 'published')) dots.push('bg-green-500');
 	if (items.some(i => i.publishingStatus === 'failed')) dots.push('bg-red-500');
-	if (items.some(i => i.publishingStatus === 'processing')) dots.push('bg-gray-300 dark:bg-gray-600');
+	if (items.some(i => i.publishingStatus === 'processing')) dots.push('bg-gray-300');
 	return dots.slice(0, 3);
 }
 
@@ -198,19 +198,19 @@ export function MobileScheduleView({
 	}, [menuOpen]);
 
 	return (
-		<div className="flex flex-1 flex-col overflow-hidden bg-gray-100 dark:bg-[#101622]">
+		<div className="flex flex-1 flex-col overflow-hidden bg-gray-100">
 			{/* Week Strip Header */}
-			<section className="flex flex-col shrink-0 bg-white shadow-sm z-10 dark:bg-[#1a1f2e]">
+			<section className="flex flex-col shrink-0 bg-white shadow-sm z-10">
 				{/* Month nav */}
 				<div data-tour="schedule-date-nav" className="flex items-center justify-between px-4 py-2.5">
 					<div className="flex items-center gap-1.5">
-						<button onClick={() => onDateChange(addDays(currentDate, -1))} className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 min-h-[44px] min-w-[44px] flex items-center justify-center">
+						<button onClick={() => onDateChange(addDays(currentDate, -1))} className="p-1.5 rounded-full hover:bg-gray-100 text-gray-500 min-h-[44px] min-w-[44px] flex items-center justify-center">
 							<ChevronLeft className="h-5 w-5" />
 						</button>
-						<h2 className="text-base font-bold text-gray-800 dark:text-white">
+						<h2 className="text-base font-bold text-gray-800">
 							{format(currentDate, 'MMM yyyy')}
 						</h2>
-						<button onClick={() => onDateChange(addDays(currentDate, 1))} className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 min-h-[44px] min-w-[44px] flex items-center justify-center">
+						<button onClick={() => onDateChange(addDays(currentDate, 1))} className="p-1.5 rounded-full hover:bg-gray-100 text-gray-500 min-h-[44px] min-w-[44px] flex items-center justify-center">
 							<ChevronRight className="h-5 w-5" />
 						</button>
 					</div>
@@ -218,7 +218,7 @@ export function MobileScheduleView({
 						{!isSameDay(currentDate, new Date()) && (
 							<button
 								onClick={() => onDateChange(new Date())}
-								className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full text-xs font-bold transition-all min-h-[36px]"
+								className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full text-xs font-bold transition-all min-h-[36px]"
 							>
 								Today
 							</button>
@@ -230,7 +230,7 @@ export function MobileScheduleView({
 				<div data-tour="schedule-week-strip" className="flex items-center px-1 pb-2">
 					<button
 						onClick={() => onDateChange(addDays(currentDate, -7))}
-						className="p-1.5 shrink-0 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 dark:text-gray-500 min-h-[44px] min-w-[44px] flex items-center justify-center"
+						className="p-1.5 shrink-0 rounded-full hover:bg-gray-100 text-gray-400 min-h-[44px] min-w-[44px] flex items-center justify-center"
 					>
 						<ChevronLeft className="h-4 w-4" />
 					</button>
@@ -246,13 +246,13 @@ export function MobileScheduleView({
 									'flex flex-col items-center gap-0.5 flex-1 snap-center transition min-w-[48px] min-h-[44px] py-1',
 									isSelected ? 'scale-105' : 'opacity-60 hover:opacity-100'
 								)}>
-									<span className={cn('text-[10px] uppercase leading-none', isSelected ? 'font-bold text-blue-500 dark:text-blue-400' : 'font-medium text-gray-400 dark:text-gray-500')}>
+									<span className={cn('text-[10px] uppercase leading-none', isSelected ? 'font-bold text-blue-500' : 'font-medium text-gray-400')}>
 										{format(day, 'EEE')}
 									</span>
 									<div className={cn(
 										'w-9 h-9 flex items-center justify-center rounded-full font-semibold text-sm relative',
-										isSelected ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30 font-bold' : 'text-gray-700 dark:text-gray-300',
-										isToday && !isSelected && 'ring-2 ring-blue-300 dark:ring-blue-600'
+										isSelected ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30 font-bold' : 'text-gray-700',
+										isToday && !isSelected && 'ring-2 ring-blue-300'
 									)}>
 										{format(day, 'd')}
 										{dayItemCount > 0 && !isSelected && (
@@ -272,7 +272,7 @@ export function MobileScheduleView({
 					</div>
 					<button
 						onClick={() => onDateChange(addDays(currentDate, 7))}
-						className="p-1.5 shrink-0 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 dark:text-gray-500 min-h-[44px] min-w-[44px] flex items-center justify-center"
+						className="p-1.5 shrink-0 rounded-full hover:bg-gray-100 text-gray-400 min-h-[44px] min-w-[44px] flex items-center justify-center"
 					>
 						<ChevronRight className="h-4 w-4" />
 					</button>
@@ -280,12 +280,12 @@ export function MobileScheduleView({
 
 				{/* L1: Collapsible Daily Frequency chart - hidden when no items */}
 				{dayItems.length > 0 && (
-					<div className="border-t border-gray-100 dark:border-gray-800">
+					<div className="border-t border-gray-100">
 						<button
 							onClick={() => setFreqOpen(!freqOpen)}
 							className="flex items-center justify-between w-full px-4 py-2 text-left"
 						>
-							<span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+							<span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
 								Daily Frequency
 							</span>
 							<div className="flex items-center gap-2">
@@ -309,9 +309,9 @@ export function MobileScheduleView({
 								<div className="flex items-end justify-between h-12 gap-[2px]">
 									{hourlyFreq.map((freq, hour) => {
 										const pct = maxFreq > 0 ? Math.max(5, (freq / maxFreq) * 100) : 5;
-										const color = pct > 60 ? 'bg-blue-500' : pct > 30 ? 'bg-blue-400 dark:bg-blue-600' : 'bg-blue-300 dark:bg-blue-700';
+										const color = pct > 60 ? 'bg-blue-500' : pct > 30 ? 'bg-blue-400' : 'bg-blue-300';
 										return (
-											<div key={hour} className="w-full bg-gray-100 dark:bg-gray-800 rounded-sm h-full flex items-end">
+											<div key={hour} className="w-full bg-gray-100 rounded-sm h-full flex items-end">
 												<div className={cn('w-full rounded-sm', color)} style={{ height: `${pct}%` }} />
 											</div>
 										);
@@ -327,7 +327,7 @@ export function MobileScheduleView({
 			</section>
 
 			{/* L3: Status filter chips - horizontally scrollable */}
-			<div data-tour="schedule-status-filters" className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-[#1a1f2e] border-t border-gray-100 dark:border-gray-800 overflow-x-auto scrollbar-hide">
+			<div data-tour="schedule-status-filters" className="flex items-center gap-2 px-4 py-2 bg-white border-t border-gray-100 overflow-x-auto scrollbar-hide">
 				{STATUS_FILTERS.map(({ key, label }) => {
 					const isActive = statusFilter === key;
 					const count = key === 'all' ? dayItems.length : dayItems.filter(i => i.publishingStatus === key).length;
@@ -339,7 +339,7 @@ export function MobileScheduleView({
 								'shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition min-h-[32px]',
 								isActive
 									? 'bg-blue-500 text-white shadow-sm'
-									: 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+									: 'bg-gray-100 text-gray-500 hover:bg-gray-200'
 							)}
 						>
 							{label}{count > 0 && ` (${count})`}
@@ -362,17 +362,17 @@ export function MobileScheduleView({
 							{[1, 2, 3].map((i) => (
 								<div key={i} className="flex gap-3 animate-pulse">
 									<div className="w-14 text-right pr-2 pt-2 shrink-0">
-										<div className="h-4 w-10 bg-gray-200 dark:bg-gray-700 rounded ml-auto" />
+										<div className="h-4 w-10 bg-gray-200 rounded ml-auto" />
 									</div>
-									<div className="flex-1 rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-[#1f2229] p-2.5 flex items-center gap-3">
-										<div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-200 dark:bg-gray-700 rounded-lg shrink-0" />
+									<div className="flex-1 rounded-xl border border-gray-100 bg-white p-2.5 flex items-center gap-3">
+										<div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-200 rounded-lg shrink-0" />
 										<div className="flex-1 space-y-2">
 											<div className="flex gap-2">
-												<div className="h-5 w-16 bg-gray-200 dark:bg-gray-700 rounded-md" />
-												<div className="h-5 w-20 bg-gray-200 dark:bg-gray-700 rounded-md" />
+												<div className="h-5 w-16 bg-gray-200 rounded-md" />
+												<div className="h-5 w-20 bg-gray-200 rounded-md" />
 											</div>
-											<div className="h-3 w-full bg-gray-100 dark:bg-gray-800 rounded" />
-											<div className="h-3 w-2/3 bg-gray-100 dark:bg-gray-800 rounded" />
+											<div className="h-3 w-full bg-gray-100 rounded" />
+											<div className="h-3 w-2/3 bg-gray-100 rounded" />
 										</div>
 									</div>
 								</div>
@@ -381,17 +381,17 @@ export function MobileScheduleView({
 					) : timeSlots.length === 0 && untimedItems.length === 0 ? (
 						/* L2: Compact empty state */
 						<div className="flex flex-col items-center justify-center py-12 px-6 text-center">
-							<div className="w-14 h-14 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-3">
-								<Calendar className="h-7 w-7 text-gray-300 dark:text-gray-600" />
+							<div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center mb-3">
+								<Calendar className="h-7 w-7 text-gray-300" />
 							</div>
-							<h3 className="text-base font-bold text-gray-700 dark:text-gray-300 mb-1">
+							<h3 className="text-base font-bold text-gray-700 mb-1">
 								{statusFilter !== 'all'
 									? `No ${statusFilter} posts`
 									: 'No posts scheduled'}
 							</h3>
 							{readyCount > 0 && onReadyClick ? (
 								<>
-									<p className="text-xs text-gray-400 dark:text-gray-500 mb-3">
+									<p className="text-xs text-gray-400 mb-3">
 										{readyCount} item{readyCount !== 1 ? 's' : ''} ready for {format(currentDate, 'MMM d')}
 									</p>
 									<button
@@ -403,7 +403,7 @@ export function MobileScheduleView({
 									</button>
 								</>
 							) : (
-								<p className="text-xs text-gray-400 dark:text-gray-500">
+								<p className="text-xs text-gray-400">
 									{statusFilter !== 'all'
 										? `No ${statusFilter} posts for ${format(currentDate, 'MMM d')}`
 										: `Tap Ready to add content`}
@@ -423,12 +423,12 @@ export function MobileScheduleView({
 							return (
 								<div key={slotKey} className="flex group min-h-[80px] mb-1.5">
 									{/* Time label */}
-									<div className="w-14 text-right pr-2 pt-2 text-[11px] font-medium text-gray-400 dark:text-gray-500 shrink-0">
-										<div className="font-bold text-gray-700 dark:text-gray-300">{slot.label}</div>
+									<div className="w-14 text-right pr-2 pt-2 text-[11px] font-medium text-gray-400 shrink-0">
+										<div className="font-bold text-gray-700">{slot.label}</div>
 									</div>
 									{/* Cards */}
 									<div className="flex-1 min-w-0 pr-4 pb-2 border-l-2 border-transparent border-dashed pl-4 relative">
-										<div className="absolute left-0 top-0 bottom-0 w-px bg-gray-200 dark:bg-gray-800 ml-[-1px]" />
+										<div className="absolute left-0 top-0 bottom-0 w-px bg-gray-200 ml-[-1px]" />
 										<div className="flex flex-col gap-2">
 											{visibleItems.map((item) => (
 												<TimelineCard
@@ -469,7 +469,7 @@ export function MobileScheduleView({
 					{untimedItems.length > 0 && (
 						<div className="px-4 mt-2">
 							{timeSlots.length > 0 && (
-								<div className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">
+								<div className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-2">
 									No scheduled time
 								</div>
 							)}
@@ -529,16 +529,16 @@ export function MobileScheduleView({
 					>
 						<div className="absolute inset-0 bg-black/40" />
 						<div
-							className="absolute bottom-0 left-0 right-0 max-w-lg mx-auto rounded-t-2xl bg-white dark:bg-[#1a1f2e] shadow-2xl animate-in slide-in-from-bottom duration-200"
+							className="absolute bottom-0 left-0 right-0 max-w-lg mx-auto rounded-t-2xl bg-white shadow-2xl animate-in slide-in-from-bottom duration-200"
 							onClick={(e) => e.stopPropagation()}
 						>
 							{/* Handle */}
 							<div className="flex justify-center pt-3 pb-1">
-								<div className="h-1 w-10 rounded-full bg-gray-300 dark:bg-slate-600" />
+								<div className="h-1 w-10 rounded-full bg-gray-300" />
 							</div>
 							{/* Item preview */}
 							<div className="flex items-center gap-3 px-5 pb-3">
-								<div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-700">
+								<div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-gray-100">
 									{menuItem.mediaUrl ? (
 										<Image
 											src={menuItem.mediaUrl}
@@ -556,8 +556,8 @@ export function MobileScheduleView({
 									)}
 								</div>
 								<div className="min-w-0 flex-1">
-									<p className="text-sm font-bold text-gray-900 dark:text-white truncate">{menuTitle}</p>
-									<p className="text-xs text-gray-500 dark:text-gray-400">{menuTime}</p>
+									<p className="text-sm font-bold text-gray-900 truncate">{menuTitle}</p>
+									<p className="text-xs text-gray-500">{menuTime}</p>
 								</div>
 							</div>
 							{/* Actions - context-aware for failed vs scheduled */}
@@ -570,7 +570,7 @@ export function MobileScheduleView({
 										/>
 										<button
 											onClick={() => { setMenuOpen(null); onItemClick?.(menuItem); }}
-											className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-50 dark:bg-slate-800 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700 transition active:scale-[0.98] min-h-[48px]"
+											className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-50 text-sm font-semibold text-gray-700 hover:bg-gray-100 transition active:scale-[0.98] min-h-[48px]"
 										>
 											<Clock className="h-5 w-5 text-blue-500" />
 											View Details
@@ -584,7 +584,7 @@ export function MobileScheduleView({
 									<>
 										<button
 											onClick={() => { setMenuOpen(null); onItemClick?.(menuItem); }}
-											className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-50 dark:bg-slate-800 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700 transition active:scale-[0.98] min-h-[48px]"
+											className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-50 text-sm font-semibold text-gray-700 hover:bg-gray-100 transition active:scale-[0.98] min-h-[48px]"
 										>
 											<Clock className="h-5 w-5 text-blue-500" />
 											Reschedule
@@ -600,7 +600,7 @@ export function MobileScheduleView({
 							<div className="px-5 pt-1 pb-24">
 								<button
 									onClick={() => setMenuOpen(null)}
-									className="w-full py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-semibold text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 transition active:scale-[0.98] min-h-[48px]"
+									className="w-full py-3 rounded-xl border border-gray-200 bg-white text-sm font-semibold text-gray-500 hover:bg-gray-50 transition active:scale-[0.98] min-h-[48px]"
 								>
 									Close
 								</button>
@@ -638,7 +638,7 @@ function ActionSheetRetryButton({ itemId, onDone }: { itemId: string; onDone: ()
 		<button
 			onClick={handleRetry}
 			disabled={loading}
-			className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-orange-50 dark:bg-orange-900/10 text-sm font-semibold text-orange-600 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-900/20 transition active:scale-[0.98] min-h-[48px] disabled:opacity-50"
+			className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-orange-50 text-sm font-semibold text-orange-600 hover:bg-orange-100 transition active:scale-[0.98] min-h-[48px] disabled:opacity-50"
 		>
 			{loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <RefreshCw className="h-5 w-5" />}
 			Retry Post
@@ -669,7 +669,7 @@ function ActionSheetDeleteButton({ itemId, onDone }: { itemId: string; onDone: (
 		<button
 			onClick={handleDelete}
 			disabled={loading}
-			className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-50 dark:bg-slate-800 text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition active:scale-[0.98] min-h-[48px] disabled:opacity-50"
+			className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-50 text-sm font-semibold text-red-600 hover:bg-red-50 transition active:scale-[0.98] min-h-[48px] disabled:opacity-50"
 		>
 			{loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Trash2 className="h-5 w-5" />}
 			Delete Post
@@ -727,8 +727,8 @@ function TimelineCard({ item, onClick, onRefresh, menuOpen, onMenuToggle, onItem
 				'max-w-full rounded-xl shadow-sm border p-2 flex items-center gap-2.5 overflow-hidden cursor-pointer transition active:scale-[0.98] relative',
 				// V2: Failed cards get red background
 				isFailed
-					? 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-900/30'
-					: 'bg-white dark:bg-[#1f2229] border-gray-100 dark:border-gray-800'
+					? 'bg-red-50 border-red-200'
+					: 'bg-white border-gray-100'
 			)}
 		>
 			{/* Red left stripe for failed */}
@@ -736,7 +736,7 @@ function TimelineCard({ item, onClick, onRefresh, menuOpen, onMenuToggle, onItem
 
 			{/* Responsive thumbnail: 64px on small, 80px on sm+ */}
 			<div className={cn(
-				'w-16 h-16 sm:w-20 sm:h-20 bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden shrink-0 relative',
+				'w-16 h-16 sm:w-20 sm:h-20 bg-gray-200 rounded-lg overflow-hidden shrink-0 relative',
 				isFailed && 'ml-1'
 			)}>
 				{item.mediaUrl && !imgError ? (
@@ -776,8 +776,8 @@ function TimelineCard({ item, onClick, onRefresh, menuOpen, onMenuToggle, onItem
 						<span className={cn(
 							'text-[11px] font-mono font-semibold px-1.5 py-0.5 rounded shrink-0',
 							isFailed
-								? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20'
-								: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
+								? 'text-red-600 bg-red-50'
+								: 'text-blue-600 bg-blue-50'
 						)}>
 							{time}
 						</span>
@@ -785,10 +785,10 @@ function TimelineCard({ item, onClick, onRefresh, menuOpen, onMenuToggle, onItem
 					{/* Compact status pill */}
 					<span className={cn(
 						'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide shrink-0',
-						item.publishingStatus === 'published' && 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400',
-						item.publishingStatus === 'failed' && 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400',
-						item.publishingStatus === 'processing' && 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400',
-						item.publishingStatus === 'scheduled' && 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400',
+						item.publishingStatus === 'published' && 'bg-emerald-50 text-emerald-600',
+						item.publishingStatus === 'failed' && 'bg-red-50 text-red-600',
+						item.publishingStatus === 'processing' && 'bg-amber-50 text-amber-600',
+						item.publishingStatus === 'scheduled' && 'bg-blue-50 text-blue-600',
 					)}>
 						<span className={cn(
 							'w-1.5 h-1.5 rounded-full',
@@ -799,20 +799,20 @@ function TimelineCard({ item, onClick, onRefresh, menuOpen, onMenuToggle, onItem
 						)} />
 						{item.publishingStatus}
 						{isFailed && item.retryCount !== undefined && item.retryCount > 0 && (
-							<span className="text-red-400 dark:text-red-500">
+							<span className="text-red-400">
 								\u00b7 {item.retryCount}x
 							</span>
 						)}
 					</span>
 				</div>
 				{/* C5: line-clamp-2 title */}
-				<h3 className="text-[13px] font-semibold text-gray-900 dark:text-white line-clamp-2 min-w-0 leading-snug mb-0.5">
+				<h3 className="text-[13px] font-semibold text-gray-900 line-clamp-2 min-w-0 leading-snug mb-0.5">
 					{displayTitle}
 				</h3>
 				{/* B1: Error text or subtitle */}
 				<p className={cn(
 					'text-[11px] truncate max-w-full',
-					isFailed ? 'text-red-500 dark:text-red-400' : 'text-gray-400 dark:text-gray-500'
+					isFailed ? 'text-red-500' : 'text-gray-400'
 				)}>
 					{isFailed ? friendlyError(item.error || 'Publishing failed') : (item.mediaType === 'VIDEO' ? 'Video story' : 'Image story')}
 				</p>
@@ -825,7 +825,7 @@ function TimelineCard({ item, onClick, onRefresh, menuOpen, onMenuToggle, onItem
 					<button
 						onClick={handleRetry}
 						disabled={isRetrying}
-						className="text-orange-500 dark:text-orange-400 hover:text-orange-600 dark:hover:text-orange-300 min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-50"
+						className="text-orange-500 hover:text-orange-600 min-h-[44px] min-w-[44px] flex items-center justify-center disabled:opacity-50"
 						title="Retry"
 					>
 						{isRetrying ? (
@@ -842,7 +842,7 @@ function TimelineCard({ item, onClick, onRefresh, menuOpen, onMenuToggle, onItem
 							e.stopPropagation();
 							onMenuToggle(item.id);
 						}}
-						className="text-gray-400 dark:text-gray-600 hover:text-gray-600 dark:hover:text-gray-300 min-h-[44px] min-w-[44px] flex items-center justify-center"
+						className="text-gray-400 hover:text-gray-600 min-h-[44px] min-w-[44px] flex items-center justify-center"
 					>
 						<MoreHorizontal className="h-5 w-5" />
 					</button>

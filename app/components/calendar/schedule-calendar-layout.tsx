@@ -259,7 +259,7 @@ export function ScheduleCalendarLayout() {
 	if (isMobile) {
 		return (
 			<>
-				<div className="flex h-[calc(100vh-4rem)] w-full overflow-hidden text-gray-900 dark:text-slate-100">
+				<div className="flex h-[calc(100vh-4rem)] w-full overflow-hidden text-gray-900">
 					{/* Tour replay button - fixed position */}
 					<div className="fixed top-3 right-3 z-30">
 						<TourTriggerButton onStartTour={startScheduleTour} />
@@ -315,7 +315,7 @@ export function ScheduleCalendarLayout() {
 	// Desktop: existing layout
 	return (
 		<DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-			<div className="flex h-[calc(100vh-4rem)] w-full overflow-hidden bg-gray-50 text-gray-900 dark:bg-[#101622] dark:text-slate-100">
+			<div className="flex h-[calc(100vh-4rem)] w-full overflow-hidden bg-gray-50 text-gray-900">
 				{/* Main Content Area */}
 				<main className="flex flex-1 flex-col overflow-hidden">
 					{/* Top Header */}
@@ -359,7 +359,7 @@ export function ScheduleCalendarLayout() {
 						)}
 
 						{scheduleViewType === 'timeline' && (
-							<div className="flex-1 overflow-auto bg-gray-50 p-4 dark:bg-[#070b13]">
+							<div className="flex-1 overflow-auto bg-gray-50 p-4">
 								<TimelineLayout
 									groups={timelineGroups}
 									onPostClick={() => {}}
@@ -418,7 +418,7 @@ export function ScheduleCalendarLayout() {
 								className="absolute inset-0 bg-black/50"
 								onClick={() => setShowMobileSidebar(false)}
 							/>
-							<div className="absolute right-0 top-0 bottom-0 w-full max-w-sm bg-white dark:bg-[#101622]">
+							<div className="absolute right-0 top-0 bottom-0 w-full max-w-sm bg-white">
 								<ReadyToScheduleSidebar
 									items={readyItems}
 									onOpenPreview={(item) => {
@@ -433,7 +433,7 @@ export function ScheduleCalendarLayout() {
 					)}
 
 					{/* Footer Legend */}
-					<footer className="flex items-center justify-between border-t border-gray-200 bg-gray-100 px-3 py-2 text-[10px] text-gray-500 lg:px-6 dark:border-slate-800 dark:bg-[#0d1421] dark:text-slate-500">
+					<footer className="flex items-center justify-between border-t border-gray-200 bg-gray-100 px-3 py-2 text-[10px] text-gray-500 lg:px-6">
 						<div className="flex gap-3 lg:gap-6">
 							<div className="flex items-center gap-1.5 lg:gap-2">
 								<span className="h-2 w-2 rounded-full bg-[#2b6cee]" />
@@ -454,7 +454,7 @@ export function ScheduleCalendarLayout() {
 						</div>
 						<div className="font-medium">
 							Total Scheduled:{' '}
-							<span className="text-gray-900 dark:text-white">{totalScheduled}</span>
+							<span className="text-gray-900">{totalScheduled}</span>
 						</div>
 					</footer>
 				</main>

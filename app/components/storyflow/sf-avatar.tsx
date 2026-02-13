@@ -53,9 +53,9 @@ export function SfAvatar({
 		<div className={cn('relative inline-flex', className)}>
 			<div className={cn(
 				'overflow-hidden rounded-full flex items-center justify-center font-medium',
-				'bg-slate-200 dark:bg-[var(--sf-border-dark)] text-slate-600 dark:text-[var(--sf-text-secondary)]',
+				'bg-slate-200 text-slate-600',
 				sizeClasses[size],
-				ring && [ringClasses[size], ringColor, 'ring-offset-white dark:ring-offset-[var(--sf-bg-dark)]']
+				ring && [ringClasses[size], ringColor, 'ring-offset-white']
 			)}>
 				{showImage ? (
 					<img src={src} alt={alt} className="h-full w-full object-cover" onError={() => setHasError(true)} />
@@ -64,7 +64,7 @@ export function SfAvatar({
 				)}
 			</div>
 			{showStatus && (
-				<span className={cn('absolute rounded-full border-2 border-white dark:border-[var(--sf-bg-dark)]', statusSizeClasses[size], statusColorClasses[status])} />
+				<span className={cn('absolute rounded-full border-2 border-white', statusSizeClasses[size], statusColorClasses[status])} />
 			)}
 		</div>
 	);
@@ -84,13 +84,13 @@ export function SfAvatarGroup({ avatars, max = 4, size = 'sm', className }: SfAv
 	return (
 		<div className={cn('flex -space-x-2', className)}>
 			{visibleAvatars.map((avatar, index) => (
-				<SfAvatar key={index} {...avatar} size={size} ring ringColor="ring-white dark:ring-[var(--sf-card-dark)]" />
+				<SfAvatar key={index} {...avatar} size={size} ring ringColor="ring-white" />
 			))}
 			{remainingCount > 0 && (
 				<div className={cn(
 					'flex items-center justify-center rounded-full font-medium',
-					'bg-slate-100 dark:bg-[var(--sf-border-dark)] text-slate-600 dark:text-[var(--sf-text-secondary)]',
-					'ring-2 ring-white dark:ring-[var(--sf-card-dark)]',
+					'bg-slate-100 text-slate-600',
+					'ring-2 ring-white',
 					sizeClasses[size]
 				)}>
 					+{remainingCount}

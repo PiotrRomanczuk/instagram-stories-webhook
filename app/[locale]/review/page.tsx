@@ -19,7 +19,7 @@ export default async function ReviewPage() {
 	}
 
 	return (
-		<main className="min-h-screen bg-gray-50 dark:bg-[#101622]">
+		<main className="min-h-screen bg-gray-50">
 			<StoryflowReviewLayout />
 		</main>
 	);

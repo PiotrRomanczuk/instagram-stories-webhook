@@ -228,12 +228,12 @@ export function SettingsFormNew() {
 		<div className="space-y-6">
 			{/* Configuration Required Alert */}
 			{!hasConfig && (
-				<Alert variant="default" className="border-amber-200 bg-amber-50 dark:bg-amber-950/20">
+				<Alert variant="default" className="border-amber-200 bg-amber-50">
 					<AlertCircle className="h-4 w-4 text-amber-600" />
-					<AlertTitle className="text-amber-800 dark:text-amber-100">
+					<AlertTitle className="text-amber-800">
 						Configuration Required
 					</AlertTitle>
-					<AlertDescription className="text-amber-700 dark:text-amber-300">
+					<AlertDescription className="text-amber-700">
 						Please fill in all the required fields below to complete the
 						application setup.
 					</AlertDescription>
@@ -244,8 +244,8 @@ export function SettingsFormNew() {
 			<Card>
 				<CardHeader>
 					<div className="flex items-center gap-3">
-						<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30">
-							<Globe className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+						<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
+							<Globe className="h-5 w-5 text-blue-600" />
 						</div>
 						<div>
 							<CardTitle>Application Settings</CardTitle>
@@ -277,8 +277,8 @@ export function SettingsFormNew() {
 			<Card>
 				<CardHeader>
 					<div className="flex items-center gap-3">
-						<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900/30">
-							<Key className="h-5 w-5 text-red-600 dark:text-red-400" />
+						<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-100">
+							<Key className="h-5 w-5 text-red-600" />
 						</div>
 						<div>
 							<CardTitle>Google OAuth</CardTitle>
@@ -310,8 +310,8 @@ export function SettingsFormNew() {
 			<Card>
 				<CardHeader>
 					<div className="flex items-center gap-3">
-						<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-900/30">
-							<Key className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+						<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100">
+							<Key className="h-5 w-5 text-indigo-600" />
 						</div>
 						<div>
 							<CardTitle>Meta / Facebook</CardTitle>
@@ -343,8 +343,8 @@ export function SettingsFormNew() {
 			<Card>
 				<CardHeader>
 					<div className="flex items-center gap-3">
-						<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
-							<Database className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+						<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100">
+							<Database className="h-5 w-5 text-emerald-600" />
 						</div>
 						<div>
 							<CardTitle>Supabase Database</CardTitle>
@@ -408,8 +408,8 @@ export function SettingsFormNew() {
 				<CardHeader>
 					<div className="flex items-center justify-between">
 						<div className="flex items-center gap-3">
-							<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100 dark:bg-purple-900/30">
-								<Shield className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+							<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100">
+								<Shield className="h-5 w-5 text-purple-600" />
 							</div>
 							<div>
 								<CardTitle>Security Secrets</CardTitle>
@@ -476,7 +476,7 @@ export function SettingsFormNew() {
 							{saveStatus === 'success' && (
 								<>
 									<CheckCircle2 className="h-5 w-5 text-green-500" />
-									<span className="font-medium text-green-600 dark:text-green-400">
+									<span className="font-medium text-green-600">
 										Configuration saved successfully!
 									</span>
 								</>

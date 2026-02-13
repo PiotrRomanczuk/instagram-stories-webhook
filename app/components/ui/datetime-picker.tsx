@@ -208,29 +208,29 @@ export function DateTimePicker({ value, onChange, minDate, hideQuickPicks, hourl
                 <button
                     type="button"
                     onClick={() => setIsOpen(!isOpen)}
-                    className="w-full px-4 py-2 text-sm rounded-xl border border-gray-200 bg-white text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white focus:border-[#2b6cee] outline-none transition text-left flex items-center justify-between group hover:border-[#2b6cee]/50"
+                    className="w-full px-4 py-2 text-sm rounded-xl border border-gray-200 bg-white text-gray-900 focus:border-[#2b6cee] outline-none transition text-left flex items-center justify-between group hover:border-[#2b6cee]/50"
                 >
                     <span className="flex items-center gap-2 truncate">
-                        <Clock className="w-4 h-4 flex-shrink-0 text-gray-400 group-hover:text-[#2b6cee] dark:text-slate-500" />
+                        <Clock className="w-4 h-4 flex-shrink-0 text-gray-400 group-hover:text-[#2b6cee]" />
                         <span className="truncate">{formatDateTime(value)}</span>
                     </span>
-                    <X className="w-4 h-4 text-gray-400 dark:text-slate-500" />
+                    <X className="w-4 h-4 text-gray-400" />
                 </button>
 
                 {/* Mobile bottom sheet style picker */}
                 <div className="fixed inset-0 z-50">
                     <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsOpen(false)} />
-                    <div className="absolute bottom-0 left-0 right-0 rounded-t-3xl bg-white shadow-2xl dark:bg-[#1a1f2e]">
+                    <div className="absolute bottom-0 left-0 right-0 rounded-t-3xl bg-white shadow-2xl">
                         {/* Handle */}
                         <div className="flex justify-center pt-2 pb-3">
-                            <div className="h-1 w-12 rounded-full bg-gray-300 dark:bg-slate-600" />
+                            <div className="h-1 w-12 rounded-full bg-gray-300" />
                         </div>
 
                         {/* Best Times Chips */}
                         <div className="px-4 pb-3">
                             <div className="mb-2 flex items-center gap-1.5">
                                 <Sparkles className="h-3.5 w-3.5 text-[#2b6cee]" />
-                                <span className="text-xs font-semibold text-gray-600 dark:text-slate-400">Best Times</span>
+                                <span className="text-xs font-semibold text-gray-600">Best Times</span>
                             </div>
                             <div className="flex gap-2">
                                 {BEST_TIMES.map((time) => (
@@ -242,7 +242,7 @@ export function DateTimePicker({ value, onChange, minDate, hideQuickPicks, hourl
                                             'rounded-full px-3 py-1.5 text-xs font-semibold transition-all',
                                             value.getHours() === time.hours && value.getMinutes() === time.minutes
                                                 ? 'bg-[#2b6cee] text-white'
-                                                : 'bg-[#2b6cee]/10 text-[#2b6cee] hover:bg-[#2b6cee]/20 dark:bg-[#2b6cee]/20 dark:hover:bg-[#2b6cee]/30'
+                                                : 'bg-[#2b6cee]/10 text-[#2b6cee] hover:bg-[#2b6cee]/20'
                                         )}
                                     >
                                         {time.label}
@@ -304,7 +304,7 @@ export function DateTimePicker({ value, onChange, minDate, hideQuickPicks, hourl
                                         setIsOpen(false);
                                         onPreview();
                                     }}
-                                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white py-3.5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700"
+                                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white py-3.5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50"
                                 >
                                     <Eye className="h-4 w-4" />
                                     Preview Story
@@ -336,17 +336,17 @@ export function DateTimePicker({ value, onChange, minDate, hideQuickPicks, hourl
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className="w-full px-4 py-2 text-sm rounded-xl border border-gray-200 bg-white text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-white focus:border-[#2b6cee] outline-none transition text-left flex items-center justify-between group hover:border-[#2b6cee]/50"
+                className="w-full px-4 py-2 text-sm rounded-xl border border-gray-200 bg-white text-gray-900 focus:border-[#2b6cee] outline-none transition text-left flex items-center justify-between group hover:border-[#2b6cee]/50"
             >
                 <span className="flex items-center gap-2 truncate">
-                    <Clock className="w-4 h-4 flex-shrink-0 text-gray-400 group-hover:text-[#2b6cee] dark:text-slate-500" />
+                    <Clock className="w-4 h-4 flex-shrink-0 text-gray-400 group-hover:text-[#2b6cee]" />
                     <span className="truncate">{formatDateTime(value)}</span>
                 </span>
-                {isOpen && <X className="w-4 h-4 text-gray-400 dark:text-slate-500" />}
+                {isOpen && <X className="w-4 h-4 text-gray-400" />}
             </button>
 
             {isOpen && (
-                <div className="absolute top-full left-0 z-50 mt-2 bg-white dark:bg-[#1a1f2e] border border-gray-200 dark:border-slate-700 rounded-xl shadow-xl p-4 w-full md:w-96">
+                <div className="absolute top-full left-0 z-50 mt-2 bg-white border border-gray-200 rounded-xl shadow-xl p-4 w-full md:w-96">
                     {/* Quick Picks */}
                     {!hideQuickPicks && (
                         <div className="grid grid-cols-2 gap-2 mb-4">
@@ -355,7 +355,7 @@ export function DateTimePicker({ value, onChange, minDate, hideQuickPicks, hourl
                                     key={option.label}
                                     type="button"
                                     onClick={() => handleQuickPick(option.getDate)}
-                                    className="px-3 py-2 text-xs font-bold bg-[#2b6cee]/10 text-[#2b6cee] rounded-lg hover:bg-[#2b6cee]/20 transition border border-[#2b6cee]/20 dark:bg-[#2b6cee]/20 dark:hover:bg-[#2b6cee]/30 dark:border-[#2b6cee]/30"
+                                    className="px-3 py-2 text-xs font-bold bg-[#2b6cee]/10 text-[#2b6cee] rounded-lg hover:bg-[#2b6cee]/20 transition border border-[#2b6cee]/20"
                                 >
                                     {option.label}
                                 </button>
@@ -363,32 +363,32 @@ export function DateTimePicker({ value, onChange, minDate, hideQuickPicks, hourl
                         </div>
                     )}
 
-                    <div className={hideQuickPicks ? '' : 'border-t border-gray-200 dark:border-slate-700 pt-4'}>
+                    <div className={hideQuickPicks ? '' : 'border-t border-gray-200 pt-4'}>
                         {/* Month/Year Navigation */}
                         <div className="flex items-center justify-between mb-4">
                             <button
                                 type="button"
                                 onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}
-                                className="p-1 hover:bg-gray-100 dark:hover:bg-slate-800 rounded transition"
+                                className="p-1 hover:bg-gray-100 rounded transition"
                             >
-                                <ChevronLeft className="w-4 h-4 text-gray-600 dark:text-slate-400" />
+                                <ChevronLeft className="w-4 h-4 text-gray-600" />
                             </button>
-                            <span className="text-sm font-bold text-gray-700 dark:text-white">
+                            <span className="text-sm font-bold text-gray-700">
                                 {currentMonth.toLocaleDateString([], { month: 'long', year: 'numeric' })}
                             </span>
                             <button
                                 type="button"
                                 onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}
-                                className="p-1 hover:bg-gray-100 dark:hover:bg-slate-800 rounded transition"
+                                className="p-1 hover:bg-gray-100 rounded transition"
                             >
-                                <ChevronRight className="w-4 h-4 text-gray-600 dark:text-slate-400" />
+                                <ChevronRight className="w-4 h-4 text-gray-600" />
                             </button>
                         </div>
 
                         {/* Calendar Grid */}
                         <div className="grid grid-cols-7 gap-1 mb-4">
                             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                                <div key={day} className="text-center text-xs font-bold text-gray-500 dark:text-slate-400 py-2">
+                                <div key={day} className="text-center text-xs font-bold text-gray-500 py-2">
                                     {day}
                                 </div>
                             ))}
@@ -404,10 +404,10 @@ export function DateTimePicker({ value, onChange, minDate, hideQuickPicks, hourl
                                         day === value.getDate() && currentMonth.getMonth() === value.getMonth() && currentMonth.getFullYear() === value.getFullYear()
                                             ? 'bg-[#2b6cee] text-white'
                                             : day
-                                                ? 'text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800'
+                                                ? 'text-gray-700 hover:bg-gray-100'
                                                 : '',
                                         day && new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day) < (minDate || new Date())
-                                            && 'text-gray-300 dark:text-slate-600 cursor-not-allowed hover:bg-transparent dark:hover:bg-transparent'
+                                            && 'text-gray-300 cursor-not-allowed hover:bg-transparent'
                                     )}
                                 >
                                     {day}
@@ -416,13 +416,13 @@ export function DateTimePicker({ value, onChange, minDate, hideQuickPicks, hourl
                         </div>
 
                         {/* Time Picker */}
-                        <div className="border-t border-gray-200 dark:border-slate-700 pt-4">
-                            <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-2 uppercase">Time</label>
+                        <div className="border-t border-gray-200 pt-4">
+                            <label className="block text-xs font-bold text-gray-700 mb-2 uppercase">Time</label>
                             <div className="flex gap-2">
                                 <select
                                     value={String(value.getHours()).padStart(2, '0')}
                                     onChange={(e) => handleTimeChange(parseInt(e.target.value), value.getMinutes())}
-                                    className="flex-1 min-h-[44px] px-2 py-2 text-xs font-bold rounded-lg border border-gray-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white focus:border-[#2b6cee] outline-none"
+                                    className="flex-1 min-h-[44px] px-2 py-2 text-xs font-bold rounded-lg border border-gray-200 focus:border-[#2b6cee] outline-none"
                                 >
                                     {Array.from({ length: 24 }, (_, i) => (
                                         <option key={i} value={String(i).padStart(2, '0')}>
@@ -434,7 +434,7 @@ export function DateTimePicker({ value, onChange, minDate, hideQuickPicks, hourl
                                 <select
                                     value={String(value.getMinutes()).padStart(2, '0')}
                                     onChange={(e) => handleTimeChange(value.getHours(), parseInt(e.target.value))}
-                                    className="flex-1 min-h-[44px] px-2 py-2 text-xs font-bold rounded-lg border border-gray-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white focus:border-[#2b6cee] outline-none"
+                                    className="flex-1 min-h-[44px] px-2 py-2 text-xs font-bold rounded-lg border border-gray-200 focus:border-[#2b6cee] outline-none"
                                 >
                                     {Array.from({ length: 60 }, (_, m) => (
                                         <option key={m} value={String(m).padStart(2, '0')}>

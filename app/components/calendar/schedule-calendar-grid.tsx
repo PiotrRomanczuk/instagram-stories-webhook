@@ -102,7 +102,7 @@ function TimeBlock({ day, hour, blockIndex, startMinute, granularity, blockHeigh
 			className={cn(
 				'relative transition-colors',
 				isOver && 'bg-[#2b6cee]/10 ring-1 ring-inset ring-[#2b6cee]/50',
-				'hover:bg-gray-50/50 dark:hover:bg-slate-800/20'
+				'hover:bg-gray-50/50'
 			)}
 			style={{ height: `${blockHeight}px` }}
 		>
@@ -142,7 +142,7 @@ function TimeBlock({ day, hour, blockIndex, startMinute, granularity, blockHeigh
 									className={cn(
 										'flex items-center justify-center rounded border border-dashed px-1',
 										'border-gray-300 bg-gray-50 text-gray-600 hover:border-[#2b6cee] hover:text-[#2b6cee]',
-										'dark:border-slate-600 dark:bg-slate-800 dark:text-slate-400',
+										'',
 										'text-[9px] font-bold transition-colors'
 									)}
 								>
@@ -154,7 +154,7 @@ function TimeBlock({ day, hour, blockIndex, startMinute, granularity, blockHeigh
 								side="right"
 								className="max-h-60 w-56 overflow-y-auto p-2"
 							>
-								<div className="mb-2 text-xs font-semibold text-gray-600 dark:text-slate-400">
+								<div className="mb-2 text-xs font-semibold text-gray-600">
 									{formatTimeLabel()} - {sortedItems.length} items
 								</div>
 								<div className="flex flex-col gap-2">
@@ -193,17 +193,17 @@ function HourRow({ day, hour, items, onItemClick, granularity, blocksPerHour, bl
 	return (
 		<div className="flex" style={{ height: `${hourHeight}px` }}>
 			{/* Time label */}
-			<div className="flex w-12 sm:w-16 flex-shrink-0 flex-col items-center justify-start border-r border-gray-200 bg-white pt-1 dark:border-slate-800 dark:bg-transparent">
-				<span className="text-[11px] font-medium text-gray-500 dark:text-slate-400">
+			<div className="flex w-12 sm:w-16 flex-shrink-0 flex-col items-center justify-start border-r border-gray-200 bg-white pt-1">
+				<span className="text-[11px] font-medium text-gray-500">
 					{hour === 12 ? '12' : hour < 12 ? hour : hour - 12}
 				</span>
-				<span className="text-[8px] text-gray-400 dark:text-slate-500">
+				<span className="text-[8px] text-gray-400">
 					{hour < 12 ? 'AM' : 'PM'}
 				</span>
 			</div>
 
 			{/* Time blocks based on granularity */}
-			<div className="flex flex-1 flex-col border-r border-gray-200/50 dark:border-slate-800/50">
+			<div className="flex flex-1 flex-col border-r border-gray-200/50">
 				{Array.from({ length: blocksPerHour }, (_, blockIndex) => {
 					const startMinute = blockIndex * granularity;
 					return (
@@ -303,13 +303,13 @@ export function ScheduleCalendarGrid({
 	return (
 		<div
 			ref={containerRef}
-			className="flex-1 overflow-auto bg-gray-50 custom-scrollbar dark:bg-[#070b13]"
+			className="flex-1 overflow-auto bg-gray-50 custom-scrollbar"
 		>
 			<div className="min-w-0">
 				{/* Header */}
-				<div className="sticky top-0 z-30 flex h-12 border-b border-gray-200 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-[#101622]/95">
+				<div className="sticky top-0 z-30 flex h-12 border-b border-gray-200 bg-white/95 backdrop-blur">
 					{/* Timezone */}
-					<div className="flex w-12 sm:w-16 flex-shrink-0 items-center justify-center border-r border-gray-200 text-[10px] font-bold text-gray-500 dark:border-slate-800 dark:text-slate-400">
+					<div className="flex w-12 sm:w-16 flex-shrink-0 items-center justify-center border-r border-gray-200 text-[10px] font-bold text-gray-500">
 						{Intl.DateTimeFormat().resolvedOptions().timeZone.split('/')[1] || 'Local'}
 					</div>
 
@@ -323,7 +323,7 @@ export function ScheduleCalendarGrid({
 						<span
 							className={cn(
 								'text-[10px] font-bold uppercase',
-								today ? 'text-[#2b6cee]' : 'text-gray-500 dark:text-slate-500'
+								today ? 'text-[#2b6cee]' : 'text-gray-500'
 							)}
 						>
 							{format(currentDate, 'EEEE')}
@@ -331,7 +331,7 @@ export function ScheduleCalendarGrid({
 						<span
 							className={cn(
 								'text-sm font-bold',
-								today ? 'text-[#2b6cee]' : 'text-gray-900 dark:text-white'
+								today ? 'text-[#2b6cee]' : 'text-gray-900'
 							)}
 						>
 							{format(currentDate, 'd')}

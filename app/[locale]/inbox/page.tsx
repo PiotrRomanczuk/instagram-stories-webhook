@@ -21,7 +21,7 @@ export default async function InboxPage() {
 	}
 
 	return (
-		<main className="min-h-screen bg-gray-50 dark:bg-[#101622]">
+		<main className="min-h-screen bg-gray-50">
 			<div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
 				<div className="space-y-6">
 					<PageHeader
@@ -32,8 +32,8 @@ export default async function InboxPage() {
 
 					<InboxManagerNew />
 
-					<footer className="pt-8 border-t border-gray-200 dark:border-[#232f48] text-center">
-						<p className="text-sm text-gray-500 dark:text-[#92a4c9]">
+					<footer className="pt-8 border-t border-gray-200 text-center">
+						<p className="text-sm text-gray-500">
 							Rate Limit: 200 messages/hour &middot; Instagram Messaging API v21.0
 						</p>
 					</footer>

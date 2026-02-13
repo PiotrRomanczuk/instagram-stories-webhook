@@ -12,7 +12,7 @@ export default async function SubmitPage() {
 	}
 
 	return (
-		<main className="min-h-screen bg-gray-50 dark:bg-[#101622]">
+		<main className="min-h-screen bg-gray-50">
 			<div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
 				<PageHeader
 					title="Submit for Review"

@@ -68,11 +68,11 @@ export function KanbanCard({ item, onPreview, onEdit, status }: KanbanCardProps)
 
 	// Card styling based on status
 	const cardStyles: Record<PublishingStatus, string> = {
-		draft: 'bg-white dark:bg-[#1a2234] border-gray-200 dark:border-[#2d3a54] hover:border-[#2b6cee]',
-		scheduled: 'border-[#2b6cee]/40 bg-blue-50 dark:bg-[#2b6cee]/5 hover:border-[#2b6cee]',
-		processing: 'bg-white dark:bg-[#1a2234] border-gray-200 dark:border-[#2d3a54]',
-		published: 'bg-white dark:bg-[#1a2234] border-gray-200 dark:border-[#2d3a54] hover:border-emerald-500/50',
-		failed: 'bg-red-50 dark:bg-red-500/5 border-red-200 dark:border-red-500/20',
+		draft: 'bg-white border-gray-200 hover:border-[#2b6cee]',
+		scheduled: 'border-[#2b6cee]/40 bg-blue-50 hover:border-[#2b6cee]',
+		processing: 'bg-white border-gray-200',
+		published: 'bg-white border-gray-200 hover:border-emerald-500/50',
+		failed: 'bg-red-50 border-red-200',
 	};
 
 	// Thumbnail styling based on status
@@ -94,13 +94,13 @@ export function KanbanCard({ item, onPreview, onEdit, status }: KanbanCardProps)
 		>
 			{/* Drag handle - shows on hover */}
 			<div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-				<GripVertical className="h-5 w-5 text-gray-400 dark:text-[#92a4c9] cursor-grab" />
+				<GripVertical className="h-5 w-5 text-gray-400 cursor-grab" />
 			</div>
 
 			{/* Thumbnail - 9:16 aspect ratio */}
 			<div
 				className={cn(
-					'w-full rounded-lg bg-cover bg-center mb-3 border border-gray-200 dark:border-[#2d3a54]/50 aspect-[9/16] relative overflow-hidden',
+					'w-full rounded-lg bg-cover bg-center mb-3 border border-gray-200 aspect-[9/16] relative overflow-hidden',
 					thumbnailStyles[status]
 				)}
 			>
@@ -112,8 +112,8 @@ export function KanbanCard({ item, onPreview, onEdit, status }: KanbanCardProps)
 						onError={() => setImageError(true)}
 					/>
 				) : (
-					<div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-[#232f48]">
-						<span className="text-gray-400 dark:text-[#92a4c9] text-xs">No image</span>
+					<div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+						<span className="text-gray-400 text-xs">No image</span>
 					</div>
 				)}
 
@@ -128,19 +128,19 @@ export function KanbanCard({ item, onPreview, onEdit, status }: KanbanCardProps)
 			{/* Content */}
 			<div className="flex flex-col gap-2">
 				{/* Title */}
-				<h4 className="text-gray-900 dark:text-white text-sm font-bold leading-tight truncate">
+				<h4 className="text-gray-900 text-sm font-bold leading-tight truncate">
 					{item.title || 'Untitled Story'}
 				</h4>
 
 				{/* Status-specific content */}
 				{status === 'draft' && (
 					<div className="flex items-center justify-between">
-						<span className="text-[10px] text-gray-500 dark:text-[#92a4c9] flex items-center gap-1">
+						<span className="text-[10px] text-gray-500 flex items-center gap-1">
 							<Pencil className="h-3 w-3" />
 							Edited {formatRelativeTime(item.updatedAt)}
 						</span>
 						<div className="flex -space-x-1.5">
-							<div className="h-5 w-5 rounded-full border border-white dark:border-[#1a2234] bg-blue-600 flex items-center justify-center text-[8px] font-bold text-white">
+							<div className="h-5 w-5 rounded-full border border-white bg-blue-600 flex items-center justify-center text-[8px] font-bold text-white">
 								{initials}
 							</div>
 						</div>
@@ -159,19 +159,19 @@ export function KanbanCard({ item, onPreview, onEdit, status }: KanbanCardProps)
 				{status === 'processing' && (
 					<div className="flex flex-col gap-3">
 						<div className="flex items-center justify-between">
-							<h4 className="text-gray-900 dark:text-white text-sm font-bold truncate">{item.title || 'Processing...'}</h4>
+							<h4 className="text-gray-900 text-sm font-bold truncate">{item.title || 'Processing...'}</h4>
 							<span className="text-[10px] text-[#2b6cee] font-bold">--</span>
 						</div>
-						<div className="w-full bg-gray-100 dark:bg-[#101622] h-1.5 rounded-full overflow-hidden">
+						<div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
 							<div className="bg-[#2b6cee] h-full w-1/2 rounded-full animate-pulse shadow-[0_0_8px_rgba(43,108,238,0.5)]" />
 						</div>
-						<p className="text-[10px] text-gray-500 dark:text-[#92a4c9] italic">Processing media...</p>
+						<p className="text-[10px] text-gray-500 italic">Processing media...</p>
 					</div>
 				)}
 
 				{status === 'published' && (
 					<div className="flex items-center justify-between mt-1">
-						<div className="flex items-center gap-1.5 text-emerald-500 dark:text-emerald-400">
+						<div className="flex items-center gap-1.5 text-emerald-500">
 							<Eye className="h-3.5 w-3.5" />
 							<span className="text-[10px] font-bold">
 								{item.igMediaId ? 'Live' : '--'}
@@ -182,7 +182,7 @@ export function KanbanCard({ item, onPreview, onEdit, status }: KanbanCardProps)
 								e.stopPropagation();
 								// Open external link if available
 							}}
-							className="text-gray-400 dark:text-[#92a4c9] hover:text-gray-900 dark:hover:text-white transition-colors"
+							className="text-gray-400 hover:text-gray-900 transition-colors"
 						>
 							<ExternalLink className="h-3.5 w-3.5" />
 						</button>

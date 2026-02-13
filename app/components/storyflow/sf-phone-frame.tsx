@@ -34,11 +34,11 @@ export function SfPhoneFrame({
 	return (
 		<div className={cn('flex flex-col items-center gap-2', className)}>
 			<div
-				className="relative rounded-[2rem] p-2 border-4 border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-[var(--sf-border-dark)] shadow-xl"
+				className="relative rounded-[2rem] p-2 border-4 border-slate-300 bg-slate-100 shadow-xl"
 				style={{ width: config.width + 16 }}
 			>
 				{/* Dynamic Island */}
-				<div className={cn('absolute left-1/2 top-2.5 -translate-x-1/2 rounded-full bg-slate-300 dark:bg-slate-700', config.notch)} />
+				<div className={cn('absolute left-1/2 top-2.5 -translate-x-1/2 rounded-full bg-slate-300', config.notch)} />
 
 				{/* Screen */}
 				<div className="relative overflow-hidden rounded-[1.5rem] bg-black" style={{ width: config.width, height: config.height }}>
@@ -87,7 +87,7 @@ export function SfPhoneFrame({
 				</div>
 
 				{/* Home bar */}
-				<div className={cn('absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-slate-300 dark:bg-slate-600', config.homeBar)} />
+				<div className={cn('absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-slate-300', config.homeBar)} />
 			</div>
 			<span className="text-xs font-medium text-[var(--sf-text-secondary)]">9:19 Preview</span>
 		</div>
