@@ -1,5 +1,6 @@
 import { publishMedia } from '@/lib/instagram';
 import { processAndUploadStoryImage } from '@/lib/media/story-processor';
+import { processAndUploadStoryVideo } from '@/lib/media/video-processor';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
 import { Logger } from '@/lib/utils/logger';
 import {
@@ -250,7 +251,7 @@ export async function processScheduledPosts(
 					`📤 Publishing scheduled post ${item.id} for user ${item.userId}...`,
 				);
 
-				// 4. Process image for story format if needed (9:16 with blurred background)
+				// 4. Process media for story format if needed
 				let publishUrl = item.mediaUrl;
 				const postType = 'STORY'; // content_items are always stories for now
 				if (item.mediaType === 'IMAGE') {
@@ -260,6 +261,15 @@ export async function processScheduledPosts(
 						await Logger.info(MODULE, `Image processed successfully`, { postId: item.id });
 					} catch (processError) {
 						await Logger.warn(MODULE, `Image processing failed, using original: ${processError}`, { postId: item.id });
+						// Fall back to original URL if processing fails
+					}
+				} else if (item.mediaType === 'VIDEO') {
+					try {
+						await Logger.info(MODULE, `Processing video for story format...`, { postId: item.id });
+						publishUrl = await processAndUploadStoryVideo(item.mediaUrl, item.id);
+						await Logger.info(MODULE, `Video processed successfully`, { postId: item.id });
+					} catch (processError) {
+						await Logger.warn(MODULE, `Video processing failed, using original: ${processError}`, { postId: item.id });
 						// Fall back to original URL if processing fails
 					}
 				}

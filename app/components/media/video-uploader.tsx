@@ -49,7 +49,7 @@ export function VideoUploader({
 				const response = await fetch('/api/media/validate-video', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ url }),
+					body: JSON.stringify({ videoUrl: url }),
 				});
 
 				if (!response.ok) {
@@ -77,7 +77,7 @@ export function VideoUploader({
 			const response = await fetch('/api/media/process-video', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ url }),
+				body: JSON.stringify({ videoUrl: url }),
 			});
 
 			if (!response.ok) {

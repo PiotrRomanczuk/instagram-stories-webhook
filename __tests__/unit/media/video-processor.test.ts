@@ -1,0 +1,995 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { EventEmitter } from 'events';
+
+// Use vi.hoisted so these are available when vi.mock factories run (hoisted to top)
+const { mockSpawn } = vi.hoisted(() => ({
+	mockSpawn: vi.fn(),
+}));
+
+// Mock child_process before importing the module under test
+vi.mock(import('child_process'), async (importOriginal) => {
+	const actual = await importOriginal();
+	return {
+		...actual,
+		default: { ...actual, spawn: mockSpawn },
+		spawn: mockSpawn,
+	};
+});
+
+vi.mock(import('fs'), async (importOriginal) => {
+	const actual = await importOriginal();
+	const mockPromises = {
+		...actual.promises,
+		writeFile: vi.fn().mockResolvedValue(undefined),
+		readFile: vi.fn().mockResolvedValue(Buffer.from('processed-video-data')),
+		unlink: vi.fn().mockResolvedValue(undefined),
+	};
+	return {
+		...actual,
+		default: { ...actual, promises: mockPromises },
+		promises: mockPromises,
+	};
+});
+
+vi.mock(import('os'), async (importOriginal) => {
+	const actual = await importOriginal();
+	return {
+		...actual,
+		default: { ...actual, tmpdir: vi.fn().mockReturnValue('/tmp') },
+		tmpdir: vi.fn().mockReturnValue('/tmp'),
+	};
+});
+
+vi.mock('@/lib/utils/logger', () => ({
+	Logger: {
+		info: vi.fn(),
+		warn: vi.fn(),
+		error: vi.fn(),
+	},
+}));
+
+vi.mock('@/lib/config/supabase-admin', () => ({
+	supabaseAdmin: {
+		storage: {
+			from: vi.fn().mockReturnValue({
+				upload: vi.fn().mockResolvedValue({ error: null }),
+				getPublicUrl: vi.fn().mockReturnValue({
+					data: { publicUrl: 'https://example.com/processed.mp4' },
+				}),
+			}),
+		},
+	},
+}));
+
+import {
+	checkFfmpegAvailable,
+	getVideoMetadata,
+	validateVideoForStories,
+	videoNeedsProcessing,
+	processVideoForStory,
+	processAndUploadStoryVideo,
+	VIDEO_STORY_WIDTH,
+	VIDEO_STORY_HEIGHT,
+} from '@/lib/media/video-processor';
+
+// Helper to create a mock child process with EventEmitter behavior
+function createMockProcess() {
+	const proc = new EventEmitter() as EventEmitter & {
+		stdout: EventEmitter;
+		stderr: EventEmitter;
+	};
+	proc.stdout = new EventEmitter();
+	proc.stderr = new EventEmitter();
+	return proc;
+}
+
+// Standard ffprobe output for a valid video
+function createFfprobeOutput(overrides: Record<string, unknown> = {}) {
+	const defaults = {
+		streams: [
+			{
+				codec_type: 'video',
+				codec_name: 'h264',
+				width: 1080,
+				height: 1920,
+				r_frame_rate: '30/1',
+			},
+			{
+				codec_type: 'audio',
+				codec_name: 'aac',
+			},
+		],
+		format: {
+			duration: '15.0',
+			bit_rate: '3500000',
+			format_name: 'mp4',
+			size: '6553600', // ~6.25 MB
+		},
+	};
+
+	return JSON.stringify({ ...defaults, ...overrides });
+}
+
+describe('video-processor', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	// ======== checkFfmpegAvailable ========
+
+	describe('checkFfmpegAvailable', () => {
+		it('should return true when ffmpeg exits with code 0', async () => {
+			const mockProc = createMockProcess();
+			mockSpawn.mockReturnValue(mockProc);
+
+			const promise = checkFfmpegAvailable();
+
+			// Simulate ffmpeg exiting successfully
+			mockProc.emit('close', 0);
+
+			const result = await promise;
+			expect(result).toBe(true);
+			expect(mockSpawn).toHaveBeenCalledWith('ffmpeg', ['-version']);
+		});
+
+		it('should return false when ffmpeg exits with non-zero code', async () => {
+			const mockProc = createMockProcess();
+			mockSpawn.mockReturnValue(mockProc);
+
+			const promise = checkFfmpegAvailable();
+
+			mockProc.emit('close', 1);
+
+			const result = await promise;
+			expect(result).toBe(false);
+		});
+
+		it('should return false when ffmpeg spawn errors', async () => {
+			const mockProc = createMockProcess();
+			mockSpawn.mockReturnValue(mockProc);
+
+			const promise = checkFfmpegAvailable();
+
+			mockProc.emit('error', new Error('ENOENT: ffmpeg not found'));
+
+			const result = await promise;
+			expect(result).toBe(false);
+		});
+	});
+
+	// ======== getVideoMetadata ========
+
+	describe('getVideoMetadata', () => {
+		it('should parse ffprobe output correctly', async () => {
+			const mockProc = createMockProcess();
+			mockSpawn.mockReturnValue(mockProc);
+
+			const promise = getVideoMetadata('/tmp/test.mp4');
+
+			// Emit stdout data
+			mockProc.stdout.emit('data', createFfprobeOutput());
+			mockProc.emit('close', 0);
+
+			const metadata = await promise;
+
+			expect(metadata.width).toBe(1080);
+			expect(metadata.height).toBe(1920);
+			expect(metadata.duration).toBe(15.0);
+			expect(metadata.codec).toBe('h264');
+			expect(metadata.frameRate).toBe(30);
+			expect(metadata.bitrate).toBe(3500000);
+			expect(metadata.hasAudio).toBe(true);
+			expect(metadata.audioCodec).toBe('aac');
+			expect(metadata.format).toBe('mp4');
+			expect(metadata.fileSize).toBe(6553600);
+		});
+
+		it('should parse frame rate from fraction format (e.g., "30000/1001")', async () => {
+			const mockProc = createMockProcess();
+			mockSpawn.mockReturnValue(mockProc);
+
+			const promise = getVideoMetadata('/tmp/test.mp4');
+
+			const output = createFfprobeOutput({
+				streams: [
+					{
+						codec_type: 'video',
+						codec_name: 'h264',
+						width: 1920,
+						height: 1080,
+						r_frame_rate: '30000/1001', // 29.97 fps NTSC
+					},
+				],
+			});
+			mockProc.stdout.emit('data', output);
+			mockProc.emit('close', 0);
+
+			const metadata = await promise;
+			// 30000/1001 = 29.97002997...
+			expect(metadata.frameRate).toBeCloseTo(29.97, 1);
+		});
+
+		it('should parse frame rate from simple number format', async () => {
+			const mockProc = createMockProcess();
+			mockSpawn.mockReturnValue(mockProc);
+
+			const promise = getVideoMetadata('/tmp/test.mp4');
+
+			const output = createFfprobeOutput({
+				streams: [
+					{
+						codec_type: 'video',
+						codec_name: 'h264',
+						width: 1920,
+						height: 1080,
+						r_frame_rate: '24', // No denominator
+					},
+				],
+			});
+			mockProc.stdout.emit('data', output);
+			mockProc.emit('close', 0);
+
+			const metadata = await promise;
+			expect(metadata.frameRate).toBe(24);
+		});
+
+		it('should reject when no video stream found', async () => {
+			const mockProc = createMockProcess();
+			mockSpawn.mockReturnValue(mockProc);
+
+			const promise = getVideoMetadata('/tmp/audio-only.mp3');
+
+			const output = JSON.stringify({
+				streams: [{ codec_type: 'audio', codec_name: 'aac' }],
+				format: {
+					duration: '120.0',
+					bit_rate: '128000',
+					format_name: 'mp3',
+					size: '1920000',
+				},
+			});
+			mockProc.stdout.emit('data', output);
+			mockProc.emit('close', 0);
+
+			await expect(promise).rejects.toThrow('No video stream found');
+		});
+
+		it('should reject when ffprobe fails with non-zero exit code', async () => {
+			const mockProc = createMockProcess();
+			mockSpawn.mockReturnValue(mockProc);
+
+			const promise = getVideoMetadata('/tmp/corrupt.mp4');
+
+			mockProc.stderr.emit('data', 'Invalid data found when processing input');
+			mockProc.emit('close', 1);
+
+			await expect(promise).rejects.toThrow('FFprobe failed');
+		});
+
+		it('should reject when ffprobe binary is not found', async () => {
+			const mockProc = createMockProcess();
+			mockSpawn.mockReturnValue(mockProc);
+
+			const promise = getVideoMetadata('/tmp/test.mp4');
+
+			mockProc.emit('error', new Error('spawn ffprobe ENOENT'));
+
+			await expect(promise).rejects.toThrow('FFprobe not found or failed');
+		});
+
+		it('should reject on malformed JSON output', async () => {
+			const mockProc = createMockProcess();
+			mockSpawn.mockReturnValue(mockProc);
+
+			const promise = getVideoMetadata('/tmp/test.mp4');
+
+			mockProc.stdout.emit('data', 'not valid json {{{');
+			mockProc.emit('close', 0);
+
+			await expect(promise).rejects.toThrow('Failed to parse video metadata');
+		});
+
+		it('should handle video without audio stream', async () => {
+			const mockProc = createMockProcess();
+			mockSpawn.mockReturnValue(mockProc);
+
+			const promise = getVideoMetadata('/tmp/no-audio.mp4');
+
+			const output = JSON.stringify({
+				streams: [
+					{
+						codec_type: 'video',
+						codec_name: 'h264',
+						width: 1080,
+						height: 1920,
+						r_frame_rate: '30/1',
+					},
+				],
+				format: {
+					duration: '10.0',
+					bit_rate: '3000000',
+					format_name: 'mp4',
+					size: '3750000',
+				},
+			});
+			mockProc.stdout.emit('data', output);
+			mockProc.emit('close', 0);
+
+			const metadata = await promise;
+			expect(metadata.hasAudio).toBe(false);
+			expect(metadata.audioCodec).toBeUndefined();
+		});
+
+		it('should pass correct arguments to ffprobe', async () => {
+			const mockProc = createMockProcess();
+			mockSpawn.mockReturnValue(mockProc);
+
+			const promise = getVideoMetadata('/tmp/test.mp4');
+
+			mockProc.stdout.emit('data', createFfprobeOutput());
+			mockProc.emit('close', 0);
+
+			await promise;
+
+			expect(mockSpawn).toHaveBeenCalledWith('ffprobe', [
+				'-v',
+				'quiet',
+				'-print_format',
+				'json',
+				'-show_format',
+				'-show_streams',
+				'/tmp/test.mp4',
+			]);
+		});
+	});
+
+	// ======== validateVideoForStories ========
+
+	describe('validateVideoForStories', () => {
+		// Helper: set up spawn to return ffprobe output for validation
+		function setupFfprobeForValidation(ffprobeOutput: string) {
+			const mockProc = createMockProcess();
+			mockSpawn.mockReturnValue(mockProc);
+
+			// Schedule the emit after the current microtask
+			process.nextTick(() => {
+				mockProc.stdout.emit('data', ffprobeOutput);
+				mockProc.emit('close', 0);
+			});
+
+			return mockProc;
+		}
+
+		it('should validate a perfect Instagram Stories video', async () => {
+			setupFfprobeForValidation(createFfprobeOutput());
+
+			const result = await validateVideoForStories(Buffer.from('video-data'));
+
+			expect(result.valid).toBe(true);
+			expect(result.errors).toHaveLength(0);
+			expect(result.metadata).not.toBeNull();
+			expect(result.metadata?.width).toBe(1080);
+			expect(result.metadata?.height).toBe(1920);
+		});
+
+		it('should flag video with wrong codec for processing', async () => {
+			const output = createFfprobeOutput({
+				streams: [
+					{
+						codec_type: 'video',
+						codec_name: 'vp9',
+						width: 1080,
+						height: 1920,
+						r_frame_rate: '30/1',
+					},
+					{ codec_type: 'audio', codec_name: 'aac' },
+				],
+			});
+			setupFfprobeForValidation(output);
+
+			const result = await validateVideoForStories(Buffer.from('video-data'));
+
+			expect(result.valid).toBe(true); // Not a critical error
+			expect(result.needsProcessing).toBe(true);
+			expect(result.processingReasons).toEqual(
+				expect.arrayContaining([expect.stringContaining('Codec vp9')])
+			);
+		});
+
+		it('should flag video with wrong resolution for processing', async () => {
+			const output = createFfprobeOutput({
+				streams: [
+					{
+						codec_type: 'video',
+						codec_name: 'h264',
+						width: 1920,
+						height: 1080, // 16:9 landscape
+						r_frame_rate: '30/1',
+					},
+					{ codec_type: 'audio', codec_name: 'aac' },
+				],
+			});
+			setupFfprobeForValidation(output);
+
+			const result = await validateVideoForStories(Buffer.from('video-data'));
+
+			expect(result.valid).toBe(true);
+			expect(result.needsProcessing).toBe(true);
+			expect(result.processingReasons).toEqual(
+				expect.arrayContaining([expect.stringContaining('Resolution')])
+			);
+			expect(result.warnings).toEqual(
+				expect.arrayContaining([expect.stringContaining('wider than 9:16')])
+			);
+		});
+
+		it('should warn about tall videos needing pillarboxing', async () => {
+			// Very tall video (e.g. 720x2560, ratio 0.28 which is < 0.5625)
+			const output = createFfprobeOutput({
+				streams: [
+					{
+						codec_type: 'video',
+						codec_name: 'h264',
+						width: 720,
+						height: 2560,
+						r_frame_rate: '30/1',
+					},
+					{ codec_type: 'audio', codec_name: 'aac' },
+				],
+			});
+			setupFfprobeForValidation(output);
+
+			const result = await validateVideoForStories(Buffer.from('video-data'));
+
+			expect(result.warnings).toEqual(
+				expect.arrayContaining([expect.stringContaining('taller than 9:16')])
+			);
+		});
+
+		it('should flag oversized file for processing', async () => {
+			const output = createFfprobeOutput({
+				streams: [
+					{
+						codec_type: 'video',
+						codec_name: 'h264',
+						width: 1080,
+						height: 1920,
+						r_frame_rate: '30/1',
+					},
+					{ codec_type: 'audio', codec_name: 'aac' },
+				],
+				format: {
+					duration: '15.0',
+					bit_rate: '3500000',
+					format_name: 'mp4',
+					size: String(150 * 1024 * 1024), // 150 MB, over 100 MB limit
+				},
+			});
+			setupFfprobeForValidation(output);
+
+			const result = await validateVideoForStories(Buffer.from('video-data'));
+
+			expect(result.needsProcessing).toBe(true);
+			expect(result.processingReasons).toEqual(
+				expect.arrayContaining([expect.stringContaining('File size')])
+			);
+			expect(result.warnings).toEqual(
+				expect.arrayContaining([expect.stringContaining('File size')])
+			);
+		});
+
+		it('should flag video exceeding max duration', async () => {
+			const output = createFfprobeOutput({
+				streams: [
+					{
+						codec_type: 'video',
+						codec_name: 'h264',
+						width: 1080,
+						height: 1920,
+						r_frame_rate: '30/1',
+					},
+					{ codec_type: 'audio', codec_name: 'aac' },
+				],
+				format: {
+					duration: '120.0', // 2 minutes
+					bit_rate: '3500000',
+					format_name: 'mp4',
+					size: '6553600',
+				},
+			});
+			setupFfprobeForValidation(output);
+
+			const result = await validateVideoForStories(Buffer.from('video-data'));
+
+			expect(result.needsProcessing).toBe(true);
+			expect(result.processingReasons).toEqual(
+				expect.arrayContaining([expect.stringContaining('Duration')])
+			);
+			expect(result.warnings).toEqual(
+				expect.arrayContaining([expect.stringContaining('120s')])
+			);
+		});
+
+		it('should flag non-AAC audio for processing', async () => {
+			const output = createFfprobeOutput({
+				streams: [
+					{
+						codec_type: 'video',
+						codec_name: 'h264',
+						width: 1080,
+						height: 1920,
+						r_frame_rate: '30/1',
+					},
+					{ codec_type: 'audio', codec_name: 'mp3' },
+				],
+			});
+			setupFfprobeForValidation(output);
+
+			const result = await validateVideoForStories(Buffer.from('video-data'));
+
+			expect(result.needsProcessing).toBe(true);
+			expect(result.processingReasons).toEqual(
+				expect.arrayContaining([expect.stringContaining('Audio codec mp3')])
+			);
+		});
+
+		it('should report critical error for too-small resolution', async () => {
+			const output = createFfprobeOutput({
+				streams: [
+					{
+						codec_type: 'video',
+						codec_name: 'h264',
+						width: 200,
+						height: 300,
+						r_frame_rate: '30/1',
+					},
+				],
+				format: {
+					duration: '10.0',
+					bit_rate: '500000',
+					format_name: 'mp4',
+					size: '625000',
+				},
+			});
+			setupFfprobeForValidation(output);
+
+			const result = await validateVideoForStories(Buffer.from('video-data'));
+
+			expect(result.valid).toBe(false);
+			expect(result.errors).toEqual(
+				expect.arrayContaining([expect.stringContaining('too small')])
+			);
+		});
+
+		it('should report critical error for too-short video', async () => {
+			const output = createFfprobeOutput({
+				streams: [
+					{
+						codec_type: 'video',
+						codec_name: 'h264',
+						width: 1080,
+						height: 1920,
+						r_frame_rate: '30/1',
+					},
+				],
+				format: {
+					duration: '0.5',
+					bit_rate: '3500000',
+					format_name: 'mp4',
+					size: '218750',
+				},
+			});
+			setupFfprobeForValidation(output);
+
+			const result = await validateVideoForStories(Buffer.from('video-data'));
+
+			expect(result.valid).toBe(false);
+			expect(result.errors).toEqual(
+				expect.arrayContaining([expect.stringContaining('too short')])
+			);
+		});
+
+		it('should flag low frame rate for processing', async () => {
+			const output = createFfprobeOutput({
+				streams: [
+					{
+						codec_type: 'video',
+						codec_name: 'h264',
+						width: 1080,
+						height: 1920,
+						r_frame_rate: '15/1', // Below 23fps threshold
+					},
+					{ codec_type: 'audio', codec_name: 'aac' },
+				],
+			});
+			setupFfprobeForValidation(output);
+
+			const result = await validateVideoForStories(Buffer.from('video-data'));
+
+			expect(result.needsProcessing).toBe(true);
+			expect(result.processingReasons).toEqual(
+				expect.arrayContaining([expect.stringContaining('Frame rate')])
+			);
+		});
+	});
+
+	// ======== videoNeedsProcessing ========
+
+	describe('videoNeedsProcessing', () => {
+		it('should return false for a valid Instagram Stories video', async () => {
+			const mockProc = createMockProcess();
+			mockSpawn.mockReturnValue(mockProc);
+
+			const promise = videoNeedsProcessing(Buffer.from('video-data'));
+
+			// Emit perfect video metadata
+			process.nextTick(() => {
+				mockProc.stdout.emit('data', createFfprobeOutput());
+				mockProc.emit('close', 0);
+			});
+
+			const result = await promise;
+			expect(result).toBe(false);
+		});
+
+		it('should return true for a video with wrong codec', async () => {
+			const mockProc = createMockProcess();
+			mockSpawn.mockReturnValue(mockProc);
+
+			const promise = videoNeedsProcessing(Buffer.from('video-data'));
+
+			const output = createFfprobeOutput({
+				streams: [
+					{
+						codec_type: 'video',
+						codec_name: 'vp9',
+						width: 1080,
+						height: 1920,
+						r_frame_rate: '30/1',
+					},
+					{ codec_type: 'audio', codec_name: 'aac' },
+				],
+			});
+
+			process.nextTick(() => {
+				mockProc.stdout.emit('data', output);
+				mockProc.emit('close', 0);
+			});
+
+			const result = await promise;
+			expect(result).toBe(true);
+		});
+
+		it('should return true for a video with wrong resolution', async () => {
+			const mockProc = createMockProcess();
+			mockSpawn.mockReturnValue(mockProc);
+
+			const promise = videoNeedsProcessing(Buffer.from('video-data'));
+
+			const output = createFfprobeOutput({
+				streams: [
+					{
+						codec_type: 'video',
+						codec_name: 'h264',
+						width: 1920,
+						height: 1080,
+						r_frame_rate: '30/1',
+					},
+					{ codec_type: 'audio', codec_name: 'aac' },
+				],
+			});
+
+			process.nextTick(() => {
+				mockProc.stdout.emit('data', output);
+				mockProc.emit('close', 0);
+			});
+
+			const result = await promise;
+			expect(result).toBe(true);
+		});
+	});
+
+	// ======== processVideoForStory (tests buildFfmpegArgs indirectly) ========
+
+	describe('processVideoForStory', () => {
+		// For processVideoForStory, spawn is called multiple times:
+		// 1. getVideoMetadata (ffprobe) on input
+		// 2. runFfmpeg
+		// 3. getVideoMetadata (ffprobe) on output
+
+		function setupForProcessing(inputMetadata: string, outputMetadata: string) {
+			let callCount = 0;
+			mockSpawn.mockImplementation((cmd: string) => {
+				callCount++;
+				const mockProc = createMockProcess();
+
+				process.nextTick(() => {
+					if (cmd === 'ffprobe') {
+						// First ffprobe call = input metadata, second = output metadata
+						const isInputProbe = callCount <= 1;
+						mockProc.stdout.emit(
+							'data',
+							isInputProbe ? inputMetadata : outputMetadata
+						);
+						mockProc.emit('close', 0);
+					} else if (cmd === 'ffmpeg') {
+						// FFmpeg processing
+						mockProc.emit('close', 0);
+					}
+				});
+
+				return mockProc;
+			});
+		}
+
+		it('should process a wide video with letterboxing', async () => {
+			// 1920x1080 (16:9 landscape) -> should get letterboxed
+			const inputMeta = createFfprobeOutput({
+				streams: [
+					{
+						codec_type: 'video',
+						codec_name: 'h264',
+						width: 1920,
+						height: 1080,
+						r_frame_rate: '30/1',
+					},
+					{ codec_type: 'audio', codec_name: 'aac' },
+				],
+			});
+
+			const outputMeta = createFfprobeOutput({
+				streams: [
+					{
+						codec_type: 'video',
+						codec_name: 'h264',
+						width: VIDEO_STORY_WIDTH,
+						height: VIDEO_STORY_HEIGHT,
+						r_frame_rate: '30/1',
+					},
+					{ codec_type: 'audio', codec_name: 'aac' },
+				],
+			});
+
+			setupForProcessing(inputMeta, outputMeta);
+
+			const result = await processVideoForStory(Buffer.from('wide-video'));
+
+			expect(result.wasProcessed).toBe(true);
+			expect(result.width).toBe(VIDEO_STORY_WIDTH);
+			expect(result.height).toBe(VIDEO_STORY_HEIGHT);
+			expect(result.processingApplied).toEqual(
+				expect.arrayContaining(['aspect-ratio-letterbox'])
+			);
+		});
+
+		it('should process a tall video with pillarboxing', async () => {
+			// 720x2560 (very tall, ratio ~0.28) -> should get pillarboxed
+			const inputMeta = createFfprobeOutput({
+				streams: [
+					{
+						codec_type: 'video',
+						codec_name: 'h264',
+						width: 720,
+						height: 2560,
+						r_frame_rate: '30/1',
+					},
+					{ codec_type: 'audio', codec_name: 'aac' },
+				],
+			});
+
+			const outputMeta = createFfprobeOutput({
+				streams: [
+					{
+						codec_type: 'video',
+						codec_name: 'h264',
+						width: VIDEO_STORY_WIDTH,
+						height: VIDEO_STORY_HEIGHT,
+						r_frame_rate: '30/1',
+					},
+					{ codec_type: 'audio', codec_name: 'aac' },
+				],
+			});
+
+			setupForProcessing(inputMeta, outputMeta);
+
+			const result = await processVideoForStory(Buffer.from('tall-video'));
+
+			expect(result.wasProcessed).toBe(true);
+			expect(result.processingApplied).toEqual(
+				expect.arrayContaining(['aspect-ratio-pillarbox'])
+			);
+		});
+
+		it('should include h264-encoding in processing applied', async () => {
+			const inputMeta = createFfprobeOutput();
+			const outputMeta = createFfprobeOutput();
+
+			setupForProcessing(inputMeta, outputMeta);
+
+			const result = await processVideoForStory(Buffer.from('video'));
+
+			expect(result.processingApplied).toContain('h264-encoding');
+		});
+
+		it('should add silent audio when video has no audio track', async () => {
+			const inputMeta = createFfprobeOutput({
+				streams: [
+					{
+						codec_type: 'video',
+						codec_name: 'h264',
+						width: 1080,
+						height: 1920,
+						r_frame_rate: '30/1',
+					},
+					// No audio stream
+				],
+			});
+
+			const outputMeta = createFfprobeOutput();
+
+			setupForProcessing(inputMeta, outputMeta);
+
+			const result = await processVideoForStory(Buffer.from('no-audio-video'));
+
+			expect(result.processingApplied).toContain('silent-audio-added');
+		});
+
+		it('should include aac-audio when video has audio', async () => {
+			const inputMeta = createFfprobeOutput();
+			const outputMeta = createFfprobeOutput();
+
+			setupForProcessing(inputMeta, outputMeta);
+
+			const result = await processVideoForStory(Buffer.from('video'));
+
+			expect(result.processingApplied).toContain('aac-audio');
+		});
+
+		it('should trim duration when video exceeds max duration', async () => {
+			const inputMeta = createFfprobeOutput({
+				streams: [
+					{
+						codec_type: 'video',
+						codec_name: 'h264',
+						width: 1080,
+						height: 1920,
+						r_frame_rate: '30/1',
+					},
+					{ codec_type: 'audio', codec_name: 'aac' },
+				],
+				format: {
+					duration: '120.0', // 2 minutes, over 60s limit
+					bit_rate: '3500000',
+					format_name: 'mp4',
+					size: '52500000',
+				},
+			});
+
+			const outputMeta = createFfprobeOutput({
+				streams: [
+					{
+						codec_type: 'video',
+						codec_name: 'h264',
+						width: 1080,
+						height: 1920,
+						r_frame_rate: '30/1',
+					},
+					{ codec_type: 'audio', codec_name: 'aac' },
+				],
+				format: {
+					duration: '60.0',
+					bit_rate: '3500000',
+					format_name: 'mp4',
+					size: '26250000',
+				},
+			});
+
+			setupForProcessing(inputMeta, outputMeta);
+
+			const result = await processVideoForStory(Buffer.from('long-video'));
+
+			expect(result.processingApplied).toContain('duration-trim-60s');
+		});
+
+		it('should adjust frame rate when outside acceptable range', async () => {
+			const inputMeta = createFfprobeOutput({
+				streams: [
+					{
+						codec_type: 'video',
+						codec_name: 'h264',
+						width: 1080,
+						height: 1920,
+						r_frame_rate: '15/1', // Below 23fps threshold
+					},
+					{ codec_type: 'audio', codec_name: 'aac' },
+				],
+			});
+
+			const outputMeta = createFfprobeOutput();
+
+			setupForProcessing(inputMeta, outputMeta);
+
+			const result = await processVideoForStory(Buffer.from('low-fps-video'));
+
+			expect(result.processingApplied).toContain('frame-rate');
+		});
+
+		it('should return original metadata', async () => {
+			const inputMeta = createFfprobeOutput({
+				streams: [
+					{
+						codec_type: 'video',
+						codec_name: 'vp9',
+						width: 1920,
+						height: 1080,
+						r_frame_rate: '24/1',
+					},
+					{ codec_type: 'audio', codec_name: 'opus' },
+				],
+				format: {
+					duration: '45.0',
+					bit_rate: '5000000',
+					format_name: 'webm',
+					size: '28125000',
+				},
+			});
+
+			const outputMeta = createFfprobeOutput();
+
+			setupForProcessing(inputMeta, outputMeta);
+
+			const result = await processVideoForStory(Buffer.from('webm-video'));
+
+			expect(result.originalMetadata.width).toBe(1920);
+			expect(result.originalMetadata.height).toBe(1080);
+			expect(result.originalMetadata.codec).toBe('vp9');
+			expect(result.originalMetadata.duration).toBe(45.0);
+		});
+
+		it('should apply custom processing options', async () => {
+			const inputMeta = createFfprobeOutput();
+			const outputMeta = createFfprobeOutput();
+
+			setupForProcessing(inputMeta, outputMeta);
+
+			const result = await processVideoForStory(Buffer.from('video'), {
+				preset: 'fast',
+				videoBitrate: '5000k',
+				audioBitrate: '192k',
+			});
+
+			expect(result.wasProcessed).toBe(true);
+			// Verify spawn was called with ffmpeg containing the custom options
+			const ffmpegCalls = mockSpawn.mock.calls.filter(
+				(call: string[]) => call[0] === 'ffmpeg'
+			);
+			expect(ffmpegCalls.length).toBe(1);
+
+			const ffmpegArgs = ffmpegCalls[0][1] as string[];
+			expect(ffmpegArgs).toContain('fast');
+			expect(ffmpegArgs).toContain('5000k');
+			expect(ffmpegArgs).toContain('192k');
+		});
+	});
+
+	// ======== processAndUploadStoryVideo ========
+
+	describe('processAndUploadStoryVideo', () => {
+		it('should return original URL when ffmpeg is not available', async () => {
+			const mockProc = createMockProcess();
+			mockSpawn.mockReturnValue(mockProc);
+
+			// Mock ffmpeg not available
+			process.nextTick(() => {
+				mockProc.emit('error', new Error('ENOENT'));
+			});
+
+			const result = await processAndUploadStoryVideo(
+				'https://example.com/original.mp4',
+				'content-123'
+			);
+
+			expect(result).toBe('https://example.com/original.mp4');
+		});
+	});
+});
