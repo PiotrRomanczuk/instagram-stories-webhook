@@ -48,10 +48,11 @@ describe('useMediaQuery', () => {
 
         expect(result.current).toBe(false);
 
-        // Simulate media query change
+        // Simulate media query change: update mock return value, then fire listener
         act(() => {
+            matchMediaMock.matches = true;
             const changeHandler = matchMediaMock.addEventListener.mock.calls[0][1];
-            changeHandler({ matches: true } as MediaQueryListEvent);
+            changeHandler();
         });
 
         expect(result.current).toBe(true);

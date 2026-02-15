@@ -104,14 +104,6 @@ export function UsersDataTable({
 		}
 	});
 
-	const SortIcon = ({ field }: { field: SortField }) => {
-		if (sortField !== field) return null;
-		return sortDirection === 'asc' ? (
-			<ChevronUp className="ml-1 inline h-3 w-3" />
-		) : (
-			<ChevronDown className="ml-1 inline h-3 w-3" />
-		);
-	};
 
 	if (isLoading) {
 		return <UsersDataTableSkeleton />;
@@ -127,35 +119,35 @@ export function UsersDataTable({
 							className="cursor-pointer text-xs font-bold uppercase tracking-wider text-[#92a4c9]"
 						>
 							Creator
-							<SortIcon field="name" />
+							{sortField === 'name' && (sortDirection === 'asc' ? <ChevronUp className="ml-1 inline h-3 w-3" /> : <ChevronDown className="ml-1 inline h-3 w-3" />)}
 						</TableHead>
 						<TableHead
 							onClick={() => handleSort('role')}
 							className="cursor-pointer text-xs font-bold uppercase tracking-wider text-[#92a4c9]"
 						>
 							Role
-							<SortIcon field="role" />
+							{sortField === 'role' && (sortDirection === 'asc' ? <ChevronUp className="ml-1 inline h-3 w-3" /> : <ChevronDown className="ml-1 inline h-3 w-3" />)}
 						</TableHead>
 						<TableHead
 							onClick={() => handleSort('workload')}
 							className="cursor-pointer text-xs font-bold uppercase tracking-wider text-[#92a4c9]"
 						>
 							Workload
-							<SortIcon field="workload" />
+							{sortField === 'workload' && (sortDirection === 'asc' ? <ChevronUp className="ml-1 inline h-3 w-3" /> : <ChevronDown className="ml-1 inline h-3 w-3" />)}
 						</TableHead>
 						<TableHead
 							onClick={() => handleSort('performance')}
 							className="cursor-pointer text-xs font-bold uppercase tracking-wider text-[#92a4c9]"
 						>
 							Performance
-							<SortIcon field="performance" />
+							{sortField === 'performance' && (sortDirection === 'asc' ? <ChevronUp className="ml-1 inline h-3 w-3" /> : <ChevronDown className="ml-1 inline h-3 w-3" />)}
 						</TableHead>
 						<TableHead
 							onClick={() => handleSort('status')}
 							className="cursor-pointer text-xs font-bold uppercase tracking-wider text-[#92a4c9]"
 						>
 							Status
-							<SortIcon field="status" />
+							{sortField === 'status' && (sortDirection === 'asc' ? <ChevronUp className="ml-1 inline h-3 w-3" /> : <ChevronDown className="ml-1 inline h-3 w-3" />)}
 						</TableHead>
 						<TableHead className="text-right text-xs font-bold uppercase tracking-wider text-[#92a4c9]">
 							Actions

@@ -261,10 +261,164 @@ Create a focused PR with the `refactor/` branch prefix:
 
 ---
 
+## React Hooks Lint Rules
+
+### Rule: Zero `react-hooks/*` warnings
+
+ESLint's React hooks rules catch real bugs and React 19 compiler issues. All four rule categories must stay at zero warnings.
+
+### Detection
+
+```bash
+# Count all react-hooks warnings
+npx eslint app/ lib/ --format compact 2>/dev/null | grep 'react-hooks/' | wc -l
+
+# Break down by rule
+npx eslint app/ lib/ --format compact 2>/dev/null | grep -oP 'react-hooks/\S+' | sort | uniq -c | sort -rn
+```
+
+### Fix Patterns by Rule
+
+#### 1. `react-hooks/static-components` -- Components defined inside render
+
+**Problem**: Defining a component inside another component causes remounting on every render.
+
+```typescript
+// BAD: Component re-created every render
+function ParentComponent() {
+  const ChildIcon = ({ active }: { active: boolean }) => (
+    <Icon className={active ? 'text-blue' : 'text-gray'} />
+  );
+  return <ChildIcon active={isActive} />;
+}
+
+// GOOD: Inline the JSX directly
+function ParentComponent() {
+  return isActive
+    ? <Icon className="text-blue" />
+    : <Icon className="text-gray" />;
+}
+
+// GOOD: Extract to file-level component
+function ChildIcon({ active }: { active: boolean }) {
+  return <Icon className={active ? 'text-blue' : 'text-gray'} />;
+}
+```
+
+#### 2. `react-hooks/purity` -- Impure calls during render
+
+**Problem**: `Date.now()`, `Math.random()`, or other side effects during render break React's purity model.
+
+```typescript
+// BAD: Date.now() called on every render
+const dayAgo = Date.now() - 86400000;
+
+// BAD: Date.now() inside useMemo still flagged
+const dayAgo = useMemo(() => Date.now() - 86400000, []);
+
+// GOOD: Capture once via lazy useState initializer
+const [now] = useState(() => Date.now());
+const dayAgo = now - 86400000;
+```
+
+#### 3. `react-hooks/exhaustive-deps` -- Missing hook dependencies
+
+**Problem**: Effects/memos that use values not in their dependency array can read stale data.
+
+```typescript
+// BAD: fetchData changes identity every render, but isn't in deps
+const fetchData = async () => { /* uses someId */ };
+useEffect(() => { fetchData(); }, []); // Missing fetchData
+
+// GOOD: Stabilize with useCallback, then include in deps
+const fetchData = useCallback(async () => {
+  /* uses someId */
+}, [someId]);
+useEffect(() => { fetchData(); }, [fetchData]);
+
+// BAD: Array reference from API changes identity every render
+const items = data?.items || [];
+useEffect(() => { process(items); }, [items]); // Infinite loop
+
+// GOOD: Stabilize with useMemo
+const items = useMemo(() => data?.items || [], [data?.items]);
+useEffect(() => { process(items); }, [items]);
+```
+
+#### 4. `react-hooks/set-state-in-effect` -- setState inside useEffect
+
+**Problem**: Synchronous setState in useEffect causes extra re-renders. React prefers derived state or lazy initializers.
+
+```typescript
+// BAD: setState in useEffect for initial value
+const [isDev, setIsDev] = useState(false);
+useEffect(() => {
+  if (window.location.hostname === 'localhost') setIsDev(true);
+}, []);
+
+// GOOD: Lazy useState initializer (no effect needed)
+const [isDev] = useState(() =>
+  typeof window !== 'undefined' && window.location.hostname === 'localhost'
+);
+
+// BAD: External subscription via useState + useEffect
+const [matches, setMatches] = useState(false);
+useEffect(() => {
+  const mq = window.matchMedia(query);
+  setMatches(mq.matches);
+  const handler = (e) => setMatches(e.matches);
+  mq.addEventListener('change', handler);
+  return () => mq.removeEventListener('change', handler);
+}, [query]);
+
+// GOOD: useSyncExternalStore (purpose-built for external subscriptions)
+import { useSyncExternalStore } from 'react';
+const matches = useSyncExternalStore(
+  (cb) => {
+    const mq = window.matchMedia(query);
+    mq.addEventListener('change', cb);
+    return () => mq.removeEventListener('change', cb);
+  },
+  () => window.matchMedia(query).matches,
+  () => false, // SSR fallback
+);
+```
+
+**When suppression is acceptable** (use block comments, not `disable-next-line`):
+
+```typescript
+// Hydration guards (must run after mount)
+/* eslint-disable react-hooks/set-state-in-effect -- Hydration guard */
+useEffect(() => { setMounted(true); }, []);
+/* eslint-enable react-hooks/set-state-in-effect */
+
+// Derived state syncing from props (no clean alternative)
+/* eslint-disable react-hooks/set-state-in-effect -- Syncing derived state from prop */
+useEffect(() => {
+  setLocalState(derivedFromProp);
+}, [prop]);
+/* eslint-enable react-hooks/set-state-in-effect */
+```
+
+**Important**: Use `/* eslint-disable */` / `/* eslint-enable */` block comments, NOT `eslint-disable-next-line`. The rule reports on each `setState` call inside the effect, not on the `useEffect` line itself, so `disable-next-line` won't suppress inner lines.
+
+### Verification After Fixes
+
+```bash
+# Must all return 0
+npx eslint app/ lib/ --format compact 2>/dev/null | grep 'react-hooks/static-components' | wc -l
+npx eslint app/ lib/ --format compact 2>/dev/null | grep 'react-hooks/purity' | wc -l
+npx eslint app/ lib/ --format compact 2>/dev/null | grep 'react-hooks/exhaustive-deps' | wc -l
+npx eslint app/ lib/ --format compact 2>/dev/null | grep 'react-hooks/set-state-in-effect' | wc -l
+```
+
+---
+
 ## Priority Order
 
 1. **Security-related** (`any` in auth/security code)
-2. **Database files** (largest files, most complex)
-3. **API routes** (frequently modified)
-4. **Utilities** (shared across codebase)
-5. **Components** (UI-specific)
+2. **React hooks violations** (cause real bugs and break React 19 compiler)
+3. **Database files** (largest files, most complex)
+4. **API routes** (frequently modified)
+5. **Utilities** (shared across codebase)
+6. **Components** (UI-specific)

@@ -293,6 +293,56 @@ const memoizedValue = useMemo(() => expensiveComputation(data), [data]);
 const memoizedCallback = useCallback(() => handleAction(id), [id]);
 ```
 
+### React Hooks Lint Rules (MANDATORY)
+
+All code must pass with zero `react-hooks/*` ESLint warnings. Follow these patterns:
+
+**Never define components inside render** (`static-components`):
+```typescript
+// BAD: remounts on every render
+function Parent() {
+  const Child = () => <span>{value}</span>;
+  return <Child />;
+}
+// GOOD: inline the JSX or extract to file-level
+```
+
+**Never call `Date.now()` / `Math.random()` during render** (`purity`):
+```typescript
+// BAD: impure render
+const elapsed = Date.now() - createdAt;
+// GOOD: capture once
+const [now] = useState(() => Date.now());
+const elapsed = now - createdAt;
+```
+
+**Always include all dependencies in hooks** (`exhaustive-deps`):
+```typescript
+// Stabilize callbacks with useCallback
+const fetch = useCallback(() => loadData(id), [id]);
+useEffect(() => { fetch(); }, [fetch]);
+
+// Stabilize derived arrays with useMemo
+const items = useMemo(() => data?.items || [], [data?.items]);
+```
+
+**Avoid setState in useEffect** (`set-state-in-effect`):
+```typescript
+// BAD: extra re-render
+const [isDev, setIsDev] = useState(false);
+useEffect(() => { setIsDev(checkDev()); }, []);
+
+// GOOD: lazy initializer
+const [isDev] = useState(() => checkDev());
+
+// GOOD: external subscriptions → useSyncExternalStore
+const value = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+```
+
+When suppression is necessary (hydration guards, derived state sync), use `/* eslint-disable */` / `/* eslint-enable */` block comments, not `disable-next-line`.
+
+See `refactoring-specialist` agent for the full reference guide.
+
 ---
 
 ## File Organization

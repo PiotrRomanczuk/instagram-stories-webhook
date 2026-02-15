@@ -2,24 +2,18 @@
 
 import { signIn } from 'next-auth/react';
 import { Instagram, Loader2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/app/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Separator } from '@/app/components/ui/separator';
 
 export default function SignIn() {
 	const [isLoading, setIsLoading] = useState(false);
-	const [isDev, setIsDev] = useState(false);
-
-	useEffect(() => {
-		if (
-			typeof window !== 'undefined' &&
-			(window.location.hostname === 'localhost' ||
-				window.location.hostname === '127.0.0.1')
-		) {
-			setIsDev(true);
-		}
-	}, []);
+	const [isDev] = useState(() =>
+		typeof window !== 'undefined' &&
+		(window.location.hostname === 'localhost' ||
+			window.location.hostname === '127.0.0.1')
+	);
 
 	const handleSignIn = async () => {
 		try {

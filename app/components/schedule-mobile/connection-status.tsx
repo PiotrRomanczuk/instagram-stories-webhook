@@ -18,6 +18,8 @@ export function ConnectionStatus({ isConnected, className = '' }: ConnectionStat
 	const [state, setState] = useState<ConnectionState>('connecting');
 	const [showTooltip, setShowTooltip] = useState(false);
 
+	/* eslint-disable react-hooks/set-state-in-effect -- Syncing derived state from connection prop */
+	/* eslint-disable react-hooks/set-state-in-effect -- Syncing derived state from connection prop */
 	useEffect(() => {
 		if (isConnected) {
 			setState('connected');
@@ -32,6 +34,7 @@ export function ConnectionStatus({ isConnected, className = '' }: ConnectionStat
 			return () => clearTimeout(timer);
 		}
 	}, [isConnected]);
+	/* eslint-enable react-hooks/set-state-in-effect */
 
 	const statusConfig = {
 		connected: {

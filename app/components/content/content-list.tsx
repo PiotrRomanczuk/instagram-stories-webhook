@@ -202,6 +202,7 @@ function formatOverdueDuration(scheduledTime: number): string {
  */
 function StatusBadge({ item }: { item: ContentItem }) {
 	const [showDetails, setShowDetails] = useState(false);
+	const [now] = useState(() => Date.now());
 
 	const hasError = item.publishingStatus === 'failed' || item.error;
 	const hasRejection = item.submissionStatus === 'rejected' && item.rejectionReason;
@@ -211,7 +212,7 @@ function StatusBadge({ item }: { item: ContentItem }) {
 	const isOverdue =
 		item.publishingStatus === 'scheduled' &&
 		item.scheduledTime &&
-		item.scheduledTime < Date.now();
+		item.scheduledTime < now;
 
 	const statusColors: Record<string, string> = {
 		published: 'bg-emerald-100 text-emerald-700',
