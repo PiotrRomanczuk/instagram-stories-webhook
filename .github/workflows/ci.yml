@@ -28,8 +28,8 @@ jobs:
       - name: Typecheck
         run: npx tsc --noEmit
 
-      - name: Run Unit Tests
-        run: npm run test
+      - name: Run Unit Tests with Coverage
+        run: npm run test:coverage
 
   build:
     name: Build
