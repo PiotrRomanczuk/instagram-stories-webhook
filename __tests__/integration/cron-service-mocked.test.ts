@@ -44,6 +44,8 @@ vi.mock('@/lib/content-db', () => ({
 	markContentFailed: vi.fn(),
 	markContentCancelled: vi.fn(),
 	getContentItemForProcessing: vi.fn(),
+	recoverStaleLocks: vi.fn().mockResolvedValue(0),
+	expireOverdueContent: vi.fn().mockResolvedValue(0),
 }));
 
 vi.mock('@/lib/validations/cron.schema', () => ({
@@ -88,6 +90,8 @@ import {
 	markContentFailed,
 	markContentCancelled,
 	getContentItemForProcessing,
+	recoverStaleLocks,
+	expireOverdueContent,
 } from '@/lib/content-db';
 import { generateContentHash, checkForRecentPublish } from '@/lib/utils/duplicate-detection';
 import { parseCronConfig } from '@/lib/validations/cron.schema';
@@ -408,6 +412,29 @@ describe('processScheduledPosts (mocked)', () => {
 		expect(recordQuotaSnapshot).toHaveBeenCalledWith(
 			expect.objectContaining({ snapshotType: 'cron_end' }),
 		);
+	});
+
+	// ── Maintenance: stale lock recovery and overdue expiration ──
+
+	it('should recover stale locks and expire overdue content on cron path', async () => {
+		vi.mocked(recoverStaleLocks).mockResolvedValue(3);
+		vi.mocked(expireOverdueContent).mockResolvedValue(5);
+		vi.mocked(getPendingContentItems).mockResolvedValue([]);
+
+		await processScheduledPosts();
+
+		expect(recoverStaleLocks).toHaveBeenCalledTimes(1);
+		expect(expireOverdueContent).toHaveBeenCalledTimes(1);
+	});
+
+	it('should not run maintenance when processing specific postId', async () => {
+		const item = makeItem({ id: 'specific-1' });
+		vi.mocked(getContentItemForProcessing).mockResolvedValue(item);
+
+		await processScheduledPosts('specific-1');
+
+		expect(recoverStaleLocks).not.toHaveBeenCalled();
+		expect(expireOverdueContent).not.toHaveBeenCalled();
 	});
 
 	// ── Specific post processing (with postId) ──

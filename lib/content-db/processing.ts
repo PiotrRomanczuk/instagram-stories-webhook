@@ -200,3 +200,70 @@ export async function markContentCancelled(
 		return false;
 	}
 }
+
+/**
+ * Recover items stuck in 'processing' state due to crashed/timed-out cron runs.
+ * Resets them to 'scheduled' so they can be picked up again.
+ * Should be called at the start of each cron cycle.
+ */
+export async function recoverStaleLocks(): Promise<number> {
+	const lockTimeout = 5 * 60 * 1000; // 5 minutes
+	const threshold = new Date(Date.now() - lockTimeout).toISOString();
+
+	try {
+		const { data, error } = await supabaseAdmin
+			.from('content_items')
+			.update({
+				publishing_status: 'scheduled',
+				processing_started_at: null,
+				updated_at: new Date().toISOString(),
+			})
+			.eq('publishing_status', 'processing')
+			.lt('processing_started_at', threshold)
+			.select('id');
+
+		if (error) {
+			console.error('Error recovering stale locks:', error);
+			return 0;
+		}
+
+		return data?.length || 0;
+	} catch (error) {
+		console.error('Error in recoverStaleLocks:', error);
+		return 0;
+	}
+}
+
+/**
+ * Expire scheduled posts that are more than 24 hours past their scheduled time.
+ * Marks them as 'failed' with an expiration reason.
+ * Should be called at the start of each cron cycle.
+ */
+export async function expireOverdueContent(
+	maxAgeMs: number = 24 * 60 * 60 * 1000,
+): Promise<number> {
+	const cutoff = Date.now() - maxAgeMs;
+
+	try {
+		const { data, error } = await supabaseAdmin
+			.from('content_items')
+			.update({
+				publishing_status: 'failed',
+				error: 'Expired: scheduled time was more than 24 hours ago',
+				updated_at: new Date().toISOString(),
+			})
+			.eq('publishing_status', 'scheduled')
+			.lt('scheduled_time', cutoff)
+			.select('id');
+
+		if (error) {
+			console.error('Error expiring overdue content:', error);
+			return 0;
+		}
+
+		return data?.length || 0;
+	} catch (error) {
+		console.error('Error in expireOverdueContent:', error);
+		return 0;
+	}
+}
