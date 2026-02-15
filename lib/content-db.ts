@@ -9,5 +9,5 @@
 export { getContentItems, getContentItemById, getReviewQueue, getScheduledItems, getContentItemForProcessing } from './content-db/queries';
 export { createContentItem, updateContentItem, updateSubmissionStatus, updatePublishingStatus, updateScheduledTime, deleteContentItem } from './content-db/mutations';
 export { bulkUpdateSubmissionStatus, reorderScheduledItems } from './content-db/bulk';
-export { getPendingContentItems, acquireContentProcessingLock, releaseContentProcessingLock, markContentPublished, markContentFailed, markContentCancelled, recoverStaleLocks, expireOverdueContent } from './content-db/processing';
+export { getPendingContentItems, acquireContentProcessingLock, releaseContentProcessingLock, markContentPublished, markContentFailed, markContentCancelled, recoverStaleLocks, expireOverdueContent, RETRY_BACKOFF_MS, MAX_RETRY_COUNT, calculateRetryScheduledTime } from './content-db/processing';
 export { archiveContentItem, getOverdueCount, getContentStats } from './content-db/stats';
