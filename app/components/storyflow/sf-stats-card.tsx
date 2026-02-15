@@ -45,11 +45,11 @@ export function SfStatsCard({
 		<SfCard className={cn('', className)}>
 			<div className="flex items-start justify-between">
 				<div className="space-y-2">
-					<p className="text-sm font-medium text-gray-500 dark:text-[var(--sf-text-secondary)]">
+					<p className="text-sm font-medium text-gray-500">
 						{label}
 					</p>
 					<div className="flex items-baseline gap-2">
-						<h3 className="text-3xl font-bold text-slate-900 dark:text-white">
+						<h3 className="text-3xl font-bold text-slate-900">
 							{value}
 						</h3>
 						{trend && (
@@ -62,7 +62,7 @@ export function SfStatsCard({
 								{trend.isPositive ? '+' : ''}
 								{trend.value}%
 								{trend.label && (
-									<span className="ml-1 text-gray-500 dark:text-[var(--sf-text-secondary)]">
+									<span className="ml-1 text-gray-500">
 										{trend.label}
 									</span>
 								)}
@@ -70,7 +70,7 @@ export function SfStatsCard({
 						)}
 					</div>
 					{description && (
-						<p className="text-xs text-gray-500 dark:text-[var(--sf-text-secondary)]">
+						<p className="text-xs text-gray-500">
 							{description}
 						</p>
 					)}
@@ -92,11 +92,11 @@ export function SfStatsCardSkeleton({ className }: SfStatsCardSkeletonProps) {
 		<SfCard className={cn('animate-pulse', className)}>
 			<div className="flex items-start justify-between">
 				<div className="space-y-2">
-					<div className="h-4 w-24 rounded bg-slate-200 dark:bg-[var(--sf-border-dark)]" />
-					<div className="h-8 w-16 rounded bg-slate-200 dark:bg-[var(--sf-border-dark)]" />
-					<div className="h-3 w-32 rounded bg-slate-200 dark:bg-[var(--sf-border-dark)]" />
+					<div className="h-4 w-24 rounded bg-slate-200" />
+					<div className="h-8 w-16 rounded bg-slate-200" />
+					<div className="h-3 w-32 rounded bg-slate-200" />
 				</div>
-				<div className="h-10 w-10 rounded-lg bg-slate-200 dark:bg-[var(--sf-border-dark)]" />
+				<div className="h-10 w-10 rounded-lg bg-slate-200" />
 			</div>
 		</SfCard>
 	);

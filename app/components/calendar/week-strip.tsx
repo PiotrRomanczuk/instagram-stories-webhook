@@ -15,7 +15,7 @@ export function WeekStrip({ selectedDate, onDateSelect, itemCounts = {} }: WeekS
 	const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
 	return (
-		<div className="flex items-center gap-1 border-b border-gray-100 bg-white px-2 py-2 dark:border-slate-800 dark:bg-[#101622]">
+		<div className="flex items-center gap-1 border-b border-gray-100 bg-white px-2 py-2">
 			{days.map((day) => {
 				const selected = isSameDay(day, selectedDate);
 				const today = isToday(day);
@@ -32,8 +32,8 @@ export function WeekStrip({ selectedDate, onDateSelect, itemCounts = {} }: WeekS
 							selected
 								? 'bg-[#2b6cee] text-white shadow-sm'
 								: today
-									? 'bg-[#2b6cee]/10 text-[#2b6cee] dark:bg-[#2b6cee]/20'
-									: 'text-gray-500 hover:bg-gray-50 dark:text-slate-400 dark:hover:bg-slate-800'
+									? 'bg-[#2b6cee]/10 text-[#2b6cee]'
+									: 'text-gray-500 hover:bg-gray-50'
 						)}
 					>
 						<span className="text-[10px] font-medium uppercase">

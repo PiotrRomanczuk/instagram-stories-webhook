@@ -45,7 +45,7 @@ export function MemeActionModal({ isOpen, onClose, onConfirm, action, isProcessi
             description: 'This will instantly publish the meme to your Instagram Story.',
             icon: Send,
             color: 'text-indigo-600',
-            bg: 'bg-indigo-100 dark:bg-indigo-900/30',
+            bg: 'bg-indigo-100',
             btnColor: 'bg-indigo-600 hover:bg-indigo-700'
         },
         schedule: {
@@ -53,7 +53,7 @@ export function MemeActionModal({ isOpen, onClose, onConfirm, action, isProcessi
             description: 'Choose a date and time to publish this meme.',
             icon: Calendar,
             color: 'text-blue-600',
-            bg: 'bg-blue-100 dark:bg-blue-900/30',
+            bg: 'bg-blue-100',
             btnColor: 'bg-blue-600 hover:bg-blue-700'
         },
         reject: {
@@ -61,7 +61,7 @@ export function MemeActionModal({ isOpen, onClose, onConfirm, action, isProcessi
             description: 'Are you sure? The user will see the rejection status.',
             icon: Ban,
             color: 'text-red-600',
-            bg: 'bg-red-100 dark:bg-red-900/30',
+            bg: 'bg-red-100',
             btnColor: 'bg-red-600 hover:bg-red-700'
         },
         approve: {
@@ -69,7 +69,7 @@ export function MemeActionModal({ isOpen, onClose, onConfirm, action, isProcessi
             description: 'This will mark the meme as ready for publishing.',
             icon: CheckCircle,
             color: 'text-green-600',
-            bg: 'bg-green-100 dark:bg-green-900/30',
+            bg: 'bg-green-100',
             btnColor: 'bg-green-600 hover:bg-green-700'
         }
     };
@@ -89,14 +89,14 @@ export function MemeActionModal({ isOpen, onClose, onConfirm, action, isProcessi
                             <DialogTitle className="text-lg font-bold">
                                 {current.title}
                             </DialogTitle>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">
+                            <p className="text-sm text-slate-500">
                                 {action}
                             </p>
                         </div>
                     </div>
                 </DialogHeader>
 
-                <p className="text-slate-600 dark:text-slate-300">
+                <p className="text-slate-600">
                     {current.description}
                 </p>
 

@@ -39,23 +39,23 @@ export function SubmissionStats({
 				label="Pending"
 				value={pending}
 				icon={<Clock className="h-5 w-5" />}
-				iconBgColor="bg-yellow-500/10 dark:bg-yellow-500/20"
-				iconColor="text-yellow-600 dark:text-yellow-500"
+				iconBgColor="bg-yellow-500/10"
+				iconColor="text-yellow-600"
 				className="hover:border-yellow-500/50 transition-colors"
 			/>
 			<SfStatsCard
 				label="Approved"
 				value={approved}
 				icon={<CheckCircle className="h-5 w-5" />}
-				iconBgColor="bg-emerald-500/10 dark:bg-emerald-500/20"
-				iconColor="text-emerald-600 dark:text-emerald-500"
+				iconBgColor="bg-emerald-500/10"
+				iconColor="text-emerald-600"
 				className="hover:border-emerald-500/50 transition-colors"
 			/>
 			<SfStatsCard
 				label="Scheduled"
 				value={scheduled}
 				icon={<Calendar className="h-5 w-5" />}
-				iconBgColor="bg-[var(--sf-primary)]/10 dark:bg-[var(--sf-primary)]/20"
+				iconBgColor="bg-[var(--sf-primary)]/10"
 				iconColor="text-[var(--sf-primary)]"
 				className="hover:border-[var(--sf-primary)]/50 transition-colors"
 			/>
@@ -63,8 +63,8 @@ export function SubmissionStats({
 				label="Published"
 				value={published}
 				icon={<Send className="h-5 w-5" />}
-				iconBgColor="bg-purple-500/10 dark:bg-purple-500/20"
-				iconColor="text-purple-600 dark:text-purple-500"
+				iconBgColor="bg-purple-500/10"
+				iconColor="text-purple-600"
 				className="hover:border-purple-500/50 transition-colors"
 			/>
 		</div>

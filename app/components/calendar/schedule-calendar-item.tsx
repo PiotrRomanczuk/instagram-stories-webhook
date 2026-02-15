@@ -97,7 +97,7 @@ export function ScheduleCalendarItem({
 				data-draggable-id={item.id}
 				data-publishing-status={item.publishingStatus}
 				className={cn(
-					'group flex h-full w-full cursor-pointer items-center gap-2 overflow-hidden rounded-md border bg-white p-1 shadow-sm transition-all dark:bg-slate-900',
+					'group flex h-full w-full cursor-pointer items-center gap-2 overflow-hidden rounded-md border bg-white p-1 shadow-sm transition-all',
 					isDragging && 'z-50 opacity-80 shadow-xl scale-105',
 					item.publishingStatus === 'failed'
 						? 'border-red-500/50'
@@ -123,7 +123,7 @@ export function ScheduleCalendarItem({
 							/>
 						</>
 					) : (
-						<div className="flex h-full w-full items-center justify-center bg-gray-200 dark:bg-slate-800">
+						<div className="flex h-full w-full items-center justify-center bg-gray-200">
 							<span className="text-[6px] text-gray-400">N/A</span>
 						</div>
 					)}
@@ -144,11 +144,11 @@ export function ScheduleCalendarItem({
 
 				{/* Content */}
 				<div className="flex min-w-0 flex-1 flex-col justify-center overflow-hidden">
-					<p className="truncate text-[9px] font-semibold leading-tight text-gray-900 dark:text-white">
+					<p className="truncate text-[9px] font-semibold leading-tight text-gray-900">
 						{title}
 					</p>
 					{scheduledTime && (
-						<p className="truncate text-[8px] font-medium text-gray-500 dark:text-slate-400">
+						<p className="truncate text-[8px] font-medium text-gray-500">
 							{format(scheduledTime, 'h:mm a')}
 						</p>
 					)}
@@ -191,8 +191,8 @@ export function ScheduleCalendarItem({
 					/>
 				</div>
 			) : (
-				<div className="absolute inset-0 flex items-center justify-center bg-gray-200 dark:bg-slate-800">
-					<span className="text-[8px] text-gray-500 dark:text-slate-500">No preview</span>
+				<div className="absolute inset-0 flex items-center justify-center bg-gray-200">
+					<span className="text-[8px] text-gray-500">No preview</span>
 				</div>
 			)}
 

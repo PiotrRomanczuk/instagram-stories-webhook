@@ -16,11 +16,11 @@ interface ScheduleListViewProps {
 }
 
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
-	scheduled: { label: 'SCHEDULED', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-500/10' },
-	published: { label: 'PUBLISHED', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-500/10' },
-	failed: { label: 'FAILED', color: 'text-red-600 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-500/10' },
-	processing: { label: 'PROCESSING', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-500/10' },
-	draft: { label: 'DRAFT', color: 'text-gray-600 dark:text-gray-400', bg: 'bg-gray-50 dark:bg-gray-500/10' },
+	scheduled: { label: 'SCHEDULED', color: 'text-blue-600', bg: 'bg-blue-50' },
+	published: { label: 'PUBLISHED', color: 'text-emerald-600', bg: 'bg-emerald-50' },
+	failed: { label: 'FAILED', color: 'text-red-600', bg: 'bg-red-50' },
+	processing: { label: 'PROCESSING', color: 'text-amber-600', bg: 'bg-amber-50' },
+	draft: { label: 'DRAFT', color: 'text-gray-600', bg: 'bg-gray-50' },
 };
 
 const statusBorderColors: Record<string, string> = {
@@ -45,12 +45,12 @@ function ListItem({ item, onItemClick }: { item: ContentItem; onItemClick?: (ite
 			onClick={() => onItemClick?.(item)}
 			className={cn(
 				'flex w-full items-center gap-3 border-l-4 bg-white p-3 text-left transition-colors hover:bg-gray-50',
-				'dark:bg-slate-900/50 dark:hover:bg-slate-800/50',
+				'',
 				borderColor
 			)}
 		>
 			{/* Thumbnail */}
-			<div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100 dark:bg-slate-800">
+			<div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100">
 				{item.mediaUrl && !imageError ? (
 					<Image
 						src={item.mediaUrl}
@@ -63,9 +63,9 @@ function ListItem({ item, onItemClick }: { item: ContentItem; onItemClick?: (ite
 				) : (
 					<div className="flex h-full w-full items-center justify-center">
 						{item.mediaType === 'VIDEO' ? (
-							<Video className="h-5 w-5 text-gray-400 dark:text-slate-500" />
+							<Video className="h-5 w-5 text-gray-400" />
 						) : (
-							<ImageIcon className="h-5 w-5 text-gray-400 dark:text-slate-500" />
+							<ImageIcon className="h-5 w-5 text-gray-400" />
 						)}
 					</div>
 				)}
@@ -76,7 +76,7 @@ function ListItem({ item, onItemClick }: { item: ContentItem; onItemClick?: (ite
 				<div className="flex items-center gap-2">
 					{/* Time */}
 					{scheduledDate && (
-						<span className="flex items-center gap-1 text-xs font-semibold text-gray-900 dark:text-white">
+						<span className="flex items-center gap-1 text-xs font-semibold text-gray-900">
 							<Clock className="h-3 w-3" />
 							{format(scheduledDate, 'h:mm a')}
 						</span>
@@ -91,11 +91,11 @@ function ListItem({ item, onItemClick }: { item: ContentItem; onItemClick?: (ite
 						)}
 					</span>
 				</div>
-				<p className="mt-0.5 truncate text-sm text-gray-600 dark:text-slate-400">
+				<p className="mt-0.5 truncate text-sm text-gray-600">
 					{item.caption || 'No caption'}
 				</p>
 				{isFailed && item.error && (
-					<p className="mt-0.5 truncate text-xs text-red-500 dark:text-red-400">
+					<p className="mt-0.5 truncate text-xs text-red-500">
 						{getFriendlyErrorShort(item.error)}
 					</p>
 				)}
@@ -104,7 +104,7 @@ function ListItem({ item, onItemClick }: { item: ContentItem; onItemClick?: (ite
 			{/* Right side - engagement or warning */}
 			<div className="flex flex-shrink-0 flex-col items-end gap-1">
 				{status === 'published' && (
-					<div className="flex items-center gap-2 text-xs text-gray-400 dark:text-slate-500">
+					<div className="flex items-center gap-2 text-xs text-gray-400">
 						<span className="flex items-center gap-0.5">
 							<Eye className="h-3 w-3" /> --
 						</span>
@@ -134,19 +134,19 @@ export function ScheduleListView({ currentDate, scheduledItems, onItemClick, sho
 	if (dayItems.length === 0) {
 		return (
 			<div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
-				<div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 dark:bg-slate-800">
+				<div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100">
 					{showAllDates ? (
-						<AlertCircle className="h-7 w-7 text-gray-400 dark:text-slate-500" />
+						<AlertCircle className="h-7 w-7 text-gray-400" />
 					) : (
-						<Clock className="h-7 w-7 text-gray-400 dark:text-slate-500" />
+						<Clock className="h-7 w-7 text-gray-400" />
 					)}
 				</div>
 				<div>
-					<p className="font-semibold text-gray-900 dark:text-white">
+					<p className="font-semibold text-gray-900">
 						{showAllDates ? 'No failed posts' : 'No stories scheduled'}
 					</p>
 					{!showAllDates && (
-						<p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
+						<p className="mt-1 text-sm text-gray-500">
 							{format(currentDate, 'EEEE, MMMM d')}
 						</p>
 					)}
@@ -157,7 +157,7 @@ export function ScheduleListView({ currentDate, scheduledItems, onItemClick, sho
 
 	return (
 		<div className="flex-1 overflow-auto">
-			<div className="divide-y divide-gray-100 dark:divide-slate-800">
+			<div className="divide-y divide-gray-100">
 				{dayItems.map((item) => (
 					<ListItem key={item.id} item={item} onItemClick={onItemClick} />
 				))}

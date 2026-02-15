@@ -114,7 +114,7 @@ export function QuickSchedulePopover({
 			{isOpen && (
 				<div
 					ref={popoverRef}
-					className="fixed inset-x-4 bottom-4 z-[60] w-auto rounded-xl border border-gray-200 bg-white p-4 shadow-xl dark:border-slate-700 dark:bg-slate-900 sm:absolute sm:inset-auto sm:left-0 sm:top-full sm:z-50 sm:mt-2 sm:w-72"
+					className="fixed inset-x-4 bottom-4 z-[60] w-auto rounded-xl border border-gray-200 bg-white p-4 shadow-xl sm:absolute sm:inset-auto sm:left-0 sm:top-full sm:z-50 sm:mt-2 sm:w-72"
 				>
 					{/* Header with thumbnail */}
 					<div className="mb-4 flex gap-3">
@@ -128,8 +128,8 @@ export function QuickSchedulePopover({
 									onError={() => setImageError(true)}
 								/>
 							) : (
-								<div className="flex h-full w-full items-center justify-center bg-gray-200 dark:bg-slate-800">
-									<span className="text-[8px] text-gray-500 dark:text-slate-500">
+								<div className="flex h-full w-full items-center justify-center bg-gray-200">
+									<span className="text-[8px] text-gray-500">
 										No preview
 									</span>
 								</div>
@@ -138,10 +138,10 @@ export function QuickSchedulePopover({
 
 						{/* Content info */}
 						<div className="flex flex-1 flex-col justify-center">
-							<p className="mb-1 line-clamp-2 text-sm font-bold text-gray-900 dark:text-white">
+							<p className="mb-1 line-clamp-2 text-sm font-bold text-gray-900">
 								{title}
 							</p>
-							<p className="text-xs text-gray-500 dark:text-slate-400">
+							<p className="text-xs text-gray-500">
 								Quick schedule
 							</p>
 						</div>
@@ -149,7 +149,7 @@ export function QuickSchedulePopover({
 
 					{/* Date Time Picker */}
 					<div className="mb-4">
-						<label className="mb-2 block text-xs font-bold uppercase text-gray-500 dark:text-slate-400">
+						<label className="mb-2 block text-xs font-bold uppercase text-gray-500">
 							Schedule for
 						</label>
 						<DateTimePicker
@@ -166,7 +166,7 @@ export function QuickSchedulePopover({
 							type="button"
 							onClick={() => onOpenChange(false)}
 							disabled={isSubmitting}
-							className="flex-1 rounded-lg border border-gray-200 px-4 py-2 text-xs font-bold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+							className="flex-1 rounded-lg border border-gray-200 px-4 py-2 text-xs font-bold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
 						>
 							Cancel
 						</button>

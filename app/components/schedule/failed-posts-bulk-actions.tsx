@@ -79,9 +79,9 @@ export function FailedPostsBulkActions({ failedItems, onRefresh }: FailedPostsBu
 
 	return (
 		<>
-			<div className="flex items-center gap-2 px-4 py-2.5 bg-red-50 dark:bg-red-900/10 border-b border-red-100 dark:border-red-900/20">
+			<div className="flex items-center gap-2 px-4 py-2.5 bg-red-50 border-b border-red-100">
 				<AlertCircle className="h-4 w-4 text-red-500 shrink-0" />
-				<span className="text-sm font-semibold text-red-700 dark:text-red-400 flex-1">
+				<span className="text-sm font-semibold text-red-700 flex-1">
 					{failedItems.length} failed post{failedItems.length !== 1 ? 's' : ''}
 				</span>
 				<button

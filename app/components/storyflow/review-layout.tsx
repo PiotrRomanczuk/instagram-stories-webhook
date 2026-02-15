@@ -171,7 +171,7 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 			<div className={cn('flex h-[calc(100vh-120px)] items-center justify-center', className)}>
 				<div className="text-center space-y-4">
 					<Loader2 className="h-12 w-12 animate-spin text-[#2b6cee] mx-auto" />
-					<p className="text-slate-500 dark:text-slate-400 font-medium">Loading stories...</p>
+					<p className="text-slate-500 font-medium">Loading stories...</p>
 				</div>
 			</div>
 		);
@@ -182,11 +182,11 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 		return (
 			<div className={cn('flex flex-col items-center justify-center h-[calc(100vh-120px)]', className)}>
 				<AlertTriangle className="h-12 w-12 text-red-400 mb-4" />
-				<h3 className="text-lg font-semibold text-slate-900 dark:text-white">Failed to load stories</h3>
-				<p className="text-sm text-slate-500 dark:text-slate-400 mt-2 mb-4">
+				<h3 className="text-lg font-semibold text-slate-900">Failed to load stories</h3>
+				<p className="text-sm text-slate-500 mt-2 mb-4">
 					{error.message || 'An error occurred'}
 				</p>
-				<Button onClick={refreshList} variant="outline" className="border-slate-300 dark:border-[#2a3649] hover:bg-slate-100 dark:hover:bg-[#232f48]">
+				<Button onClick={refreshList} variant="outline" className="border-slate-300 hover:bg-slate-100">
 					Try Again
 				</Button>
 			</div>
@@ -197,11 +197,11 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 	if (items.length === 0) {
 		return (
 			<div className={cn('flex flex-col items-center justify-center h-[calc(100vh-120px)]', className)}>
-				<div className="h-20 w-20 rounded-full bg-blue-100 dark:bg-[#232f48] flex items-center justify-center mb-4">
+				<div className="h-20 w-20 rounded-full bg-blue-100 flex items-center justify-center mb-4">
 					<Inbox className="h-10 w-10 text-[#2b6cee]" />
 				</div>
-				<h3 className="text-lg font-semibold text-slate-900 dark:text-white">All caught up!</h3>
-				<p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
+				<h3 className="text-lg font-semibold text-slate-900">All caught up!</h3>
+				<p className="text-sm text-slate-500 mt-2">
 					No stories pending review
 				</p>
 			</div>
@@ -209,20 +209,20 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 	}
 
 	return (
-		<div className={cn('flex h-[calc(100vh-120px)] bg-white dark:bg-[#101622]', className)}>
+		<div className={cn('flex h-[calc(100vh-120px)] bg-white', className)}>
 			{/* Left Sidebar: Review History (desktop only) */}
 			<ReviewHistorySidebar history={reviewHistory} />
 
 			{/* Main Content */}
-			<main className="flex-1 flex flex-col bg-slate-50 dark:bg-black/20 overflow-y-auto">
+			<main className="flex-1 flex flex-col bg-slate-50 overflow-y-auto">
 				<div className="max-w-4xl mx-auto w-full px-3 py-4 sm:p-8 flex flex-col items-center">
 					{/* Header */}
 					<div data-tour="review-header" className="mb-4 sm:mb-6 text-center">
 						<div className="flex items-center justify-center gap-2 mb-1">
-							<h1 className="text-lg sm:text-2xl font-bold text-slate-900 dark:text-white">Story Review Queue</h1>
+							<h1 className="text-lg sm:text-2xl font-bold text-slate-900">Story Review Queue</h1>
 							<TourTriggerButton onStartTour={startTour} />
 						</div>
-						<p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm">
+						<p className="text-slate-500 text-xs sm:text-sm">
 							{remainingCount} {remainingCount === 1 ? 'story' : 'stories'} pending review
 							{reviewedCount > 0 && (
 								<span className="ml-2 text-[#2b6cee]">
@@ -261,8 +261,8 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 							onClick={() => setShowMobileDetails(!showMobileDetails)}
 							className={cn(
 								'w-full flex items-center justify-center gap-2',
-								'bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10',
-								'text-slate-700 dark:text-white py-2.5 rounded-xl text-sm font-medium transition-colors'
+								'bg-slate-100 hover:bg-slate-200',
+								'text-slate-700 py-2.5 rounded-xl text-sm font-medium transition-colors'
 							)}
 						>
 							<MessageSquare className="h-4 w-4" />
@@ -274,15 +274,15 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 							<div className="mt-3 space-y-3 animate-in slide-in-from-top-2 duration-200">
 								{/* Story info */}
 								{currentItem && (
-									<div className="p-3 bg-white dark:bg-white/5 rounded-xl border border-slate-200 dark:border-[#2a3649]">
-										<div className="flex justify-between text-xs text-slate-500 dark:text-slate-400">
+									<div className="p-3 bg-white rounded-xl border border-slate-200">
+										<div className="flex justify-between text-xs text-slate-500">
 											<span>Author</span>
-											<span className="font-medium text-slate-900 dark:text-white capitalize">
+											<span className="font-medium text-slate-900 capitalize">
 												{currentItem.userEmail?.split('@')[0] || 'Unknown'}
 											</span>
 										</div>
 										{currentItem.caption && (
-											<p className="mt-2 text-xs text-slate-600 dark:text-slate-300 line-clamp-2">
+											<p className="mt-2 text-xs text-slate-600 line-clamp-2">
 												{currentItem.caption}
 											</p>
 										)}
@@ -291,7 +291,7 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 
 								{/* Comment input */}
 								<div className="space-y-1.5">
-									<label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+									<label className="text-xs font-bold text-slate-500 uppercase tracking-widest">
 										Review Comment
 									</label>
 									<textarea
@@ -300,8 +300,8 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 										placeholder="Add notes about this review..."
 										className={cn(
 											'w-full min-h-[60px] p-3 rounded-xl resize-none',
-											'bg-white dark:bg-black/20 border border-slate-200 dark:border-[#2a3649]',
-											'text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm',
+											'bg-white border border-slate-200',
+											'text-slate-900 placeholder:text-slate-400 text-sm',
 											'focus:outline-none focus:ring-2 focus:ring-[#2b6cee]/50 focus:border-[#2b6cee]'
 										)}
 									/>

@@ -43,7 +43,7 @@ export default function SignIn() {
 	};
 
 	return (
-		<div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-[#101622] p-4 sm:p-6">
+		<div className="flex min-h-screen items-center justify-center bg-gray-50 p-4 sm:p-6">
 			<div className="w-full max-w-md space-y-8">
 				{/* Logo */}
 				<div className="text-center">

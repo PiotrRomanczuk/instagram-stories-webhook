@@ -125,16 +125,16 @@ export function ScheduleTimeSheet({
 			/>
 
 			{/* Bottom sheet */}
-			<div className="absolute bottom-0 left-0 right-0 max-w-lg mx-auto rounded-t-2xl bg-white shadow-2xl dark:bg-[#1a1f2e] animate-in slide-in-from-bottom duration-300">
+			<div className="absolute bottom-0 left-0 right-0 max-w-lg mx-auto rounded-t-2xl bg-white shadow-2xl animate-in slide-in-from-bottom duration-300">
 				{/* Handle */}
 				<div className="flex justify-center pt-3 pb-1">
-					<div className="h-1 w-10 rounded-full bg-gray-300 dark:bg-slate-600" />
+					<div className="h-1 w-10 rounded-full bg-gray-300" />
 				</div>
 
 				{/* Header with item preview */}
 				<div className="flex items-center gap-3 px-5 pb-3">
 					{/* Thumbnail */}
-					<div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-700">
+					<div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-gray-100">
 						{item.mediaUrl ? (
 							<Image
 								src={item.mediaUrl}
@@ -150,16 +150,16 @@ export function ScheduleTimeSheet({
 						)}
 					</div>
 					<div className="min-w-0 flex-1">
-						<h3 className="text-sm font-bold text-gray-900 dark:text-white truncate">
+						<h3 className="text-sm font-bold text-gray-900 truncate">
 							Schedule Post
 						</h3>
-						<p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+						<p className="text-xs text-gray-500 truncate">
 							{displayTitle}
 						</p>
 					</div>
 					<button
 						onClick={onCancel}
-						className="rounded-full p-2 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition min-h-[44px] min-w-[44px] flex items-center justify-center"
+						className="rounded-full p-2 text-gray-400 hover:bg-gray-100 transition min-h-[44px] min-w-[44px] flex items-center justify-center"
 					>
 						<X className="h-5 w-5" />
 					</button>
@@ -169,7 +169,7 @@ export function ScheduleTimeSheet({
 				<div className="px-5 pb-3">
 					<div className="mb-2 flex items-center gap-1.5">
 						<Sparkles className="h-3 w-3 text-blue-500" />
-						<span className="text-[11px] font-semibold text-gray-500 dark:text-slate-400">
+						<span className="text-[11px] font-semibold text-gray-500">
 							Best Times
 						</span>
 					</div>
@@ -184,7 +184,7 @@ export function ScheduleTimeSheet({
 									selectedDate.getHours() === time.hours &&
 										selectedDate.getMinutes() === time.minutes
 										? 'bg-blue-500 text-white shadow-sm shadow-blue-500/25'
-										: 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700',
+										: 'bg-gray-100 text-gray-600 hover:bg-gray-200',
 								)}
 							>
 								{time.label}
@@ -197,12 +197,12 @@ export function ScheduleTimeSheet({
 				<div className="px-5 py-3 space-y-3">
 					{/* Date Select */}
 					<div className="space-y-1.5">
-						<Label className="text-xs text-gray-500 dark:text-slate-400 pl-0.5">
+						<Label className="text-xs text-gray-500 pl-0.5">
 							<Calendar className="h-3.5 w-3.5" />
 							Date
 						</Label>
 						<Select value={selectedDayValue} onValueChange={handleDayChange}>
-							<SelectTrigger className="w-full h-11 rounded-xl bg-gray-50 dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-sm font-medium">
+							<SelectTrigger className="w-full h-11 rounded-xl bg-gray-50 border-gray-200 text-sm font-medium">
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent className="z-[110]">
@@ -217,7 +217,7 @@ export function ScheduleTimeSheet({
 
 					{/* Time Input */}
 					<div className="space-y-1.5">
-						<Label className="text-xs text-gray-500 dark:text-slate-400 pl-0.5">
+						<Label className="text-xs text-gray-500 pl-0.5">
 							<Clock className="h-3.5 w-3.5" />
 							Time
 						</Label>
@@ -225,14 +225,14 @@ export function ScheduleTimeSheet({
 							type="time"
 							value={timeValue}
 							onChange={handleTimeChange}
-							className="w-full h-11 rounded-xl bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 px-3 text-sm font-medium text-gray-900 dark:text-white outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+							className="w-full h-11 rounded-xl bg-gray-50 border border-gray-200 px-3 text-sm font-medium text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
 						/>
 					</div>
 				</div>
 
 				{/* Summary line */}
 				<div className="px-5 py-2">
-					<p className="text-xs text-center text-gray-400 dark:text-slate-500">
+					<p className="text-xs text-center text-gray-400">
 						Posting {formattedDay} at {formattedTime}
 					</p>
 				</div>
@@ -242,7 +242,7 @@ export function ScheduleTimeSheet({
 					<button
 						type="button"
 						onClick={onCancel}
-						className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white py-3 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-50 active:scale-[0.98] dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700"
+						className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white py-3 text-sm font-semibold text-gray-600 transition-colors hover:bg-gray-50 active:scale-[0.98]"
 					>
 						Cancel
 					</button>

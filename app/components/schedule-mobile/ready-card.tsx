@@ -52,8 +52,8 @@ export function ReadyCard({
 			className={cn(
 				'relative z-10 flex items-center gap-4 rounded-xl p-3 shadow-sm transition active:scale-[0.98]',
 				isSelected
-					? 'border-2 border-blue-500 bg-blue-50 dark:border-blue-500 dark:bg-blue-900/10'
-					: 'border border-gray-100 bg-white dark:border-gray-800 dark:bg-[#1f2229]',
+					? 'border-2 border-blue-500 bg-blue-50'
+					: 'border border-gray-100 bg-white',
 			)}
 		>
 			{/* Selection check badge */}
@@ -68,8 +68,8 @@ export function ReadyCard({
 				className={cn(
 					'relative h-24 w-24 shrink-0 overflow-hidden rounded-lg',
 					isVideo && !item.mediaUrl
-						? 'flex items-center justify-center bg-purple-100 text-purple-500 dark:bg-purple-900/30'
-						: 'bg-gray-200 dark:bg-gray-700',
+						? 'flex items-center justify-center bg-purple-100 text-purple-500'
+						: 'bg-gray-200',
 				)}
 			>
 				{isVideo && !item.mediaUrl ? (
@@ -85,12 +85,12 @@ export function ReadyCard({
 					/>
 				) : (
 					<div className="flex h-full w-full items-center justify-center">
-						<ImageIcon className="h-8 w-8 text-gray-400 dark:text-gray-500" />
+						<ImageIcon className="h-8 w-8 text-gray-400" />
 					</div>
 				)}
 				{/* Blue dot for new items */}
 				{isGreen && (
-					<div className="absolute right-1 top-1 h-2 w-2 rounded-full border border-white bg-blue-500 dark:border-gray-800" />
+					<div className="absolute right-1 top-1 h-2 w-2 rounded-full border border-white bg-blue-500" />
 				)}
 			</div>
 
@@ -101,15 +101,15 @@ export function ReadyCard({
 						className={cn(
 							'rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider',
 							isGreen
-								? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400'
-								: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',
+								? 'bg-green-100 text-green-600'
+								: 'bg-gray-100 text-gray-500',
 						)}
 					>
 						{approvalLabel}
 					</span>
 					<span className="text-xs text-gray-400">{approvalTime}</span>
 				</div>
-				<h3 className="line-clamp-2 text-sm font-semibold leading-snug text-gray-900 dark:text-white">
+				<h3 className="line-clamp-2 text-sm font-semibold leading-snug text-gray-900">
 					{item.caption || item.title || 'Untitled content'}
 				</h3>
 			</div>

@@ -73,7 +73,7 @@ export function DrumPicker({
 	return (
 		<div className={cn('flex flex-col items-center', className)}>
 			{label && (
-				<span className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-slate-500">
+				<span className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
 					{label}
 				</span>
 			)}
@@ -83,7 +83,7 @@ export function DrumPicker({
 			>
 				{/* Selection indicator */}
 				<div
-					className="pointer-events-none absolute left-0 right-0 z-10 rounded-lg border border-[#2b6cee]/30 bg-[#2b6cee]/5 dark:border-[#2b6cee]/40 dark:bg-[#2b6cee]/10"
+					className="pointer-events-none absolute left-0 right-0 z-10 rounded-lg border border-[#2b6cee]/30 bg-[#2b6cee]/5"
 					style={{
 						top: paddingItems * itemHeight,
 						height: itemHeight,
@@ -91,8 +91,8 @@ export function DrumPicker({
 				/>
 
 				{/* Fade masks */}
-				<div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-12 bg-gradient-to-b from-white dark:from-[#1a1f2e]" />
-				<div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-12 bg-gradient-to-t from-white dark:from-[#1a1f2e]" />
+				<div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-12 bg-gradient-to-b from-white" />
+				<div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-12 bg-gradient-to-t from-white" />
 
 				{/* Scrollable list */}
 				<div
@@ -132,8 +132,8 @@ export function DrumPicker({
 									className={cn(
 										'text-lg font-bold transition-colors',
 										index === selectedIndex
-											? 'text-gray-900 dark:text-white'
-											: 'text-gray-400 dark:text-slate-500'
+											? 'text-gray-900'
+											: 'text-gray-400'
 									)}
 								>
 									{item}

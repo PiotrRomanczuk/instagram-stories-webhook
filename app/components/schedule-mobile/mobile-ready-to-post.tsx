@@ -239,20 +239,20 @@ export function MobileReadyToPost({ items, scheduledItems = [], onBack, onItemCl
 			animate={{ x: 0 }}
 			exit={{ x: '100%' }}
 			transition={{ type: 'spring', damping: 26, stiffness: 200 }}
-			className="fixed inset-0 z-50 flex flex-col bg-gray-100 dark:bg-[#0f1115] text-gray-900 dark:text-gray-100"
+			className="fixed inset-0 z-50 flex flex-col bg-gray-100 text-gray-900"
 		>
 			{/* Header */}
-			<header className="flex h-16 shrink-0 items-center justify-between border-b border-gray-200 bg-white/90 px-4 backdrop-blur-xl dark:border-gray-800 dark:bg-[#181b21]/90">
+			<header className="flex h-16 shrink-0 items-center justify-between border-b border-gray-200 bg-white/90 px-4 backdrop-blur-xl">
 				<div className="flex items-center gap-3">
 					<button
 						onClick={onBack}
-						className="-ml-2 rounded-full p-2 text-gray-500 transition hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+						className="-ml-2 rounded-full p-2 text-gray-500 transition hover:bg-gray-100"
 					>
 						<ArrowLeft className="h-6 w-6" />
 					</button>
 					<div>
-						<h1 className="text-lg font-bold leading-tight text-gray-900 dark:text-white">Ready to Post</h1>
-						<p className="text-xs text-gray-500 dark:text-gray-400">{readyItems.filter(i => !dismissingCards.has(i.id)).length} items approved</p>
+						<h1 className="text-lg font-bold leading-tight text-gray-900">Ready to Post</h1>
+						<p className="text-xs text-gray-500">{readyItems.filter(i => !dismissingCards.has(i.id)).length} items approved</p>
 					</div>
 				</div>
 				<div className="flex items-center gap-2">
@@ -261,8 +261,8 @@ export function MobileReadyToPost({ items, scheduledItems = [], onBack, onItemCl
 						className={cn(
 							'rounded-lg px-2 py-2 text-sm font-semibold transition',
 							selectMode
-								? 'text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20'
-								: 'text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20'
+								? 'text-red-500 hover:bg-red-50'
+								: 'text-blue-500 hover:bg-blue-50'
 						)}
 					>
 						{selectMode ? 'Cancel' : 'Select'}
@@ -279,7 +279,7 @@ export function MobileReadyToPost({ items, scheduledItems = [], onBack, onItemCl
 										setSelectedIds(new Set(activeItems.map(i => i.id)));
 									}
 								}}
-								className="rounded-lg px-2 py-2 text-sm font-semibold text-blue-500 transition hover:bg-blue-50 dark:hover:bg-blue-900/20"
+								className="rounded-lg px-2 py-2 text-sm font-semibold text-blue-500 transition hover:bg-blue-50"
 							>
 								{allSelected ? 'Deselect All' : 'Select All'}
 							</button>
@@ -290,8 +290,8 @@ export function MobileReadyToPost({ items, scheduledItems = [], onBack, onItemCl
 						className={cn(
 							'rounded-full p-2 transition',
 							showSortMenu
-								? 'bg-blue-50 text-blue-500 dark:bg-blue-900/20'
-								: 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
+								? 'bg-blue-50 text-blue-500'
+								: 'text-gray-500 hover:bg-gray-100'
 						)}
 					>
 						<Filter className="h-6 w-6" />
@@ -301,9 +301,9 @@ export function MobileReadyToPost({ items, scheduledItems = [], onBack, onItemCl
 
 			{/* Swipe Hint */}
 			{!selectMode && readyItems.length > 0 && (
-				<div className="flex items-center justify-center gap-4 px-4 py-2 text-xs font-medium text-gray-400 dark:text-gray-500">
+				<div className="flex items-center justify-center gap-4 px-4 py-2 text-xs font-medium text-gray-400">
 					<span className="flex items-center gap-1"><ArrowLeft className="h-3 w-3" /> Archive</span>
-					<span className="text-gray-300 dark:text-gray-600">|</span>
+					<span className="text-gray-300">|</span>
 					<span className="flex items-center gap-1">Schedule <ArrowRight className="h-3 w-3" /></span>
 				</div>
 			)}
@@ -312,9 +312,9 @@ export function MobileReadyToPost({ items, scheduledItems = [], onBack, onItemCl
 			<main className="flex-1 overflow-y-auto pb-32 pt-1">
 				{readyItems.length === 0 ? (
 					<div className="flex flex-col items-center justify-center px-8 py-20 text-center">
-						<Clock className="mb-4 h-12 w-12 text-gray-300 dark:text-gray-600" />
-						<h3 className="mb-1 text-lg font-bold text-gray-700 dark:text-gray-300">No content ready</h3>
-						<p className="text-sm text-gray-400 dark:text-gray-500">
+						<Clock className="mb-4 h-12 w-12 text-gray-300" />
+						<h3 className="mb-1 text-lg font-bold text-gray-700">No content ready</h3>
+						<p className="text-sm text-gray-400">
 							Approved submissions will appear here
 						</p>
 					</div>
@@ -351,17 +351,17 @@ export function MobileReadyToPost({ items, scheduledItems = [], onBack, onItemCl
 			{/* Selection Action Bar */}
 			{selectedIds.size > 0 && (
 				<div className="fixed bottom-24 left-4 right-4 z-40">
-					<div className="flex flex-col gap-3 rounded-2xl bg-gray-900 p-4 shadow-xl shadow-black/20 dark:bg-white">
+					<div className="flex flex-col gap-3 rounded-2xl bg-gray-900 p-4 shadow-xl shadow-black/20">
 						<div className="flex items-center justify-between">
 							<div className="flex items-center gap-3">
 								<div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 text-sm font-bold text-white">
 									{selectedIds.size}
 								</div>
 								<div className="flex flex-col">
-									<span className="text-sm font-bold text-white dark:text-gray-900">
+									<span className="text-sm font-bold text-white">
 										Post{selectedIds.size !== 1 ? 's' : ''} Selected
 									</span>
-									<span className="text-xs text-gray-400 dark:text-gray-500">
+									<span className="text-xs text-gray-400">
 										{(() => {
 											const now = new Date();
 											const times = Array.from({ length: selectedIds.size }, (_, i) =>
@@ -378,7 +378,7 @@ export function MobileReadyToPost({ items, scheduledItems = [], onBack, onItemCl
 							</div>
 							<button
 								onClick={clearSelection}
-								className="text-xs font-medium text-gray-400 transition hover:text-white dark:hover:text-black"
+								className="text-xs font-medium text-gray-400 transition hover:text-white"
 							>
 								Clear
 							</button>
@@ -392,8 +392,8 @@ export function MobileReadyToPost({ items, scheduledItems = [], onBack, onItemCl
 								<Calendar className="h-[18px] w-[18px]" />
 								{isScheduling ? 'Scheduling...' : 'Schedule All'}
 							</button>
-							<button className="flex w-12 items-center justify-center rounded-xl bg-gray-700 transition hover:bg-gray-600 active:scale-95 dark:bg-gray-200 dark:hover:bg-gray-300">
-								<Archive className="h-5 w-5 text-white dark:text-gray-900" />
+							<button className="flex w-12 items-center justify-center rounded-xl bg-gray-700 transition hover:bg-gray-600 active:scale-95">
+								<Archive className="h-5 w-5 text-white" />
 							</button>
 						</div>
 					</div>
@@ -418,15 +418,15 @@ export function MobileReadyToPost({ items, scheduledItems = [], onBack, onItemCl
 				>
 					<div className="absolute inset-0 bg-black/40" />
 					<div
-						className="absolute bottom-0 left-0 right-0 max-w-lg mx-auto rounded-t-2xl bg-white dark:bg-[#1a1f2e] shadow-2xl animate-in slide-in-from-bottom duration-200"
+						className="absolute bottom-0 left-0 right-0 max-w-lg mx-auto rounded-t-2xl bg-white shadow-2xl animate-in slide-in-from-bottom duration-200"
 						onClick={(e) => e.stopPropagation()}
 					>
 						{/* Handle */}
 						<div className="flex justify-center pt-3 pb-1">
-							<div className="h-1 w-10 rounded-full bg-gray-300 dark:bg-slate-600" />
+							<div className="h-1 w-10 rounded-full bg-gray-300" />
 						</div>
 						<div className="px-5 pb-2">
-							<h3 className="text-sm font-bold text-gray-900 dark:text-white">Sort By</h3>
+							<h3 className="text-sm font-bold text-gray-900">Sort By</h3>
 						</div>
 						<div className="px-5 pb-3 flex flex-col gap-2">
 							{([
@@ -440,8 +440,8 @@ export function MobileReadyToPost({ items, scheduledItems = [], onBack, onItemCl
 									className={cn(
 										'w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition active:scale-[0.98] min-h-[48px]',
 										sortMode === value
-											? 'bg-blue-50 dark:bg-blue-900/20 text-blue-500'
-											: 'bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-700'
+											? 'bg-blue-50 text-blue-500'
+											: 'bg-gray-50 text-gray-700 hover:bg-gray-100'
 									)}
 								>
 									{label}
@@ -452,7 +452,7 @@ export function MobileReadyToPost({ items, scheduledItems = [], onBack, onItemCl
 						<div className="px-5 pt-1 pb-24">
 							<button
 								onClick={() => setShowSortMenu(false)}
-								className="w-full py-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-semibold text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 transition active:scale-[0.98] min-h-[48px]"
+								className="w-full py-3 rounded-xl border border-gray-200 bg-white text-sm font-semibold text-gray-500 hover:bg-gray-50 transition active:scale-[0.98] min-h-[48px]"
 							>
 								Close
 							</button>

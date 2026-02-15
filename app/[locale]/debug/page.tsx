@@ -15,7 +15,7 @@ export default async function DebugPage() {
 	}
 
 	return (
-		<main className="min-h-screen bg-gray-50 dark:bg-[#101622] mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+		<main className="min-h-screen bg-gray-50 mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
 			<div className="space-y-6">
 				<PageHeader
 					title="Publish Debug"
@@ -26,12 +26,12 @@ export default async function DebugPage() {
 
 				<DebugPublisherNew />
 
-				<Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/20">
+				<Alert className="border-amber-200 bg-amber-50">
 					<AlertTriangle className="h-4 w-4 text-amber-600" />
-					<AlertTitle className="text-amber-800 dark:text-amber-100">
+					<AlertTitle className="text-amber-800">
 						Security Warning
 					</AlertTitle>
-					<AlertDescription className="text-amber-700 dark:text-amber-300">
+					<AlertDescription className="text-amber-700">
 						This is a manual debug tool. Use it only to verify that your Instagram
 						connection is working. Posts made here will NOT be tracked in your
 						schedule history.

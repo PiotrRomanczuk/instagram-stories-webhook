@@ -74,7 +74,7 @@ export function MemeEditModal({
 	return (
 		<Dialog open={isOpen} onOpenChange={(open) => { if (!open) handleCancel(); }}>
 			<DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-				<DialogHeader className="bg-gradient-to-r from-indigo-50 to-white dark:from-slate-800 dark:to-slate-900 -mx-6 -mt-6 px-6 pt-6 pb-4 border-b border-gray-200 dark:border-slate-700">
+				<DialogHeader className="bg-gradient-to-r from-indigo-50 to-white -mx-6 -mt-6 px-6 pt-6 pb-4 border-b border-gray-200">
 					<DialogTitle>Edit Meme Submission</DialogTitle>
 				</DialogHeader>
 
@@ -161,7 +161,7 @@ export function MemeEditModal({
 					)}
 				</div>
 
-				<DialogFooter className="bg-gray-50 dark:bg-slate-800 -mx-6 -mb-6 px-6 py-4 border-t border-gray-200 dark:border-slate-700">
+				<DialogFooter className="bg-gray-50 -mx-6 -mb-6 px-6 py-4 border-t border-gray-200">
 					<Button
 						variant='outline'
 						onClick={handleCancel}

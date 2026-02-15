@@ -102,7 +102,7 @@ export function StoryPreview() {
 				{!error && !loading && lastStory && (
 					<div className="space-y-4">
 						{/* Last Story Preview */}
-						<div className="relative aspect-[9/16] max-w-[280px] mx-auto bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-950 dark:to-pink-950 rounded-2xl overflow-hidden shadow-xl">
+						<div className="relative aspect-[9/16] max-w-[280px] mx-auto bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl overflow-hidden shadow-xl">
 							{lastStory.media_type === 'IMAGE' ? (
 								<Image
 									src={lastStory.media_url}

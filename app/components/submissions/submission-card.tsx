@@ -79,7 +79,7 @@ export function SubmissionCard({
 		<div
 			className={cn(
 				'group relative aspect-[9/16] rounded-xl overflow-hidden',
-				'bg-black border border-gray-200 dark:border-[var(--sf-border-dark)]',
+				'bg-black border border-gray-200',
 				'hover:shadow-2xl transition-all duration-300',
 				className
 			)}
@@ -93,7 +93,7 @@ export function SubmissionCard({
 					onError={() => setImageError(true)}
 				/>
 			) : (
-				<div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gray-100 dark:bg-[var(--sf-card-dark)] text-gray-500 dark:text-[var(--sf-text-secondary)]">
+				<div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gray-100 text-gray-500">
 					<ImageOff className="h-12 w-12 opacity-50" />
 					<span className="text-xs">Image unavailable</span>
 				</div>
@@ -213,16 +213,16 @@ export function SubmissionCard({
  */
 export function SubmissionCardSkeleton() {
 	return (
-		<div className="relative aspect-[9/16] rounded-xl overflow-hidden bg-white dark:bg-[var(--sf-card-dark)] border border-gray-200 dark:border-[var(--sf-border-dark)] animate-pulse">
+		<div className="relative aspect-[9/16] rounded-xl overflow-hidden bg-white border border-gray-200 animate-pulse">
 			<div className="absolute top-4 left-4">
-				<div className="h-5 w-16 rounded-full bg-gray-200 dark:bg-[var(--sf-border-dark)]" />
+				<div className="h-5 w-16 rounded-full bg-gray-200" />
 			</div>
 			<div className="absolute bottom-0 left-0 right-0 p-4">
 				<div className="flex items-center gap-2 mb-2">
-					<div className="h-6 w-6 rounded-full bg-gray-200 dark:bg-[var(--sf-border-dark)]" />
-					<div className="h-4 w-24 rounded bg-gray-200 dark:bg-[var(--sf-border-dark)]" />
+					<div className="h-6 w-6 rounded-full bg-gray-200" />
+					<div className="h-4 w-24 rounded bg-gray-200" />
 				</div>
-				<div className="h-3 w-20 rounded bg-gray-200 dark:bg-[var(--sf-border-dark)]" />
+				<div className="h-3 w-20 rounded bg-gray-200" />
 			</div>
 		</div>
 	);

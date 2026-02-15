@@ -74,7 +74,7 @@ export function AdminMemeCard({ meme, onUpdate }: AdminMemeCardProps) {
         <>
             <Card className="rounded-2xl overflow-hidden">
                 {/* Image */}
-                <div className="relative aspect-square bg-slate-100 dark:bg-slate-900 group">
+                <div className="relative aspect-square bg-slate-100 group">
                     <Image
                         src={meme.media_url}
                         alt={meme.title || 'Meme'}
@@ -96,7 +96,7 @@ export function AdminMemeCard({ meme, onUpdate }: AdminMemeCardProps) {
                     </div>
 
                     {meme.title && (
-                        <h3 className="font-bold text-slate-900 dark:text-white truncate">
+                        <h3 className="font-bold text-slate-900 truncate">
                             {meme.title}
                         </h3>
                     )}
@@ -129,7 +129,7 @@ export function AdminMemeCard({ meme, onUpdate }: AdminMemeCardProps) {
                         )}
 
                         {canPublish && (
-                            <div className="flex gap-2 pt-2 border-t border-slate-100 dark:border-slate-700">
+                            <div className="flex gap-2 pt-2 border-t border-slate-100">
                                 <Button
                                     onClick={() => setAction('publish')}
                                     className="flex-[2] bg-indigo-500 hover:bg-indigo-600 text-white font-semibold text-sm"

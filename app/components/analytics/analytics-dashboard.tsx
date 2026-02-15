@@ -145,7 +145,7 @@ export function AnalyticsDashboard() {
 					</CardHeader>
 					<CardContent>
 						{analytics.topContributor ? (
-							<div className="flex items-center gap-4 p-4 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-950/20 dark:to-orange-950/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+							<div className="flex items-center gap-4 p-4 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg border border-yellow-200">
 								<div className="h-12 w-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
 									<Users className="h-6 w-6 text-white" />
 								</div>

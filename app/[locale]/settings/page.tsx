@@ -24,7 +24,7 @@ export default async function SettingsPage() {
 	}
 
 	return (
-		<main className="min-h-screen bg-gray-50 dark:bg-[#101622] mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+		<main className="min-h-screen bg-gray-50 mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
 			<div className="space-y-6">
 				<PageHeader
 					title="Application Settings"
@@ -40,12 +40,12 @@ export default async function SettingsPage() {
 				/>
 
 				{/* Security Notice */}
-				<Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/20">
+				<Alert className="border-amber-200 bg-amber-50">
 					<Shield className="h-4 w-4 text-amber-600" />
-					<AlertTitle className="text-amber-800 dark:text-amber-100">
+					<AlertTitle className="text-amber-800">
 						Security Notice
 					</AlertTitle>
-					<AlertDescription className="text-amber-700 dark:text-amber-300">
+					<AlertDescription className="text-amber-700">
 						These credentials are stored in a local JSON file on this device.
 						They are <strong>not</strong> uploaded to any server. Keep this
 						device secure and do not share access.
@@ -56,32 +56,32 @@ export default async function SettingsPage() {
 				<div className="grid grid-cols-2 gap-4 md:grid-cols-4">
 					<Card>
 						<CardContent className="flex items-center gap-3 p-4">
-							<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30">
-								<Globe className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+							<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100">
+								<Globe className="h-4 w-4 text-blue-600" />
 							</div>
 							<span className="text-sm font-medium">App Settings</span>
 						</CardContent>
 					</Card>
 					<Card>
 						<CardContent className="flex items-center gap-3 p-4">
-							<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900/30">
-								<Key className="h-4 w-4 text-red-600 dark:text-red-400" />
+							<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-100">
+								<Key className="h-4 w-4 text-red-600" />
 							</div>
 							<span className="text-sm font-medium">Google Auth</span>
 						</CardContent>
 					</Card>
 					<Card>
 						<CardContent className="flex items-center gap-3 p-4">
-							<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-900/30">
-								<Key className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+							<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100">
+								<Key className="h-4 w-4 text-indigo-600" />
 							</div>
 							<span className="text-sm font-medium">Meta/Facebook</span>
 						</CardContent>
 					</Card>
 					<Card>
 						<CardContent className="flex items-center gap-3 p-4">
-							<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
-								<Database className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+							<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100">
+								<Database className="h-4 w-4 text-emerald-600" />
 							</div>
 							<span className="text-sm font-medium">Supabase</span>
 						</CardContent>

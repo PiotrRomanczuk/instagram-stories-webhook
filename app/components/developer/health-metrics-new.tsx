@@ -162,15 +162,15 @@ function MetricCard({
 	const variantStyles = {
 		default: 'bg-muted',
 		destructive: 'bg-destructive/10 border-destructive/20',
-		warning: 'bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-800',
-		success: 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800',
+		warning: 'bg-yellow-50 border-yellow-200',
+		success: 'bg-emerald-50 border-emerald-200',
 	};
 
 	const textStyles = {
 		default: 'text-foreground',
 		destructive: 'text-destructive',
-		warning: 'text-yellow-700 dark:text-yellow-400',
-		success: 'text-emerald-700 dark:text-emerald-400',
+		warning: 'text-yellow-700',
+		success: 'text-emerald-700',
 	};
 
 	return (

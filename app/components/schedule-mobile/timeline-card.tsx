@@ -35,10 +35,10 @@ interface TimelineCardProps {
 }
 
 const statusConfig: Record<TimelineCardStatus, { label: string; dot: string; text: string; bg: string }> = {
-	scheduled: { label: 'SCHEDULED', dot: 'bg-blue-500', text: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-500/10' },
-	published: { label: 'PUBLISHED', dot: 'bg-emerald-500', text: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-500/10' },
-	failed: { label: 'FAILED', dot: 'bg-red-500', text: 'text-red-600 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-500/10' },
-	processing: { label: 'PROCESSING', dot: 'bg-amber-500', text: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-500/10' },
+	scheduled: { label: 'SCHEDULED', dot: 'bg-blue-500', text: 'text-blue-600', bg: 'bg-blue-50' },
+	published: { label: 'PUBLISHED', dot: 'bg-emerald-500', text: 'text-emerald-600', bg: 'bg-emerald-50' },
+	failed: { label: 'FAILED', dot: 'bg-red-500', text: 'text-red-600', bg: 'bg-red-50' },
+	processing: { label: 'PROCESSING', dot: 'bg-amber-500', text: 'text-amber-600', bg: 'bg-amber-50' },
 };
 
 const borderColors: Record<TimelineCardStatus, string> = {
@@ -150,15 +150,15 @@ export function TimelineCard({ post, item, onClick, onUpdate }: TimelineCardProp
 			className={cn(
 				'relative flex gap-2.5 rounded-xl border-l-4 p-2.5 lg:p-3',
 				'bg-white shadow-sm hover:shadow-md',
-				'dark:bg-[#1a1f2e] dark:shadow-lg dark:hover:shadow-xl',
+				'',
 				'transition-all duration-200 hover:-translate-y-0.5 cursor-pointer group',
 				borderColor
 			)}
 		>
 			{/* Thumbnail - responsive sizing */}
-			<div className="relative h-16 w-16 sm:h-20 sm:w-20 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100 dark:bg-slate-800">
+			<div className="relative h-16 w-16 sm:h-20 sm:w-20 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100">
 				{post.mediaType === 'VIDEO' ? (
-					<div className="flex h-full w-full items-center justify-center bg-gray-100 dark:bg-slate-800">
+					<div className="flex h-full w-full items-center justify-center bg-gray-100">
 						<video
 							src={post.url}
 							className="h-full w-full object-cover"
@@ -183,7 +183,7 @@ export function TimelineCard({ post, item, onClick, onUpdate }: TimelineCardProp
 							/>
 						) : (
 							<div className="flex h-full w-full items-center justify-center">
-								<ImageIcon className="h-6 w-6 text-gray-400 dark:text-slate-500" />
+								<ImageIcon className="h-6 w-6 text-gray-400" />
 							</div>
 						)}
 					</>
@@ -197,7 +197,7 @@ export function TimelineCard({ post, item, onClick, onUpdate }: TimelineCardProp
 					{/* Time badge */}
 					<div
 						data-testid="time-badge"
-						className="inline-flex items-center gap-1 rounded-md bg-[#2b6cee]/8 px-2 py-0.5 dark:bg-[#2b6cee]/15"
+						className="inline-flex items-center gap-1 rounded-md bg-[#2b6cee]/8 px-2 py-0.5"
 					>
 						<Clock className="h-3 w-3 text-[#2b6cee]" />
 						<span className="text-[11px] font-bold text-[#2b6cee]">
@@ -220,7 +220,7 @@ export function TimelineCard({ post, item, onClick, onUpdate }: TimelineCardProp
 				{/* Caption */}
 				<p
 					data-testid="caption-preview"
-					className="line-clamp-2 text-sm leading-snug text-gray-700 dark:text-slate-300"
+					className="line-clamp-2 text-sm leading-snug text-gray-700"
 				>
 					{post.caption || 'No caption'}
 				</p>
@@ -229,7 +229,7 @@ export function TimelineCard({ post, item, onClick, onUpdate }: TimelineCardProp
 				{post.engagement?.predicted && (
 					<div
 						data-testid="engagement-badge"
-						className="mt-1.5 inline-flex items-center gap-1 self-start text-xs text-emerald-600 dark:text-emerald-400"
+						className="mt-1.5 inline-flex items-center gap-1 self-start text-xs text-emerald-600"
 					>
 						<TrendingUp className="h-3 w-3" />
 						<span className="font-medium">{post.engagement.predicted}% engagement</span>
