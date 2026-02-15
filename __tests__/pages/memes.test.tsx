@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import MemesPage from '@/app/[locale]/memes/page';
+import { MemesPageClient } from '@/app/[locale]/memes/memes-page-client';
 
 // Mock next-auth/react
 vi.mock('next-auth/react', () => ({
@@ -37,18 +36,18 @@ describe('Memes Page', () => {
 
 	describe('rendering', () => {
 		it('renders without crashing', () => {
-			render(<MemesPage />);
+			render(<MemesPageClient />);
 			expect(screen.getByRole('main')).toBeInTheDocument();
 		});
 
 		it('displays Community Meme Hub heading', () => {
-			render(<MemesPage />);
+			render(<MemesPageClient />);
 			expect(screen.getByText('Community')).toBeInTheDocument();
 			expect(screen.getByText('Meme Hub')).toBeInTheDocument();
 		});
 
 		it('displays page description', () => {
-			render(<MemesPage />);
+			render(<MemesPageClient />);
 			expect(
 				screen.getByText(/Submit your best memes for a chance to be featured on our Instagram/)
 			).toBeInTheDocument();
@@ -57,14 +56,14 @@ describe('Memes Page', () => {
 
 	describe('navigation', () => {
 		it('has back to dashboard link', () => {
-			render(<MemesPage />);
+			render(<MemesPageClient />);
 			const backLink = screen.getByText('Back to Dashboard');
 			expect(backLink).toBeInTheDocument();
 			expect(backLink.closest('a')).toHaveAttribute('href', '/');
 		});
 
 		it('back link has correct styling classes', () => {
-			render(<MemesPage />);
+			render(<MemesPageClient />);
 			const backLink = screen.getByText('Back to Dashboard').closest('a');
 			expect(backLink).toHaveClass('inline-flex');
 			expect(backLink).toHaveClass('items-center');
@@ -73,14 +72,14 @@ describe('Memes Page', () => {
 
 	describe('MemesDashboard component', () => {
 		it('renders the MemesDashboard component', () => {
-			render(<MemesPage />);
+			render(<MemesPageClient />);
 			expect(screen.getByTestId('memes-dashboard')).toBeInTheDocument();
 		});
 	});
 
 	describe('footer', () => {
 		it('displays footer text', () => {
-			render(<MemesPage />);
+			render(<MemesPageClient />);
 			expect(screen.getByText(/Community Feature/)).toBeInTheDocument();
 			expect(screen.getByText(/Instagram Story Submissions/)).toBeInTheDocument();
 		});
@@ -88,14 +87,13 @@ describe('Memes Page', () => {
 
 	describe('layout', () => {
 		it('has correct main container styling', () => {
-			render(<MemesPage />);
+			render(<MemesPageClient />);
 			const main = screen.getByRole('main');
 			expect(main).toHaveClass('min-h-screen');
 		});
 
 		it('has hero header section', () => {
-			render(<MemesPage />);
-			// The hero section has the border-b class
+			render(<MemesPageClient />);
 			const heroSection = document.querySelector('.border-b');
 			expect(heroSection).toBeInTheDocument();
 		});
@@ -103,14 +101,13 @@ describe('Memes Page', () => {
 
 	describe('visual elements', () => {
 		it('has sparkles icon', () => {
-			render(<MemesPage />);
-			// The sparkles icon container has animate-bounce class
+			render(<MemesPageClient />);
 			const sparklesContainer = document.querySelector('.animate-bounce');
 			expect(sparklesContainer).toBeInTheDocument();
 		});
 
 		it('has gradient text styling', () => {
-			render(<MemesPage />);
+			render(<MemesPageClient />);
 			const gradientText = document.querySelector('.bg-gradient-to-r');
 			expect(gradientText).toBeInTheDocument();
 		});
