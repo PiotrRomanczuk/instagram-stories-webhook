@@ -11,6 +11,7 @@ import { Logger } from '@/lib/utils/logger';
 import { ContentItemRow, mapContentItemRow } from '@/lib/types/posts';
 
 const MODULE = 'video-processing-job';
+const MAX_PROCESSING_RETRIES = 3;
 
 const CONTENT_ITEM_COLUMNS = 'id, user_id, user_email, media_url, media_type, storage_path, dimensions, thumbnail_url, video_duration, video_codec, video_framerate, needs_processing, title, caption, user_tags, hashtags, source, submission_status, publishing_status, rejection_reason, reviewed_at, reviewed_by, scheduled_time, processing_started_at, published_at, ig_media_id, error, content_hash, idempotency_key, retry_count, archived_at, version, created_at, updated_at';
 
@@ -18,11 +19,12 @@ export interface VideoProcessingResult {
 	totalQueued: number;
 	processed: number;
 	failed: number;
+	skipped: number;
 	errors: Array<{ id: string; error: string }>;
 }
 
 /**
- * Get videos that need processing
+ * Get videos that need processing (with retry_count < max retries)
  */
 async function getVideosNeedingProcessing(): Promise<ContentItemRow[]> {
 	try {
@@ -31,6 +33,7 @@ async function getVideosNeedingProcessing(): Promise<ContentItemRow[]> {
 			.select(CONTENT_ITEM_COLUMNS)
 			.eq('media_type', 'VIDEO')
 			.eq('needs_processing', true)
+			.lt('retry_count', MAX_PROCESSING_RETRIES)
 			.order('created_at', { ascending: true })
 			.limit(10); // Process up to 10 videos per run
 
@@ -77,6 +80,8 @@ async function processVideo(videoRow: ContentItemRow): Promise<boolean> {
 				.from('content_items')
 				.update({
 					needs_processing: false,
+					retry_count: 0,
+					error: null,
 					updated_at: new Date().toISOString(),
 				})
 				.eq('id', videoItem.id);
@@ -121,6 +126,8 @@ async function processVideo(videoRow: ContentItemRow): Promise<boolean> {
 				video_codec: 'h264', // Always H.264 after processing
 				video_framerate: 30, // Always 30fps after processing
 				needs_processing: false,
+				retry_count: 0,
+				error: null,
 				updated_at: new Date().toISOString(),
 			})
 			.eq('id', videoItem.id);
@@ -146,17 +153,36 @@ async function processVideo(videoRow: ContentItemRow): Promise<boolean> {
 
 		return true;
 	} catch (error) {
-		Logger.error(MODULE, `Failed to process video ${videoItem.id}`, error);
+		const currentRetries = videoItem.retryCount || 0;
+		const newRetryCount = currentRetries + 1;
+		const errorMessage = error instanceof Error ? error.message : 'Video processing failed';
 
-		// Mark as failed (set needs_processing = false to prevent infinite retries)
-		await supabaseAdmin
-			.from('content_items')
-			.update({
-				needs_processing: false,
-				error: error instanceof Error ? error.message : 'Video processing failed',
-				updated_at: new Date().toISOString(),
-			})
-			.eq('id', videoItem.id);
+		Logger.error(MODULE, `Failed to process video ${videoItem.id} (attempt ${newRetryCount}/${MAX_PROCESSING_RETRIES})`, error);
+
+		if (newRetryCount >= MAX_PROCESSING_RETRIES) {
+			// Max retries reached, stop retrying
+			Logger.error(MODULE, `Video ${videoItem.id} failed after ${MAX_PROCESSING_RETRIES} attempts, giving up`);
+			await supabaseAdmin
+				.from('content_items')
+				.update({
+					needs_processing: false,
+					retry_count: newRetryCount,
+					error: `${errorMessage} (after ${newRetryCount} attempts)`,
+					updated_at: new Date().toISOString(),
+				})
+				.eq('id', videoItem.id);
+		} else {
+			// Keep needs_processing true so it will be retried
+			Logger.info(MODULE, `Video ${videoItem.id} will be retried (attempt ${newRetryCount}/${MAX_PROCESSING_RETRIES})`);
+			await supabaseAdmin
+				.from('content_items')
+				.update({
+					retry_count: newRetryCount,
+					error: `${errorMessage} (attempt ${newRetryCount}/${MAX_PROCESSING_RETRIES})`,
+					updated_at: new Date().toISOString(),
+				})
+				.eq('id', videoItem.id);
+		}
 
 		return false;
 	}
@@ -177,6 +203,7 @@ export async function processVideosQueue(): Promise<VideoProcessingResult> {
 			totalQueued: 0,
 			processed: 0,
 			failed: 0,
+			skipped: 0,
 			errors: [],
 		};
 	}
@@ -187,6 +214,7 @@ export async function processVideosQueue(): Promise<VideoProcessingResult> {
 		totalQueued: videosToProcess.length,
 		processed: 0,
 		failed: 0,
+		skipped: 0,
 		errors: [],
 	};
 

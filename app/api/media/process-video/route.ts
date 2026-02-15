@@ -24,7 +24,7 @@ import {
     checkFfmpegAvailable,
     VIDEO_MAX_DURATION_SEC
 } from '@/lib/media/video-processor';
-import { supabase } from '@/lib/config/supabase';
+import { supabaseAdmin } from '@/lib/config/supabase-admin';
 import { Logger } from '@/lib/utils/logger';
 
 const MODULE = 'api/process-video';
@@ -111,7 +111,7 @@ export async function POST(request: Request) {
 
         await Logger.info(MODULE, `📤 Uploading processed video: ${fileName}`);
 
-        const { error: uploadError } = await supabase.storage
+        const { error: uploadError } = await supabaseAdmin.storage
             .from('stories')
             .upload(fileName, result.buffer, {
                 contentType: 'video/mp4',
@@ -123,7 +123,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Failed to upload processed video' }, { status: 500 });
         }
 
-        const { data: { publicUrl } } = supabase.storage
+        const { data: { publicUrl } } = supabaseAdmin.storage
             .from('stories')
             .getPublicUrl(fileName);
 

@@ -21,6 +21,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import os from 'os';
 import { Logger } from '@/lib/utils/logger';
+import { supabaseAdmin } from '@/lib/config/supabase-admin';
 import { VideoMetadata, VideoValidationResult, VideoProcessingOptions, VideoProcessingResult } from '@/lib/types';
 
 const MODULE = 'video-processor';
@@ -436,4 +437,68 @@ function runFfmpeg(args: string[]): Promise<void> {
 export async function videoNeedsProcessing(inputBuffer: Buffer): Promise<boolean> {
     const validation = await validateVideoForStories(inputBuffer);
     return validation.needsProcessing;
+}
+
+/**
+ * Downloads a video from a URL, processes it for Instagram Stories if needed,
+ * uploads the result to Supabase storage, and returns the public URL.
+ * If the video already meets standards, returns the original URL.
+ */
+export async function processAndUploadStoryVideo(
+    videoUrl: string,
+    contentId: string
+): Promise<string> {
+    await Logger.info(MODULE, `Processing story video for content: ${contentId}`);
+
+    const ffmpegAvailable = await checkFfmpegAvailable();
+    if (!ffmpegAvailable) {
+        await Logger.warn(MODULE, 'FFmpeg not available, returning original URL');
+        return videoUrl;
+    }
+
+    // Download the video
+    const response = await fetch(videoUrl);
+    if (!response.ok) {
+        throw new Error(`Failed to download video: ${response.statusText}`);
+    }
+    const videoBuffer = Buffer.from(await response.arrayBuffer());
+
+    // Validate first
+    const validation = await validateVideoForStories(videoBuffer);
+
+    if (!validation.needsProcessing) {
+        await Logger.info(MODULE, `Video ${contentId} already meets Stories standards`);
+        return videoUrl;
+    }
+
+    await Logger.info(MODULE, `Video ${contentId} needs processing: ${validation.processingReasons.join(', ')}`);
+
+    // Process the video
+    const result = await processVideoForStory(videoBuffer);
+
+    // Upload processed video to Supabase storage
+    const filename = `story-${contentId}-${Date.now()}.mp4`;
+    const storagePath = `processed-stories/${filename}`;
+
+    const { error: uploadError } = await supabaseAdmin.storage
+        .from('stories')
+        .upload(storagePath, result.buffer, {
+            contentType: 'video/mp4',
+            upsert: true,
+        });
+
+    if (uploadError) {
+        await Logger.error(MODULE, `Failed to upload processed video: ${uploadError.message}`);
+        throw new Error(`Failed to upload processed video: ${uploadError.message}`);
+    }
+
+    const { data: urlData } = supabaseAdmin.storage
+        .from('stories')
+        .getPublicUrl(storagePath);
+
+    await Logger.info(MODULE, `Processed video uploaded: ${urlData.publicUrl}`, {
+        processingApplied: result.processingApplied,
+    });
+
+    return urlData.publicUrl;
 }
