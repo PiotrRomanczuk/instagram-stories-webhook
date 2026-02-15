@@ -28,6 +28,7 @@ import {
 import { parseCronConfig } from '@/lib/validations/cron.schema';
 import { checkPublishingQuota } from '@/lib/scheduler/quota-gate';
 import { generateCronRunId, recordQuotaSnapshot } from '@/lib/scheduler/quota-history';
+import { getAppEnvironment } from '@/lib/utils/environment';
 
 const MODULE = 'scheduler';
 
@@ -45,11 +46,12 @@ export async function processScheduledPosts(
 	const config = parseCronConfig();
 	const cronRunId = postId ? undefined : generateCronRunId();
 
+	const environment = getAppEnvironment();
 	await Logger.info(
 		MODULE,
 		postId
 			? `🚀 Attempting to post ${postId} immediately...${bypassDuplicateCheck ? ' (Bypassing duplicate check)' : ''}`
-			: `🔄 Checking for pending scheduled posts (max=${config.maxPostsPerCronRun}, delay=${config.publishDelayMs}ms)...`,
+			: `🔄 Checking for pending scheduled posts [env=${environment}] (max=${config.maxPostsPerCronRun}, delay=${config.publishDelayMs}ms)...`,
 	);
 
 	try {
@@ -193,6 +195,7 @@ export async function processScheduledPosts(
 				.from('content_items')
 				.select('id', { count: 'exact', head: true })
 				.eq('publishing_status', 'scheduled')
+				.eq('environment', environment)
 				.gt('scheduled_time', now)
 				.lte('scheduled_time', oneDayFromNow);
 

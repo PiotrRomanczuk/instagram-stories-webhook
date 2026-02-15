@@ -10,6 +10,7 @@ import {
 	PublishingStatus,
 	mapContentItemRow,
 } from '../types/posts';
+import { getAppEnvironment } from '../utils/environment';
 
 export async function createContentItem(
 	userId: string,
@@ -40,6 +41,7 @@ export async function createContentItem(
 					submission_status: input.source === 'submission' ? 'pending' : null,
 					publishing_status: input.scheduledTime ? 'scheduled' : 'draft',
 					scheduled_time: input.scheduledTime,
+					environment: getAppEnvironment(),
 					created_at: new Date().toISOString(),
 					updated_at: new Date().toISOString(),
 					version: 1,

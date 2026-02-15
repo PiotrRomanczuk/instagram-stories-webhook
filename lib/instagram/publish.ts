@@ -4,6 +4,7 @@ import { waitForContainerReady } from './container';
 import { MediaType, PostType, ContainerData } from '@/lib/types';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
 import { Logger } from '@/lib/utils/logger';
+import { isDryRun } from '@/lib/utils/environment';
 
 import { withRetry } from '@/lib/utils/retry';
 
@@ -57,6 +58,24 @@ export async function publishMedia(
     const igUserId = await getInstagramUserId(userId);
     if (!igUserId) {
         throw new Error(`No Instagram Business Account found for user ${userId}.`);
+    }
+
+    // Dry-run mode: skip actual Instagram API calls
+    if (isDryRun()) {
+        const dryRunId = `dry_run_${Date.now()}`;
+        await Logger.info(MODULE, `[DRY RUN] Would publish ${mediaType} ${postType} for user ${userId} - skipping Instagram API call`, { url, userId });
+
+        await supabaseAdmin.from('publishing_logs').insert({
+            user_id: userId,
+            media_url: url,
+            media_type: mediaType,
+            post_type: postType,
+            caption: caption,
+            status: 'SUCCESS',
+            ig_media_id: dryRunId,
+        });
+
+        return { id: dryRunId };
     }
 
     // Step 1: Create Media Container

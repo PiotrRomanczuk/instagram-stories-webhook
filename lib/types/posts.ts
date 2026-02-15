@@ -91,6 +91,9 @@ export interface ContentItem {
 	retryCount?: number;
 	version: number;
 
+	// Environment isolation (defaults to 'production' in DB)
+	environment?: string;
+
 	// Archive
 	archivedAt?: string;
 
@@ -149,6 +152,7 @@ export interface ContentItemRow {
 	video_codec?: string;
 	video_framerate?: number;
 	needs_processing?: boolean;
+	environment?: string;
 	title?: string;
 	caption?: string;
 	user_tags?: string; // JSON stringified
@@ -366,6 +370,7 @@ export function mapContentItemRow(row: ContentItemRow): ContentItem {
 		contentHash: row.content_hash,
 		idempotencyKey: row.idempotency_key,
 		retryCount: row.retry_count,
+		environment: row.environment || 'production',
 		archivedAt: row.archived_at,
 		version: row.version,
 		createdAt: row.created_at,
