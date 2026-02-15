@@ -22,6 +22,8 @@ import {
 	markContentFailed,
 	markContentCancelled,
 	getContentItemForProcessing,
+	recoverStaleLocks,
+	expireOverdueContent,
 } from '@/lib/content-db';
 import { parseCronConfig } from '@/lib/validations/cron.schema';
 import { checkPublishingQuota } from '@/lib/scheduler/quota-gate';
@@ -51,6 +53,25 @@ export async function processScheduledPosts(
 	);
 
 	try {
+		// Maintenance: recover stale locks and expire overdue posts (cron path only)
+		if (!postId) {
+			const recoveredLocks = await recoverStaleLocks();
+			if (recoveredLocks > 0) {
+				await Logger.info(
+					MODULE,
+					`🔓 Recovered ${recoveredLocks} stale processing lock(s)`,
+				);
+			}
+
+			const expiredCount = await expireOverdueContent();
+			if (expiredCount > 0) {
+				await Logger.info(
+					MODULE,
+					`⏰ Expired ${expiredCount} overdue post(s) (>24h past scheduled time)`,
+				);
+			}
+		}
+
 		let pendingItems: ContentItem[] = [];
 
 		if (postId) {

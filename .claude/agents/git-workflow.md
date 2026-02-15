@@ -13,28 +13,28 @@ tools:
 ## Core Principles
 
 1. **NEVER commit directly to `main` or `production`** -- always use feature branches
-2. **ALWAYS link to Linear** -- every commit and PR must reference a `STRUM-XXX` ticket
+2. **ALWAYS link to Linear** -- every commit and PR must reference a `ISW-XXX` ticket
 3. **ALWAYS test before committing** -- `npm run lint && npm test`
-4. **Version is bumped automatically post-merge** -- a GitHub Action bumps patch/minor/major based on branch prefix or PR labels
+4. **ALWAYS bump version in the PR** -- `npm version minor/patch --no-git-tag-version` before final commit, then `npm run release` after merge
 
 ---
 
 ## Branch Naming Convention
 
 ```
-feature/STRUM-XXX-short-description    # New features
-fix/STRUM-XXX-short-description        # Bug fixes
-refactor/STRUM-XXX-short-description   # Code refactoring
-test/STRUM-XXX-short-description       # Test improvements
-docs/STRUM-XXX-short-description       # Documentation
-chore/STRUM-XXX-short-description      # Maintenance tasks
+feature/ISW-XXX-short-description    # New features
+fix/ISW-XXX-short-description        # Bug fixes
+refactor/ISW-XXX-short-description   # Code refactoring
+test/ISW-XXX-short-description       # Test improvements
+docs/ISW-XXX-short-description       # Documentation
+chore/ISW-XXX-short-description      # Maintenance tasks
 ```
 
 Examples:
 ```bash
-git checkout -b feature/STRUM-123-add-lesson-reminders
-git checkout -b fix/STRUM-124-song-progress-calculation
-git checkout -b refactor/STRUM-125-user-service-cleanup
+git checkout -b feature/ISW-123-add-lesson-reminders
+git checkout -b fix/ISW-124-song-progress-calculation
+git checkout -b refactor/ISW-125-user-service-cleanup
 ```
 
 ### Branch Protection Rules
@@ -50,63 +50,61 @@ git checkout -b refactor/STRUM-125-user-service-cleanup
 Format: `type(scope): description [TICKET-ID]`
 
 ```bash
-git commit -m "feat(lessons): add email reminders [STRUM-123]"
-git commit -m "fix(songs): correct progress calculation [STRUM-124]"
-git commit -m "refactor(users): simplify service layer [STRUM-125]"
+git commit -m "feat(lessons): add email reminders [ISW-123]"
+git commit -m "fix(songs): correct progress calculation [ISW-124]"
+git commit -m "refactor(users): simplify service layer [ISW-125]"
 ```
 
 Types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`, `perf`, `style`
 
 ---
 
-## Version Bumping & Release Documentation (Automated)
+## Version Bumping & Release
 
-Version bumping is handled automatically by a GitHub Action (`version-bump.yml`) that runs after each PR is merged to `main`. **Do not run `npm version` manually on feature branches.**
+Version bumping is **manual** -- bump `package.json` before the final commit on the branch. After merge, run `npm run release` to create the git tag and trigger a GitHub Release.
 
 | Change Type | Bump | Trigger |
 |---|---|---|
 | Bug fix, small improvement, refactor | patch | `fix/`, `refactor/`, `chore/`, `test/`, `docs/`, `perf/` branch prefix |
 | New feature, new component | minor | `feature/` or `feat/` branch prefix |
-| Breaking change, major rewrite | major | Add `version:major` label to PR |
+| Breaking change, major rewrite | major | Explicit decision (rare) |
 
-Override with PR labels: `version:major`, `version:minor`, `version:patch`.
+### Version Bump Workflow
 
-### Automated Release Documentation
+1. **Before final commit**, bump version:
+   ```bash
+   npm version minor --no-git-tag-version  # or patch/major
+   git add package.json package-lock.json
+   ```
 
-**The version-bump workflow automatically creates:**
+2. **Include version in commit message**:
+   ```
+   feat: add feature (0.15.0 -> 0.16.0) (ISW-XXX)
+   ```
 
-1. **Enhanced Commit Message** with PR title and description
-2. **Annotated Git Tag** (e.g., `v0.84.0`) with PR title
-3. **GitHub Release** with full PR body as release notes
+3. **After PR is merged**, create the release:
+   ```bash
+   git checkout master && git pull
+   npm run release        # creates + pushes v{version} tag
+   npm run release:dry    # preview without creating anything
+   ```
 
-**IMPORTANT for agents**: This is now automatic via GitHub Actions. You do NOT need to manually create tags or releases. The workflow handles:
-- ✅ Version bump in package.json
-- ✅ Git tag creation with PR context
-- ✅ GitHub Release with changelog links
-- ✅ Tag push to origin
-
-If working on a hotfix or manual release, follow the pattern:
-```bash
-# Create tag with descriptive message
-git tag -a v0.X.Y -m "Release v0.X.Y: <Feature description>"
-git push origin v0.X.Y
-
-# Create GitHub release
-gh release create v0.X.Y \
-  --title "v0.X.Y: <Feature description>" \
-  --notes "<Full description>"
-```
+### What happens on release:
+- `scripts/release.sh` creates annotated git tag `v{version}` from `package.json`
+- Pushes the tag to origin
+- `.github/workflows/release.yml` triggers on the `v*` tag push
+- GitHub Release is auto-created with changelog from merged PRs
 
 ### CHANGELOG.md Format
 
 ```markdown
 ## [0.66.0] - 2026-02-09
 ### Added
-- Lesson reminder email system [STRUM-123]
-- User notification preferences [STRUM-123]
+- Lesson reminder email system [ISW-123]
+- User notification preferences [ISW-123]
 
 ### Fixed
-- Song progress calculation bug [STRUM-124]
+- Song progress calculation bug [ISW-124]
 ```
 
 ---
@@ -128,8 +126,8 @@ gh release create v0.X.Y \
 
 ### Auto-Linking
 
-- Linear auto-links commits containing `[STRUM-XXX]`
-- PR descriptions with `Closes STRUM-XXX` auto-close tickets
+- Linear auto-links commits containing `[ISW-XXX]`
+- PR descriptions with `Closes ISW-XXX` auto-close tickets
 - Use Linear's GitHub integration for automatic updates
 
 ---
@@ -138,13 +136,13 @@ gh release create v0.X.Y \
 
 ### PR Title Format
 
-`[STRUM-123] Add lesson reminder system`
+`[ISW-123] Add lesson reminder system`
 
 ### PR Description Template
 
 ```markdown
 ## Linear Ticket
-Closes STRUM-123
+Closes ISW-123
 
 ## Changes
 - Added email reminder service
@@ -203,11 +201,11 @@ npm run pre-commit              # Full pre-commit checks
 ### Starting a New Feature
 
 ```bash
-# 1. Create Linear ticket (or get assigned one): STRUM-XXX
+# 1. Create Linear ticket (or get assigned one): ISW-XXX
 # 2. Create and checkout feature branch
 git checkout main
 git pull origin main
-git checkout -b feature/STRUM-XXX-add-lesson-reminders
+git checkout -b feature/ISW-XXX-add-lesson-reminders
 
 # 3. Make your changes (follow TDD!)
 npm test -- --watch
@@ -217,24 +215,24 @@ npm run lint
 npm test
 npm run test:smoke
 
-# 5. Version bump happens automatically after merge to main
+# 5. Bump version: npm version minor --no-git-tag-version
 
 # 6. Commit with proper format
 git add .
-git commit -m "feat(lessons): add email reminder system [STRUM-XXX]"
+git commit -m "feat(lessons): add email reminder system [ISW-XXX]"
 
 # 7. Push and create PR
-git push origin feature/STRUM-XXX-add-lesson-reminders
+git push origin feature/ISW-XXX-add-lesson-reminders
 
 # 8. After merge, clean up
 git checkout main && git pull origin main
-git branch -d feature/STRUM-XXX-add-lesson-reminders
+git branch -d feature/ISW-XXX-add-lesson-reminders
 ```
 
 ### Fixing a Bug
 
 ```bash
-git checkout -b fix/STRUM-XXX-song-progress-calculation
+git checkout -b fix/ISW-XXX-song-progress-calculation
 
 # Write failing test first (TDD!)
 npm test -- SongProgress --watch
@@ -242,18 +240,18 @@ npm test -- SongProgress --watch
 # Fix the bug, verify all tests pass
 npm test && npm run test:smoke
 
-# Version bump happens automatically after merge to main
+# Bump version: npm version patch --no-git-tag-version
 
 # Commit and push
 git add .
-git commit -m "fix(songs): correct progress calculation logic [STRUM-XXX]"
-git push origin fix/STRUM-XXX-song-progress-calculation
+git commit -m "fix(songs): correct progress calculation logic [ISW-XXX]"
+git push origin fix/ISW-XXX-song-progress-calculation
 ```
 
 ### Refactoring Code
 
 ```bash
-git checkout -b refactor/STRUM-XXX-simplify-user-service
+git checkout -b refactor/ISW-XXX-simplify-user-service
 
 # Ensure all existing tests pass BEFORE refactoring
 npm test
@@ -262,11 +260,11 @@ npm test
 # Ensure all tests STILL pass
 npm test
 
-# Version bump happens automatically after merge to main
+# Bump version: npm version patch --no-git-tag-version
 
 git add .
-git commit -m "refactor(users): simplify service layer [STRUM-XXX]"
-git push origin refactor/STRUM-XXX-simplify-user-service
+git commit -m "refactor(users): simplify service layer [ISW-XXX]"
+git push origin refactor/ISW-XXX-simplify-user-service
 ```
 
 ### Hotfix to Production
@@ -275,19 +273,18 @@ git push origin refactor/STRUM-XXX-simplify-user-service
 # Create hotfix from production branch
 git checkout production
 git pull origin production
-git checkout -b fix/STRUM-XXX-critical-auth-bug
+git checkout -b fix/ISW-XXX-critical-auth-bug
 
 # Write test, fix bug, verify
 npm test && npm run test:smoke
 
-# NOTE: For hotfixes to production, manual version bump may be needed
-# since the version-bump Action only watches main.
-# npm version patch --no-git-tag-version
+# Bump version for hotfix
+npm version patch --no-git-tag-version
 
 git add .
-git commit -m "fix(auth)!: resolve critical security bug [STRUM-XXX]"
-git push origin fix/STRUM-XXX-critical-auth-bug
-# Create PR: fix/STRUM-XXX → production
+git commit -m "fix(auth)!: resolve critical security bug [ISW-XXX]"
+git push origin fix/ISW-XXX-critical-auth-bug
+# Create PR: fix/ISW-XXX → production
 # After merge, also merge production → main to sync
 ```
 
@@ -315,7 +312,7 @@ git push origin v0.66.0
 ## Deployment Checklist
 
 - [ ] All tests passing (unit + E2E)
-- [ ] Version bumped automatically post-merge
+- [ ] Version bumped in package.json before commit
 - [ ] CHANGELOG.md updated
 - [ ] Linear ticket linked in PR
 - [ ] Code reviewed and approved
@@ -331,14 +328,14 @@ git push origin v0.66.0
 ```bash
 # Full workflow in one go
 git checkout main && git pull origin main
-git checkout -b feature/STRUM-XXX-description
+git checkout -b feature/ISW-XXX-description
 # ... make changes ...
 npm test && npm run lint
 git add .
-git commit -m "feat(scope): description [STRUM-XXX]"
-git push origin feature/STRUM-XXX-description
+git commit -m "feat(scope): description [ISW-XXX]"
+git push origin feature/ISW-XXX-description
 # ... create PR on GitHub ...
 # ... after merge ...
 git checkout main && git pull
-git branch -d feature/STRUM-XXX-description
+git branch -d feature/ISW-XXX-description
 ```

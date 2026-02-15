@@ -24,6 +24,8 @@ import {
 	markContentCancelled,
 	getContentItemForProcessing,
 	getOverdueCount,
+	recoverStaleLocks,
+	expireOverdueContent,
 } from '@/lib/content-db';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
 
@@ -1181,7 +1183,7 @@ describe('content-db', () => {
 
 			const count = await getOverdueCount();
 			expect(count).toBe(5);
-			expect(mockQuery.select).toHaveBeenCalledWith('id', { count: 'exact', head: true });
+			expect(mockQuery.select).toHaveBeenCalledWith('*', { count: 'exact', head: true });
 		});
 
 		it('should return 0 on errors', async () => {
@@ -1334,6 +1336,161 @@ describe('content-db', () => {
 
 			const result = await deleteContentItem('1');
 			expect(result).toBe(false);
+		});
+	});
+
+	describe('recoverStaleLocks', () => {
+		it('should recover stale processing locks and return count', async () => {
+			const mockQuery = {
+				update: vi.fn().mockReturnThis(),
+				eq: vi.fn().mockReturnThis(),
+				lt: vi.fn().mockReturnThis(),
+				select: vi.fn().mockResolvedValue({
+					data: [{ id: '1' }, { id: '2' }, { id: '3' }],
+					error: null,
+				}),
+			};
+
+			vi.mocked(supabaseAdmin.from).mockReturnValue(mockQuery as any);
+
+			const count = await recoverStaleLocks();
+			expect(count).toBe(3);
+			expect(mockQuery.update).toHaveBeenCalledWith(
+				expect.objectContaining({
+					publishing_status: 'scheduled',
+					processing_started_at: null,
+				})
+			);
+			expect(mockQuery.eq).toHaveBeenCalledWith('publishing_status', 'processing');
+		});
+
+		it('should return 0 when no stale locks found', async () => {
+			const mockQuery = {
+				update: vi.fn().mockReturnThis(),
+				eq: vi.fn().mockReturnThis(),
+				lt: vi.fn().mockReturnThis(),
+				select: vi.fn().mockResolvedValue({
+					data: [],
+					error: null,
+				}),
+			};
+
+			vi.mocked(supabaseAdmin.from).mockReturnValue(mockQuery as any);
+
+			const count = await recoverStaleLocks();
+			expect(count).toBe(0);
+		});
+
+		it('should return 0 on database error', async () => {
+			const mockQuery = {
+				update: vi.fn().mockReturnThis(),
+				eq: vi.fn().mockReturnThis(),
+				lt: vi.fn().mockReturnThis(),
+				select: vi.fn().mockResolvedValue({
+					data: null,
+					error: new Error('DB error'),
+				}),
+			};
+
+			vi.mocked(supabaseAdmin.from).mockReturnValue(mockQuery as any);
+
+			const count = await recoverStaleLocks();
+			expect(count).toBe(0);
+		});
+
+		it('should handle exceptions gracefully', async () => {
+			vi.mocked(supabaseAdmin.from).mockImplementation(() => {
+				throw new Error('Network error');
+			});
+
+			const count = await recoverStaleLocks();
+			expect(count).toBe(0);
+		});
+	});
+
+	describe('expireOverdueContent', () => {
+		it('should expire overdue items and return count', async () => {
+			const mockQuery = {
+				update: vi.fn().mockReturnThis(),
+				eq: vi.fn().mockReturnThis(),
+				lt: vi.fn().mockReturnThis(),
+				select: vi.fn().mockResolvedValue({
+					data: [{ id: '1' }, { id: '2' }],
+					error: null,
+				}),
+			};
+
+			vi.mocked(supabaseAdmin.from).mockReturnValue(mockQuery as any);
+
+			const count = await expireOverdueContent();
+			expect(count).toBe(2);
+			expect(mockQuery.update).toHaveBeenCalledWith(
+				expect.objectContaining({
+					publishing_status: 'failed',
+					error: 'Expired: scheduled time was more than 24 hours ago',
+				})
+			);
+			expect(mockQuery.eq).toHaveBeenCalledWith('publishing_status', 'scheduled');
+		});
+
+		it('should return 0 when no overdue items', async () => {
+			const mockQuery = {
+				update: vi.fn().mockReturnThis(),
+				eq: vi.fn().mockReturnThis(),
+				lt: vi.fn().mockReturnThis(),
+				select: vi.fn().mockResolvedValue({
+					data: [],
+					error: null,
+				}),
+			};
+
+			vi.mocked(supabaseAdmin.from).mockReturnValue(mockQuery as any);
+
+			const count = await expireOverdueContent();
+			expect(count).toBe(0);
+		});
+
+		it('should accept custom maxAgeMs parameter', async () => {
+			const mockQuery = {
+				update: vi.fn().mockReturnThis(),
+				eq: vi.fn().mockReturnThis(),
+				lt: vi.fn().mockReturnThis(),
+				select: vi.fn().mockResolvedValue({
+					data: [{ id: '1' }],
+					error: null,
+				}),
+			};
+
+			vi.mocked(supabaseAdmin.from).mockReturnValue(mockQuery as any);
+
+			const count = await expireOverdueContent(12 * 60 * 60 * 1000); // 12 hours
+			expect(count).toBe(1);
+		});
+
+		it('should return 0 on database error', async () => {
+			const mockQuery = {
+				update: vi.fn().mockReturnThis(),
+				eq: vi.fn().mockReturnThis(),
+				lt: vi.fn().mockReturnThis(),
+				select: vi.fn().mockResolvedValue({
+					data: null,
+					error: new Error('DB error'),
+				}),
+			};
+
+			vi.mocked(supabaseAdmin.from).mockReturnValue(mockQuery as any);
+
+			const count = await expireOverdueContent();
+			expect(count).toBe(0);
+		});
+
+		it('should handle exceptions gracefully', async () => {
+			vi.mocked(supabaseAdmin.from).mockImplementation(() => {
+				throw new Error('Network error');
+			});
+
+			const count = await expireOverdueContent();
+			expect(count).toBe(0);
 		});
 	});
 

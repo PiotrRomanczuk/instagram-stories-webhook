@@ -17,9 +17,9 @@ For every PR, run through these review passes **in order**. Stop and flag blocke
 ### Pass 1: Linear & Branch Hygiene
 
 - [ ] PR is on a **dedicated feature branch** (not `master`, not `staging`)
-- [ ] Branch name follows convention: `{type}/{BMS-XXX}-{short-description}`
-- [ ] PR title includes Linear issue ID: `feat: description (BMS-XXX)`
-- [ ] PR body includes `Closes BMS-XXX` or `Fixes BMS-XXX`
+- [ ] Branch name follows convention: `{type}/{ISW-XXX}-{short-description}`
+- [ ] PR title includes Linear issue ID: `feat: description (ISW-XXX)`
+- [ ] PR body includes `Closes ISW-XXX` or `Fixes ISW-XXX`
 - [ ] Linear issue exists and is in "In Review" state
 - [ ] Linear issue has the PR link attached
 - [ ] If new work was discovered, new Linear issues were created
@@ -31,7 +31,7 @@ For every PR, run through these review passes **in order**. Stop and flag blocke
 gh pr view <PR_NUMBER> --json title,body,headRefName,baseRefName
 
 # Verify branch is not master/staging
-# Verify title has BMS-XXX pattern
+# Verify title has ISW-XXX pattern
 # Verify body references Linear issue
 ```
 
@@ -197,7 +197,7 @@ Structure your review as:
 ## PR Review: #{number} - {title}
 
 ### Linear Status
-- Issue: BMS-XXX ({status})
+- Issue: ISW-XXX ({status})
 - Branch: {branch_name} -> {base_branch}
 
 ### Blockers (must fix before merge)

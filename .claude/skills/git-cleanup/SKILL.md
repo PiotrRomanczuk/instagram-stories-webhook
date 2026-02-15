@@ -147,8 +147,8 @@ When creating PRs for branches without them:
 
 1. **Extract metadata from branch**
    ```
-   feature/STRUM-123-add-feature → [STRUM-123] Add feature
-   fix/STRUM-456-bug-fix → [STRUM-456] Bug fix
+   feature/ISW-123-add-feature → [ISW-123] Add feature
+   fix/ISW-456-bug-fix → [ISW-456] Bug fix
    ```
 
 2. **Generate PR body**
@@ -169,7 +169,7 @@ When creating PRs for branches without them:
 
 3. **Create and link**
    ```bash
-   gh pr create --title "[STRUM-123] Title" --body "<body>"
+   gh pr create --title "[ISW-123] Title" --body "<body>"
    ```
 
 ## Example Output
@@ -185,19 +185,19 @@ When creating PRs for branches without them:
   Merged PRs: 15
 
 ✅ KEPT (3 branches)
-  • feature/STRUM-XXX-student-activity-tracking → PR #129 (OPEN)
-  • feature/STRUMMY-260-user-repository-layer → PR #128 (OPEN)
+  • feature/ISW-XXX-student-activity-tracking → PR #129 (OPEN)
+  • feature/ISW-260-user-repository-layer → PR #128 (OPEN)
   • dependabot/github_actions/actions/checkout-6 → PR #123 (OPEN)
 
 🗑️  DELETED LOCAL (4 branches)
   • dependabot/npm_and_yarn/dependencies-f80e182b08 → PR #124 (CLOSED)
-  • fix/STRUM-XXX-songs-list-serialization → PR #113 (CLOSED)
-  • feature/STRUMMY-XXX-nivo-statistics-dashboard → duplicate of PR #128
-  • feature/STRUMMY-XXX-song-stats-nivo → empty, no commits
+  • fix/ISW-XXX-songs-list-serialization → PR #113 (CLOSED)
+  • feature/ISW-XXX-nivo-statistics-dashboard → duplicate of PR #128
+  • feature/ISW-XXX-song-stats-nivo → empty, no commits
 
 🗑️  DELETED REMOTE (12 branches)
-  • feature/STRUM-96-email-notification-templates → PR #86 (MERGED)
-  • feature/STRUM-97-self-service-profile → PR #85 (MERGED)
+  • feature/ISW-96-email-notification-templates → PR #86 (MERGED)
+  • feature/ISW-97-self-service-profile → PR #85 (MERGED)
   • fix/BMS-211-217-security-fixes → PR #105 (MERGED)
   ... (9 more)
 
@@ -213,19 +213,19 @@ When creating PRs for branches without them:
 
 ## Project-Specific Notes
 
-### Guitar CRM / Strummy
+### Instagram Stories Webhook
 
-- **Base branches**: main, production
-- **Ticket format**: STRUM-XXX or STRUMMY-XXX
-- **PR title format**: `[STRUM-XXX] Description`
-- **Commit format**: `type(scope): description [STRUM-XXX]`
+- **Base branches**: master
+- **Ticket format**: ISW-XXX
+- **PR title format**: `feat: description (ISW-XXX)` or `fix: description (ISW-XXX)`
+- **Commit format**: `type: description (ISW-XXX)`
 
 ### Git Workflow Integration
 
 This skill follows the project's git workflow:
 - See `.claude/agents/git-workflow.md` for branch naming conventions
 - See `.claude/agents/pr-manager.md` for PR creation standards
-- Respects version bumping rules (automatic post-merge)
+- Respects version bumping rules (manual bump in PR, `npm run release` after merge)
 
 ## Error Handling
 
