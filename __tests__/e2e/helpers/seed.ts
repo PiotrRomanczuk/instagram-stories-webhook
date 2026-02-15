@@ -379,6 +379,30 @@ export async function createScheduledContent(
 }
 
 /**
+ * Create failed content for retry/delete testing
+ */
+export async function createFailedContent(
+  page: Page,
+  options: {
+    title?: string;
+    caption?: string;
+    mediaIndex?: number;
+  } = {}
+): Promise<string> {
+  const { title, caption, mediaIndex = Math.floor(Math.random() * 100) } = options;
+
+  return createContent(page, {
+    title: title || `Failed Content ${Date.now()}`,
+    caption: caption || 'Failed caption for E2E testing',
+    mediaUrl: getTestMediaUrl(mediaIndex),
+    mediaType: 'IMAGE',
+    source: 'submission',
+    submissionStatus: 'approved',
+    publishingStatus: 'failed',
+  });
+}
+
+/**
  * Approve content via review API
  */
 export async function approveContent(page: Page, contentId: string): Promise<void> {
