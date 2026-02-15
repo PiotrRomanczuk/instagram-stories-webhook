@@ -56,7 +56,7 @@ const nextConfig: NextConfig = {
 							"default-src 'self'",
 							"script-src 'self' 'unsafe-inline' 'unsafe-eval'",
 							"style-src 'self' 'unsafe-inline'",
-							"img-src 'self' data: blob: https://*.supabase.co https://*.googleusercontent.com https://picsum.photos",
+							"img-src 'self' data: blob: https://*.supabase.co https://*.googleusercontent.com https://picsum.photos https://fastly.picsum.photos",
 							"connect-src 'self' https://*.supabase.co https://graph.facebook.com https://graph.instagram.com",
 							"frame-ancestors 'none'",
 						].join('; '),

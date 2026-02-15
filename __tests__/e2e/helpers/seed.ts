@@ -379,6 +379,30 @@ export async function createScheduledContent(
 }
 
 /**
+ * Create published content for verification testing
+ */
+export async function createPublishedContent(
+  page: Page,
+  options: {
+    title?: string;
+    caption?: string;
+    mediaIndex?: number;
+  } = {}
+): Promise<string> {
+  const { title, caption, mediaIndex = Math.floor(Math.random() * 100) } = options;
+
+  return createContent(page, {
+    title: title || `Published Content ${Date.now()}`,
+    caption: caption || 'Published caption for E2E testing',
+    mediaUrl: getTestMediaUrl(mediaIndex),
+    mediaType: 'IMAGE',
+    source: 'submission',
+    submissionStatus: 'approved',
+    publishingStatus: 'published',
+  });
+}
+
+/**
  * Create failed content for retry/delete testing
  */
 export async function createFailedContent(
