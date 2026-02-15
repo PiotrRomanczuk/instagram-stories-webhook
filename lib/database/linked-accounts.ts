@@ -1,6 +1,10 @@
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
 import { Logger } from '@/lib/utils/logger';
 import { LinkedAccount } from '@/lib/types';
+import {
+	encryptTokenForStorage,
+	decryptTokenFromStorage,
+} from '@/lib/utils/token-encryption';
 
 const MODULE = 'db:accounts';
 
@@ -9,13 +13,26 @@ const MODULE = 'db:accounts';
  */
 
 /**
+ * Decrypts token fields on a linked account read from the database.
+ */
+function decryptAccountTokens(account: LinkedAccount): LinkedAccount {
+	return {
+		...account,
+		access_token: decryptTokenFromStorage(account.access_token),
+		refresh_token: account.refresh_token
+			? decryptTokenFromStorage(account.refresh_token)
+			: account.refresh_token,
+	};
+}
+
+/**
  * Get a user's linked Facebook account
  */
 export async function getLinkedFacebookAccount(
 	userId: string,
 ): Promise<LinkedAccount | null> {
 	try {
-		Logger.debug(MODULE, `🔍 Fetching linked account for user ${userId}`);
+		Logger.debug(MODULE, `Fetching linked account for user ${userId}`);
 		const { data, error } = await supabaseAdmin
 			.from('linked_accounts')
 			.select('id, user_id, provider, provider_account_id, access_token, refresh_token, expires_at, ig_user_id, ig_username, created_at, updated_at')
@@ -25,22 +42,22 @@ export async function getLinkedFacebookAccount(
 
 		if (error) {
 			if (error.code === 'PGRST116') {
-				Logger.debug(MODULE, `ℹ️ No linked account found for user ${userId}`);
+				Logger.debug(MODULE, `No linked account found for user ${userId}`);
 				return null;
 			}
 			Logger.error(
 				MODULE,
-				`❌ Supabase getLinkedFacebookAccount Error: ${error.message}`,
+				`Supabase getLinkedFacebookAccount Error: ${error.message}`,
 				error,
 			);
 			return null;
 		}
 
-		return data as LinkedAccount;
+		return decryptAccountTokens(data as LinkedAccount);
 	} catch (error) {
 		Logger.error(
 			MODULE,
-			`❌ getLinkedFacebookAccount exception for user ${userId}`,
+			`getLinkedFacebookAccount exception for user ${userId}`,
 			error,
 		);
 		return null;
@@ -54,19 +71,25 @@ export async function saveLinkedFacebookAccount(
 	account: LinkedAccount,
 ): Promise<void> {
 	try {
+		// Encrypt tokens before storage
+		const encryptedAccessToken = encryptTokenForStorage(account.access_token);
+		const encryptedRefreshToken = account.refresh_token
+			? encryptTokenForStorage(account.refresh_token)
+			: account.refresh_token;
+
 		// Check if account already exists
 		const existing = await getLinkedFacebookAccount(account.user_id);
 
 		if (existing) {
 			Logger.info(
 				MODULE,
-				`🔄 Updating Facebook account for user ${account.user_id}`,
+				`Updating Facebook account for user ${account.user_id}`,
 			);
 			const { error } = await supabaseAdmin
 				.from('linked_accounts')
 				.update({
-					access_token: account.access_token,
-					refresh_token: account.refresh_token,
+					access_token: encryptedAccessToken,
+					refresh_token: encryptedRefreshToken,
 					expires_at: account.expires_at,
 					ig_user_id: account.ig_user_id,
 					ig_username: account.ig_username,
@@ -77,7 +100,7 @@ export async function saveLinkedFacebookAccount(
 			if (error) {
 				Logger.error(
 					MODULE,
-					`❌ Supabase updateLinkedFacebookAccount Error: ${error.message}`,
+					`Supabase updateLinkedFacebookAccount Error: ${error.message}`,
 					error,
 				);
 				throw error;
@@ -85,14 +108,14 @@ export async function saveLinkedFacebookAccount(
 		} else {
 			Logger.info(
 				MODULE,
-				`💾 Saving new Facebook account for user ${account.user_id}`,
+				`Saving new Facebook account for user ${account.user_id}`,
 			);
 			const { error } = await supabaseAdmin.from('linked_accounts').insert({
 				user_id: account.user_id,
 				provider: 'facebook',
 				provider_account_id: account.provider_account_id,
-				access_token: account.access_token,
-				refresh_token: account.refresh_token,
+				access_token: encryptedAccessToken,
+				refresh_token: encryptedRefreshToken,
 				expires_at: account.expires_at,
 				ig_user_id: account.ig_user_id,
 				ig_username: account.ig_username,
@@ -103,7 +126,7 @@ export async function saveLinkedFacebookAccount(
 			if (error) {
 				Logger.error(
 					MODULE,
-					`❌ Supabase insertLinkedFacebookAccount Error: ${error.message}`,
+					`Supabase insertLinkedFacebookAccount Error: ${error.message}`,
 					error,
 				);
 				throw error;
@@ -112,7 +135,7 @@ export async function saveLinkedFacebookAccount(
 	} catch (error) {
 		Logger.error(
 			MODULE,
-			`❌ saveLinkedFacebookAccount exception for user ${account.user_id}`,
+			`saveLinkedFacebookAccount exception for user ${account.user_id}`,
 			error,
 		);
 		throw error;
@@ -126,7 +149,7 @@ export async function deleteLinkedFacebookAccount(
 	userId: string,
 ): Promise<void> {
 	try {
-		Logger.info(MODULE, `🗑️ Unlinking Facebook account for user ${userId}`);
+		Logger.info(MODULE, `Unlinking Facebook account for user ${userId}`);
 		const { error } = await supabaseAdmin
 			.from('linked_accounts')
 			.delete()
@@ -136,7 +159,7 @@ export async function deleteLinkedFacebookAccount(
 		if (error) {
 			Logger.error(
 				MODULE,
-				`❌ Supabase deleteLinkedFacebookAccount Error: ${error.message}`,
+				`Supabase deleteLinkedFacebookAccount Error: ${error.message}`,
 				error,
 			);
 			throw error;
@@ -144,7 +167,7 @@ export async function deleteLinkedFacebookAccount(
 	} catch (error) {
 		Logger.error(
 			MODULE,
-			`❌ deleteLinkedFacebookAccount exception for user ${userId}`,
+			`deleteLinkedFacebookAccount exception for user ${userId}`,
 			error,
 		);
 		throw error;
@@ -162,7 +185,7 @@ export async function getFacebookAccessToken(
 
 	// Check if token is expired
 	if (account.expires_at && account.expires_at < Date.now()) {
-		Logger.warn(MODULE, `⚠️ Facebook token for user ${userId} has expired`, {
+		Logger.warn(MODULE, `Facebook token for user ${userId} has expired`, {
 			userId,
 			expiresAt: account.expires_at,
 		});
