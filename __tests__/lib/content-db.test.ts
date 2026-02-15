@@ -845,8 +845,8 @@ describe('content-db', () => {
 		it('should release processing lock', async () => {
 			const mockQuery = {
 				update: vi.fn().mockReturnThis(),
-				eq: vi.fn().mockResolvedValue({
-					error: null,
+				eq: vi.fn().mockReturnValue({
+					eq: vi.fn().mockResolvedValue({ error: null }),
 				}),
 			};
 
@@ -862,8 +862,8 @@ describe('content-db', () => {
 		it('should handle errors', async () => {
 			const mockQuery = {
 				update: vi.fn().mockReturnThis(),
-				eq: vi.fn().mockResolvedValue({
-					error: new Error('Update failed'),
+				eq: vi.fn().mockReturnValue({
+					eq: vi.fn().mockResolvedValue({ error: new Error('Update failed') }),
 				}),
 			};
 
@@ -891,7 +891,10 @@ describe('content-db', () => {
 		it('should mark content as published with IG media ID', async () => {
 			const mockQuery = {
 				update: vi.fn().mockReturnThis(),
-				eq: vi.fn().mockResolvedValue({
+				eq: vi.fn().mockReturnThis(),
+				select: vi.fn().mockReturnThis(),
+				maybeSingle: vi.fn().mockResolvedValue({
+					data: { id: '1' },
 					error: null,
 				}),
 			};
@@ -911,7 +914,10 @@ describe('content-db', () => {
 		it('should mark with content hash', async () => {
 			const mockQuery = {
 				update: vi.fn().mockReturnThis(),
-				eq: vi.fn().mockResolvedValue({
+				eq: vi.fn().mockReturnThis(),
+				select: vi.fn().mockReturnThis(),
+				maybeSingle: vi.fn().mockResolvedValue({
+					data: { id: '1' },
 					error: null,
 				}),
 			};
@@ -930,7 +936,10 @@ describe('content-db', () => {
 		it('should handle errors', async () => {
 			const mockQuery = {
 				update: vi.fn().mockReturnThis(),
-				eq: vi.fn().mockResolvedValue({
+				eq: vi.fn().mockReturnThis(),
+				select: vi.fn().mockReturnThis(),
+				maybeSingle: vi.fn().mockResolvedValue({
+					data: null,
 					error: new Error('Update failed'),
 				}),
 			};
@@ -959,8 +968,8 @@ describe('content-db', () => {
 		it('should mark as failed when max retries reached', async () => {
 			const mockQuery = {
 				update: vi.fn().mockReturnThis(),
-				eq: vi.fn().mockResolvedValue({
-					error: null,
+				eq: vi.fn().mockReturnValue({
+					eq: vi.fn().mockResolvedValue({ error: null }),
 				}),
 			};
 
@@ -980,8 +989,8 @@ describe('content-db', () => {
 		it('should keep as scheduled for retry when retries < 3', async () => {
 			const mockQuery = {
 				update: vi.fn().mockReturnThis(),
-				eq: vi.fn().mockResolvedValue({
-					error: null,
+				eq: vi.fn().mockReturnValue({
+					eq: vi.fn().mockResolvedValue({ error: null }),
 				}),
 			};
 
@@ -1001,8 +1010,8 @@ describe('content-db', () => {
 		it('should not set retry_count when undefined', async () => {
 			const mockQuery = {
 				update: vi.fn().mockReturnThis(),
-				eq: vi.fn().mockResolvedValue({
-					error: null,
+				eq: vi.fn().mockReturnValue({
+					eq: vi.fn().mockResolvedValue({ error: null }),
 				}),
 			};
 
@@ -1021,8 +1030,8 @@ describe('content-db', () => {
 		it('should handle database errors', async () => {
 			const mockQuery = {
 				update: vi.fn().mockReturnThis(),
-				eq: vi.fn().mockResolvedValue({
-					error: new Error('DB error'),
+				eq: vi.fn().mockReturnValue({
+					eq: vi.fn().mockResolvedValue({ error: new Error('DB error') }),
 				}),
 			};
 
@@ -1050,8 +1059,8 @@ describe('content-db', () => {
 		it('should mark content as cancelled with reason', async () => {
 			const mockQuery = {
 				update: vi.fn().mockReturnThis(),
-				eq: vi.fn().mockResolvedValue({
-					error: null,
+				eq: vi.fn().mockReturnValue({
+					eq: vi.fn().mockResolvedValue({ error: null }),
 				}),
 			};
 

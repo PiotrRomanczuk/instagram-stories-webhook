@@ -90,7 +90,8 @@ export async function releaseContentProcessingLock(id: string): Promise<boolean>
 				processing_started_at: null,
 				updated_at: new Date().toISOString(),
 			})
-			.eq('id', id);
+			.eq('id', id)
+			.eq('publishing_status', 'processing');
 
 		if (error) {
 			console.error('Error releasing content processing lock:', error);
@@ -110,7 +111,7 @@ export async function markContentPublished(
 	contentHash?: string,
 ): Promise<boolean> {
 	try {
-		const { error } = await supabaseAdmin
+		const { data, error } = await supabaseAdmin
 			.from('content_items')
 			.update({
 				publishing_status: 'published',
@@ -118,12 +119,21 @@ export async function markContentPublished(
 				ig_media_id: igMediaId,
 				content_hash: contentHash,
 				error: null,
+				processing_started_at: null,
 				updated_at: new Date().toISOString(),
 			})
-			.eq('id', id);
+			.eq('id', id)
+			.eq('publishing_status', 'processing')
+			.select('id')
+			.maybeSingle();
 
 		if (error) {
 			console.error('Error marking content as published:', error);
+			return false;
+		}
+
+		if (!data) {
+			console.error(`markContentPublished: item ${id} was not in processing state, possible duplicate publish`);
 			return false;
 		}
 
@@ -132,6 +142,27 @@ export async function markContentPublished(
 		console.error('Error in markContentPublished:', error);
 		return false;
 	}
+}
+
+/**
+ * Exponential backoff delays for retry attempts.
+ * Retry 1: 1 minute, Retry 2: 5 minutes, Retry 3+: 15 minutes
+ */
+export const RETRY_BACKOFF_MS: readonly number[] = [
+	1 * 60 * 1000,   // 1 minute
+	5 * 60 * 1000,   // 5 minutes
+	15 * 60 * 1000,  // 15 minutes
+];
+
+export const MAX_RETRY_COUNT = 3;
+
+/**
+ * Calculate the next scheduled time with exponential backoff.
+ * Returns a future timestamp based on the retry attempt number (1-indexed).
+ */
+export function calculateRetryScheduledTime(retryCount: number): number {
+	const backoffIndex = Math.min(retryCount - 1, RETRY_BACKOFF_MS.length - 1);
+	return Date.now() + RETRY_BACKOFF_MS[Math.max(0, backoffIndex)];
 }
 
 export async function markContentFailed(
@@ -150,6 +181,10 @@ export async function markContentFailed(
 		} else {
 			updates.publishing_status = 'scheduled';
 			updates.processing_started_at = null;
+			// Apply exponential backoff: push scheduled_time into the future
+			if (retryCount \!== undefined && retryCount > 0) {
+				updates.scheduled_time = calculateRetryScheduledTime(retryCount);
+			}
 		}
 
 		if (retryCount !== undefined) {
@@ -159,7 +194,8 @@ export async function markContentFailed(
 		const { error } = await supabaseAdmin
 			.from('content_items')
 			.update(updates)
-			.eq('id', id);
+			.eq('id', id)
+			.eq('publishing_status', 'processing');
 
 		if (error) {
 			console.error('Error marking content as failed:', error);
@@ -185,9 +221,11 @@ export async function markContentCancelled(
 			.update({
 				publishing_status: 'failed',
 				error: reason,
+				processing_started_at: null,
 				updated_at: new Date().toISOString(),
 			})
-			.eq('id', id);
+			.eq('id', id)
+			.eq('publishing_status', 'processing');
 
 		if (error) {
 			console.error('Error marking content as cancelled:', error);
