@@ -171,10 +171,13 @@ Agent files: `.claude/agents/*.md`
 - **`/interface-design-init`** - Initialize design system
 - **`/interface-design-audit`** - Audit component consistency
 
+**Reporting:**
+- **`/work-time-log`** - Regenerate client work report (`docs/work-time-log.md` + `.csv`)
+
 ### Available Skills
 
 **UI/UX**: `frontend-design`, `interface-design` | **Dev Tools**: `git-cleanup`, `webapp-testing`
-**Automation**: `file-size-enforcer`, `i18n-manager`, `changelog-generator`
+**Automation**: `file-size-enforcer`, `i18n-manager`, `changelog-generator`, `work-time-log`
 
 → **For detailed command docs**: See `.claude/commands/*.md` and `.claude/skills/*/SKILL.md`
 

@@ -9,8 +9,3 @@ export type ContentSource = 'submission' | 'direct';
 export type SubmissionStatus = 'pending' | 'approved' | 'rejected';
 export type PublishingStatus = 'draft' | 'scheduled' | 'processing' | 'published' | 'failed';
 
-export interface TokenData {
-    access_token: string;
-    user_id?: string;
-    expires_at?: number;
-}

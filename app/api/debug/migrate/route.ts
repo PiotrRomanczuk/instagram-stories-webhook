@@ -20,35 +20,13 @@ export async function GET() {
 
     try {
         interface MigrationResults {
-            tokens: string;
             posts: string;
         }
         const results: MigrationResults = {
-            tokens: 'not_found',
             posts: 'not_found'
         };
 
-        // 1. Migrate Tokens
-        const tokensPath = path.join(process.cwd(), 'data', 'tokens.json');
-        try {
-            const tokensData = await fs.readFile(tokensPath, 'utf-8');
-            const tokens = JSON.parse(tokensData);
-
-            const { error: tokenError } = await supabaseAdmin
-                .from('tokens')
-                .upsert({
-                    id: '00000000-0000-0000-0000-000000000001',
-                    access_token: tokens.access_token,
-                    user_id: tokens.user_id,
-                    expires_at: tokens.expires_at
-                });
-
-            results.tokens = tokenError ? `error: ${tokenError.message}` : 'success';
-        } catch (e: unknown) {
-            results.tokens = `skip: ${e instanceof Error ? e.message : String(e)}`;
-        }
-
-        // 2. Migrate Posts
+        // Migrate Posts (tokens table has been dropped - INS-41)
         const postsPath = path.join(process.cwd(), 'data', 'scheduled-posts.json');
         try {
             const postsData = await fs.readFile(postsPath, 'utf-8');

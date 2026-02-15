@@ -1,8 +1,25 @@
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
 import { Logger } from '@/lib/utils/logger';
 import { LinkedAccount } from '@/lib/types';
+import {
+	encryptTokenForStorage,
+	decryptTokenFromStorage,
+} from '@/lib/utils/token-encryption';
 
 const MODULE = 'db:accounts';
+
+/**
+ * Decrypts token fields on a linked account read from the database.
+ */
+function decryptAccountTokens(account: LinkedAccount): LinkedAccount {
+	return {
+		...account,
+		access_token: decryptTokenFromStorage(account.access_token),
+		refresh_token: account.refresh_token
+			? decryptTokenFromStorage(account.refresh_token)
+			: account.refresh_token,
+	};
+}
 
 /**
  * Linked Account Data - stores Facebook/Instagram tokens linked to a user
@@ -36,7 +53,7 @@ export async function getLinkedFacebookAccount(
 			return null;
 		}
 
-		return data as LinkedAccount;
+		return decryptAccountTokens(data as LinkedAccount);
 	} catch (error) {
 		Logger.error(
 			MODULE,
@@ -54,6 +71,12 @@ export async function saveLinkedFacebookAccount(
 	account: LinkedAccount,
 ): Promise<void> {
 	try {
+		// Encrypt tokens before storage
+		const encryptedAccessToken = encryptTokenForStorage(account.access_token);
+		const encryptedRefreshToken = account.refresh_token
+			? encryptTokenForStorage(account.refresh_token)
+			: account.refresh_token;
+
 		// Check if account already exists
 		const existing = await getLinkedFacebookAccount(account.user_id);
 
@@ -65,8 +88,8 @@ export async function saveLinkedFacebookAccount(
 			const { error } = await supabaseAdmin
 				.from('linked_accounts')
 				.update({
-					access_token: account.access_token,
-					refresh_token: account.refresh_token,
+					access_token: encryptedAccessToken,
+					refresh_token: encryptedRefreshToken,
 					expires_at: account.expires_at,
 					ig_user_id: account.ig_user_id,
 					ig_username: account.ig_username,
@@ -91,8 +114,8 @@ export async function saveLinkedFacebookAccount(
 				user_id: account.user_id,
 				provider: 'facebook',
 				provider_account_id: account.provider_account_id,
-				access_token: account.access_token,
-				refresh_token: account.refresh_token,
+				access_token: encryptedAccessToken,
+				refresh_token: encryptedRefreshToken,
 				expires_at: account.expires_at,
 				ig_user_id: account.ig_user_id,
 				ig_username: account.ig_username,

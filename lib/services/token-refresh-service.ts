@@ -4,6 +4,7 @@ import { saveLinkedFacebookAccount } from '@/lib/database/linked-accounts';
 import { LinkedAccount } from '@/lib/types';
 import { Logger } from '@/lib/utils/logger';
 import { withRetry } from '@/lib/utils/retry';
+import { decryptTokenFromStorage } from '@/lib/utils/token-encryption';
 
 const MODULE = 'token-refresh';
 const GRAPH_API_VERSION = 'v24.0';
@@ -99,8 +100,9 @@ async function refreshSingleAccount(
 	}
 
 	try {
+		const decryptedToken = decryptTokenFromStorage(account.access_token);
 		const { accessToken, expiresIn } = await withRetry(
-			() => exchangeForLongLivedToken(account.access_token, appId, appSecret),
+			() => exchangeForLongLivedToken(decryptedToken, appId, appSecret),
 			{
 				maxAttempts: 3,
 				initialDelayMs: 2000,
