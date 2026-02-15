@@ -356,7 +356,6 @@ export async function processScheduledPosts(
 				// so we do NOT call releaseContentProcessingLock first (that would create a
 				// race window where another cron run picks up the item between the two calls).
 				const retryCount = (item.retryCount || 0) + 1;
-				
 
 				await markContentFailed(
 					item.id,
