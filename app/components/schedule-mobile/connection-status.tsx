@@ -19,6 +19,7 @@ export function ConnectionStatus({ isConnected, className = '' }: ConnectionStat
 	const [showTooltip, setShowTooltip] = useState(false);
 
 	/* eslint-disable react-hooks/set-state-in-effect -- Syncing derived state from connection prop */
+	/* eslint-disable react-hooks/set-state-in-effect -- Syncing derived state from connection prop */
 	useEffect(() => {
 		if (isConnected) {
 			setState('connected');

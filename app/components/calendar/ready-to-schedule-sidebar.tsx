@@ -242,6 +242,8 @@ export function ReadyToScheduleSidebar({
 	// Capture current time once to avoid Date.now() in render
 	const [filterNow] = useState(() => Date.now());
 
+	// Capture current time once to avoid Date.now() in render
+
 	// Apply tab filter
 	const filteredItems = readyItems.filter((item) => {
 		switch (activeTab) {
