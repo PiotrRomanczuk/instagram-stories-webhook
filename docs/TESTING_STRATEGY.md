@@ -67,7 +67,7 @@ curl -H "Authorization: Bearer $CRON_SECRET" \
 
 #### C. Integration Testing
 
-**Test File**: `__tests__/integration/cron-service.test.ts`
+**Test File**: `__tests__/integration/cron-service-mocked.test.ts`
 
 ```typescript
 import { processScheduledPosts } from '@/lib/scheduler/process-service';
