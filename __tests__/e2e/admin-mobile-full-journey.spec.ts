@@ -4,6 +4,7 @@ import {
 	createPendingContent,
 	createApprovedContent,
 	createScheduledContent,
+	createPublishedContent,
 	cleanupTestContentByPattern,
 } from './helpers/seed';
 
@@ -59,6 +60,15 @@ test('Admin Mobile Full Journey — single session recording', async ({ page }) 
 			title: `${TEST_TITLE_PREFIX} Scheduled ${timestamp}-${i + 1}`,
 			caption: `Scheduled journey caption ${i + 1}`,
 			mediaIndex: 80 + i,
+		});
+	}
+
+	// Create 2 published content items for verification
+	for (let i = 0; i < 2; i++) {
+		await createPublishedContent(page, {
+			title: `${TEST_TITLE_PREFIX} Published ${timestamp}-${i + 1}`,
+			caption: `Published journey caption ${i + 1}`,
+			mediaIndex: 90 + i,
 		});
 	}
 
@@ -223,6 +233,31 @@ test('Admin Mobile Full Journey — single session recording', async ({ page }) 
 	await expect(page.locator('h1').filter({ hasText: 'Ready to Post' })).not.toBeVisible({ timeout: 10000 });
 
 	await page.waitForTimeout(1000);
+
+	// ══════════════════════════════════════════════════════════════════
+	// AMJ-11: Verify published posts on Posted Stories page
+	// ══════════════════════════════════════════════════════════════════
+	await page.goto('/posted-stories');
+	await page.waitForLoadState('domcontentloaded');
+
+	// Verify page loaded with correct header
+	await expect(page.locator('text=Posted Stories')).toBeVisible({ timeout: 15000 });
+
+	// Verify the seeded published items appear in the table
+	const publishedCaption1 = page.locator('text=Published journey caption 1');
+	const publishedCaption2 = page.locator('text=Published journey caption 2');
+
+	await expect(publishedCaption1).toBeVisible({ timeout: 10000 });
+	await expect(publishedCaption2).toBeVisible({ timeout: 10000 });
+
+	// Verify the table shows IMAGE type for seeded items
+	const imageLabels = page.locator('text=IMAGE');
+	await expect(imageLabels.first()).toBeVisible({ timeout: 5000 });
+
+	// Verify total count badge is present
+	await expect(page.locator('text=total')).toBeVisible({ timeout: 5000 });
+
+	await page.waitForTimeout(1500);
 
 	// ── Cleanup ──────────────────────────────────────────────────────
 	await cleanupTestContentByPattern(page, TEST_TITLE_PREFIX);

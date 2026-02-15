@@ -21,6 +21,7 @@ interface GetContentOptions {
 	scheduledTimeAfter?: number;
 	scheduledTimeBefore?: number;
 	includeArchived?: boolean;
+	requireIgMediaId?: boolean;
 	limit?: number;
 	offset?: number;
 }
@@ -41,6 +42,7 @@ export async function getContentItems(
 		scheduledTimeAfter,
 		scheduledTimeBefore,
 		includeArchived = false,
+		requireIgMediaId = false,
 		limit = 20,
 		offset = 0,
 	} = options;
@@ -56,6 +58,7 @@ export async function getContentItems(
 		if (source) query = query.eq('source', source);
 		if (submissionStatus) query = query.eq('submission_status', submissionStatus);
 		if (publishingStatus) query = query.eq('publishing_status', publishingStatus);
+		if (requireIgMediaId) query = query.not('ig_media_id', 'is', null);
 
 		if (scheduledTimeAfter) query = query.gte('scheduled_time', scheduledTimeAfter);
 		if (scheduledTimeBefore) query = query.lt('scheduled_time', scheduledTimeBefore);

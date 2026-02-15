@@ -116,8 +116,9 @@ export async function GET(req: NextRequest) {
 				break;
 
 			case 'published':
-				// Published items
+				// Published items — only show items that actually reached Instagram
 				filterOptions.publishingStatus = 'published';
+				filterOptions.requireIgMediaId = true;
 				// Non-admins see only their own
 				if (role !== 'admin' && role !== 'developer') {
 					filterOptions.userId = userId;
