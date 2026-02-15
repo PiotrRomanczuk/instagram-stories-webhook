@@ -48,7 +48,7 @@ export async function GET() {
 
             // Try to fetch real-time info from Facebook
             try {
-                const meRes = await axios.get(`https://graph.facebook.com/v21.0/me`, {
+                const meRes = await axios.get(`https://graph.facebook.com/v24.0/me`, {
                     params: {
                         fields: 'id,name,email,picture',
                         access_token: linkedAccount.access_token
@@ -57,7 +57,7 @@ export async function GET() {
                 debugData.facebook_live = meRes.data;
 
                 // Check permissions
-                const permRes = await axios.get(`https://graph.facebook.com/v21.0/me/permissions`, {
+                const permRes = await axios.get(`https://graph.facebook.com/v24.0/me/permissions`, {
                     params: { access_token: linkedAccount.access_token }
                 });
                 debugData.permissions = permRes.data.data;

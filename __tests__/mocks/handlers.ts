@@ -2,7 +2,7 @@ import { http, HttpResponse } from 'msw';
 
 export const handlers = [
   // Mock Facebook Graph API
-  http.get('https://graph.facebook.com/v21.0/me', () => {
+  http.get('https://graph.facebook.com/v24.0/me', () => {
     return HttpResponse.json({
       id: '123456789',
       name: 'Test Artist',
@@ -10,7 +10,7 @@ export const handlers = [
   }),
 
   // Mock Instagram Business Account lookup
-  http.get('https://graph.facebook.com/v21.0/me/accounts', () => {
+  http.get('https://graph.facebook.com/v24.0/me/accounts', () => {
     return HttpResponse.json({
       data: [
         {

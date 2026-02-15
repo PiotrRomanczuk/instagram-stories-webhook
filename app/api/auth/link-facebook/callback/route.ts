@@ -98,7 +98,7 @@ export async function GET(req: NextRequest) {
 		// 4. Exchange code for access token
 		await Logger.info(MODULE, `🔑 Exchanging code for token...`, { userId });
 		const tokenResponse = await fetch(
-			`https://graph.facebook.com/v21.0/oauth/access_token?client_id=${appId}&redirect_uri=${redirectUri}&client_secret=${appSecret}&code=${code}`,
+			`https://graph.facebook.com/v24.0/oauth/access_token?client_id=${appId}&redirect_uri=${redirectUri}&client_secret=${appSecret}&code=${code}`,
 		);
 		const tokenData = await tokenResponse.json();
 
@@ -116,7 +116,7 @@ export async function GET(req: NextRequest) {
 
 		// 5. Exchange for long-lived token (60 days)
 		const longLivedResponse = await fetch(
-			`https://graph.facebook.com/v21.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${appSecret}&fb_exchange_token=${shortLivedToken}`,
+			`https://graph.facebook.com/v24.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${appSecret}&fb_exchange_token=${shortLivedToken}`,
 		);
 		const longLivedData = await longLivedResponse.json();
 

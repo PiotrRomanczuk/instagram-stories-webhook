@@ -29,7 +29,7 @@ export async function POST() {
         console.log(`🔄 Extending token for user ${session.user.id}...`);
 
         // Exchange for long-lived token
-        const response = await axios.get('https://graph.facebook.com/v21.0/oauth/access_token', {
+        const response = await axios.get('https://graph.facebook.com/v24.0/oauth/access_token', {
             params: {
                 grant_type: 'fb_exchange_token',
                 client_id: appId,

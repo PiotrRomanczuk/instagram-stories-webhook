@@ -9,7 +9,7 @@ import type {
     InstagramMessageAPI,
 } from '@/lib/types/messaging';
 
-const GRAPH_API_BASE = 'https://graph.facebook.com/v21.0';
+const GRAPH_API_BASE = 'https://graph.facebook.com/v24.0';
 const MODULE = 'instagram-messages';
 
 /**

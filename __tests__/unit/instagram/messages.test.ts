@@ -42,7 +42,7 @@ vi.mock('@/lib/utils/retry', async () => {
 
 import { getFacebookAccessToken, getInstagramUserId } from '@/lib/database/linked-accounts';
 
-const GRAPH_API_BASE = 'https://graph.facebook.com/v21.0';
+const GRAPH_API_BASE = 'https://graph.facebook.com/v24.0';
 
 describe('instagram/messages', () => {
 	beforeEach(() => {

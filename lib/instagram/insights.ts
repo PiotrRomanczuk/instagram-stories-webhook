@@ -3,7 +3,7 @@ import { getFacebookAccessToken } from '@/lib/database/linked-accounts';
 import { Logger } from '@/lib/utils/logger';
 import { MediaInsight, PostType } from '@/lib/types';
 
-const GRAPH_API_BASE = 'https://graph.facebook.com/v21.0';
+const GRAPH_API_BASE = 'https://graph.facebook.com/v24.0';
 const MODULE = 'insights';
 
 
