@@ -139,7 +139,7 @@ export async function GET(req: NextRequest) {
 
 			case 'failed':
 				// Items that failed publishing (admins/developers only)
-				if (role \!== 'admin' && role \!== 'developer') {
+				if (role !== 'admin' && role !== 'developer') {
 					return NextResponse.json(
 						{ error: 'Only admins can access failed items' },
 						{ status: 403 },

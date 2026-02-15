@@ -16,8 +16,16 @@ vi.mock('@/lib/config/supabase-admin', () => ({
 
 // Chain setup helper
 function setupChain(result: { data?: unknown; error?: unknown }) {
+	// Create a chainable + thenable object so that:
+	// - Chains like .eq().eq() resolve to `result` when awaited
+	// - Chains like .eq().eq().select().maybeSingle() also resolve to `result`
+	const chainable = {
+		eq: mockEq,
+		select: mockSelect,
+		then: (resolve: (v: unknown) => void) => resolve(result),
+	};
 	mockUpdate.mockReturnValue({ eq: mockEq });
-	mockEq.mockImplementation(() => ({ eq: mockEq, select: mockSelect }));
+	mockEq.mockImplementation(() => chainable);
 	mockSelect.mockReturnValue({ maybeSingle: mockMaybeSingle });
 	mockMaybeSingle.mockResolvedValue(result);
 }
