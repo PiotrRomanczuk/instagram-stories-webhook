@@ -147,14 +147,14 @@ git log main..branch-name  # Should be empty
 Extract ticket and generate title:
 
 ```
-feature/STRUM-123-add-user-export
-→ [STRUM-123] Add user export
+feature/ISW-123-add-user-export
+→ [ISW-123] Add user export
 
-fix/STRUM-456-broken-calendar
-→ [STRUM-456] Broken calendar
+fix/ISW-456-broken-calendar
+→ [ISW-456] Broken calendar
 
-refactor/STRUM-789-split-components
-→ [STRUM-789] Split components
+refactor/ISW-789-split-components
+→ [ISW-789] Split components
 ```
 
 ### From Commit History
@@ -198,7 +198,7 @@ git log main..HEAD --oneline
 - [ ] Manual testing completed
 
 ## Linear Ticket
-Fixes STRUM-XXX
+Fixes ISW-XXX
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 ```

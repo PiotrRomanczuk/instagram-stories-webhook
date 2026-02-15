@@ -122,8 +122,8 @@ Claude: Running automatic cleanup...
 
 ```
 ✅ PR #120 merged
-→ Delete local: feature/STRUM-XXX-feature
-→ Delete remote: origin/feature/STRUM-XXX-feature
+→ Delete local: feature/ISW-XXX-feature
+→ Delete remote: origin/feature/ISW-XXX-feature
 ```
 
 ### Abandoned Work
@@ -166,7 +166,7 @@ Analyzes all branches and their PR status without making changes.
 
 **Usage**:
 ```bash
-cd /Users/piotr/Desktop/guitar-crm
+cd /Users/piotr/Desktop/instagram-stories-webhook
 ./.claude/skills/git-cleanup/scripts/analyze-branches.sh
 ```
 
@@ -178,20 +178,20 @@ cd /Users/piotr/Desktop/guitar-crm
 LOCAL BRANCHES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🏠 main (base branch)
-✅ feature/STRUM-XXX-active → PR #129 (OPEN)
-🗑️  feature/STRUM-XXX-old → PR #120 (MERGED) - can delete
-📝 feature/STRUM-XXX-new → No PR, 3 commits ahead of main - needs PR
+✅ feature/ISW-XXX-active → PR #129 (OPEN)
+🗑️  feature/ISW-XXX-old → PR #120 (MERGED) - can delete
+📝 feature/ISW-XXX-new → No PR, 3 commits ahead of main - needs PR
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 REMOTE BRANCHES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✅ feature/STRUM-XXX-active → PR #129 (OPEN)
-🗑️  feature/STRUM-96-email → PR #86 (MERGED) - can delete from origin
+✅ feature/ISW-XXX-active → PR #129 (OPEN)
+🗑️  feature/ISW-96-email → PR #86 (MERGED) - can delete from origin
 ```
 
 ## Integration with Workflow
 
-This skill integrates with the Guitar CRM development workflow:
+This skill integrates with the Instagram Stories Webhook development workflow:
 
 - **Respects** branch naming conventions
 - **Links** to Linear tickets automatically

@@ -9,7 +9,7 @@
 **Linear Project**: [Instagram Stories Webhook](https://linear.app/bms95/project/instagram-stories-webhook-ea21e56e20bf) | **Team**: BMS
 
 - All task tracking, milestones, and backlog management happens in Linear
-- Issues: BMS-137 through BMS-186 (50 issues across 4 phases)
+- Issues: ISW-137 through ISW-186 (50 issues across 4 phases)
 - Coordination: Claim Linear issues before starting work to avoid conflicts
 
 ---
@@ -32,8 +32,8 @@ npm run lint && npx tsc && npm run test
 
 ### PR Workflow (Use `/ship` command)
 ```bash
-# 1. Get Linear ticket (BMS-XXX)
-# 2. Create branch: feature/BMS-XXX-description
+# 1. Get Linear ticket (ISW-XXX)
+# 2. Create branch: feature/ISW-XXX-description
 # 3. Make changes and commit
 # 4. Run quality gates
 /ship                # Validates, tests, pushes, creates PR, updates Linear
@@ -151,7 +151,7 @@ Agent files: `.claude/agents/*.md`
 **Deployment:**
 - PRs → Vercel preview deployment with unique URL
 - Merge to `master` → Auto-deploys to production
-- Version bumping → Automatic via GitHub Action (based on branch prefix)
+- Version bumping → Manual in PR (`npm version minor/patch --no-git-tag-version`), then `npm run release` after merge
 
 **File Conventions:**
 - Components: `PascalCase.tsx`

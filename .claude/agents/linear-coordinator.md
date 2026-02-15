@@ -24,7 +24,7 @@ tools:
 - **Project**: Instagram Stories Webhook
 - **Team**: BMS
 - **URL**: https://linear.app/bms95/project/instagram-stories-webhook-ea21e56e20bf
-- **Issues**: BMS-137 through BMS-186+
+- **Issues**: ISW-137 through ISW-186+
 - **Milestones**: Phase 1 (Feb 26), Phase 2 (Mar 19), Phase 3 (Apr 9), Phase 4 (Apr 28)
 
 ---
@@ -73,8 +73,8 @@ When multiple Claude Code sessions run in parallel:
 list_issues(project: "Instagram Stories Webhook", state: "In Progress")
 
 # Claim an issue
-update_issue(id: "BMS-XXX", assignee: "current-session")
-update_issue(id: "BMS-XXX", state: "In Progress")
+update_issue(id: "ISW-XXX", assignee: "current-session")
+update_issue(id: "ISW-XXX", state: "In Progress")
 ```
 
 ### Handoff Protocol
@@ -220,14 +220,14 @@ Every issue should have:
 # Use Linear MCP: list_issues(team: "BMS", project: "Instagram Stories Webhook", state: ["Todo", "In Progress"])
 
 # Get issue details
-# Use Linear MCP: get_issue(id: "BMS-XXX")
+# Use Linear MCP: get_issue(id: "ISW-XXX")
 
 # Update issue state
-# Use Linear MCP: update_issue(id: "BMS-XXX", state: "In Progress")
+# Use Linear MCP: update_issue(id: "ISW-XXX", state: "In Progress")
 
 # Create issue
 # Use Linear MCP: create_issue(title: "...", team: "BMS", ...)
 
 # Add comment
-# Use Linear MCP: create_comment(issueId: "BMS-XXX", body: "Progress update: ...")
+# Use Linear MCP: create_comment(issueId: "ISW-XXX", body: "Progress update: ...")
 ```

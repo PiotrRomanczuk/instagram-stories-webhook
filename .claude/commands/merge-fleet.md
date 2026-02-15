@@ -26,7 +26,7 @@ gh pr list --state open --base main --json number,title,headRefName,statusCheckR
 
 ### 1.2 For each PR, extract:
 - **PR number and title**
-- **Branch name** (extract `STRUM-XXX` ticket ID)
+- **Branch name** (extract `ISW-XXX` ticket ID)
 - **CI status**: map `statusCheckRollup` entries to determine which checks are failing
 - **Mergeability**: `MERGEABLE`, `CONFLICTING`, or `UNKNOWN`
 
@@ -41,10 +41,10 @@ gh pr list --state open --base main --json number,title,headRefName,statusCheckR
 ### 1.4 Print discovery report:
 ```
 PR Fleet Status:
-  #94  [STRUM-XXX] Fix songs search           -> Fixable (lint failing)
-  #95  [STRUM-XXX] Add calendar month view     -> Fixable (lint failing)
-  #96  [STRUM-XXX] Adopt shadcn/ui             -> Conflicting (skip)
-  #97  [STRUM-XXX] AI conversation persistence -> Fixable (lint failing)
+  #94  [ISW-XXX] Fix songs search           -> Fixable (lint failing)
+  #95  [ISW-XXX] Add calendar month view     -> Fixable (lint failing)
+  #96  [ISW-XXX] Adopt shadcn/ui             -> Conflicting (skip)
+  #97  [ISW-XXX] AI conversation persistence -> Fixable (lint failing)
 
 Plan: Fix 3, Merge 3, Skip 1
 ```
@@ -149,7 +149,7 @@ npm test
 ### 3.10 Commit and push fixes
 ```bash
 git add {only the files you modified}
-git commit -m "fix(ci): resolve lint and type errors [STRUM-XXX]
+git commit -m "fix(ci): resolve lint and type errors [ISW-XXX]
 
 Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
 git push origin {branch-name}
@@ -201,7 +201,7 @@ git pull origin main
   - Push with `--force-with-lease` and wait for CI again
 
 ### 4.5 Update Linear ticket (unless `--skip-linear`)
-- Use Linear MCP `get_issue` with the `STRUM-XXX` identifier
+- Use Linear MCP `get_issue` with the `ISW-XXX` identifier
 - Use `update_issue` to set state to **"Done"**
 - Use `create_comment` to add: "Merged via /merge-fleet -- PR #{number}"
 
@@ -217,12 +217,12 @@ Print a comprehensive report:
 Fleet Merge Complete!
 
 Merged (3):
-  #94  [STRUM-XXX] Fix songs search              -> Merged (fixed lint)
-  #95  [STRUM-XXX] Add calendar month view        -> Merged (fixed lint)
-  #97  [STRUM-XXX] AI conversation persistence    -> Merged (fixed lint + types)
+  #94  [ISW-XXX] Fix songs search              -> Merged (fixed lint)
+  #95  [ISW-XXX] Add calendar month view        -> Merged (fixed lint)
+  #97  [ISW-XXX] AI conversation persistence    -> Merged (fixed lint + types)
 
 Skipped (1):
-  #96  [STRUM-XXX] Adopt shadcn/ui                -> Conflicting (manual resolution needed)
+  #96  [ISW-XXX] Adopt shadcn/ui                -> Conflicting (manual resolution needed)
 
 Linear: 3 tickets -> Done
 Branches: 3 deleted

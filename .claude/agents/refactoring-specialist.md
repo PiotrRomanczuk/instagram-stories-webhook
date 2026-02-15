@@ -228,9 +228,9 @@ npm run lint && npx tsc && npm run test
 ### Step 5: PR
 
 Create a focused PR with the `refactor/` branch prefix:
-- `refactor/BMS-XXX-split-content-db`
-- `refactor/BMS-XXX-eliminate-any-types`
-- `refactor/BMS-XXX-consistent-logging`
+- `refactor/ISW-XXX-split-content-db`
+- `refactor/ISW-XXX-eliminate-any-types`
+- `refactor/ISW-XXX-consistent-logging`
 
 ---
 

@@ -1,7 +1,7 @@
 ---
 allowed-tools: Read, Edit, Write, Bash, Glob, Grep
 argument-hint: [--patch|--minor|--major] [--skip-linear] [--dry-run]
-description: Full ship workflow — validate branch & changes, run tests, update Linear, push, and create PR (version bumped automatically post-merge)
+description: Full ship workflow — validate branch & changes, bump version, run tests, update Linear, push, and create PR
 ---
 
 # Ship Workflow
@@ -23,12 +23,12 @@ Run ALL of these checks before proceeding:
 1. **Get current branch name** via `git branch --show-current`
 2. **If on `main` or `production`** — do NOT abort. Instead, **automatically create a new feature branch**:
    - Detect the domain from uncommitted changed files (e.g., `calendar-actions.ts` → `calendar`)
-   - Extract or ask for a Linear ticket ID (use `STRUM-XXX` as placeholder if unknown)
-   - Create branch: `git checkout -b feature/STRUM-XXX-{domain}-{short-description}`
+   - Extract or ask for a Linear ticket ID (use `ISW-XXX` as placeholder if unknown)
+   - Create branch: `git checkout -b feature/ISW-XXX-{domain}-{short-description}`
    - Continue the workflow on the new branch
 3. **Check for uncommitted changes** via `git status --porcelain` — warn the user if there are unstaged or staged changes and ask whether to commit them or abort
 4. **Get commits ahead of main** via `git log main..HEAD --oneline` — ABORT if there are zero commits AND no uncommitted changes (nothing to ship)
-5. **Extract Linear ticket ID** from branch name (pattern: `STRUM-XXX` or `STRUM-\d+`) — warn if not found but continue
+5. **Extract Linear ticket ID** from branch name (pattern: `ISW-XXX` or `ISW-\d+`) — warn if not found but continue
 
 ---
 
@@ -38,9 +38,9 @@ Verify that the changed files belong to the domain this branch is about. This pr
 
 1. **Get changed files**: `git diff main..HEAD --name-only` (plus uncommitted files from `git diff --name-only` and untracked from `git ls-files --others --exclude-standard`)
 2. **Extract the domain keyword(s) from the branch name** — the slug after the ticket ID tells you what domain this branch is for:
-   - `feature/STRUM-123-ai-generations-history` → domain: **ai**, **generations**
-   - `fix/STRUM-456-users-table-sorting` → domain: **users**, **table**
-   - `refactor/STRUM-789-lesson-form-cleanup` → domain: **lesson**, **form**
+   - `feature/ISW-123-ai-generations-history` → domain: **ai**, **generations**
+   - `fix/ISW-456-users-table-sorting` → domain: **users**, **table**
+   - `refactor/ISW-789-lesson-form-cleanup` → domain: **lesson**, **form**
 
 3. **Map changed files to their domains** using the directory/filename:
    - `components/users/UsersTable.tsx` → domain: **users**
@@ -50,13 +50,13 @@ Verify that the changed files belong to the domain this branch is about. This pr
    - Shared files (`types/`, `schemas/`, `lib/supabase/`, config files) are neutral — they belong to any branch
 
 4. **Check for mismatches**: If a significant portion of changed files belong to a domain that does NOT match the branch name, **ABORT and ask the user**:
-   - "You're on branch `feature/STRUM-XXX-ai-testing` but 6 of 8 changed files are in `components/users/`. These changes should be on a users-related branch. Continue anyway or abort?"
+   - "You're on branch `feature/ISW-XXX-ai-testing` but 6 of 8 changed files are in `components/users/`. These changes should be on a users-related branch. Continue anyway or abort?"
    - Minor shared/config files (package.json, types/index.ts, CLAUDE.md) should be ignored in this check — they're expected on any branch
    - If ALL changed files are in the branch's domain or are shared files: proceed silently
 
 ```
 Branch validation:
-  Branch:      feature/STRUM-123-ai-generations-history
+  Branch:      feature/ISW-123-ai-generations-history
   Domain:      ai, generations
   Changed files by domain:
     ai/         8 files  ✓ matches branch
@@ -68,14 +68,14 @@ Branch validation:
 **Mismatch example** (would ABORT):
 ```
 Branch validation:
-  Branch:      feature/STRUM-123-ai-testing
+  Branch:      feature/ISW-123-ai-testing
   Domain:      ai, testing
   Changed files by domain:
     users/      6 files  ✗ WRONG BRANCH — users changes don't belong here
     ai/         1 file   ✓ matches branch
     types/      1 file   (shared — OK)
   Assessment:  ✗ Most changes are users-related, not ai-related
-               → These should be on a branch like fix/STRUM-XXX-users-table-ui
+               → These should be on a branch like fix/ISW-XXX-users-table-ui
 ```
 
 ---
@@ -86,7 +86,7 @@ If there are uncommitted changes from Phase 1:
 
 1. Show `git diff --stat` to summarize what changed
 2. Ask user: "Stage and commit these changes before shipping?"
-   - If yes: stage relevant files (NOT .env or secrets), compose a commit message following the format `type(scope): description [STRUM-XXX]`, and commit
+   - If yes: stage relevant files (NOT .env or secrets), compose a commit message following the format `type(scope): description [ISW-XXX]`, and commit
    - If no: ABORT with "Please commit or stash your changes first"
 
 ---
@@ -113,25 +113,44 @@ Quality gates:
 
 ---
 
-## Phase 5: Version Bump (Automated Post-Merge)
+## Phase 5: Version Bump (Manual)
 
-Version bumping is handled **automatically** by a GitHub Action that runs after the PR is merged to `main`. No manual `npm version` is needed during `/ship`.
+Version bumping is **manual** and must be done before the final commit on the branch. After the PR is merged, `npm run release` creates the git tag and triggers a GitHub Release.
 
 ### How it works:
-- The `version-bump.yml` workflow triggers on push to `main`
-- It extracts the PR number from the squash-merge commit, reads the source branch name, and determines the bump type
-- Bump type logic: `feature/`|`feat/` → minor, everything else → patch
-- Override with PR labels: `version:major`, `version:minor`, `version:patch`
-- A concurrency group ensures sequential execution when multiple PRs merge close together
+1. Detect the bump type from the branch prefix:
+   - `feature/`|`feat/` → **minor** bump
+   - `fix/`|`refactor/`|`chore/`|`test/`|`docs/` → **patch** bump
+   - Breaking changes → **major** bump (rare, must be explicit)
+
+2. Run the version bump:
+   ```bash
+   npm version minor --no-git-tag-version  # or patch/major
+   ```
+
+3. Stage `package.json` and `package-lock.json`:
+   ```bash
+   git add package.json package-lock.json
+   ```
+
+4. Include the version bump in the commit message:
+   ```
+   feat: description (0.15.0 -> 0.16.0) (ISW-XXX)
+   ```
 
 ### What to display:
-1. Detect the bump type from the branch prefix (same rules as above)
-2. Print the expected bump type for visibility — **do not run `npm version`**
-
 ```
 Version bump:
-  Type:   minor (auto-detected from feature/ branch)
-  Action: will be applied automatically after merge to main
+  Current: 0.15.0
+  Type:    minor (from feature/ branch prefix)
+  New:     0.16.0
+  Action:  bumped in package.json, included in commit
+```
+
+### After merge:
+```bash
+git checkout master && git pull
+npm run release        # Creates v0.16.0 tag + triggers GitHub Release
 ```
 
 ---
@@ -148,9 +167,9 @@ Version bump:
 
 ## Phase 7: Update Linear (unless `--skip-linear`)
 
-If a `STRUM-XXX` ticket ID was extracted from the branch name:
+If a `ISW-XXX` ticket ID was extracted from the branch name:
 
-1. Use Linear MCP `get_issue` to fetch the current issue by the identifier (e.g., `STRUM-123`)
+1. Use Linear MCP `get_issue` to fetch the current issue by the identifier (e.g., `ISW-123`)
 2. If found, use `update_issue` to set state to **"In Review"**
 3. After the PR is created (Phase 8), add a comment with the PR link using `create_comment`
 
@@ -163,9 +182,9 @@ If no ticket ID was found in the branch name, skip and note it in the summary.
 
 ### Determine PR metadata:
 
-1. **Title**: `[STRUM-XXX] Short description from branch name`
+1. **Title**: `[ISW-XXX] Short description from branch name`
    - Convert branch slug to readable text: `add-lesson-reminders` → `Add lesson reminders`
-   - Example: `[STRUM-123] Add lesson reminders`
+   - Example: `[ISW-123] Add lesson reminders`
 
 2. **Body**: Generate from the commit log since main:
    - Get commits: `git log main..HEAD --pretty=format:"- %s"`
@@ -176,7 +195,7 @@ If no ticket ID was found in the branch name, skip and note it in the summary.
 ```bash
 gh pr create --title "{title}" --body "$(cat <<'EOF'
 ## Linear Ticket
-Closes STRUM-XXX
+Closes ISW-XXX
 
 ## Changes
 {bullet list of commits}
@@ -186,7 +205,7 @@ Closes STRUM-XXX
 
 ## Quality Gates
 - [x] Unit tests passing
-- [x] Version bump: auto ({type} from branch prefix, applied post-merge)
+- [x] Version bump: {old} -> {new} ({type} from branch prefix)
 - [x] Lint + TSC checked on push (hooks)
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
@@ -207,10 +226,11 @@ EOF
 2. Print final summary:
 ```
 Ship complete!
-  Branch:   feature/STRUM-123-add-lesson-reminders
-  Version:  auto-bump on merge (minor)
+  Branch:   feature/ISW-123-add-lesson-reminders
+  Version:  0.15.0 -> 0.16.0 (minor)
   PR:       https://github.com/...
-  Linear:   STRUM-123 → In Review
+  Linear:   ISW-123 → In Review
+  Release:  run `npm run release` after merge to create v0.16.0 tag
 
   Quality:  tests ✓ | lint ✓ (hook) | tsc ✓ (hook)
 ```

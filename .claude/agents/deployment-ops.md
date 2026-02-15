@@ -299,7 +299,7 @@ export async function GET(req: Request) {
 
 1. **Assess**: Check Sentry, Vercel logs, user reports
 2. **Contain**: Rollback if fix isn't obvious
-3. **Fix**: Create hotfix branch `fix/BMS-XXX-incident-description`
+3. **Fix**: Create hotfix branch `fix/ISW-XXX-incident-description`
 4. **Verify**: Run full test suite + smoke tests
 5. **Deploy**: Push fix to master
 6. **Document**: Create post-mortem in Linear

@@ -36,7 +36,7 @@ update_issue(id, state: "In Progress")
 
 ### Step 2: Create a New Branch
 
-**Branch naming convention**: `{type}/{BMS-issue-id}-{short-description}`
+**Branch naming convention**: `{type}/{ISW-issue-id}-{short-description}`
 
 Types: `feature/`, `fix/`, `refactor/`, `test/`, `docs/`, `chore/`
 
@@ -44,19 +44,19 @@ Types: `feature/`, `fix/`, `refactor/`, `test/`, `docs/`, `chore/`
 # Always branch from latest master
 git checkout master
 git pull origin master
-git checkout -b feature/BMS-150-add-dark-mode
+git checkout -b feature/ISW-150-add-dark-mode
 ```
 
 Examples:
-- `feature/BMS-150-add-dark-mode`
-- `fix/BMS-163-token-refresh-race`
-- `test/BMS-172-scheduler-coverage`
-- `refactor/BMS-145-split-publish-module`
+- `feature/ISW-150-add-dark-mode`
+- `fix/ISW-163-token-refresh-race`
+- `test/ISW-172-scheduler-coverage`
+- `refactor/ISW-145-split-publish-module`
 
 ### Step 3: Develop and Commit
 
 Follow project conventions:
-- Commit message format: `type: description (BMS-XXX)`
+- Commit message format: `type: description (ISW-XXX)`
 - Include version bump if feature work (see CLAUDE.md Versioning section)
 - Prefix with Linear issue ID for automatic linking
 
@@ -64,7 +64,7 @@ Follow project conventions:
 # Example commit
 git add <specific-files>
 git commit -m "$(cat <<'EOF'
-feat: add dark mode toggle (BMS-150)
+feat: add dark mode toggle (ISW-150)
 
 - Add ThemeProvider with system preference detection
 - Add toggle component to settings page
@@ -87,19 +87,19 @@ npm run lint && npx tsc && npm run test
 
 ```bash
 # Push the new branch
-git push -u origin feature/BMS-150-add-dark-mode
+git push -u origin feature/ISW-150-add-dark-mode
 ```
 
 Create the PR with `gh`:
 
 ```bash
-gh pr create --title "feat: add dark mode toggle (BMS-150)" --body "$(cat <<'EOF'
+gh pr create --title "feat: add dark mode toggle (ISW-150)" --body "$(cat <<'EOF'
 ## Summary
 - Add dark mode toggle to settings page
 - Detect system preference and allow manual override
 - Persist preference in localStorage
 
-Closes BMS-150
+Closes ISW-150
 
 ## Test plan
 - [ ] Toggle switches between light and dark mode
@@ -117,13 +117,13 @@ EOF
 After PR creation, attach the PR URL to the Linear issue:
 
 ```
-update_issue(id: "BMS-150", state: "In Review", links: [{url: "PR_URL", title: "PR: feat: add dark mode toggle"}])
+update_issue(id: "ISW-150", state: "In Review", links: [{url: "PR_URL", title: "PR: feat: add dark mode toggle"}])
 ```
 
 Also add a comment on the Linear issue summarizing the PR:
 
 ```
-create_comment(issueId: "BMS-150", body: "PR created: [#42](PR_URL)\n\nChanges:\n- ThemeProvider with system preference detection\n- Toggle component on settings page\n- localStorage persistence")
+create_comment(issueId: "ISW-150", body: "PR created: [#42](PR_URL)\n\nChanges:\n- ThemeProvider with system preference detection\n- Toggle component on settings page\n- localStorage persistence")
 ```
 
 ### Step 7: Watch CI Checks
@@ -145,7 +145,7 @@ If checks fail:
 Once the PR is merged, update the Linear issue:
 
 ```
-update_issue(id: "BMS-150", state: "Done")
+update_issue(id: "ISW-150", state: "Done")
 ```
 
 ### Step 9: Create Release (if version was bumped)
@@ -183,9 +183,9 @@ The `v*` tag triggers `.github/workflows/release.yml`, which auto-creates a GitH
 
 ### Linear Issue References in Git
 
-- **Commit messages**: Include `(BMS-XXX)` in the commit subject line
-- **PR title**: Include `(BMS-XXX)` in the title
-- **PR body**: Include `Closes BMS-XXX` or `Fixes BMS-XXX` for auto-linking
+- **Commit messages**: Include `(ISW-XXX)` in the commit subject line
+- **PR title**: Include `(ISW-XXX)` in the title
+- **PR body**: Include `Closes ISW-XXX` or `Fixes ISW-XXX` for auto-linking
 
 ### Creating New Issues for Discovered Work
 
@@ -196,10 +196,10 @@ create_issue(
   title: "Fix race condition in token refresh",
   team: "BMS",
   project: "Instagram Stories Webhook",
-  description: "Discovered while working on BMS-150. The token refresh...",
+  description: "Discovered while working on ISW-150. The token refresh...",
   labels: ["bug"],
   priority: 2,  // High
-  relatedTo: ["BMS-150"]
+  relatedTo: ["ISW-150"]
 )
 ```
 
@@ -226,7 +226,7 @@ create_issue(
 After merge, delete the remote branch:
 
 ```bash
-git push origin --delete feature/BMS-150-add-dark-mode
+git push origin --delete feature/ISW-150-add-dark-mode
 ```
 
 ---
@@ -241,7 +241,7 @@ Every PR must follow this structure:
 ## Summary
 <1-3 bullet points describing the changes in user-facing language>
 
-Closes STRUM-XXX
+Closes ISW-XXX
 
 ## Changes
 - List new features, components, or fixes
@@ -303,7 +303,7 @@ npm version patch --no-git-tag-version
 git add package.json package-lock.json
 ```
 
-Include the version bump in the commit message: `feat: add dark mode (0.3.0 -> 0.4.0) (BMS-150)`
+Include the version bump in the commit message: `feat: add dark mode (0.3.0 -> 0.4.0) (ISW-150)`
 
 ---
 
@@ -312,17 +312,17 @@ Include the version bump in the commit message: `feat: add dark mode (0.3.0 -> 0
 ```bash
 # Full PR workflow in one go
 git checkout master && git pull origin master
-git checkout -b feature/BMS-XXX-description
+git checkout -b feature/ISW-XXX-description
 # ... do work ...
 npm run lint && npx tsc && npm run test
 git add <files>
-git commit -m "feat: description (BMS-XXX)"
-git push -u origin feature/BMS-XXX-description
-gh pr create --title "feat: description (BMS-XXX)" --body "..."
+git commit -m "feat: description (ISW-XXX)"
+git push -u origin feature/ISW-XXX-description
+gh pr create --title "feat: description (ISW-XXX)" --body "..."
 gh pr checks --watch
 # After merge:
 git checkout master && git pull origin master
-git branch -d feature/BMS-XXX-description
+git branch -d feature/ISW-XXX-description
 ```
 
 ---
@@ -333,4 +333,4 @@ git branch -d feature/BMS-XXX-description
 - **Team**: BMS
 - **URL**: https://linear.app/bms95/project/instagram-stories-webhook-ea21e56e20bf
 - **Milestones**: Phase 1 (Feb 26), Phase 2 (Mar 19), Phase 3 (Apr 9), Phase 4 (Apr 28)
-- **Issue range**: BMS-137 through BMS-186+
+- **Issue range**: ISW-137 through ISW-186+
