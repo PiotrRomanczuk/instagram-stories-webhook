@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react';
 import Image from 'next/image';
 import { Upload, Send, Loader2, CheckCircle, XCircle, Terminal } from 'lucide-react';
-import { supabase } from '@/lib/config/supabase';
+import { uploadToStorage } from '@/lib/storage/upload-client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
@@ -51,21 +51,9 @@ export function DebugPublisherNew() {
 		addLog(`Selected file: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`);
 
 		try {
-			addLog('Uploading to storage...');
-			const fileExt = file.name.split('.').pop();
-			const fileName = `debug-${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
-			const filePath = `uploads/${fileName}`;
+			addLog('Uploading via API proxy...');
 
-			const { error } = await supabase.storage.from('stories').upload(filePath, file, {
-				cacheControl: '3600',
-				upsert: false,
-			});
-
-			if (error) throw error;
-
-			const {
-				data: { publicUrl },
-			} = supabase.storage.from('stories').getPublicUrl(filePath);
+			const { publicUrl } = await uploadToStorage(file, { path: 'uploads/debug' });
 
 			setImageUrl(publicUrl);
 			addLog(`Upload complete: ${publicUrl.substring(0, 60)}...`);

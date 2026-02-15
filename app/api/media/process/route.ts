@@ -1,13 +1,13 @@
 /**
  * POST /api/media/process
- * 
+ *
  * Processes an image to fit Instagram Story dimensions (9:16 / 1080x1920)
- * 
+ *
  * Request body:
  * - imageUrl: string - URL of the image to process
  * - backgroundColor?: string - Hex color for padding (default: #000000)
  * - blurBackground?: boolean - Use blurred image as background instead
- * 
+ *
  * Returns:
  * - processedUrl: string - URL of the processed image in Supabase storage
  * - originalDimensions: { width, height }
@@ -17,7 +17,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { processImageForStory } from '@/lib/media/processor';
-import { supabase } from '@/lib/config/supabase';
+import { supabaseAdmin } from '@/lib/config/supabase-admin';
 
 export async function POST(request: Request) {
     try {
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
         // Upload the processed image to Supabase
         const fileName = `processed/${crypto.randomUUID()}.jpg`;
 
-        const { error: uploadError } = await supabase.storage
+        const { error: uploadError } = await supabaseAdmin.storage
             .from('stories')
             .upload(fileName, result.buffer, {
                 contentType: 'image/jpeg',
@@ -76,7 +76,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Failed to upload processed image' }, { status: 500 });
         }
 
-        const { data: { publicUrl } } = supabase.storage
+        const { data: { publicUrl } } = supabaseAdmin.storage
             .from('stories')
             .getPublicUrl(fileName);
 

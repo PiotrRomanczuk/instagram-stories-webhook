@@ -15,7 +15,7 @@ import { Progress } from '@/app/components/ui/progress';
 import { ToggleGroup, ToggleGroupItem } from '@/app/components/ui/toggle-group';
 import { TagInput } from '../ui/tag-input';
 import { DateTimePicker } from '../ui/datetime-picker';
-import { supabase } from '@/lib/config/supabase';
+import { uploadToStorage } from '@/lib/storage/upload-client';
 import { useMediaValidation } from '@/app/hooks/use-media-validation';
 import { AspectRatioIndicator, ProcessingPrompt } from '../media/aspect-ratio-indicator';
 import { InstagramPreview } from '../media/instagram-preview';
@@ -99,26 +99,10 @@ export function ScheduleForm({ onScheduled }: ScheduleFormProps) {
         setUploadProgress(10);
 
         try {
-            const fileExt = file.name.split('.').pop();
-            const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
-            const filePath = `uploads/${fileName}`;
-
             setUploadProgress(30);
 
-            const { error } = await supabase.storage
-                .from('stories')
-                .upload(filePath, file, {
-                    cacheControl: '3600',
-                    upsert: false
-                });
-
-            if (error) throw error;
-
-            setUploadProgress(80);
-
-            const { data: { publicUrl } } = supabase.storage
-                .from('stories')
-                .getPublicUrl(filePath);
+            // Upload via authenticated API proxy
+            const { publicUrl } = await uploadToStorage(file, { path: 'uploads' });
 
             setUploadProgress(100);
             setValue('mediaUrl', publicUrl);
