@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
 
         let providerAccountId = globalToken.user_id || "migrated_user";
         try {
-            const meRes = await fetch(`https://graph.facebook.com/v21.0/me?access_token=${globalToken.access_token}`);
+            const meRes = await fetch(`https://graph.facebook.com/v24.0/me?access_token=${globalToken.access_token}`);
             const meData = await meRes.json();
             if (meData.id) providerAccountId = meData.id;
         } catch {

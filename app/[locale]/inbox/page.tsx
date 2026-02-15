@@ -34,7 +34,7 @@ export default async function InboxPage() {
 
 					<footer className="pt-8 border-t border-gray-200 text-center">
 						<p className="text-sm text-gray-500">
-							Rate Limit: 200 messages/hour &middot; Instagram Messaging API v21.0
+							Rate Limit: 200 messages/hour &middot; Instagram Messaging API v24.0
 						</p>
 					</footer>
 				</div>

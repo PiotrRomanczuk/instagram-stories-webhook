@@ -30,7 +30,7 @@ vi.mock('@/lib/config/supabase-admin', () => ({
     } as unknown as { from: any; insert: any; update: any; select: any; delete: any; eq: any; single: any },
 }));
 
-const GRAPH_API_BASE = 'https://graph.facebook.com/v21.0';
+const GRAPH_API_BASE = 'https://graph.facebook.com/v24.0';
 
 describe('publishMedia', () => {
     const mockUserId = 'user-123';

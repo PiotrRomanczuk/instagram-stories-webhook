@@ -7,7 +7,7 @@ import { Logger } from '@/lib/utils/logger';
 
 import { withRetry } from '@/lib/utils/retry';
 
-const GRAPH_API_BASE = 'https://graph.facebook.com/v21.0';
+const GRAPH_API_BASE = 'https://graph.facebook.com/v24.0';
 const MODULE = 'instagram';
 
 /**

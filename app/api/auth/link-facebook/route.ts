@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
         const state = createSignedState({ userId }, stateSecret);
 
 
-        const facebookAuthUrl = new URL("https://www.facebook.com/v21.0/dialog/oauth");
+        const facebookAuthUrl = new URL("https://www.facebook.com/v24.0/dialog/oauth");
         facebookAuthUrl.searchParams.set("client_id", appId || "");
         facebookAuthUrl.searchParams.set("redirect_uri", redirectUri);
         facebookAuthUrl.searchParams.set("scope", scopes);

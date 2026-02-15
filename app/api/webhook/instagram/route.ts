@@ -154,7 +154,7 @@ async function processMessagingEvent(
             .from('linked_accounts')
             .select('user_id')
             .eq('ig_user_id', ourIgUserId)
-            .eq('provider', 'meta')
+            .eq('provider', 'facebook')
             .single();
 
         if (accountError || !linkedAccount) {

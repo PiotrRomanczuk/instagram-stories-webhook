@@ -5,7 +5,7 @@ import { getLinkedFacebookAccount } from '@/lib/database/linked-accounts';
 import { authOptions } from "@/lib/auth";
 import { isAdmin } from '@/lib/auth-helpers';
 
-const GRAPH_API_BASE = 'https://graph.facebook.com/v21.0';
+const GRAPH_API_BASE = 'https://graph.facebook.com/v24.0';
 
 export async function GET() {
     // Block in production

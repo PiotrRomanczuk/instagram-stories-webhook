@@ -155,13 +155,9 @@ export async function POST(req: NextRequest) {
         await writeConfig(mergedConfig);
         await Logger.info(MODULE, "Configuration updated", { user: session.user.email });
 
-        // Generate .env content for reference
-        const envContent = generateEnvContent(mergedConfig);
-
         return NextResponse.json({
             success: true,
             message: "Configuration saved successfully",
-            envContent,
         });
     } catch (error) {
         await Logger.error(MODULE, "Failed to save config", error);
@@ -199,49 +195,4 @@ function isConfigured(config: AppConfig): boolean {
         config.supabase.anonKey &&
         config.security.nextAuthSecret
     );
-}
-
-/**
- * Generate .env.local content from config
- */
-function generateEnvContent(config: AppConfig): string {
-    return `# 🌐 APP CONFIGURATION
-# ------------------------------------------------------------------------------
-NEXT_PUBLIC_APP_URL=${config.appUrl}
-NEXTAUTH_URL=${config.appUrl}
-
-# 🔐 LAYER 1: PRIMARY IDENTITY (NextAuth Google Auth)
-# ------------------------------------------------------------------------------
-ADMIN_EMAIL=${config.adminEmail}
-
-# Google OAuth Settings
-AUTH_GOOGLE_ID=${config.google.clientId}
-AUTH_GOOGLE_SECRET=${config.google.clientSecret}
-
-# Used by NextAuth to encrypt cookies
-NEXTAUTH_SECRET=${config.security.nextAuthSecret}
-
-# 🎭 LAYER 2: META INTEGRATION (Facebook / Instagram)
-# ------------------------------------------------------------------------------
-AUTH_FACEBOOK_ID=${config.facebook.appId}
-AUTH_FACEBOOK_SECRET=${config.facebook.appSecret}
-
-# Original Meta variables for scripts/direct API calls
-NEXT_PUBLIC_FB_APP_ID=${config.facebook.appId}
-FB_APP_SECRET=${config.facebook.appSecret}
-FB_REDIRECT_URI=${config.appUrl}/api/auth/callback
-
-# 🛡️ EXTERNAL SECURITY (Webhook & Cron)
-# ------------------------------------------------------------------------------
-WEBHOOK_SECRET=${config.security.webhookSecret}
-CRON_SECRET=${config.security.cronSecret}
-
-# ⚡ DATABASE (Supabase)
-# ------------------------------------------------------------------------------
-NEXT_PUBLIC_SUPABASE_URL=${config.supabase.url}
-NEXT_PUBLIC_SUPABASE_ANON_KEY=${config.supabase.anonKey}
-SUPABASE_SERVICE_ROLE_KEY=${config.supabase.serviceRoleKey}
-SUPABASE_JWT_SECRET=${config.supabase.jwtSecret}
-SUPABASE_DATABASE_PASSWORD=${config.supabase.databasePassword}
-`;
 }
