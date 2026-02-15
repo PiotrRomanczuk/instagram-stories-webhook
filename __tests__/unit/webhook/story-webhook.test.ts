@@ -108,7 +108,7 @@ describe('/api/webhook/story', () => {
 						}),
 					}),
 				}),
-			} as ReturnType<typeof supabaseAdmin.schema>);
+			} as unknown as ReturnType<typeof supabaseAdmin.schema>);
 
 			const req = makeRequest(
 				{ url: 'https://example.com/image.jpg' },
@@ -143,7 +143,7 @@ describe('/api/webhook/story', () => {
 						}),
 					}),
 				}),
-			} as ReturnType<typeof supabaseAdmin.schema>);
+			} as unknown as ReturnType<typeof supabaseAdmin.schema>);
 
 			const req = makeRequest({ url: 'https://example.com/image.jpg' });
 			const res = await POST(req);
@@ -190,7 +190,7 @@ describe('/api/webhook/story', () => {
 						}),
 					}),
 				}),
-			} as ReturnType<typeof supabaseAdmin.schema>);
+			} as unknown as ReturnType<typeof supabaseAdmin.schema>);
 
 			const req = makeRequest(
 				{ url: 'https://example.com/image.jpg' },
@@ -227,7 +227,7 @@ describe('/api/webhook/story', () => {
 						}),
 					}),
 				}),
-			} as ReturnType<typeof supabaseAdmin.schema>);
+			} as unknown as ReturnType<typeof supabaseAdmin.schema>);
 
 			const req = makeRequest(
 				{ url: 'https://example.com/video.mp4', type: 'VIDEO' },
@@ -285,7 +285,7 @@ describe('/api/webhook/story', () => {
 						}),
 					}),
 				}),
-			} as ReturnType<typeof supabaseAdmin.schema>);
+			} as unknown as ReturnType<typeof supabaseAdmin.schema>);
 
 			const req = makeRequest({
 				url: 'https://example.com/image.jpg',
@@ -318,7 +318,7 @@ describe('/api/webhook/story', () => {
 						}),
 					}),
 				}),
-			} as ReturnType<typeof supabaseAdmin.schema>);
+			} as unknown as ReturnType<typeof supabaseAdmin.schema>);
 
 			const req = makeRequest({
 				url: 'https://example.com/image.jpg',
@@ -349,7 +349,7 @@ describe('/api/webhook/story', () => {
 						}),
 					}),
 				}),
-			} as ReturnType<typeof supabaseAdmin.schema>);
+			} as unknown as ReturnType<typeof supabaseAdmin.schema>);
 
 			const req = makeRequest(
 				{ url: 'https://example.com/image.jpg' },
@@ -401,7 +401,7 @@ describe('/api/webhook/story', () => {
 						}),
 					}),
 				}),
-			} as ReturnType<typeof supabaseAdmin.schema>);
+			} as unknown as ReturnType<typeof supabaseAdmin.schema>);
 
 			const req = makeRequest(
 				{ url: 'https://example.com/image.jpg' },
