@@ -14,6 +14,40 @@
 
 ---
 
+## Branch Safety Protocol (MANDATORY - DO THIS FIRST)
+
+**BEFORE starting ANY task**, you MUST check the current git branch and working tree state:
+
+```bash
+git branch --show-current && git status --short
+```
+
+**Rules:**
+1. **Never work on `master` directly.** If you're on `master`, create a feature branch FIRST before making any changes.
+2. **If a feature branch already exists for the task**, switch to it before doing anything.
+3. **If there are uncommitted changes on the wrong branch**, stash or commit them before switching.
+4. **Branch naming**: `feature/ISW-XXX-description` (or `fix/`, `chore/`, `refactor/`).
+5. **Create the branch BEFORE writing code**, not after. This prevents file loss when multiple Claude sessions run concurrently.
+
+**The check must happen at the very start of every task — no exceptions.** This applies to all agents and all workflows. If you skip this step and work on the wrong branch, changes may be lost when another session switches branches.
+
+**Quick reference:**
+```bash
+# Check current state
+git branch --show-current && git status --short
+
+# Create and switch to new branch (do this BEFORE any code changes)
+git checkout -b feature/ISW-XXX-description
+
+# If you're on master with no changes, just create the branch
+git checkout -b feature/ISW-XXX-description
+
+# If you accidentally started on master with uncommitted changes
+git stash && git checkout -b feature/ISW-XXX-description && git stash pop
+```
+
+---
+
 ## Quick Start
 
 ```bash
@@ -32,10 +66,11 @@ npm run lint && npx tsc && npm run test
 
 ### PR Workflow (Use `/ship` command)
 ```bash
-# 1. Get Linear ticket (ISW-XXX)
-# 2. Create branch: feature/ISW-XXX-description
-# 3. Make changes and commit
-# 4. Run quality gates
+# 1. Run Branch Safety Protocol (see above) — ALWAYS FIRST
+# 2. Get Linear ticket (ISW-XXX)
+# 3. Create branch IMMEDIATELY: git checkout -b feature/ISW-XXX-description
+# 4. Make changes and commit
+# 5. Run quality gates
 /ship                # Validates, tests, pushes, creates PR, updates Linear
 ```
 
