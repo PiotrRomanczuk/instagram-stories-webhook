@@ -23,9 +23,11 @@ import {
 	getContentItemForProcessing,
 	recoverStaleLocks,
 	expireOverdueContent,
+} from '@/lib/content-db';
+import {
 	MAX_RETRY_COUNT,
 	RETRY_BACKOFF_MS,
-} from '@/lib/content-db';
+} from '@/lib/content-db/processing';
 import { parseCronConfig } from '@/lib/validations/cron.schema';
 import { checkPublishingQuota } from '@/lib/scheduler/quota-gate';
 import { generateCronRunId, recordQuotaSnapshot } from '@/lib/scheduler/quota-history';
