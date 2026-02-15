@@ -1,0 +1,86 @@
+{
+  "student": {
+    "user_id": "123e4567-e89b-12d3-a456-426614174000",
+    "email": "john.doe@example.com",
+    "firstName": "John",
+    "lastName": "Doe",
+    "isStudent": true,
+    "isActive": true,
+    "created_at": "2024-01-15T10:00:00Z"
+  },
+  "lessons": [
+    {
+      "id": "lesson-1",
+      "lesson_number": 1,
+      "student_id": "123e4567-e89b-12d3-a456-426614174000",
+      "date": "2024-01-20T14:00:00Z",
+      "start_time": "14:00",
+      "status": "completed",
+      "songs": [
+        { "id": "song-1", "title": "Wonderwall", "author": "Oasis" }
+      ],
+      "notes": "Great progress on chord transitions. Practice G to D transition."
+    },
+    {
+      "id": "lesson-2",
+      "lesson_number": 2,
+      "student_id": "123e4567-e89b-12d3-a456-426614174000",
+      "date": "2024-01-27T14:00:00Z",
+      "start_time": "14:00",
+      "status": "completed",
+      "songs": [
+        { "id": "song-1", "title": "Wonderwall", "author": "Oasis" },
+        { "id": "song-2", "title": "Horse With No Name", "author": "America" }
+      ],
+      "notes": "Introduced new song. Wonderwall sounding good."
+    },
+    {
+      "id": "lesson-3",
+      "lesson_number": 3,
+      "student_id": "123e4567-e89b-12d3-a456-426614174000",
+      "date": "2024-02-03T14:00:00Z",
+      "start_time": "14:00",
+      "status": "scheduled",
+      "songs": [],
+      "notes": ""
+    }
+  ],
+  "songs": [
+    {
+      "id": "song-1",
+      "title": "Wonderwall",
+      "author": "Oasis",
+      "level": "beginner",
+      "key": "Em",
+      "status": "remembered",
+      "chords": "Em G D A"
+    },
+    {
+      "id": "song-2",
+      "title": "Horse With No Name",
+      "author": "America",
+      "level": "beginner",
+      "key": "Em",
+      "status": "started",
+      "chords": "Em D6/9"
+    },
+    {
+      "id": "song-3",
+      "title": "Blackbird",
+      "author": "The Beatles",
+      "level": "intermediate",
+      "key": "G",
+      "status": "to_learn",
+      "chords": "G Am7 G/B"
+    },
+    {
+      "id": "song-4",
+      "title": "Wish You Were Here",
+      "author": "Pink Floyd",
+      "level": "intermediate",
+      "key": "G",
+      "status": "mastered",
+      "chords": "Em G A"
+    }
+  ]
+}
