@@ -32,16 +32,31 @@ tools:
 find app/ lib/ -name '*.ts' -o -name '*.tsx' | xargs wc -l | sort -rn | head -20
 ```
 
-### Current Violators (from last audit)
+### Current Violators (updated February 2026)
 
-| File | Lines | Over By |
-|------|-------|---------|
-| `lib/content-db.ts` | 926 | 6.2x |
-| `lib/memes-db.ts` | 859 | 5.7x |
-| `lib/scheduler/process-service.ts` | 367 | 2.4x |
-| `app/api/schedule/route.ts` | 356 | 2.4x |
-| `lib/auth.ts` | 292 | 1.9x |
-| `lib/utils/logger.ts` | 282 | 1.9x |
+| File | Lines | Over By | Status |
+|------|-------|---------|--------|
+| `lib/media/video-processor.ts` | 505 | 3.4x | Active - split by concern |
+| `lib/scheduler/process-service.ts` | 497 | 3.3x | Active - extract sub-services |
+| `app/api/schedule/route.ts` | 356 | 2.4x | Active - extract to service |
+| `lib/auth.ts` | 292 | 1.9x | Active - split by provider |
+| `lib/utils/logger.ts` | 282 | 1.9x | Active - extract formatters |
+| `lib/content-db/processing.ts` | 270 | 1.8x | Active - extract lock logic |
+
+### Resolved Violators
+
+| File | Was | Now | How |
+|------|-----|-----|-----|
+| `lib/content-db.ts` | 926 | 13 (barrel) | Split into queries, mutations, bulk, processing, stats |
+| `lib/memes-db.ts` | 859 | 21 (barrel) | Split into sub-modules |
+
+### Quick Audit
+
+Use the `file-size-enforcer` skill for automated auditing, or run manually:
+
+```bash
+find app/ lib/ -name '*.ts' -o -name '*.tsx' | xargs wc -l | sort -rn | awk '$1 > 150 && !/total$/' | head -20
+```
 
 ### Splitting Strategy
 

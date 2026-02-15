@@ -345,3 +345,94 @@ E2E tests verify the entire system works together in production-like conditions:
 - Real error responses
 
 **If you need to mock -> It's not an E2E test -> Write a unit/integration test instead.**
+
+---
+
+## RLS Policy Testing
+
+### Why Test RLS
+
+Row Level Security policies are the primary data access control. Untested policies can leak data between users.
+
+### Testing Approach
+
+Test RLS by making queries as different users using Supabase client with different auth contexts:
+
+```typescript
+import { createClient } from '@supabase/supabase-js';
+
+describe('RLS: content_items', () => {
+  it('should only return items belonging to the authenticated user', async () => {
+    // Create client as user A
+    const clientA = createClient(SUPABASE_URL, ANON_KEY, {
+      global: { headers: { Authorization: `Bearer ${userAToken}` } }
+    });
+
+    // Create client as user B
+    const clientB = createClient(SUPABASE_URL, ANON_KEY, {
+      global: { headers: { Authorization: `Bearer ${userBToken}` } }
+    });
+
+    // User A's data should not be visible to User B
+    const { data: bData } = await clientB
+      .from('content_items')
+      .select('*')
+      .eq('user_id', userAId);
+
+    expect(bData).toHaveLength(0);
+  });
+});
+```
+
+### What to Test
+
+- Users can only read their own data
+- Users cannot update other users' data
+- Service role bypasses RLS (for cron jobs)
+- Anonymous users have no access to protected tables
+- Admin users have appropriate elevated access
+
+---
+
+## E2E Test Maintenance
+
+### Handling Flaky Tests
+
+E2E tests against real Instagram API are inherently variable. Mitigate flakiness:
+
+1. **Generous timeouts**: Video publishing can take 30-90s. Use 120s timeouts
+2. **24-hour de-duplication**: Tests skip if content was recently published
+3. **Retry on network errors**: Use Playwright's `test.retry(2)` for network-sensitive tests
+4. **Conditional skip**: Skip gracefully if prerequisites fail (token expired, quota exhausted)
+
+```typescript
+test.beforeEach(async () => {
+  // Skip if Instagram token is expired
+  const tokenValid = await checkTokenValidity();
+  test.skip(!tokenValid, 'Instagram token expired - re-authenticate');
+});
+```
+
+### Playwright Trace Analysis
+
+When E2E tests fail in CI, use traces to debug:
+
+```bash
+# Download trace from CI artifacts
+# Open in Playwright trace viewer
+npx playwright show-trace trace.zip
+```
+
+Traces show:
+- Network requests/responses (see exact Instagram API errors)
+- DOM snapshots at each step
+- Console logs from the browser
+- Screenshots at failure point
+
+### Updating Tests When Instagram UI Changes
+
+Instagram's embed/display may change. When tests break due to UI changes:
+1. Check if the selector/locator is still valid
+2. Update selectors to match new structure
+3. Never mock the Instagram response to "fix" the test
+4. If the API behavior changed, update test expectations to match reality

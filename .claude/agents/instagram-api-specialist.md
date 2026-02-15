@@ -12,6 +12,54 @@ tools:
 
 # Instagram API Specialist Agent
 
+## MANDATORY: Always Verify Against Official Documentation
+
+Before implementing or debugging ANY Instagram/Meta API integration, **always check the official documentation**:
+
+- **Meta Developer Docs**: https://developers.facebook.com/docs/
+- **Instagram Graph API**: https://developers.facebook.com/docs/instagram-platform/instagram-graph-api
+- **Instagram Content Publishing**: https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/content-publishing
+- **Instagram Stories**: https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/story-publishing
+- **Instagram Insights**: https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/insights
+- **Rate Limits**: https://developers.facebook.com/docs/graph-api/overview/rate-limiting
+- **Error Codes**: https://developers.facebook.com/docs/graph-api/guides/error-handling
+- **Permissions Reference**: https://developers.facebook.com/docs/permissions
+
+### Why This Is Mandatory
+
+1. **API changes frequently** - Meta deprecates endpoints and changes behavior between versions
+2. **Not everything is possible** - Some features that seem logical are not supported by the API
+3. **Version-specific behavior** - Features available in v24.0 may not exist in v21.0
+4. **Scope limitations** - Some actions require specific permissions or business verification
+
+### What Is NOT Possible (Common Misconceptions)
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Scheduling via API | Not natively | Must build own scheduler (we use Vercel cron) |
+| Editing published stories | Not possible | Stories cannot be modified after posting |
+| Reading DM content via Graph API | Limited | Only for business messaging with permission |
+| Carousel stories via API | Not supported | Only single image/video per story |
+| Custom stickers/effects | Not supported | API only supports basic media |
+| Deleting stories via API | Supported | `DELETE /{ig-media-id}` |
+| Story polls/questions via API | Not supported | Interactive elements are app-only |
+
+### Before Implementing a New Feature
+
+1. Search the docs at https://developers.facebook.com/docs/ for the endpoint
+2. Check if the feature is supported for the current API version
+3. Check required permissions
+4. Check rate limits for the endpoint
+5. Test in Graph API Explorer before writing code
+
+Use the `WebFetch` tool to check documentation when uncertain:
+```
+WebFetch: https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/content-publishing
+Prompt: "What endpoints and parameters are available for content publishing?"
+```
+
+---
+
 ## API Versioning
 
 - Always use the `GRAPH_API_BASE` constant from `lib/instagram/publish.ts`
@@ -225,3 +273,89 @@ Based on findings, guide user to:
 - Auto-archive: Published memes saved for analysis
 - Supported formats: JPEG, PNG for images; MP4 for video
 - Instagram-specific constraints on aspect ratio and dimensions
+
+---
+
+## Error Recovery Playbooks
+
+### Code 190: Invalid/Expired Token
+
+**Symptoms**: All API calls fail with "Invalid OAuth access token"
+**Root Cause**: Token expired, user revoked access, or app re-auth needed
+
+**Recovery**:
+1. Check token `expires_at` in `oauth_tokens` table
+2. If expired recently: trigger manual refresh via `/api/schedule/refresh-token`
+3. If refresh fails: user must re-authenticate via `/api/auth/link-facebook`
+4. After re-auth: verify with `GET /me?fields=id,name` using new token
+5. Update Vercel env if token is stored there
+
+### Code 100: Invalid Parameter
+
+**Symptoms**: Container creation fails, "unsupported post method"
+**Root Cause**: Invalid media URL, wrong format, or missing permissions
+
+**Recovery**:
+1. Verify media URL is publicly accessible: `curl -I <media_url>`
+2. Check media format (JPEG/PNG for images, MP4 for video)
+3. Verify Instagram Business Account is linked to Facebook Page
+4. Check that `media_type` parameter matches actual content
+5. For video: ensure container is in `FINISHED` state before publishing
+
+### Code 368: Rate Limit / Policy Block
+
+**Symptoms**: Publishing works then suddenly fails, "temporarily blocked"
+**Root Cause**: Exceeded publishing quota (25/24hr) or content policy violation
+
+**Recovery**:
+1. Check current quota: `GET /{ig-user-id}/content_publishing_limit`
+2. If quota exhausted: wait for reset (rolling 24-hour window)
+3. If content policy: review the specific content that triggered the block
+4. Check `api_quota_history` table for usage patterns
+5. Implement publishing delay to spread posts over time
+
+### Code 10: Permission Denied
+
+**Symptoms**: Specific endpoint returns permission error
+**Root Cause**: App missing required permissions
+
+**Recovery**:
+1. Check current permissions: `GET /me/permissions`
+2. Required: `instagram_basic`, `instagram_content_publish`, `pages_read_engagement`, `pages_show_list`
+3. If missing: re-authenticate with full scope via `/api/auth/link-facebook`
+
+### "Container Not Ready" / Status EXPIRED
+
+**Symptoms**: `media_publish` fails, container shows `IN_PROGRESS` or `EXPIRED`
+**Root Cause**: Video transcoding timeout or Instagram server issues
+
+**Recovery**:
+1. Check container status: `GET /{container-id}?fields=status_code`
+2. Status `IN_PROGRESS`: wait and poll (30-90s typical for video)
+3. Status `EXPIRED`: container timed out - create a new one
+4. Status `ERROR`: check `status` field for specific error
+5. If persistent: try with a smaller/shorter video file
+6. Refer to `media-pipeline-specialist` agent for video processing issues
+
+---
+
+## Quota Management Best Practices
+
+### Monitoring
+
+- Check `api_quota_history` table for usage trends
+- Default quota: 25 publishes per rolling 24-hour window
+- Quota gate (`lib/scheduler/quota-gate.ts`) checks before each publish
+
+### Distributing Load
+
+- Configure `publishDelayMs` in cron config to space out publishes
+- Set `maxPostsPerCronRun` to limit batch size
+- Safety margin in quota gate reserves headroom for manual publishes
+
+### Fail-Open Strategy
+
+The quota gate fails open with cap=1 if the quota API is unreachable:
+- Allows 1 publish (not all) to prevent complete stall
+- Logs a warning for monitoring
+- Prevents runaway publishing if API is down

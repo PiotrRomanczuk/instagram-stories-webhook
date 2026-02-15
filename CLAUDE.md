@@ -97,19 +97,23 @@ npm run lint && npx tsc && npm run test
 |-------|----------|
 | **`git-workflow`** | Git operations, branching, versioning, PR lifecycle |
 | **`pr-manager`** | Creating PRs, Linear linking, release management |
-| **`test-engineer`** | Writing/reviewing tests, MSW setup, E2E flows |
+| **`test-engineer`** | Writing/reviewing tests, MSW setup, E2E flows, RLS testing |
 | **`security-reviewer`** | Security audits, RLS validation, secret leak checks |
 | **`database-ops`** | Migrations, RLS policies, query optimization |
-| **`instagram-api-specialist`** | Instagram API integration, publishing flow, error handling |
+| **`instagram-api-specialist`** | Instagram API integration, publishing flow, error recovery, Meta docs |
 | **`feature-developer`** | Implementing features with Next.js patterns |
 | **`ui-engineer`** | shadcn/ui components, responsive design, accessibility |
-| **`deployment-ops`** | Vercel deployments, CI/CD, rollbacks, incidents |
+| **`deployment-ops`** | Vercel deployments, CI/CD, Vercel MCP, rollbacks, incidents |
 | **`observability-engineer`** | Monitoring, logging, Sentry, analytics |
-| **`refactoring-specialist`** | File splitting, eliminating `any`, tech debt |
+| **`refactoring-specialist`** | File splitting, eliminating `any`, tech debt, file-size-enforcer |
 | **`pr-reviewer`** | Code review, quality checks, convention validation |
 | **`linear-coordinator`** | Sprint planning, issue triage, backlog grooming |
 | **`supabase-realtime-optimizer`** | Realtime performance, WebSocket debugging |
 | **`supabase-schema-architect`** | Schema design, complex migrations, RLS architecture |
+| **`cron-job-engineer`** | Cron job development, debugging, locking, quota gates |
+| **`media-pipeline-specialist`** | Media validation, video/image processing, FFmpeg, storage |
+| **`content-lifecycle-specialist`** | Content queue state machine, bulk ops, processing locks |
+| **`analytics-engineer`** | Instagram Insights API, metrics, quota history analysis |
 
 Agent files: `.claude/agents/*.md`
 
@@ -134,8 +138,8 @@ Agent files: `.claude/agents/*.md`
 
 ### Available Skills
 
-**Document**: `docx`, `pdf`, `xlsx` | **UI/UX**: `frontend-design`, `interface-design`, `theme-factory`
-**Dev Tools**: `git-cleanup`, `webapp-testing` | **Meta**: `mcp-builder`, `skill-creator`
+**UI/UX**: `frontend-design`, `interface-design` | **Dev Tools**: `git-cleanup`, `webapp-testing`
+**Automation**: `file-size-enforcer`, `i18n-manager`, `changelog-generator`
 
 → **For detailed command docs**: See `.claude/commands/*.md` and `.claude/skills/*/SKILL.md`
 
