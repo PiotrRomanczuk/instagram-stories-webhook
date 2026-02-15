@@ -11,7 +11,7 @@ export async function runIdentityAudit() {
     try {
         const { data: links, error: linkError } = await supabaseAdmin
             .from('linked_accounts')
-            .select('id, user_id, provider, provider_account_id, access_token, refresh_token, expires_at, ig_user_id, ig_username, created_at, updated_at');
+            .select('id, user_id, provider, provider_account_id, expires_at, ig_user_id, ig_username, created_at, updated_at');
 
         if (linkError) {
             Logger.error(MODULE, '❌ Failed to fetch links', linkError);
