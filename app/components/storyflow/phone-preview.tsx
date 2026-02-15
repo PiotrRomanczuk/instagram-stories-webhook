@@ -17,11 +17,13 @@ export function PhonePreview({ item, onImageError, className }: PhonePreviewProp
 	const [retryKey, setRetryKey] = useState(0);
 
 	// Reset image state when item changes
+	/* eslint-disable react-hooks/set-state-in-effect -- Reset derived state on prop change */
 	useEffect(() => {
 		setImageError(false);
 		setImageLoaded(false);
 		setRetryKey(0);
 	}, [item?.mediaUrl]);
+	/* eslint-enable react-hooks/set-state-in-effect */
 
 	const handleImageError = () => {
 		setImageError(true);

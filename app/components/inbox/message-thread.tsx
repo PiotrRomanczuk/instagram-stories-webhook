@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import type { InstagramConversation, InstagramMessage } from '@/lib/types/messaging';
 import { MessageComposer } from './message-composer';
 import { ChevronLeft, RefreshCw } from 'lucide-react';
@@ -20,19 +20,11 @@ export function MessageThread({ conversation, onBack }: MessageThreadProps) {
     const [error, setError] = useState<string | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-        fetchMessages();
-    }, [conversation.id]);
-
-    useEffect(() => {
-        scrollToBottom();
-    }, [messages]);
-
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
 
-    const fetchMessages = async (sync = false) => {
+    const fetchMessages = useCallback(async (sync = false) => {
         try {
             setIsLoading(true);
             setError(null);
@@ -58,7 +50,15 @@ export function MessageThread({ conversation, onBack }: MessageThreadProps) {
             setIsLoading(false);
             setIsSyncing(false);
         }
-    };
+    }, [conversation.id]);
+
+    useEffect(() => {
+        fetchMessages();
+    }, [fetchMessages]);
+
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages]);
 
     const handleSync = () => {
         setIsSyncing(true);

@@ -5,7 +5,7 @@
  * Consolidates meme submissions, schedule management, and admin review into one interface
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
@@ -200,7 +200,7 @@ export function ContentHub({ initialTab = 'all' }: ContentHubProps) {
 	const isAdmin = userRole === 'admin' || userRole === 'developer';
 
 	// Get items from response (moved up for use in handlers)
-	const items: ContentItem[] = data?.items || [];
+	const items: ContentItem[] = useMemo(() => data?.items || [], [data?.items]);
 	const stats = data?.stats;
 	const pagination = data?.pagination;
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { driver, DriveStep, Driver } from 'driver.js';
 import { driverConfig, TOURS_ENABLED } from '@/lib/tour/driver-config';
 import { adminTourSteps, adminFailedPostsStep } from '@/lib/tour/admin-tour';
@@ -44,7 +44,7 @@ export function useTour({
 	}, []);
 
 	// Function to start the tour
-	const startTour = () => {
+	const startTour = useCallback(() => {
 		if (!TOURS_ENABLED) return;
 		// Build steps based on role and conditions
 		let steps: DriveStep[] = [];
@@ -94,7 +94,7 @@ export function useTour({
 
 		setDriverInstance(driverObj);
 		driverObj.drive();
-	};
+	}, [role, hasFailedPosts, hasSubmissions]);
 
 	// Auto-start tour if conditions are met
 	useEffect(() => {
@@ -107,7 +107,7 @@ export function useTour({
 				return () => clearTimeout(timer);
 			}
 		}
-	}, [isLoading, autoStart, tourStatus]);
+	}, [isLoading, autoStart, tourStatus, startTour]);
 
 	return {
 		startTour,

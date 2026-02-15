@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { TimelineGridSkeleton } from './timeline-grid-skeleton';
 import { TimelineCard, type TimelineCardPost } from './timeline-card';
 import { motion } from 'framer-motion';
@@ -23,12 +23,13 @@ export function TimelineSkeletonExample() {
 		return () => clearTimeout(timer);
 	}, []);
 
-	const mockPosts: TimelineCardPost[] = [
+	const [now] = useState(() => Date.now());
+	const mockPosts: TimelineCardPost[] = useMemo(() => [
 		{
 			id: '1',
 			url: 'https://picsum.photos/400/711?random=1',
 			caption: 'Beautiful sunset at the beach 🌅',
-			scheduledTime: Date.now() + 3600000,
+			scheduledTime: now + 3600000,
 			publishingStatus: 'scheduled',
 			mediaType: 'IMAGE',
 		},
@@ -36,7 +37,7 @@ export function TimelineSkeletonExample() {
 			id: '2',
 			url: 'https://picsum.photos/400/711?random=2',
 			caption: 'Morning coffee vibes ☕',
-			scheduledTime: Date.now() + 7200000,
+			scheduledTime: now + 7200000,
 			publishingStatus: 'scheduled',
 			mediaType: 'IMAGE',
 		},
@@ -44,11 +45,11 @@ export function TimelineSkeletonExample() {
 			id: '3',
 			url: 'https://picsum.photos/400/711?random=3',
 			caption: 'Weekend adventure time! 🏔️',
-			scheduledTime: Date.now() + 10800000,
+			scheduledTime: now + 10800000,
 			publishingStatus: 'scheduled',
 			mediaType: 'IMAGE',
 		},
-	];
+	], [now]);
 
 	if (isLoading) {
 		return (

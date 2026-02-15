@@ -94,7 +94,7 @@ export function ScheduleCalendarLayout() {
 		}
 	);
 
-	const allItems: ContentItem[] = data?.items || [];
+	const allItems: ContentItem[] = useMemo(() => data?.items || [], [data?.items]);
 
 	// Filter scheduled items (items with scheduledTime)
 	const scheduledItems = useMemo(() => {

@@ -239,12 +239,15 @@ export function ReadyToScheduleSidebar({
 			.map((item) => item.id)
 	);
 
+	// Capture current time once to avoid Date.now() in render
+	const [filterNow] = useState(() => Date.now());
+
 	// Apply tab filter
 	const filteredItems = readyItems.filter((item) => {
 		switch (activeTab) {
 			case 'recent':
 				// Items from last 24 hours
-				const dayAgo = Date.now() - 24 * 60 * 60 * 1000;
+				const dayAgo = filterNow - 24 * 60 * 60 * 1000;
 				return new Date(item.createdAt).getTime() > dayAgo;
 			case 'approved':
 				return item.submissionStatus === 'approved';

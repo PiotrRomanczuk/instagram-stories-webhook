@@ -57,7 +57,7 @@ export function KanbanLayout() {
 		}
 	);
 
-	const items: ContentItem[] = data?.items || [];
+	const items: ContentItem[] = useMemo(() => data?.items || [], [data?.items]);
 
 	// Get scheduled dates for calendar
 	const scheduledDates = useMemo(() => {
