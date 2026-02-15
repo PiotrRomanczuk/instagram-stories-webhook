@@ -73,9 +73,25 @@ vi.mock('@/lib/scheduler/quota-history', () => ({
 	recordQuotaSnapshot: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock('@/lib/utils/token-encryption', () => ({
+	encryptTokenForStorage: vi.fn((token: string) => token),
+	decryptTokenFromStorage: vi.fn((token: string) => token),
+	isTokenEncrypted: vi.fn(() => false),
+}));
+
 vi.mock('@/lib/database/linked-accounts', () => ({
 	getLinkedFacebookAccount: vi.fn().mockResolvedValue({
+		id: 'acc-1',
+		user_id: 'user-1',
+		provider: 'facebook',
+		provider_account_id: 'fb-123',
+		access_token: 'EAAtoken123',
+		refresh_token: 'refresh-abc',
+		expires_at: Date.now() + 30 * 24 * 60 * 60 * 1000,
 		ig_user_id: 'ig-123',
+		ig_username: 'testuser',
+		created_at: '2026-01-01T00:00:00Z',
+		updated_at: '2026-01-01T00:00:00Z',
 	}),
 }));
 
