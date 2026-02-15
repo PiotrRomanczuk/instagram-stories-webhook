@@ -6,7 +6,7 @@ import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { cn } from '@/lib/utils';
 import { VideoMetadata, VideoValidationResult } from '@/lib/types';
-import { supabase } from '@/lib/config/supabase';
+import { uploadToStorage } from '@/lib/storage/upload-client';
 
 interface VideoUploaderProps {
 	value: string | null;
@@ -112,25 +112,8 @@ export function VideoUploader({
 			setUploadProgress(0);
 
 			try {
-				// Upload to Supabase storage
-				const fileExt = file.name.split('.').pop() || 'mp4';
-				const fileName = `uploads/videos/${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
-
-				const { error: uploadError } = await supabase.storage
-					.from('stories')
-					.upload(fileName, file, {
-						cacheControl: '3600',
-						upsert: false,
-					});
-
-				if (uploadError) {
-					throw new Error(uploadError.message);
-				}
-
-				// Get public URL
-				const {
-					data: { publicUrl },
-				} = supabase.storage.from('stories').getPublicUrl(fileName);
+				// Upload via authenticated API proxy
+				const { publicUrl, storagePath } = await uploadToStorage(file, { path: 'uploads/videos' });
 
 				setUploadProgress(100);
 
@@ -138,12 +121,10 @@ export function VideoUploader({
 				const validation = await validateVideo(publicUrl);
 
 				if (validation && !validation.valid && autoProcess) {
-					// Auto-process if enabled and video needs processing
 					const processedUrl = await processVideo(publicUrl);
-					onChange(processedUrl, validation.metadata ?? undefined, fileName);
+					onChange(processedUrl, validation.metadata ?? undefined, storagePath);
 				} else {
-					// Use original URL
-					onChange(publicUrl, validation?.metadata ?? undefined, fileName);
+					onChange(publicUrl, validation?.metadata ?? undefined, storagePath);
 				}
 			} catch (err) {
 				setError(err instanceof Error ? err.message : 'Failed to upload video');

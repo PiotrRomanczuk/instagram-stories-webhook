@@ -12,7 +12,7 @@ import {
 } from '@/lib/media/validator';
 import { AspectRatioInfo, MediaDimensions } from '@/lib/types';
 import { AspectRatioBadge } from './aspect-ratio-badge';
-import { supabase } from '@/lib/config/supabase';
+import { uploadToStorage } from '@/lib/storage/upload-client';
 
 interface ImageUploaderProps {
 	value: string | null;
@@ -66,27 +66,10 @@ export function ImageUploader({
 				const dimensions = await getImageDimensionsFromFile(file);
 				updateAspectInfo(dimensions);
 
-				// Upload to Supabase storage
-				const fileExt = file.name.split('.').pop();
-				const fileName = `uploads/memes/${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+				// Upload via authenticated API proxy
+				const { publicUrl, storagePath } = await uploadToStorage(file, { path: 'uploads/memes' });
 
-				const { error: uploadError } = await supabase.storage
-					.from('stories')
-					.upload(fileName, file, {
-						cacheControl: '3600',
-						upsert: false,
-					});
-
-				if (uploadError) {
-					throw new Error(uploadError.message);
-				}
-
-				// Get public URL
-				const { data: { publicUrl } } = supabase.storage
-					.from('stories')
-					.getPublicUrl(fileName);
-
-				onChange(publicUrl, dimensions, fileName);
+				onChange(publicUrl, dimensions, storagePath);
 			} catch (err) {
 				setError(err instanceof Error ? err.message : 'Failed to upload image');
 				console.error(err);

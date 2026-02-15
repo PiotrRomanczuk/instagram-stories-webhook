@@ -14,7 +14,7 @@ import {
 	AlertCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/lib/config/supabase';
+import { uploadToStorage } from '@/lib/storage/upload-client';
 import { useMediaValidation } from '@/app/hooks/use-media-validation';
 import {
 	AspectRatioIndicator,
@@ -87,36 +87,20 @@ export function MemeSubmitForm({ onSubmitted }: MemeSubmitFormProps) {
 		setUploadProgress(10);
 
 		try {
-			const fileExt = file.name.split('.').pop();
-			const fileName = `memes/${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
-			const filePath = `uploads/${fileName}`;
-
 			setUploadProgress(30);
 
-			const { error } = await supabase.storage
-				.from('stories')
-				.upload(filePath, file, {
-					cacheControl: '3600',
-					upsert: false,
-				});
-
-			if (error) throw error;
-
-			setUploadProgress(80);
-
-			const {
-				data: { publicUrl },
-			} = supabase.storage.from('stories').getPublicUrl(filePath);
+			// Upload via authenticated API proxy
+			const { publicUrl, storagePath } = await uploadToStorage(file, { path: 'uploads/memes' });
 
 			setUploadProgress(100);
 			setValue('mediaUrl', publicUrl);
-			setValue('storagePath', filePath);
+			setValue('storagePath', storagePath);
 			setMediaType(isVideo ? 'VIDEO' : 'IMAGE');
 
 			await fetch('/api/uploads/pending', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ storagePath: filePath }),
+				body: JSON.stringify({ storagePath }),
 			});
 
 			toast.success('Media uploaded successfully');

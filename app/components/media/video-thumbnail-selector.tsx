@@ -4,7 +4,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { Loader2, Check } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/lib/config/supabase';
+import { uploadToStorage } from '@/lib/storage/upload-client';
 
 interface VideoThumbnailSelectorProps {
 	videoUrl: string;
@@ -165,28 +165,11 @@ export function VideoThumbnailSelector({
 			const response = await fetch(selectedFrame.dataUrl);
 			const blob = await response.blob();
 
-			// Generate filename
-			const fileName = contentId
-				? `thumbnails/${contentId}.jpg`
-				: `thumbnails/${Math.random().toString(36).substring(2)}-${Date.now()}.jpg`;
-
-			// Upload to Supabase
-			const { error: uploadError } = await supabase.storage
-				.from('stories')
-				.upload(fileName, blob, {
-					cacheControl: '3600',
-					upsert: true, // Allow overwriting
-					contentType: 'image/jpeg',
-				});
-
-			if (uploadError) {
-				throw new Error(uploadError.message);
-			}
-
-			// Get public URL
-			const {
-				data: { publicUrl },
-			} = supabase.storage.from('stories').getPublicUrl(fileName);
+			// Upload via authenticated API proxy
+			const { publicUrl } = await uploadToStorage(blob, {
+				path: 'thumbnails',
+				upsert: true,
+			});
 
 			onThumbnailSelect(publicUrl);
 		} catch (err) {
