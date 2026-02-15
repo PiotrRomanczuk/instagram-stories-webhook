@@ -182,7 +182,7 @@ export async function markContentFailed(
 			updates.publishing_status = 'scheduled';
 			updates.processing_started_at = null;
 			// Apply exponential backoff: push scheduled_time into the future
-			if (retryCount \!== undefined && retryCount > 0) {
+			if (retryCount !== undefined && retryCount > 0) {
 				updates.scheduled_time = calculateRetryScheduledTime(retryCount);
 			}
 		}
