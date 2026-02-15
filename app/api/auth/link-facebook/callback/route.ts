@@ -213,10 +213,7 @@ export async function GET(req: NextRequest) {
 			{ userId, error },
 		);
 		return NextResponse.redirect(
-			new URL(
-				`/?error=linking_failed&message=${encodeURIComponent(errorMessage)}`,
-				req.url,
-			),
+			new URL('/?error=linking_failed', req.url),
 		);
 	}
 }
