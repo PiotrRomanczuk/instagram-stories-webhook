@@ -144,7 +144,7 @@ export function PostedStoriesClient() {
 						</div>
 
 						{totalPages > 1 && (
-							<div className="flex items-center justify-between">
+							<div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
 								<p className="text-sm text-muted-foreground">
 									Page {page} of {totalPages}
 								</p>
@@ -152,21 +152,23 @@ export function PostedStoriesClient() {
 									<Button
 										variant="outline"
 										size="sm"
+										className="min-h-[44px] min-w-[44px]"
 										onClick={() => setPage((p) => Math.max(1, p - 1))}
 										disabled={page <= 1}
 									>
 										<ChevronLeft className="h-4 w-4" />
-										Previous
+										<span className="hidden sm:inline">Previous</span>
 									</Button>
 									<Button
 										variant="outline"
 										size="sm"
+										className="min-h-[44px] min-w-[44px]"
 										onClick={() =>
 											setPage((p) => Math.min(totalPages, p + 1))
 										}
 										disabled={page >= totalPages}
 									>
-										Next
+										<span className="hidden sm:inline">Next</span>
 										<ChevronRight className="h-4 w-4" />
 									</Button>
 								</div>
@@ -199,7 +201,7 @@ function StoryCard({ item }: { item: ContentItem }) {
 			/>
 
 			<div className="p-3 space-y-2">
-				<div className="flex items-center justify-between">
+				<div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
 					<div className="flex items-center gap-1">
 						{item.mediaType === 'VIDEO' ? (
 							<Video className="h-3 w-3 text-muted-foreground" />
@@ -262,7 +264,7 @@ function FailedStoryCard({ item }: { item: ContentItem }) {
 			</div>
 
 			<div className="p-3 space-y-2">
-				<div className="flex items-center justify-between">
+				<div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
 					<div className="flex items-center gap-1">
 						{item.mediaType === 'VIDEO' ? (
 							<Video className="h-3 w-3 text-muted-foreground" />

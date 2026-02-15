@@ -37,7 +37,7 @@ export function ReviewActionBar({
 					className={cn(
 						'flex-1 flex items-center justify-center gap-3',
 						'bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white',
-						'border border-red-500/30 py-4 rounded-xl font-bold transition-all group',
+						'border border-red-500/30 min-h-[48px] py-3 sm:py-4 rounded-xl font-bold transition-all group',
 						'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-red-500/10 disabled:hover:text-red-500'
 					)}
 				>
@@ -59,7 +59,7 @@ export function ReviewActionBar({
 					className={cn(
 						'flex-1 flex items-center justify-center gap-3',
 						'bg-[#2b6cee]/20 hover:bg-[#2b6cee] text-[#2b6cee] hover:text-white',
-						'border border-[#2b6cee]/30 py-4 rounded-xl font-bold transition-all group',
+						'border border-[#2b6cee]/30 min-h-[48px] py-3 sm:py-4 rounded-xl font-bold transition-all group',
 						'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#2b6cee]/20 disabled:hover:text-[#2b6cee]'
 					)}
 				>
@@ -81,7 +81,7 @@ export function ReviewActionBar({
 					onClick={onPrevious}
 					disabled={!hasPrevious || disabled}
 					className={cn(
-						'flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors',
+						'flex items-center gap-2 min-h-[44px] px-3 text-slate-500 hover:text-slate-900 transition-colors',
 						'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-slate-500'
 					)}
 				>
@@ -93,7 +93,7 @@ export function ReviewActionBar({
 					onClick={onSkip}
 					disabled={!hasNext || disabled}
 					className={cn(
-						'flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors',
+						'flex items-center gap-2 min-h-[44px] px-3 text-slate-500 hover:text-slate-900 transition-colors',
 						'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-slate-500'
 					)}
 				>

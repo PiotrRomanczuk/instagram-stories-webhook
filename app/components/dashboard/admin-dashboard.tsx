@@ -151,9 +151,9 @@ export function AdminDashboard({ userName, isDeveloper }: AdminDashboardProps) {
 			{/* Failed Posts Alert */}
 			{stats.failed > 0 && (
 				<Card className="border-red-200 bg-red-50" data-tour="admin-failed-alert">
-					<CardContent className="flex items-center justify-between p-4">
+					<CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
 						<div className="flex items-center gap-3">
-							<div className="rounded-full bg-red-100 p-2">
+							<div className="shrink-0 rounded-full bg-red-100 p-2">
 								<AlertCircle className="h-5 w-5 text-red-600" />
 							</div>
 							<div>
@@ -165,7 +165,7 @@ export function AdminDashboard({ userName, isDeveloper }: AdminDashboardProps) {
 								</p>
 							</div>
 						</div>
-						<Button variant="outline" size="sm" asChild>
+						<Button variant="outline" size="sm" asChild className="shrink-0 self-end sm:self-auto">
 							<Link href="/schedule?filter=failed">View Failed</Link>
 						</Button>
 					</CardContent>

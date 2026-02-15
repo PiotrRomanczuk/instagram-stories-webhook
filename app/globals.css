@@ -216,6 +216,14 @@
   animation: shimmer 1.5s infinite linear;
 }
 
+/* Hide scrollbar utility — used for horizontal tab scrolling on mobile */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
 /* Accessible screen reader only class */
 .sr-only {
   position: absolute;
