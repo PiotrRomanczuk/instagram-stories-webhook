@@ -83,6 +83,18 @@ function createMockProcess() {
 	return proc;
 }
 
+/**
+ * Helper: create a mock process that immediately succeeds (emits 'close' 0).
+ * Used for the ffmpeg availability check that ensureFfmpegAvailable() runs.
+ */
+function createSuccessfulFfmpegCheckProcess() {
+	const proc = createMockProcess();
+	process.nextTick(() => {
+		proc.emit('close', 0);
+	});
+	return proc;
+}
+
 // Standard ffprobe output for a valid video
 function createFfprobeOutput(overrides: Record<string, unknown> = {}) {
 	const defaults = {
@@ -108,6 +120,45 @@ function createFfprobeOutput(overrides: Record<string, unknown> = {}) {
 	};
 
 	return JSON.stringify({ ...defaults, ...overrides });
+}
+
+/**
+ * Sets up mockSpawn for getVideoMetadata tests:
+ *  - The first call (ffmpeg -version check from ensureFfmpegAvailable) succeeds immediately
+ *  - The second call (ffprobe) emits the given output and closes with the given code
+ *
+ * For error tests, pass errorEvent to emit an 'error' event on the ffprobe process instead.
+ */
+function setupSpawnForMetadata(opts: {
+	ffprobeOutput?: string;
+	ffprobeStderr?: string;
+	ffprobeExitCode?: number;
+	ffprobeError?: Error;
+}) {
+	let callIndex = 0;
+	mockSpawn.mockImplementation(() => {
+		callIndex++;
+		if (callIndex === 1) {
+			// ensureFfmpegAvailable -> spawn('ffmpeg', ['-version'])
+			return createSuccessfulFfmpegCheckProcess();
+		}
+		// spawn('ffprobe', args)
+		const ffprobeProc = createMockProcess();
+		process.nextTick(() => {
+			if (opts.ffprobeError) {
+				ffprobeProc.emit('error', opts.ffprobeError);
+			} else {
+				if (opts.ffprobeStderr) {
+					ffprobeProc.stderr.emit('data', opts.ffprobeStderr);
+				}
+				if (opts.ffprobeOutput) {
+					ffprobeProc.stdout.emit('data', opts.ffprobeOutput);
+				}
+				ffprobeProc.emit('close', opts.ffprobeExitCode ?? 0);
+			}
+		});
+		return ffprobeProc;
+	});
 }
 
 describe('video-processor', () => {
@@ -160,17 +211,13 @@ describe('video-processor', () => {
 	// ======== getVideoMetadata ========
 
 	describe('getVideoMetadata', () => {
+		// NOTE: getVideoMetadata calls ensureFfmpegAvailable() first, which spawns
+		// 'ffmpeg -version'. We must account for this extra spawn call in every test.
+
 		it('should parse ffprobe output correctly', async () => {
-			const mockProc = createMockProcess();
-			mockSpawn.mockReturnValue(mockProc);
+			setupSpawnForMetadata({ ffprobeOutput: createFfprobeOutput() });
 
-			const promise = getVideoMetadata('/tmp/test.mp4');
-
-			// Emit stdout data
-			mockProc.stdout.emit('data', createFfprobeOutput());
-			mockProc.emit('close', 0);
-
-			const metadata = await promise;
+			const metadata = await getVideoMetadata('/tmp/test.mp4');
 
 			expect(metadata.width).toBe(1080);
 			expect(metadata.height).toBe(1920);
@@ -185,11 +232,6 @@ describe('video-processor', () => {
 		});
 
 		it('should parse frame rate from fraction format (e.g., "30000/1001")', async () => {
-			const mockProc = createMockProcess();
-			mockSpawn.mockReturnValue(mockProc);
-
-			const promise = getVideoMetadata('/tmp/test.mp4');
-
 			const output = createFfprobeOutput({
 				streams: [
 					{
@@ -201,20 +243,14 @@ describe('video-processor', () => {
 					},
 				],
 			});
-			mockProc.stdout.emit('data', output);
-			mockProc.emit('close', 0);
+			setupSpawnForMetadata({ ffprobeOutput: output });
 
-			const metadata = await promise;
+			const metadata = await getVideoMetadata('/tmp/test.mp4');
 			// 30000/1001 = 29.97002997...
 			expect(metadata.frameRate).toBeCloseTo(29.97, 1);
 		});
 
 		it('should parse frame rate from simple number format', async () => {
-			const mockProc = createMockProcess();
-			mockSpawn.mockReturnValue(mockProc);
-
-			const promise = getVideoMetadata('/tmp/test.mp4');
-
 			const output = createFfprobeOutput({
 				streams: [
 					{
@@ -226,19 +262,13 @@ describe('video-processor', () => {
 					},
 				],
 			});
-			mockProc.stdout.emit('data', output);
-			mockProc.emit('close', 0);
+			setupSpawnForMetadata({ ffprobeOutput: output });
 
-			const metadata = await promise;
+			const metadata = await getVideoMetadata('/tmp/test.mp4');
 			expect(metadata.frameRate).toBe(24);
 		});
 
 		it('should reject when no video stream found', async () => {
-			const mockProc = createMockProcess();
-			mockSpawn.mockReturnValue(mockProc);
-
-			const promise = getVideoMetadata('/tmp/audio-only.mp3');
-
 			const output = JSON.stringify({
 				streams: [{ codec_type: 'audio', codec_name: 'aac' }],
 				format: {
@@ -248,53 +278,43 @@ describe('video-processor', () => {
 					size: '1920000',
 				},
 			});
-			mockProc.stdout.emit('data', output);
-			mockProc.emit('close', 0);
+			setupSpawnForMetadata({ ffprobeOutput: output });
 
-			await expect(promise).rejects.toThrow('No video stream found');
+			await expect(getVideoMetadata('/tmp/audio-only.mp3')).rejects.toThrow(
+				'No video stream found'
+			);
 		});
 
 		it('should reject when ffprobe fails with non-zero exit code', async () => {
-			const mockProc = createMockProcess();
-			mockSpawn.mockReturnValue(mockProc);
+			setupSpawnForMetadata({
+				ffprobeStderr: 'Invalid data found when processing input',
+				ffprobeExitCode: 1,
+			});
 
-			const promise = getVideoMetadata('/tmp/corrupt.mp4');
-
-			mockProc.stderr.emit('data', 'Invalid data found when processing input');
-			mockProc.emit('close', 1);
-
-			await expect(promise).rejects.toThrow('FFprobe failed');
+			await expect(getVideoMetadata('/tmp/corrupt.mp4')).rejects.toThrow(
+				'FFprobe failed'
+			);
 		});
 
 		it('should reject when ffprobe binary is not found', async () => {
-			const mockProc = createMockProcess();
-			mockSpawn.mockReturnValue(mockProc);
+			setupSpawnForMetadata({
+				ffprobeError: new Error('spawn ffprobe ENOENT'),
+			});
 
-			const promise = getVideoMetadata('/tmp/test.mp4');
-
-			mockProc.emit('error', new Error('spawn ffprobe ENOENT'));
-
-			await expect(promise).rejects.toThrow('FFprobe not found or failed');
+			await expect(getVideoMetadata('/tmp/test.mp4')).rejects.toThrow(
+				'FFprobe not found or failed'
+			);
 		});
 
 		it('should reject on malformed JSON output', async () => {
-			const mockProc = createMockProcess();
-			mockSpawn.mockReturnValue(mockProc);
+			setupSpawnForMetadata({ ffprobeOutput: 'not valid json {{{' });
 
-			const promise = getVideoMetadata('/tmp/test.mp4');
-
-			mockProc.stdout.emit('data', 'not valid json {{{');
-			mockProc.emit('close', 0);
-
-			await expect(promise).rejects.toThrow('Failed to parse video metadata');
+			await expect(getVideoMetadata('/tmp/test.mp4')).rejects.toThrow(
+				'Failed to parse video metadata'
+			);
 		});
 
 		it('should handle video without audio stream', async () => {
-			const mockProc = createMockProcess();
-			mockSpawn.mockReturnValue(mockProc);
-
-			const promise = getVideoMetadata('/tmp/no-audio.mp4');
-
 			const output = JSON.stringify({
 				streams: [
 					{
@@ -312,24 +332,17 @@ describe('video-processor', () => {
 					size: '3750000',
 				},
 			});
-			mockProc.stdout.emit('data', output);
-			mockProc.emit('close', 0);
+			setupSpawnForMetadata({ ffprobeOutput: output });
 
-			const metadata = await promise;
+			const metadata = await getVideoMetadata('/tmp/no-audio.mp4');
 			expect(metadata.hasAudio).toBe(false);
 			expect(metadata.audioCodec).toBeUndefined();
 		});
 
 		it('should pass correct arguments to ffprobe', async () => {
-			const mockProc = createMockProcess();
-			mockSpawn.mockReturnValue(mockProc);
+			setupSpawnForMetadata({ ffprobeOutput: createFfprobeOutput() });
 
-			const promise = getVideoMetadata('/tmp/test.mp4');
-
-			mockProc.stdout.emit('data', createFfprobeOutput());
-			mockProc.emit('close', 0);
-
-			await promise;
+			await getVideoMetadata('/tmp/test.mp4');
 
 			expect(mockSpawn).toHaveBeenCalledWith('ffprobe', [
 				'-v',
@@ -346,18 +359,24 @@ describe('video-processor', () => {
 	// ======== validateVideoForStories ========
 
 	describe('validateVideoForStories', () => {
-		// Helper: set up spawn to return ffprobe output for validation
+		// Helper: set up spawn to handle both the ensureFfmpegAvailable check
+		// and the ffprobe call that getVideoMetadata makes
 		function setupFfprobeForValidation(ffprobeOutput: string) {
-			const mockProc = createMockProcess();
-			mockSpawn.mockReturnValue(mockProc);
-
-			// Schedule the emit after the current microtask
-			process.nextTick(() => {
-				mockProc.stdout.emit('data', ffprobeOutput);
-				mockProc.emit('close', 0);
+			let callIndex = 0;
+			mockSpawn.mockImplementation(() => {
+				callIndex++;
+				if (callIndex === 1) {
+					// ensureFfmpegAvailable -> spawn('ffmpeg', ['-version'])
+					return createSuccessfulFfmpegCheckProcess();
+				}
+				// spawn('ffprobe', args) - the actual metadata extraction
+				const ffprobeProc = createMockProcess();
+				process.nextTick(() => {
+					ffprobeProc.stdout.emit('data', ffprobeOutput);
+					ffprobeProc.emit('close', 0);
+				});
+				return ffprobeProc;
 			});
-
-			return mockProc;
 		}
 
 		it('should validate a perfect Instagram Stories video', async () => {
@@ -616,28 +635,33 @@ describe('video-processor', () => {
 	// ======== videoNeedsProcessing ========
 
 	describe('videoNeedsProcessing', () => {
-		it('should return false for a valid Instagram Stories video', async () => {
-			const mockProc = createMockProcess();
-			mockSpawn.mockReturnValue(mockProc);
+		// videoNeedsProcessing -> validateVideoForStories -> getVideoMetadata
+		// which calls ensureFfmpegAvailable (ffmpeg check) + ffprobe
 
-			const promise = videoNeedsProcessing(Buffer.from('video-data'));
-
-			// Emit perfect video metadata
-			process.nextTick(() => {
-				mockProc.stdout.emit('data', createFfprobeOutput());
-				mockProc.emit('close', 0);
+		function setupForNeedsProcessing(ffprobeOutput: string) {
+			let callIndex = 0;
+			mockSpawn.mockImplementation(() => {
+				callIndex++;
+				if (callIndex === 1) {
+					return createSuccessfulFfmpegCheckProcess();
+				}
+				const ffprobeProc = createMockProcess();
+				process.nextTick(() => {
+					ffprobeProc.stdout.emit('data', ffprobeOutput);
+					ffprobeProc.emit('close', 0);
+				});
+				return ffprobeProc;
 			});
+		}
 
-			const result = await promise;
+		it('should return false for a valid Instagram Stories video', async () => {
+			setupForNeedsProcessing(createFfprobeOutput());
+
+			const result = await videoNeedsProcessing(Buffer.from('video-data'));
 			expect(result).toBe(false);
 		});
 
 		it('should return true for a video with wrong codec', async () => {
-			const mockProc = createMockProcess();
-			mockSpawn.mockReturnValue(mockProc);
-
-			const promise = videoNeedsProcessing(Buffer.from('video-data'));
-
 			const output = createFfprobeOutput({
 				streams: [
 					{
@@ -650,22 +674,13 @@ describe('video-processor', () => {
 					{ codec_type: 'audio', codec_name: 'aac' },
 				],
 			});
+			setupForNeedsProcessing(output);
 
-			process.nextTick(() => {
-				mockProc.stdout.emit('data', output);
-				mockProc.emit('close', 0);
-			});
-
-			const result = await promise;
+			const result = await videoNeedsProcessing(Buffer.from('video-data'));
 			expect(result).toBe(true);
 		});
 
 		it('should return true for a video with wrong resolution', async () => {
-			const mockProc = createMockProcess();
-			mockSpawn.mockReturnValue(mockProc);
-
-			const promise = videoNeedsProcessing(Buffer.from('video-data'));
-
 			const output = createFfprobeOutput({
 				streams: [
 					{
@@ -678,13 +693,9 @@ describe('video-processor', () => {
 					{ codec_type: 'audio', codec_name: 'aac' },
 				],
 			});
+			setupForNeedsProcessing(output);
 
-			process.nextTick(() => {
-				mockProc.stdout.emit('data', output);
-				mockProc.emit('close', 0);
-			});
-
-			const result = await promise;
+			const result = await videoNeedsProcessing(Buffer.from('video-data'));
 			expect(result).toBe(true);
 		});
 	});
@@ -692,28 +703,30 @@ describe('video-processor', () => {
 	// ======== processVideoForStory (tests buildFfmpegArgs indirectly) ========
 
 	describe('processVideoForStory', () => {
-		// For processVideoForStory, spawn is called multiple times:
-		// 1. getVideoMetadata (ffprobe) on input
-		// 2. runFfmpeg
-		// 3. getVideoMetadata (ffprobe) on output
+		// processVideoForStory spawn sequence:
+		// 1. ensureFfmpegAvailable() -> spawn('ffmpeg', ['-version'])
+		// 2. getVideoMetadata(input) -> ensureFfmpegAvailable() -> spawn('ffmpeg', ['-version'])
+		// 3. getVideoMetadata(input) -> spawn('ffprobe', args)  [input metadata]
+		// 4. runFfmpeg(args) -> spawn('ffmpeg', args)  [actual processing]
+		// 5. getVideoMetadata(output) -> ensureFfmpegAvailable() -> spawn('ffmpeg', ['-version'])
+		// 6. getVideoMetadata(output) -> spawn('ffprobe', args)  [output metadata]
 
 		function setupForProcessing(inputMetadata: string, outputMetadata: string) {
-			let callCount = 0;
+			let ffprobeCallCount = 0;
 			mockSpawn.mockImplementation((cmd: string) => {
-				callCount++;
 				const mockProc = createMockProcess();
 
 				process.nextTick(() => {
 					if (cmd === 'ffprobe') {
-						// First ffprobe call = input metadata, second = output metadata
-						const isInputProbe = callCount <= 1;
+						ffprobeCallCount++;
+						// First ffprobe = input metadata, second = output metadata
 						mockProc.stdout.emit(
 							'data',
-							isInputProbe ? inputMetadata : outputMetadata
+							ffprobeCallCount === 1 ? inputMetadata : outputMetadata
 						);
 						mockProc.emit('close', 0);
 					} else if (cmd === 'ffmpeg') {
-						// FFmpeg processing
+						// All ffmpeg calls succeed (version checks + actual processing)
 						mockProc.emit('close', 0);
 					}
 				});
@@ -959,13 +972,17 @@ describe('video-processor', () => {
 			});
 
 			expect(result.wasProcessed).toBe(true);
-			// Verify spawn was called with ffmpeg containing the custom options
-			const ffmpegCalls = mockSpawn.mock.calls.filter(
-				(call: string[]) => call[0] === 'ffmpeg'
+			// Filter for ffmpeg processing calls (not version checks).
+			// Version checks use ['-version'], processing calls have many args.
+			const ffmpegProcessingCalls = mockSpawn.mock.calls.filter(
+				(call: unknown[]) => {
+					const args = call[1] as string[] | undefined;
+					return call[0] === 'ffmpeg' && args && args.length > 1;
+				}
 			);
-			expect(ffmpegCalls.length).toBe(1);
+			expect(ffmpegProcessingCalls.length).toBe(1);
 
-			const ffmpegArgs = ffmpegCalls[0][1] as string[];
+			const ffmpegArgs = ffmpegProcessingCalls[0][1] as string[];
 			expect(ffmpegArgs).toContain('fast');
 			expect(ffmpegArgs).toContain('5000k');
 			expect(ffmpegArgs).toContain('192k');

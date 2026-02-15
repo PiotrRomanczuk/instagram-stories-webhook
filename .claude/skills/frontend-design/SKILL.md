@@ -1,13 +1,13 @@
 ---
 name: frontend-design
-description: Frontend UI/UX design guidance for creating distinctive, production-grade interfaces. Use when designing new components, improving existing UI, or ensuring consistent design patterns across the Guitar CRM application. Focuses on mobile-first design, Tailwind CSS, shadcn/ui, and Framer Motion animations.
+description: Frontend UI/UX design guidance for creating distinctive, production-grade interfaces. Use when designing new components, improving existing UI, or ensuring consistent design patterns. Focuses on mobile-first design, Tailwind CSS, shadcn/ui, and Framer Motion animations.
 ---
 
 # Frontend Design Guide
 
 ## Overview
 
-Create distinctive, production-grade frontend interfaces for Guitar CRM using Tailwind CSS 4, shadcn/ui components, and Framer Motion for smooth animations. **All components MUST be mobile-friendly first.**
+Create distinctive, production-grade frontend interfaces for Instagram Stories Webhook using Tailwind CSS 4, shadcn/ui components, and Framer Motion for smooth animations. **All components MUST be mobile-friendly first.**
 
 ## Core Principles
 
@@ -336,7 +336,7 @@ function Component() {
 
 ## Color System
 
-### Guitar CRM Palette
+### Instagram Stories Webhook Palette
 
 ```css
 /* Primary palette */

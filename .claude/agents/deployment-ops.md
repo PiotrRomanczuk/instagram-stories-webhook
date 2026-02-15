@@ -307,12 +307,6 @@ export async function GET(req: Request) {
 ### Key Debugging Commands
 
 ```bash
-# Check recent Vercel deployment logs
-# Use Vercel MCP tools
-
-# Check Sentry for recent errors
-# Use Sentry dashboard
-
 # Check cron job status
 curl -H "Authorization: Bearer $CRON_SECRET" \
   https://marszal-arts.vercel.app/api/developer/cron-debug/status
@@ -321,3 +315,57 @@ curl -H "Authorization: Bearer $CRON_SECRET" \
 curl -H "Authorization: Bearer $CRON_SECRET" \
   https://marszal-arts.vercel.app/api/developer/cron-debug/stuck-locks
 ```
+
+---
+
+## Vercel MCP Integration
+
+Use the Vercel MCP tools for deployment operations instead of raw CLI commands where possible.
+
+### Available MCP Tools
+
+| Tool | Use Case |
+|------|----------|
+| `mcp__vercel__list_projects` | Find project ID and slug |
+| `mcp__vercel__get_project` | Get project config and settings |
+| `mcp__vercel__list_deployments` | List recent deployments with status |
+| `mcp__vercel__get_deployment` | Get specific deployment details |
+| `mcp__vercel__get_deployment_build_logs` | Debug build failures |
+| `mcp__vercel__get_runtime_logs` | Debug serverless function errors |
+| `mcp__vercel__deploy_to_vercel` | Trigger deployment |
+| `mcp__vercel__list_teams` | Find team ID |
+
+### Project Identifiers
+
+Read `.vercel/project.json` to get `projectId` and `orgId` (teamId) for MCP calls.
+
+### Debugging Build Failures
+
+```
+1. list_deployments -> find failed deployment ID
+2. get_deployment_build_logs(id) -> read error messages
+3. Common failures:
+   - TypeScript errors: fix types locally, push
+   - Missing env vars: check Vercel dashboard
+   - Dependency conflicts: check package-lock.json
+   - Memory exceeded: optimize build or increase limit
+```
+
+### Debugging Runtime Errors
+
+```
+1. get_runtime_logs(projectId, teamId, level=["error"]) -> find errors
+2. Filter by:
+   - environment: "production" or "preview"
+   - source: "serverless" for API routes, "edge-middleware" for middleware
+   - since: "1h" for recent issues
+3. Use requestId to trace specific failed requests
+```
+
+### Edge Function Troubleshooting
+
+Edge functions (middleware) have different runtime constraints:
+- No Node.js APIs (no `fs`, `child_process`, etc.)
+- Limited package support
+- Shorter execution time limits
+- Use `get_runtime_logs` with `source: ["edge-middleware"]` to debug

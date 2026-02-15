@@ -1,13 +1,13 @@
 ---
 name: webapp-testing
-description: Web application testing toolkit using Playwright for E2E testing. Use when writing automated tests for the Guitar CRM application, testing user flows, or debugging UI issues. Complements existing Cypress tests with Playwright capabilities. Leverages both Playwright MCP (rich introspection) and Playwright CLI (token-efficient automation).
+description: Web application testing toolkit using Playwright for E2E testing. Use when writing automated tests, testing user flows, or debugging UI issues. Leverages both Playwright MCP (rich introspection) and Playwright CLI (token-efficient automation).
 ---
 
 # Web Application Testing Toolkit
 
 ## Overview
 
-Test Guitar CRM web application using Playwright for comprehensive E2E testing. Two Playwright tools are available as MCP servers:
+Test Instagram Stories Webhook web application using Playwright for comprehensive E2E testing. Two Playwright tools are available as MCP servers:
 
 | Tool | Best For | How It Works |
 |------|----------|--------------|
@@ -102,31 +102,26 @@ The Playwright MCP server exposes these tool categories through Claude's tool sy
 
 Use MCP tools when you need iterative exploration with rich context preservation.
 
-## Testing Patterns for Guitar CRM
+## Testing Patterns for Instagram Stories Webhook
 
 ### Pattern 1: Login + Verify Dashboard
 
 ```bash
 # Using CLI
-playwright-cli open http://localhost:3000/login
+playwright-cli open http://localhost:3000/auth/signin
 playwright-cli snapshot                          # Find form refs
-playwright-cli fill <email-ref> "teacher@example.com"
-playwright-cli fill <pass-ref> "test123_teacher"
-playwright-cli click <submit-ref>
+playwright-cli click <google-sign-in-ref>        # Google OAuth
 playwright-cli snapshot                          # Verify dashboard content
 ```
 
-### Pattern 2: Test CRUD Operations (Lessons)
+### Pattern 2: Test Content Queue Operations
 
 ```bash
-playwright-cli -s=crud state-load auth-teacher.json
-playwright-cli -s=crud goto http://localhost:3000/dashboard/lessons/new
-playwright-cli -s=crud snapshot
-# Fill lesson form fields using refs from snapshot
-playwright-cli -s=crud fill <student-ref> "Test Student"
-playwright-cli -s=crud fill <date-ref> "2025-02-15"
-playwright-cli -s=crud click <submit-ref>
-playwright-cli -s=crud snapshot                  # Verify success message
+playwright-cli -s=admin state-load auth-admin.json
+playwright-cli -s=admin goto http://localhost:3000/schedule
+playwright-cli -s=admin snapshot
+# Verify scheduled content items
+playwright-cli -s=admin snapshot                  # Verify queue state
 ```
 
 ### Pattern 3: Visual Regression
@@ -202,13 +197,13 @@ def login_as_admin(page):
     page.wait_for_url('**/dashboard**')
 ```
 
-## Dev Credentials (Local Only)
+## Auth (Local Development)
 
-| Role | Email | Password |
-|------|-------|----------|
-| Admin | p.romanczuk@gmail.com | test123_admin |
-| Teacher | teacher@example.com | test123_teacher |
-| Student | student@example.com | test123_student |
+| Role | Email | Auth Method |
+|------|-------|-------------|
+| Admin | p.romanczuk@gmail.com | Google OAuth |
+
+Authentication uses NextAuth with Google OAuth. Use `storageState` in Playwright to persist auth sessions.
 
 ## Best Practices
 
@@ -229,12 +224,13 @@ def login_as_admin(page):
 - **Playwright CLI**: Installed globally via `npx @playwright/cli@latest` (use via Bash tool)
 - **Python tests** (optional): `pip install playwright && playwright install`
 
-## Integration with Existing Cypress Tests
+## Integration with Existing Playwright E2E Tests
 
-This skill complements the existing Cypress E2E tests in `/cypress`. Use Playwright for:
+This skill complements the existing E2E test suite in `__tests__/e2e/`. Use for:
 - Interactive browser debugging via CLI/MCP
 - Cross-browser testing (Chromium, Firefox, WebKit)
-- Multi-session role-based testing
 - Network mocking and tracing
 - API testing alongside UI tests
 - Visual regression testing
+
+**IMPORTANT**: E2E tests against Instagram API must use REAL account (`@www_hehe_pl`). See `test-engineer` agent for details.
