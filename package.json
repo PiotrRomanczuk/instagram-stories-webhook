@@ -3,7 +3,11 @@
   "version": "0.14.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "concurrently -n next,cron -c blue,magenta \"next dev\" \"npm run dev:cron\"",
+    "dev:next": "next dev",
+    "dev:cron": "tsx --watch scripts/local-cron.ts",
+    "dev:no-cron": "next dev",
+    "cron:sync": "tsx scripts/sync-vercel-crons.ts",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
