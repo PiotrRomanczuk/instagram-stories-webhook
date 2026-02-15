@@ -243,7 +243,7 @@ async function findOrCreateConversation(
     // Try to find existing conversation
     const { data: existingConv, error: findError } = await supabaseAdmin
         .from('instagram_conversations')
-        .select('*')
+        .select('id, user_id, ig_conversation_id, participant_ig_id, participant_username, participant_profile_pic, last_message_text, last_message_at, unread_count, is_active, created_at, updated_at')
         .eq('user_id', userId)
         .eq('participant_ig_id', participantIgId)
         .single();

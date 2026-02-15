@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
 		// 1. Fetch recent publishing logs from database (last 48 hours)
 		const { data: publishingLogs, error: dbError } = await supabaseAdmin
 			.from('publishing_logs')
-			.select('*')
+			.select('id, user_id, media_url, media_type, post_type, caption, status, ig_media_id, error_message, created_at')
 			.eq('user_id', userId)
 			.eq('post_type', 'STORY')
 			.gte('created_at', new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString())

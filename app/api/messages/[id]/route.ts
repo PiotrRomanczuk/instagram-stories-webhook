@@ -41,7 +41,7 @@ export async function GET(
         // Verify the conversation belongs to the user
         const { data: conversationData, error: convError } = await supabaseAdmin
             .from('instagram_conversations')
-            .select('*')
+            .select('id, user_id, ig_conversation_id, participant_ig_id, participant_username, participant_profile_pic, last_message_text, last_message_at, unread_count, is_active, created_at, updated_at')
             .eq('id', conversationId)
             .eq('user_id', userId)
             .single();
@@ -119,7 +119,7 @@ export async function GET(
         // Fetch messages from database
         const { data: messagesData, error: dbError } = await supabaseAdmin
             .from('instagram_messages')
-            .select('*')
+            .select('id, conversation_id, ig_message_id, sender_ig_id, recipient_ig_id, message_text, message_type, attachments, is_from_user, ig_created_time, created_at')
             .eq('conversation_id', conversationId)
             .order('created_at', { ascending: true })
             .limit(limit);

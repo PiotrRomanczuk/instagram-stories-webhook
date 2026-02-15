@@ -9,6 +9,7 @@ import axios from 'axios';
 
 const MODULE = 'ai-analysis:meme-archiver';
 const BUCKET_NAME = 'ai-analysis';
+const ANALYSIS_RECORD_COLUMNS = 'id, meme_id, ig_media_id, storage_path, analysis_status, file_type, file_size_bytes, created_at';
 
 interface SaveMemeForAnalysisOptions {
     memeId: string;
@@ -150,7 +151,7 @@ export async function getAnalysisRecord(memeId: string): Promise<AnalysisRecord 
     try {
         const { data, error } = await supabaseAdmin
             .from('ai_meme_analysis')
-            .select('*')
+            .select(ANALYSIS_RECORD_COLUMNS)
             .eq('meme_id', memeId)
             .single();
 
@@ -183,7 +184,7 @@ export async function getPendingAnalysisMemes(limit = 50): Promise<AnalysisRecor
     try {
         const { data, error } = await supabaseAdmin
             .from('ai_meme_analysis')
-            .select('*')
+            .select(ANALYSIS_RECORD_COLUMNS)
             .eq('analysis_status', 'pending')
             .order('created_at', { ascending: true })
             .limit(limit);

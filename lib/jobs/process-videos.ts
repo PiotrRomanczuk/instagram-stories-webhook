@@ -12,6 +12,8 @@ import { ContentItemRow, mapContentItemRow } from '@/lib/types/posts';
 
 const MODULE = 'video-processing-job';
 
+const CONTENT_ITEM_COLUMNS = 'id, user_id, user_email, media_url, media_type, storage_path, dimensions, thumbnail_url, video_duration, video_codec, video_framerate, needs_processing, title, caption, user_tags, hashtags, source, submission_status, publishing_status, rejection_reason, reviewed_at, reviewed_by, scheduled_time, processing_started_at, published_at, ig_media_id, error, content_hash, idempotency_key, retry_count, archived_at, version, created_at, updated_at';
+
 export interface VideoProcessingResult {
 	totalQueued: number;
 	processed: number;
@@ -26,7 +28,7 @@ async function getVideosNeedingProcessing(): Promise<ContentItemRow[]> {
 	try {
 		const { data, error } = await supabaseAdmin
 			.from('content_items')
-			.select('*')
+			.select(CONTENT_ITEM_COLUMNS)
 			.eq('media_type', 'VIDEO')
 			.eq('needs_processing', true)
 			.order('created_at', { ascending: true })

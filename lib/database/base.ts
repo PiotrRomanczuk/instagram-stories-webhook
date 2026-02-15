@@ -9,7 +9,7 @@ export async function getTokens(): Promise<TokenData | null> {
     try {
         const { data, error } = await supabaseAdmin
             .from('tokens')
-            .select('*')
+            .select('access_token, user_id, expires_at')
             .eq('id', TOKEN_RECORD_ID)
             .single();
 

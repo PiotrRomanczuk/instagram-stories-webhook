@@ -105,7 +105,7 @@ describe('Memes Database Layer', () => {
 			const result = await getAllowedUsers();
 
 			expect(result).toEqual(users);
-			expect(qb.select).toHaveBeenCalledWith('*');
+			expect(qb.select).toHaveBeenCalledWith('id, email, role, display_name, added_by, created_at');
 			expect(qb.order).toHaveBeenCalledWith('created_at', { ascending: false });
 		});
 	});

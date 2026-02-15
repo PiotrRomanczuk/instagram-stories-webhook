@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
         // Fetch conversations from database
         const { data: conversationsData, error: dbError } = await supabaseAdmin
             .from('instagram_conversations')
-            .select('*')
+            .select('id, user_id, ig_conversation_id, participant_ig_id, participant_username, participant_profile_pic, last_message_text, last_message_at, unread_count, is_active, created_at, updated_at')
             .eq('user_id', userId)
             .eq('is_active', true)
             .order('last_message_at', { ascending: false })

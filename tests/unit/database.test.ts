@@ -84,7 +84,7 @@ describe('Linked Accounts Database', () => {
             const result = await getLinkedFacebookAccount(mockUserId);
             expect(result).toEqual(mockAccount);
             expect(supabaseAdmin.from).toHaveBeenCalledWith('linked_accounts');
-            expect(mockChain.select).toHaveBeenCalledWith('*');
+            expect(mockChain.select).toHaveBeenCalledWith('id, user_id, provider, provider_account_id, access_token, refresh_token, expires_at, ig_user_id, ig_username, created_at, updated_at');
             expect(mockChain.eq).toHaveBeenCalledWith('user_id', mockUserId);
             expect(mockChain.eq).toHaveBeenCalledWith('provider', 'facebook');
         });

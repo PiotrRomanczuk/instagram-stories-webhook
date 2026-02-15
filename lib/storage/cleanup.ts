@@ -19,7 +19,7 @@ export async function cleanupOrphanedUploads(): Promise<{
 		// 1. Get orphaned uploads from tracking table
 		const { data: orphaned, error: fetchError } = await supabaseAdmin
 			.from('pending_uploads')
-			.select('*')
+			.select('id, storage_path, created_at')
 			.lt('created_at', oneHourAgo);
 
 		if (fetchError) {
