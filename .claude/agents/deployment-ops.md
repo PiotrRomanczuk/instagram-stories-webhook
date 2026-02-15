@@ -242,6 +242,48 @@ BASE_URL=https://marszal-arts.vercel.app npx playwright test --config=playwright
 
 ---
 
+## Breaking Changes & API Versioning
+
+### Breaking Change Strategy
+
+When introducing changes that break existing behavior:
+
+**API Endpoints:**
+1. Create new versioned endpoint `/api/v2/*`
+2. Keep old endpoint functional for 2 releases minimum
+3. Add deprecation warning in old endpoint responses
+4. Document migration path in Linear ticket
+5. Remove old endpoint after deprecation period
+
+**Database Columns:**
+1. Add new column (nullable initially)
+2. Backfill data with migration script
+3. Deprecate old column (mark in docs, warn in logs)
+4. Remove old column after 2 releases
+
+**Component Props:**
+1. Add new prop with deprecation warning for old one
+2. Support both props for transition period (2 releases)
+3. Update all usages to new prop
+4. Remove old prop after deprecation period
+
+### Deprecation Example
+
+```typescript
+// Old endpoint (v1)
+export async function GET(req: Request) {
+  console.warn('DEPRECATED: /api/schedule is deprecated. Use /api/v2/schedule instead. Will be removed in v1.0.0');
+  // ... existing logic
+}
+
+// New endpoint (v2)
+export async function GET(req: Request) {
+  // ... new logic with breaking changes
+}
+```
+
+---
+
 ## Incident Response
 
 ### Severity Levels

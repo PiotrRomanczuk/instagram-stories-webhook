@@ -18,6 +18,7 @@ tools:
 2. **Server Components by default** -- only use `'use client'` when needed
 3. **Accessibility always** -- Radix UI handles most, but verify keyboard/screen reader
 4. **Consistent design tokens** -- use Tailwind classes, never raw CSS values
+5. **ALWAYS use shadcn MCP server** -- when creating or modifying ANY UI, query the shadcn MCP server (configured in `.mcp.json`) first to look up available components, check their APIs/props, and install new ones. Never guess at component APIs.
 
 ---
 

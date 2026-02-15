@@ -235,26 +235,56 @@ git push origin --delete feature/BMS-150-add-dark-mode
 
 Every PR must follow this structure:
 
+**IMPORTANT**: PR descriptions become GitHub Release notes automatically when merged to main. Write comprehensive, user-facing descriptions that document what changed, why, and how to use new features.
+
 ```markdown
 ## Summary
-<1-3 bullet points describing the changes>
+<1-3 bullet points describing the changes in user-facing language>
 
-Closes BMS-XXX
+Closes STRUM-XXX
 
 ## Changes
-- File/component changes listed
+- List new features, components, or fixes
+- Include file counts and key architectural decisions
+- Mention database migrations if applicable
 
-## Test plan
-- [ ] Test case 1
-- [ ] Test case 2
+## Testing
+- [ ] Unit tests added and passing (coverage >70%)
+- [ ] Integration tests if applicable
+- [ ] E2E tests for user journeys
+- [ ] Manually tested on local environment
+- [ ] Tested on mobile devices
 
-## Security checklist (if applicable)
+## Database Changes (if applicable)
+- [ ] Migration file created: `supabase/migrations/YYYYMMDD_description.sql`
+- [ ] Migration tested locally
+- [ ] RLS policies verified
+
+## Breaking Changes (if applicable)
+- List any breaking changes
+- Include migration guide for users
+
+## Security Checklist (if applicable)
 - [ ] No hardcoded secrets
 - [ ] Input validation on new endpoints
 - [ ] Auth checks on protected routes
+- [ ] RLS policies enforced
+
+## Screenshots (for UI changes)
+[Add before/after screenshots if UI changes]
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 ```
+
+### Release Notes Best Practices
+
+Since PR descriptions become release notes, ensure they:
+1. **Use user-facing language** -- not technical implementation details
+2. **Include "What's Changed"** section with clear feature list
+3. **Document breaking changes** prominently
+4. **Add migration guides** if schema/API changes
+5. **Include screenshots** for UI features
+6. **Link to Linear tickets** for traceability
 
 ---
 
