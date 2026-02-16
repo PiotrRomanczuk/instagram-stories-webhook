@@ -18,8 +18,6 @@ import {
 	Code,
 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
-import { Session } from 'next-auth';
-import { getUserRole } from '@/lib/auth-helpers';
 import { ScheduledPostWithUser } from '@/lib/types';
 import { StatusBadge } from '../ui/status-badge';
 import { MediaModal } from '../ui/media-modal';
@@ -75,7 +73,7 @@ export function PostCard({
 	const [expandedError, setExpandedError] = useState(false);
 
 	const { data: session } = useSession();
-	const isDeveloper = session ? getUserRole(session as Session) === 'developer' : false;
+	const isDeveloper = session?.user?.role === 'developer';
 
 	// DnD Hooks
 	const {
