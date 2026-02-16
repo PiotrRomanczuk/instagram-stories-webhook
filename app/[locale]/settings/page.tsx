@@ -2,12 +2,13 @@ import { redirect } from 'next/navigation';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { getUserRole } from '@/lib/auth-helpers';
-import { Shield, Globe, Key, Database } from 'lucide-react';
+import { Shield, Globe, Key, Database, Clapperboard } from 'lucide-react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { Badge } from '@/app/components/ui/badge';
-import { Card, CardContent } from '@/app/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/app/components/ui/alert';
 import { SettingsFormNew } from '@/app/components/settings/settings-form-new';
+import { AutoProcessToggle } from '@/app/components/settings/auto-process-toggle';
 
 export default async function SettingsPage() {
 	const session = await getServerSession(authOptions);
@@ -87,6 +88,37 @@ export default async function SettingsPage() {
 						</CardContent>
 					</Card>
 				</div>
+
+				{/* Video Processing Settings */}
+				<Card>
+					<CardHeader>
+						<div className="flex items-center gap-3">
+							<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
+								<Clapperboard className="h-5 w-5 text-blue-600" />
+							</div>
+							<div className="flex-1">
+								<CardTitle>Video Processing</CardTitle>
+								<CardDescription>
+									Control automatic video processing for Instagram Stories
+								</CardDescription>
+							</div>
+						</div>
+					</CardHeader>
+					<CardContent>
+						<div className="flex items-center justify-between rounded-lg border p-4">
+							<div className="space-y-1">
+								<p className="text-sm font-medium">
+									Auto-process uploaded videos
+								</p>
+								<p className="text-xs text-muted-foreground">
+									When enabled, videos are automatically converted to meet
+									Instagram Stories requirements (1080x1920, H.264, MP4, 30fps).
+								</p>
+							</div>
+							<AutoProcessToggle />
+						</div>
+					</CardContent>
+				</Card>
 
 				{/* Settings Form */}
 				<SettingsFormNew />
