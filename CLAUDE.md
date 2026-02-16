@@ -127,6 +127,17 @@ npm run lint && npx tsc && npm run test
 - Mobile-first: 70%+ tests cover mobile viewports (375px, 390px, 414px, 768px)
 - Quality over quantity: Detailed edge cases belong in unit tests
 
+**🚨 CRITICAL E2E TEST LIMIT (MANDATORY)**:
+- **NEVER add more than 10 E2E tests** for any single feature
+- If a feature needs >10 tests, write unit/integration tests instead
+- E2E tests are for **critical user flows only**, not feature coverage
+- When adding tests for new features:
+  - ✅ Add 1-3 E2E tests for the happy path user journey
+  - ✅ Add 10-20 unit tests for business logic and edge cases
+  - ✅ Add 5-10 integration tests for API/database interactions
+  - ❌ NEVER add 20+ E2E tests for UI states, edge cases, or variations
+- **Reject any PR that adds >10 E2E tests** - move them to unit/integration layer
+
 **The 6 Core E2E Files**:
 1. `critical-user-journeys.spec.ts` (54 tests) - User and admin workflows
 2. `instagram-publishing-live.spec.ts` (27 tests) - REAL Instagram API publishing
