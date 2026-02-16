@@ -91,24 +91,30 @@ If there are uncommitted changes from Phase 1:
 
 ---
 
-## Phase 4: Unit Tests (MANDATORY)
+## Phase 4: Unit Tests Only (MANDATORY)
 
-Run unit tests. **STOP on failure.**
+Run **unit tests only**. **STOP on failure.**
 
 ```bash
 npm test
 ```
 
-- On failure: Report failing tests and STOP. Do not proceed.
-- On success: Report the count.
+**IMPORTANT**: This runs **unit tests only** (Vitest). E2E tests (Playwright) are NOT run locally for speed.
+- E2E tests run automatically on CI/CD (GitHub Actions) after PR is created
+- Local development focuses on fast feedback from unit tests
+- E2E tests take 10+ minutes and hit real APIs - reserved for CI only
 
-Note: **Lint and TypeScript checks are NOT run here** — they execute automatically on `git push` via pre-push hooks. If they fail during push (Phase 6), the push will be rejected and you'll need to fix before re-running `/ship`.
+**On failure**: Report failing tests and STOP. Do not proceed.
+**On success**: Report the count.
+
+**Note**: Lint and TypeScript checks are NOT run here — they execute automatically on `git push` via pre-push hooks. If they fail during push (Phase 6), the push will be rejected and you'll need to fix before re-running `/ship`.
 
 ```
-Quality gates:
-  Tests: PASSED (XX suites, XX tests)
-  Lint:  runs on push (hook)
-  TSC:   runs on push (hook)
+Quality gates (local):
+  Unit Tests: PASSED (XX suites, XX tests)
+  Lint:       runs on push (hook)
+  TSC:        runs on push (hook)
+  E2E Tests:  runs on CI/CD only (GitHub Actions)
 ```
 
 ---
