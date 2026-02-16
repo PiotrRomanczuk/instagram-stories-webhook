@@ -46,6 +46,9 @@ vi.mock('@/lib/content-db', () => ({
 	getContentItemForProcessing: vi.fn(),
 	recoverStaleLocks: vi.fn().mockResolvedValue(0),
 	expireOverdueContent: vi.fn().mockResolvedValue(0),
+	MAX_RETRY_COUNT: 3,
+	RETRY_BACKOFF_MS: [60000, 300000, 900000],
+	calculateRetryScheduledTime: vi.fn().mockReturnValue(Date.now() + 60000),
 }));
 
 vi.mock('@/lib/validations/cron.schema', () => ({
@@ -239,7 +242,7 @@ describe('processScheduledPosts (mocked)', () => {
 		expect(publishMedia).not.toHaveBeenCalled();
 	});
 
-	it('should release lock and increment retry on publish failure', async () => {
+	it('should mark failed and increment retry on publish failure without releasing lock separately', async () => {
 		const item = makeItem({ retryCount: 0 });
 		vi.mocked(getPendingContentItems).mockResolvedValue([item]);
 		vi.mocked(publishMedia).mockRejectedValue(new Error('Token expired'));
@@ -248,7 +251,7 @@ describe('processScheduledPosts (mocked)', () => {
 
 		expect(result.failed).toBe(1);
 		expect(result.results[0].error).toBe('Token expired');
-		expect(releaseContentProcessingLock).toHaveBeenCalledWith('item-1');
+		expect(releaseContentProcessingLock).not.toHaveBeenCalled();
 		expect(markContentFailed).toHaveBeenCalledWith(
 			'item-1',
 			'Token expired (attempt 1/3)',

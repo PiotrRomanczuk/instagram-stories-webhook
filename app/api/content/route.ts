@@ -37,7 +37,7 @@ const API_RATE_LIMIT = { limit: 100, windowMs: 60 * 1000 };
  * - sortBy: 'newest' | 'oldest' | 'schedule-asc'
  * - page: pagination page (default 1)
  * - limit: items per page (default 20)
- * - tab: 'all' | 'review' | 'queue' | 'published' | 'rejected' (convenience grouping)
+ * - tab: 'all' | 'review' | 'queue' | 'published' | 'rejected' | 'failed' (convenience grouping)
  * - scheduleFilter: 'today' | 'week' (for queue tab only)
  */
 export async function GET(req: NextRequest) {
@@ -135,6 +135,17 @@ export async function GET(req: NextRequest) {
 				}
 				filterOptions.source = 'submission';
 				filterOptions.submissionStatus = 'rejected';
+				break;
+
+			case 'failed':
+				// Items that failed publishing (admins/developers only)
+				if (role !== 'admin' && role !== 'developer') {
+					return NextResponse.json(
+						{ error: 'Only admins can access failed items' },
+						{ status: 403 },
+					);
+				}
+				filterOptions.publishingStatus = 'failed';
 				break;
 
 			case 'all':

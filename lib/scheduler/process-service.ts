@@ -17,13 +17,14 @@ import {
 import {
 	getPendingContentItems,
 	acquireContentProcessingLock,
-	releaseContentProcessingLock,
 	markContentPublished,
 	markContentFailed,
 	markContentCancelled,
 	getContentItemForProcessing,
 	recoverStaleLocks,
 	expireOverdueContent,
+	MAX_RETRY_COUNT,
+	RETRY_BACKOFF_MS,
 } from '@/lib/content-db';
 import { parseCronConfig } from '@/lib/validations/cron.schema';
 import { checkPublishingQuota } from '@/lib/scheduler/quota-gate';
@@ -351,31 +352,32 @@ export async function processScheduledPosts(
 					error,
 				);
 
-				// Release lock on failure to allow future retry
-				await releaseContentProcessingLock(item.id);
-
-				// Increment retry count
+				// markContentFailed atomically transitions processing -> scheduled/failed,
+				// so we do NOT call releaseContentProcessingLock first (that would create a
+				// race window where another cron run picks up the item between the two calls).
 				const retryCount = (item.retryCount || 0) + 1;
-				const maxRetries = 3;
+				
 
-				// Mark as failed with retry logic
 				await markContentFailed(
 					item.id,
-					retryCount >= maxRetries
+					retryCount >= MAX_RETRY_COUNT
 						? `${errorMessage} (after ${retryCount} attempts)`
-						: `${errorMessage} (attempt ${retryCount}/${maxRetries})`,
+						: `${errorMessage} (attempt ${retryCount}/${MAX_RETRY_COUNT})`,
 					retryCount,
 				);
 
-				if (retryCount >= maxRetries) {
+				if (retryCount >= MAX_RETRY_COUNT) {
 					await Logger.error(
 						MODULE,
-						`❌ Post ${item.id} failed after ${retryCount} attempts, marking as failed`,
+						`Post ${item.id} permanently failed after ${retryCount} attempts`,
 					);
 				} else {
+					const backoffIndex = Math.min(retryCount - 1, RETRY_BACKOFF_MS.length - 1);
+					const backoffMs = RETRY_BACKOFF_MS[Math.max(0, backoffIndex)];
+					const backoffMin = Math.round(backoffMs / 60000);
 					await Logger.info(
 						MODULE,
-						`🔄 Post ${item.id} will be retried (attempt ${retryCount}/${maxRetries})`,
+						`Post ${item.id} will be retried in ${backoffMin}min (attempt ${retryCount}/${MAX_RETRY_COUNT})`,
 					);
 				}
 
