@@ -50,7 +50,7 @@ export function ReadyCard({
 		<div
 			onClick={onClick}
 			className={cn(
-				'relative z-10 flex items-center gap-4 rounded-xl p-3 shadow-sm transition active:scale-[0.98]',
+				'relative flex items-center gap-4 rounded-xl p-3 shadow-sm transition active:scale-[0.98]',
 				isSelected
 					? 'border-2 border-blue-500 bg-blue-50'
 					: 'border border-gray-100 bg-white',

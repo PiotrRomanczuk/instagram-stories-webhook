@@ -288,7 +288,7 @@ export function SwipeableReadyCard({
 				<motion.div
 					{...(bind() as Record<string, unknown>)}
 					style={{ x: springX }}
-					className="relative z-10"
+					className="relative"
 				>
 					<ReadyCard
 						item={item}

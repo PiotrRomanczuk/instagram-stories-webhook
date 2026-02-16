@@ -13,6 +13,9 @@ import {
 vi.mock('@/lib/database/scheduled-posts');
 vi.mock('next-auth/next');
 vi.mock('@/lib/auth', () => ({ authOptions: {} }));
+vi.mock('@/lib/database/schedule-conflict', () => ({
+	checkScheduleConflict: vi.fn().mockResolvedValue({ hasConflict: false }),
+}));
 
 // Helper to create request
 const createRequest = (method: string, url: string, body?: unknown) => {

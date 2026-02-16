@@ -441,7 +441,7 @@ export function ContentPreviewModal({
 				)}
 
 				{/* Mobile: full-screen bottom sheet / Desktop: centered card */}
-				<div className='relative h-[100dvh] md:h-auto md:max-h-[92vh] w-full max-w-6xl overflow-hidden rounded-t-3xl md:rounded-[2.5rem] bg-white shadow-2xl ring-1 ring-black/5 flex flex-col md:flex-row animate-in slide-in-from-bottom-4 md:fade-in md:zoom-in duration-300'>
+				<div className='relative h-[calc(100dvh-4rem)] md:h-auto md:max-h-[92vh] w-full max-w-6xl overflow-hidden rounded-t-3xl md:rounded-[2.5rem] bg-white shadow-2xl ring-1 ring-black/5 flex flex-col md:flex-row animate-in slide-in-from-bottom-4 md:fade-in md:zoom-in duration-300'>
 					{/* Mobile close button - always visible on mobile */}
 					<button
 						onClick={onClose}
@@ -788,7 +788,7 @@ export function ContentPreviewModal({
 							</section>
 
 							{/* Footer Actions */}
-							<div className='flex flex-col gap-3 pt-4 pb-32 md:pb-0'>
+							<div className='flex flex-col gap-3 pt-4 pb-40 md:pb-0'>
 							{/* Approval buttons for pending submissions */}
 							{isAdmin && isPendingSubmission && (
 								<div className='flex gap-2'>

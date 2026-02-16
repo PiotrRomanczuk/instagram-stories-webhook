@@ -43,9 +43,9 @@ export async function checkScheduleConflict(
 
 		return { hasConflict: false };
 	} catch (error) {
-		// Fail open: log the error but don't block scheduling
-		console.error('Schedule conflict check failed, allowing request:', error);
-		return { hasConflict: false };
+		// Fail closed: block scheduling if we can't verify no conflict
+		console.error('Schedule conflict check failed, blocking request for safety:', error);
+		return { hasConflict: true };
 	}
 }
 
@@ -71,7 +71,7 @@ async function checkScheduledPosts(
 
 		if (error) {
 			console.error('Error checking scheduled_posts conflicts:', error);
-			return { hasConflict: false };
+			return { hasConflict: true };
 		}
 
 		if (data && data.length > 0) {
@@ -85,7 +85,7 @@ async function checkScheduledPosts(
 		return { hasConflict: false };
 	} catch (error) {
 		console.error('Error checking scheduled_posts conflicts:', error);
-		return { hasConflict: false };
+		return { hasConflict: true };
 	}
 }
 
@@ -111,7 +111,7 @@ async function checkContentItems(
 
 		if (error) {
 			console.error('Error checking content_items conflicts:', error);
-			return { hasConflict: false };
+			return { hasConflict: true };
 		}
 
 		if (data && data.length > 0) {
@@ -125,6 +125,6 @@ async function checkContentItems(
 		return { hasConflict: false };
 	} catch (error) {
 		console.error('Error checking content_items conflicts:', error);
-		return { hasConflict: false };
+		return { hasConflict: true };
 	}
 }
