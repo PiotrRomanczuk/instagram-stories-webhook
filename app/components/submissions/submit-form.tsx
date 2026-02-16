@@ -9,15 +9,21 @@ import { Textarea } from '@/app/components/ui/textarea';
 import { Label } from '@/app/components/ui/label';
 import { Card, CardContent } from '@/app/components/ui/card';
 import { ImageUploader } from '@/app/components/media/image-uploader';
+import { VideoUploader } from '@/app/components/media/video-uploader';
 import { StoryPreview } from '@/app/components/media/story-preview';
+import { VideoPreview } from '@/app/components/media/video-preview';
 import { AspectRatioBadge } from '@/app/components/media/aspect-ratio-badge';
-import { AspectRatioInfo, MediaDimensions } from '@/lib/types';
+import { AspectRatioInfo, MediaDimensions, MediaType, VideoMetadata, VideoValidationResult } from '@/lib/types';
 
 const MAX_CAPTION_LENGTH = 2200;
 
 export function SubmitForm() {
 	const router = useRouter();
+	const [mediaType, setMediaType] = useState<MediaType>('IMAGE');
 	const [imageUrl, setImageUrl] = useState<string | null>(null);
+	const [videoUrl, setVideoUrl] = useState<string | null>(null);
+	const [videoMetadata, setVideoMetadata] = useState<VideoMetadata | undefined>(undefined);
+	const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
 	const [dimensions, setDimensions] = useState<MediaDimensions | null>(null);
 	const [storagePath, setStoragePath] = useState<string | null>(null);
 	const [aspectInfo, setAspectInfo] = useState<AspectRatioInfo | null>(null);
@@ -30,11 +36,20 @@ export function SubmitForm() {
 		setStoragePath(path || null);
 	};
 
+	const handleVideoChange = (url: string | null, metadata?: VideoMetadata, path?: string) => {
+		setVideoUrl(url);
+		setVideoMetadata(metadata);
+		setStoragePath(path || null);
+		// Note: thumbnailUrl will be generated server-side during validation
+	};
+
+	const mediaUrl = mediaType === 'VIDEO' ? videoUrl : imageUrl;
+
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 
-		if (!imageUrl) {
-			toast.error('Please upload an image');
+		if (!mediaUrl) {
+			toast.error(`Please upload ${mediaType === 'VIDEO' ? 'a video' : 'an image'}`);
 			return;
 		}
 
@@ -46,11 +61,16 @@ export function SubmitForm() {
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					source: 'submission',
-					mediaUrl: imageUrl,
-					mediaType: 'IMAGE',
+					mediaUrl,
+					mediaType,
 					caption: caption.trim() || undefined,
 					dimensions,
 					storagePath: storagePath || undefined,
+					...(mediaType === 'VIDEO' && videoMetadata ? {
+						videoDuration: videoMetadata.duration,
+						videoCodec: videoMetadata.codec,
+						videoFramerate: videoMetadata.frameRate,
+					} : {}),
 				}),
 			});
 
@@ -68,7 +88,7 @@ export function SubmitForm() {
 		}
 	};
 
-	const isValid = imageUrl !== null;
+	const isValid = mediaUrl !== null;
 	const captionLength = caption.length;
 
 	const submitButton = (
@@ -92,18 +112,50 @@ export function SubmitForm() {
 			<div className="grid gap-6 lg:grid-cols-2">
 				{/* Left: Upload & Caption */}
 				<div className="space-y-6">
-					{/* Image Upload */}
-					<div className="space-y-2">
-						<Label htmlFor="image">
-							<span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">1</span>
-							{' '}Image
-						</Label>
-						<ImageUploader
-							value={imageUrl}
-							onChange={handleImageChange}
-							onAspectRatioChange={setAspectInfo}
+					{/* Media Type Toggle */}
+					<div className="flex gap-2">
+						<Button
+							type="button"
+							variant={mediaType === 'IMAGE' ? 'default' : 'outline'}
+							size="sm"
+							onClick={() => setMediaType('IMAGE')}
 							disabled={isSubmitting}
-						/>
+						>
+							Image
+						</Button>
+						<Button
+							type="button"
+							variant={mediaType === 'VIDEO' ? 'default' : 'outline'}
+							size="sm"
+							onClick={() => setMediaType('VIDEO')}
+							disabled={isSubmitting}
+						>
+							Video
+						</Button>
+					</div>
+
+					{/* Media Upload */}
+					<div className="space-y-2">
+						<Label htmlFor="media">
+							<span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">1</span>
+							{' '}{mediaType === 'VIDEO' ? 'Video' : 'Image'}
+						</Label>
+						{mediaType === 'IMAGE' ? (
+							<ImageUploader
+								value={imageUrl}
+								onChange={handleImageChange}
+								onAspectRatioChange={setAspectInfo}
+								disabled={isSubmitting}
+							/>
+						) : (
+							<VideoUploader
+								value={videoUrl}
+								onChange={handleVideoChange}
+								disabled={isSubmitting}
+								autoProcess={true}
+								showRequirements={true}
+							/>
+						)}
 					</div>
 
 					{/* Aspect Ratio Info */}
@@ -150,9 +202,16 @@ export function SubmitForm() {
 					</div>
 
 					{/* Mobile Compact Preview */}
-					{imageUrl && (
+					{mediaUrl && (
 						<div className="flex items-center gap-3 lg:hidden">
-							<StoryPreview imageUrl={imageUrl} compact />
+							{mediaType === 'VIDEO' ? (
+								<VideoPreview
+									videoUrl={videoUrl!}
+									duration={videoMetadata?.duration}
+								/>
+							) : (
+								<StoryPreview imageUrl={imageUrl!} compact />
+							)}
 							<span className="text-xs text-muted-foreground">Preview</span>
 						</div>
 					)}
@@ -160,7 +219,17 @@ export function SubmitForm() {
 
 				{/* Right: Full Preview (desktop only) */}
 				<div className="hidden lg:flex justify-center lg:justify-end">
-					<StoryPreview imageUrl={imageUrl} />
+					{mediaType === 'VIDEO' && videoUrl ? (
+						<VideoPreview
+							videoUrl={videoUrl}
+							duration={videoMetadata?.duration}
+							resolution={videoMetadata ? { width: videoMetadata.width, height: videoMetadata.height } : undefined}
+							codec={videoMetadata?.codec}
+							framerate={videoMetadata?.frameRate}
+						/>
+					) : imageUrl ? (
+						<StoryPreview imageUrl={imageUrl} />
+					) : null}
 				</div>
 			</div>
 
