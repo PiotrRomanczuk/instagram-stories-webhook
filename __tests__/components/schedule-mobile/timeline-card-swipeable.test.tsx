@@ -7,6 +7,10 @@ import { render, screen } from '@testing-library/react';
 import { TimelineCardSwipeable } from '@/app/components/schedule-mobile/timeline-card-swipeable';
 import { TimelineCardPost } from '@/app/components/schedule-mobile/timeline-card';
 
+vi.mock('next-auth/react', () => ({
+	useSession: () => ({ data: null, status: 'unauthenticated' }),
+}));
+
 const mockPost: TimelineCardPost = {
 	id: 'test-1',
 	url: 'https://example.com/image.jpg',
