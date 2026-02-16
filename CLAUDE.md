@@ -114,15 +114,28 @@ npm run lint && npx tsc && npm run test
 
 ## Testing Strategy
 
-| Layer | Tool | Instagram API Handling |
-|-------|------|------------------------|
-| Unit | Vitest + MSW | **Mock with MSW** |
-| Integration | Vitest + Supabase | **Mock with MSW** |
-| E2E | Playwright | **NEVER MOCK - Use real account** |
+| Layer | Tool | File Count | Test Count | Instagram API Handling |
+|-------|------|-----------|-----------|------------------------|
+| Unit | Vitest + MSW | ~50 files | ~500 tests | **Mock with MSW** |
+| Integration | Vitest + Supabase | ~20 files | ~200 tests | **Mock with MSW** |
+| E2E | Playwright | **6 files** | **~172 tests** | **NEVER MOCK - Use real account** |
 
-**CRITICAL**: E2E tests use REAL Instagram account (`@www_hehe_pl`). Never mock Meta API in E2E.
+**E2E Test Philosophy**:
+- Test **USER JOURNEYS**, not UI components or implementation details
+- Use REAL Instagram account (`@www_hehe_pl`) - NEVER mock in E2E
+- Keep test count low (<200) for fast CI feedback (<10 min)
+- Mobile-first: 70%+ tests cover mobile viewports (375px, 390px, 414px, 768px)
+- Quality over quantity: Detailed edge cases belong in unit tests
 
-→ **For detailed testing patterns**: delegate to `test-engineer` agent
+**The 6 Core E2E Files**:
+1. `critical-user-journeys.spec.ts` (54 tests) - User and admin workflows
+2. `instagram-publishing-live.spec.ts` (27 tests) - REAL Instagram API publishing
+3. `mobile-responsive-core.spec.ts` (37 tests) - Mobile UX validation
+4. `auth-and-rbac-core.spec.ts` (22 tests) - Authentication & RBAC
+5. `production-smoke.spec.ts` (10 tests) - Production verification
+6. `developer-tools.spec.ts` (22 tests) - Internal tooling
+
+→ **For detailed testing patterns and guidelines**: See `TESTING.md` or delegate to `test-engineer` agent
 
 ---
 
