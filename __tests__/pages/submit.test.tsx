@@ -69,7 +69,7 @@ describe('SubmitForm', () => {
 		render(<SubmitForm />);
 
 		// Check for image label (includes step badge)
-		expect(screen.getByText(/Image/)).toBeInTheDocument();
+		expect(screen.getAllByText(/Image/).length).toBeGreaterThan(0);
 		// Check for caption label (includes step badge)
 		expect(screen.getByText(/Caption/)).toBeInTheDocument();
 		// Check for submit button (mobile + desktop both rendered)
@@ -443,7 +443,7 @@ describe('SubmitForm - Accessibility', () => {
 		expect(screen.getByText(/Caption/)).toBeInTheDocument();
 
 		// Image should be labeled (includes step badge)
-		expect(screen.getByText(/Image/)).toBeInTheDocument();
+		expect(screen.getAllByText(/Image/).length).toBeGreaterThan(0);
 	});
 
 	it('should have proper button text for screen readers', async () => {
