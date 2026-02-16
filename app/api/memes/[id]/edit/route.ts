@@ -58,7 +58,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 		}
 
 		// Optimistic locking: increment version
-		const currentVersion = (meme as any).version || 1;
+		const currentVersion = meme.version || 1;
 		const newVersion = currentVersion + 1;
 		updates.version = newVersion;
 

@@ -118,7 +118,7 @@ export async function POST(
 				data: updatedItem,
 				message: 'Content published successfully',
 			});
-		} catch (publishError: any) {
+		} catch (publishError: unknown) {
 			const errorMessage =
 				publishError instanceof Error
 					? publishError.message

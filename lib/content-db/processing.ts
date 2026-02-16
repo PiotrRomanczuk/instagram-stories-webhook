@@ -5,8 +5,6 @@
 import { supabaseAdmin } from '../config/supabase-admin';
 import { ContentItem, mapContentItemRow } from '../types/posts';
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 export async function getPendingContentItems(maxItems: number = 25): Promise<ContentItem[]> {
 	try {
 		const now = Date.now();
@@ -140,7 +138,7 @@ export async function markContentFailed(
 	retryCount?: number,
 ): Promise<boolean> {
 	try {
-		const updates: Record<string, any> = {
+		const updates: Record<string, string | number | null> = {
 			error: errorMessage,
 			updated_at: new Date().toISOString(),
 		};
@@ -172,8 +170,6 @@ export async function markContentFailed(
 		return false;
 	}
 }
-
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
 export async function markContentCancelled(
 	id: string,

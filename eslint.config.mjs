@@ -28,8 +28,8 @@ const eslintConfig = [
   ...nextTypescript,
   {
     rules: {
-      // Downgrade to warn until existing tech debt is resolved (tracked in Linear)
-      '@typescript-eslint/no-explicit-any': 'warn',
+      // All any types eliminated (INS-15) - enforce as error to prevent regressions
+      '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-unused-vars': ['warn', {
         argsIgnorePattern: '^_',
         varsIgnorePattern: '^_',

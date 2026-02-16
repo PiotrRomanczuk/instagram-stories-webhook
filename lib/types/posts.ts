@@ -219,6 +219,7 @@ export interface MemeSubmission {
 	scheduled_post_id?: string;
 	published_at?: string;
 	ig_media_id?: string;
+	version?: number;
 }
 
 export interface CreateMemeInput {
