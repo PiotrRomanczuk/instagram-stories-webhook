@@ -46,12 +46,12 @@ export async function checkForRecentPublish(
         const cutoffTime = Date.now() - hoursBack * 60 * 60 * 1000;
 
         const { data, error } = await supabaseAdmin
-            .from('scheduled_posts')
+            .from('content_items')
             .select('id, published_at')
             .eq('content_hash', contentHash)
             .eq('user_id', userId)
-            .eq('status', 'published')
-            .gte('published_at', cutoffTime)
+            .eq('publishing_status', 'published')
+            .gte('published_at', new Date(cutoffTime).toISOString())
             .order('published_at', { ascending: false })
             .limit(1);
 
@@ -87,10 +87,10 @@ export async function isMemeAlreadyScheduled(memeId: string): Promise<{
 }> {
     try {
         const { data, error } = await supabaseAdmin
-            .from('scheduled_posts')
-            .select('id, status')
-            .eq('meme_id', memeId)
-            .in('status', ['pending', 'processing', 'published'])
+            .from('content_items')
+            .select('id, publishing_status')
+            .eq('source_id', memeId)
+            .in('publishing_status', ['scheduled', 'processing', 'published'])
             .limit(1);
 
         if (error) {
@@ -107,7 +107,7 @@ export async function isMemeAlreadyScheduled(memeId: string): Promise<{
         return {
             isScheduled,
             postId: data?.[0]?.id,
-            status: data?.[0]?.status
+            status: data?.[0]?.publishing_status
         };
     } catch (error) {
         Logger.error(MODULE, 'Exception in isMemeAlreadyScheduled', error);
