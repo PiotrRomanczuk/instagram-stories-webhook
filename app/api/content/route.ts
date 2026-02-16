@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
 		// Build filter options based on tab
 		let filterOptions: Parameters<typeof getContentItems>[0] = {
 			search,
-			sortBy: (sortBy as any) || 'newest',
+			sortBy: sortBy || 'newest',
 			limit,
 			offset,
 		};

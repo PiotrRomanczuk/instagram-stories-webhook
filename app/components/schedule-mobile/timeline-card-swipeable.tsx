@@ -234,7 +234,7 @@ export function TimelineCardSwipeable({
 
 			{/* Card Wrapper */}
 			<motion.div
-				{...(bind() as any)}
+				{...(bind() as Record<string, unknown>)}
 				style={{ x: springX }}
 				className="relative z-10"
 			>
