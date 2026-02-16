@@ -23,8 +23,12 @@ import os from 'os';
 import { Logger } from '@/lib/utils/logger';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
 import { VideoMetadata, VideoValidationResult, VideoProcessingOptions, VideoProcessingResult } from '@/lib/types';
+import { isCloudinaryConfigured, processVideoUrlWithCloudinary, extractThumbnailWithCloudinary } from './cloudinary-video-processor';
 
 const MODULE = 'video-processor';
+
+/** Default time offset (in seconds) for thumbnail extraction */
+export const THUMBNAIL_OFFSET_SEC = 2;
 
 // Instagram Stories Video Constants
 export const VIDEO_STORY_WIDTH = 1080;
@@ -440,9 +444,24 @@ export async function videoNeedsProcessing(inputBuffer: Buffer): Promise<boolean
 }
 
 /**
+ * Determine which video processing backend is available.
+ * Returns 'ffmpeg' for local dev, 'cloudinary' for Vercel, or 'none'.
+ */
+export async function getVideoProcessingBackend(): Promise<'ffmpeg' | 'cloudinary' | 'none'> {
+    const ffmpegAvailable = await checkFfmpegAvailable();
+    if (ffmpegAvailable) return 'ffmpeg';
+    if (isCloudinaryConfigured()) return 'cloudinary';
+    return 'none';
+}
+
+/**
  * Downloads a video from a URL, processes it for Instagram Stories if needed,
  * uploads the result to Supabase storage, and returns the public URL.
- * If the video already meets standards, returns the original URL.
+ *
+ * Uses a 3-tier fallback:
+ *  1. FFmpeg (local/Docker) - preferred
+ *  2. Cloudinary (production/Vercel) - cloud-based
+ *  3. Accept as-is - no processing available
  */
 export async function processAndUploadStoryVideo(
     videoUrl: string,
@@ -450,20 +469,29 @@ export async function processAndUploadStoryVideo(
 ): Promise<string> {
     await Logger.info(MODULE, `Processing story video for content: ${contentId}`);
 
-    const ffmpegAvailable = await checkFfmpegAvailable();
-    if (!ffmpegAvailable) {
-        await Logger.warn(MODULE, 'FFmpeg not available, returning original URL');
+    const backend = await getVideoProcessingBackend();
+
+    if (backend === 'none') {
+        await Logger.warn(MODULE, 'No video processing backend available, returning original URL');
         return videoUrl;
     }
 
-    // Download the video
+    if (backend === 'cloudinary') {
+        await Logger.info(MODULE, `Using Cloudinary backend for content: ${contentId}`);
+        const result = await processVideoUrlWithCloudinary(videoUrl, contentId);
+        await Logger.info(MODULE, `Cloudinary processing complete: ${result.url}`, {
+            processingApplied: result.processingApplied,
+        });
+        return result.url;
+    }
+
+    // FFmpeg path: download, validate, process, upload
     const response = await fetch(videoUrl);
     if (!response.ok) {
         throw new Error(`Failed to download video: ${response.statusText}`);
     }
     const videoBuffer = Buffer.from(await response.arrayBuffer());
 
-    // Validate first
     const validation = await validateVideoForStories(videoBuffer);
 
     if (!validation.needsProcessing) {
@@ -473,10 +501,8 @@ export async function processAndUploadStoryVideo(
 
     await Logger.info(MODULE, `Video ${contentId} needs processing: ${validation.processingReasons.join(', ')}`);
 
-    // Process the video
     const result = await processVideoForStory(videoBuffer);
 
-    // Upload processed video to Supabase storage
     const filename = `story-${contentId}-${Date.now()}.mp4`;
     const storagePath = `processed-stories/${filename}`;
 
@@ -501,4 +527,112 @@ export async function processAndUploadStoryVideo(
     });
 
     return urlData.publicUrl;
+}
+
+/**
+ * Extract a thumbnail from a video.
+ *
+ * Backend selection:
+ *  - FFmpeg: writes a temp file, extracts a frame via `ffmpeg -ss`, uploads to Supabase.
+ *  - Cloudinary: uploads the video URL and uses video-to-image transformation.
+ *
+ * Returns the public URL of the thumbnail image, or null if extraction fails.
+ */
+export async function extractVideoThumbnail(
+    videoUrl: string,
+    contentId: string,
+    offsetSeconds: number = THUMBNAIL_OFFSET_SEC,
+): Promise<string | null> {
+    await Logger.info(MODULE, `Extracting thumbnail for content: ${contentId}`);
+
+    const backend = await getVideoProcessingBackend();
+
+    if (backend === 'cloudinary') {
+        try {
+            const result = await extractThumbnailWithCloudinary(videoUrl, contentId, offsetSeconds);
+            await Logger.info(MODULE, `Cloudinary thumbnail extracted: ${result.url}`);
+            return result.url;
+        } catch (error) {
+            await Logger.warn(MODULE, 'Cloudinary thumbnail extraction failed', error);
+            return null;
+        }
+    }
+
+    if (backend === 'ffmpeg') {
+        return extractThumbnailWithFfmpeg(videoUrl, contentId, offsetSeconds);
+    }
+
+    await Logger.warn(MODULE, 'No backend available for thumbnail extraction');
+    return null;
+}
+
+/**
+ * Extract a thumbnail using FFmpeg locally.
+ * Downloads the video, seeks to the offset, grabs one frame as JPEG,
+ * uploads it to Supabase storage, and returns the public URL.
+ */
+async function extractThumbnailWithFfmpeg(
+    videoUrl: string,
+    contentId: string,
+    offsetSeconds: number,
+): Promise<string | null> {
+    const tempDir = os.tmpdir();
+    const sessionId = crypto.randomUUID();
+    const tempInput = path.join(tempDir, `thumb_input_${sessionId}.mp4`);
+    const tempOutput = path.join(tempDir, `thumb_output_${sessionId}.jpg`);
+
+    try {
+        // Download video
+        const response = await fetch(videoUrl);
+        if (!response.ok) {
+            await Logger.warn(MODULE, `Failed to fetch video for thumbnail: ${response.statusText}`);
+            return null;
+        }
+        const videoBuffer = Buffer.from(await response.arrayBuffer());
+        await fs.writeFile(tempInput, videoBuffer);
+
+        // Get duration so we can clamp the offset
+        const metadata = await getVideoMetadata(tempInput);
+        const clampedOffset = Math.min(offsetSeconds, Math.max(0, metadata.duration - 0.1));
+
+        // Extract a single frame
+        const args = [
+            '-y',
+            '-ss', clampedOffset.toString(),
+            '-i', tempInput,
+            '-frames:v', '1',
+            '-q:v', '2',
+            tempOutput,
+        ];
+
+        await runFfmpeg(args);
+
+        const thumbBuffer = await fs.readFile(tempOutput);
+        const storagePath = `thumbnails/${contentId}.jpg`;
+
+        const { error: uploadError } = await supabaseAdmin.storage
+            .from('stories')
+            .upload(storagePath, thumbBuffer, {
+                contentType: 'image/jpeg',
+                upsert: true,
+            });
+
+        if (uploadError) {
+            await Logger.warn(MODULE, `Failed to upload thumbnail: ${uploadError.message}`);
+            return null;
+        }
+
+        const { data: urlData } = supabaseAdmin.storage
+            .from('stories')
+            .getPublicUrl(storagePath);
+
+        await Logger.info(MODULE, `FFmpeg thumbnail uploaded: ${urlData.publicUrl}`);
+        return urlData.publicUrl;
+    } catch (error) {
+        await Logger.warn(MODULE, 'FFmpeg thumbnail extraction failed', error);
+        return null;
+    } finally {
+        try { await fs.unlink(tempInput); } catch { /* ignore */ }
+        try { await fs.unlink(tempOutput); } catch { /* ignore */ }
+    }
 }

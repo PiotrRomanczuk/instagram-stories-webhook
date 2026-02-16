@@ -22,9 +22,10 @@ import { authOptions } from '@/lib/auth';
 import {
     processVideoForStory,
     validateVideoForStories,
-    checkFfmpegAvailable,
+    getVideoProcessingBackend,
     VIDEO_MAX_DURATION_SEC
 } from '@/lib/media/video-processor';
+import { processVideoUrlWithCloudinary } from '@/lib/media/cloudinary-video-processor';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
 import { Logger } from '@/lib/utils/logger';
 
@@ -37,13 +38,12 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Check if FFmpeg is available
-        const ffmpegAvailable = await checkFfmpegAvailable();
-        if (!ffmpegAvailable) {
-            await Logger.error(MODULE, 'FFmpeg not installed on system');
+        const backend = await getVideoProcessingBackend();
+        if (backend === 'none') {
+            await Logger.error(MODULE, 'No video processing backend available');
             return NextResponse.json({
-                error: 'Video processing is not available. FFmpeg must be installed on the server.',
-                ffmpegRequired: true
+                error: 'Video processing is not available. Configure FFmpeg or Cloudinary.',
+                processingUnavailable: true
             }, { status: 503 });
         }
 
@@ -59,9 +59,24 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'videoUrl is required' }, { status: 400 });
         }
 
-        await Logger.info(MODULE, `📥 Processing video from: ${videoUrl}`);
+        await Logger.info(MODULE, `Processing video from: ${videoUrl} (backend: ${backend})`);
 
-        // Fetch the video
+        // Cloudinary path: upload directly from URL (no download needed)
+        if (backend === 'cloudinary') {
+            const contentId = crypto.randomUUID();
+            const result = await processVideoUrlWithCloudinary(videoUrl, contentId);
+            return NextResponse.json({
+                processedUrl: result.url,
+                newDimensions: { width: result.width, height: result.height },
+                duration: result.duration,
+                wasProcessed: true,
+                processingApplied: result.processingApplied,
+                backend: 'cloudinary',
+                message: `Video processed via Cloudinary: ${result.processingApplied.join(', ')}`
+            });
+        }
+
+        // FFmpeg path: download, validate, process, upload
         const videoResponse = await fetch(videoUrl);
         if (!videoResponse.ok) {
             await Logger.error(MODULE, `Failed to fetch video: ${videoResponse.status}`);
@@ -69,9 +84,7 @@ export async function POST(request: Request) {
         }
 
         const videoBuffer = Buffer.from(await videoResponse.arrayBuffer());
-        await Logger.info(MODULE, `📦 Video fetched: ${(videoBuffer.length / (1024 * 1024)).toFixed(2)} MB`);
 
-        // Validate video first
         const validation = await validateVideoForStories(videoBuffer);
 
         if (!validation.valid) {
@@ -84,22 +97,18 @@ export async function POST(request: Request) {
             }, { status: 400 });
         }
 
-        // If no processing needed, return the original URL
         if (!validation.needsProcessing) {
-            await Logger.info(MODULE, '✅ Video already meets Instagram Stories standards');
             return NextResponse.json({
                 processedUrl: videoUrl,
                 originalMetadata: validation.metadata,
                 wasProcessed: false,
                 processingApplied: [],
                 warnings: validation.warnings,
+                backend: 'ffmpeg',
                 message: 'Video already meets Instagram Stories standards'
             });
         }
 
-        await Logger.info(MODULE, `🔧 Processing required: ${validation.processingReasons.join(', ')}`);
-
-        // Process the video
         const result = await processVideoForStory(videoBuffer, {
             backgroundColor,
             maxDuration,
@@ -107,10 +116,7 @@ export async function POST(request: Request) {
             blurBackground: false
         });
 
-        // Upload the processed video to Supabase
         const fileName = `processed/${crypto.randomUUID()}.mp4`;
-
-        await Logger.info(MODULE, `📤 Uploading processed video: ${fileName}`);
 
         const { error: uploadError } = await supabaseAdmin.storage
             .from('stories')
@@ -128,19 +134,15 @@ export async function POST(request: Request) {
             .from('stories')
             .getPublicUrl(fileName);
 
-        await Logger.info(MODULE, `✅ Video processed successfully: ${publicUrl}`);
-
         return NextResponse.json({
             processedUrl: publicUrl,
             originalMetadata: result.originalMetadata,
-            newDimensions: {
-                width: result.width,
-                height: result.height
-            },
+            newDimensions: { width: result.width, height: result.height },
             duration: result.duration,
             wasProcessed: true,
             processingApplied: result.processingApplied,
             warnings: validation.warnings,
+            backend: 'ffmpeg',
             message: `Video processed: ${result.processingApplied.join(', ')}`
         });
 
@@ -153,20 +155,22 @@ export async function POST(request: Request) {
 
 /**
  * GET /api/media/process-video/status
- * Check if video processing is available (FFmpeg installed)
+ * Check if video processing is available and which backend is active
  */
 export async function GET() {
     try {
-        const ffmpegAvailable = await checkFfmpegAvailable();
+        const backend = await getVideoProcessingBackend();
         return NextResponse.json({
-            available: ffmpegAvailable,
-            message: ffmpegAvailable
-                ? 'Video processing is available'
-                : 'FFmpeg is not installed on the server'
+            available: backend !== 'none',
+            backend,
+            message: backend === 'none'
+                ? 'No video processing backend available. Configure FFmpeg or Cloudinary.'
+                : `Video processing available via ${backend}`
         });
     } catch (error) {
         return NextResponse.json({
             available: false,
+            backend: 'none',
             error: error instanceof Error ? error.message : 'Unknown error'
         });
     }
