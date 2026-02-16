@@ -836,16 +836,7 @@ export function ContentPreviewModal({
 							{/* Publish/Schedule buttons for non-pending, non-failed items */}
 							{item.publishingStatus !== 'published' && item.publishingStatus !== 'failed' && !isPendingSubmission && (
 								<div className='flex gap-2'>
-									{(item.source !== 'submission' ||
-										item.submissionStatus === 'approved') && (
-										<button
-											onClick={() => setShowConfirmPublish(true)}
-											className='flex-1 h-14 bg-emerald-500 text-white rounded-2xl hover:bg-emerald-600 active:scale-[0.98] transition-all font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl shadow-emerald-200'
-										>
-											<Send className='h-4 w-4' />
-											Publish Now
-										</button>
-									)}
+									{/* MVP: Instant publish hidden — scheduling only */}
 									<button
 										onClick={() => {
 											onClose();

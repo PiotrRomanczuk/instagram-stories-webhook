@@ -206,15 +206,7 @@ export function ScheduleHeader({
 					</div>
 				)}
 
-				{onPublishNow && (
-					<Button
-						onClick={onPublishNow}
-						className="gap-2 bg-[#2b6cee] px-2 text-white hover:bg-[#2b6cee]/90 sm:px-4"
-					>
-						<Zap className="h-4 w-4" />
-						<span className="hidden sm:inline">Publish Now</span>
-					</Button>
-				)}
+				{/* MVP: Instant publish hidden — scheduling only */}
 
 				{onNewSchedule && (
 					<Button

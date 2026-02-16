@@ -1,6 +1,6 @@
 'use client';
 
-import { Link, usePathname, useRouter } from '@/i18n/routing';
+import { Link, usePathname } from '@/i18n/routing';
 import { useSession } from 'next-auth/react';
 import {
 	Home,
@@ -9,10 +9,10 @@ import {
 	ClipboardCheck,
 	Calendar,
 	Menu,
-	Languages,
+	CheckCircle2,
 } from 'lucide-react';
 import { UserRole } from '@/lib/types';
-import { useTranslations, useLocale } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/app/components/ui/button';
 import {
 	DropdownMenu,
@@ -21,7 +21,6 @@ import {
 	DropdownMenuTrigger,
 } from '@/app/components/ui/dropdown-menu';
 import { UserMenu } from './user-menu';
-import { NotificationBell } from './notification-bell';
 
 interface NavItem {
 	href: string;
@@ -32,8 +31,6 @@ interface NavItem {
 
 export function Navbar() {
 	const t = useTranslations('Navbar');
-	const locale = useLocale();
-	const router = useRouter();
 	const { data: session, status } = useSession();
 	const pathname = usePathname();
 	// Don't show navbar on signin page
@@ -44,11 +41,6 @@ export function Navbar() {
 	const isDev = userRole === 'developer';
 	const isAdmin = userRole === 'admin';
 	const isAdminOrDev = isAdmin || isDev;
-
-	const toggleLocale = () => {
-		const nextLocale = locale === 'en' ? 'pl' : 'en';
-		router.replace(pathname, { locale: nextLocale });
-	};
 
 	// Navigation items with role-based visibility
 	const navItems: NavItem[] = [
@@ -69,6 +61,12 @@ export function Navbar() {
 			href: '/schedule',
 			label: t('schedule') || 'Schedule',
 			icon: Calendar,
+			roles: ['admin', 'developer'],
+		},
+		{
+			href: '/posted-stories',
+			label: 'Posted',
+			icon: CheckCircle2,
 			roles: ['admin', 'developer'],
 		},
 	];
@@ -145,21 +143,6 @@ export function Navbar() {
 
 					{/* Actions */}
 					<div className="flex items-center gap-2">
-						{/* Language Toggle */}
-						<Button
-							variant="ghost"
-							size="icon"
-							onClick={toggleLocale}
-							className="hidden sm:flex"
-							title={locale === 'en' ? 'Switch to Polish' : 'Switch to English'}
-						>
-							<Languages className="h-4 w-4" />
-							<span className="sr-only">Toggle language</span>
-						</Button>
-
-						{/* Notifications */}
-						{session?.user && <NotificationBell />}
-
 						{/* User Menu or Sign In */}
 						{status === 'loading' ? (
 							<div className="h-10 w-10 animate-pulse rounded-full bg-muted" />

@@ -924,16 +924,7 @@ export function ContentList({
 												>
 													<Calendar className='h-4 w-4' />
 												</button>
-												{(item.source !== 'submission' ||
-													item.submissionStatus === 'approved') && (
-													<button
-														onClick={() => setSelectedItemForPublish(item)}
-														className='p-2 hover:bg-white rounded-lg transition-colors text-gray-400 hover:text-emerald-600 shadow-sm border border-transparent hover:border-emerald-100'
-														title='Publish Now'
-													>
-														<Send className='h-4 w-4' />
-													</button>
-												)}
+												{/* MVP: Instant publish hidden — scheduling only */}
 											</>
 										)}
 									</div>

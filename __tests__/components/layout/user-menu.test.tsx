@@ -103,7 +103,7 @@ describe('UserMenu', () => {
 		});
 	});
 
-	it('should show Settings link for developer', async () => {
+	it('should not show Settings link in MVP mode', async () => {
 		const user = userEvent.setup();
 		const devUser = {
 			...mockUser,
@@ -111,18 +111,6 @@ describe('UserMenu', () => {
 		};
 
 		render(<UserMenu user={devUser} />);
-
-		const trigger = screen.getByRole('button', { name: 'User menu' });
-		await user.click(trigger);
-
-		await waitFor(() => {
-			expect(screen.getByText('Settings')).toBeInTheDocument();
-		});
-	});
-
-	it('should not show Settings link for regular user', async () => {
-		const user = userEvent.setup();
-		render(<UserMenu user={mockUser} />);
 
 		const trigger = screen.getByRole('button', { name: 'User menu' });
 		await user.click(trigger);

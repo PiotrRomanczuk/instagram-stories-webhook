@@ -196,27 +196,10 @@ describe('ScheduleHeader - Action Buttons', () => {
 		onViewModeChange: vi.fn(),
 	};
 
-	it('should render Publish Now button when onPublishNow is provided', () => {
+	it('should not render Publish Now button in MVP mode', () => {
 		render(<ScheduleHeader {...defaultProps} onPublishNow={vi.fn()} />);
 
-		expect(screen.getByRole('button', { name: /Publish Now/i })).toBeInTheDocument();
-	});
-
-	it('should not render Publish Now button when onPublishNow is not provided', () => {
-		render(<ScheduleHeader {...defaultProps} />);
-
 		expect(screen.queryByRole('button', { name: /Publish Now/i })).not.toBeInTheDocument();
-	});
-
-	it('should call onPublishNow when clicking Publish Now', async () => {
-		const user = userEvent.setup();
-		const onPublishNow = vi.fn();
-
-		render(<ScheduleHeader {...defaultProps} onPublishNow={onPublishNow} />);
-
-		await user.click(screen.getByRole('button', { name: /Publish Now/i }));
-
-		expect(onPublishNow).toHaveBeenCalled();
 	});
 
 	it('should render New Schedule button when onNewSchedule is provided', () => {

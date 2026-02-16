@@ -19,6 +19,7 @@ import {
 	User,
 	AlertCircle,
 	XCircle,
+	ExternalLink,
 } from 'lucide-react';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -234,9 +235,16 @@ function StoryCard({ item }: { item: ContentItem }) {
 				</div>
 
 				{item.igMediaId && (
-					<code className="block text-[9px] bg-muted px-1.5 py-0.5 rounded font-mono text-muted-foreground truncate">
-						{item.igMediaId}
-					</code>
+					<a
+						href={`https://www.instagram.com/stories/www_hehe_pl/${item.igMediaId}/`}
+						target="_blank"
+						rel="noopener noreferrer"
+						className="flex items-center gap-1 text-[9px] bg-muted px-1.5 py-0.5 rounded font-mono text-primary hover:underline truncate"
+						title="View on Instagram (stories expire after 24h)"
+					>
+						<ExternalLink className="h-2.5 w-2.5 shrink-0" />
+						<span className="truncate">{item.igMediaId}</span>
+					</a>
 				)}
 			</div>
 		</div>

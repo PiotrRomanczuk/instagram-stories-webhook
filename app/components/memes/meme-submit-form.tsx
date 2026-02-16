@@ -71,17 +71,15 @@ export function MemeSubmitForm({ onSubmitted }: MemeSubmitFormProps) {
 		const file = e.target.files?.[0];
 		if (!file) return;
 
-		const isVideo = file.type.startsWith('video/');
 		const isImage = file.type.startsWith('image/');
 
-		if (!isVideo && !isImage) {
-			toast.error('Please upload an image or video file.');
+		// MVP: Images only — video upload re-enabled post-MVP
+		if (!isImage) {
+			toast.error('Please upload an image file (JPEG, PNG).');
 			return;
 		}
 
-		if (isImage) {
-			await mediaValidation.validateFile(file);
-		}
+		await mediaValidation.validateFile(file);
 
 		setUploading(true);
 		setUploadProgress(10);
@@ -95,7 +93,7 @@ export function MemeSubmitForm({ onSubmitted }: MemeSubmitFormProps) {
 			setUploadProgress(100);
 			setValue('mediaUrl', publicUrl);
 			setValue('storagePath', storagePath);
-			setMediaType(isVideo ? 'VIDEO' : 'IMAGE');
+			setMediaType('IMAGE');
 
 			await fetch('/api/uploads/pending', {
 				method: 'POST',
@@ -222,7 +220,7 @@ export function MemeSubmitForm({ onSubmitted }: MemeSubmitFormProps) {
 								ref={fileInputRef}
 								onChange={handleFileUpload}
 								className='hidden'
-								accept='image/*,video/mp4'
+								accept='image/*'
 							/>
 
 							{uploading ? (
@@ -241,7 +239,7 @@ export function MemeSubmitForm({ onSubmitted }: MemeSubmitFormProps) {
 										Drop your meme here or browse
 									</p>
 									<p className='text-xs text-slate-400 mt-2'>
-										MP4, JPEG, PNG - Up to 50MB
+										JPEG, PNG - Up to 50MB
 									</p>
 								</>
 							)}
