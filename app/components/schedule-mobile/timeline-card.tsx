@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { Clock, AlertCircle, TrendingUp, Video, ImageIcon } from 'lucide-react';
+import { Clock, AlertCircle, TrendingUp, Video, ImageIcon, Code } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ContentItem } from '@/lib/types/posts';
 import { TimelineCardActions } from './timeline-card-actions';
@@ -11,6 +11,7 @@ import { useMediaQuery } from '@/app/hooks/use-media-query';
 import { ContentEditModal } from '../content/content-edit-modal';
 import { ConfirmationDialog } from '../ui/confirmation-dialog';
 import { toast } from 'sonner';
+import { useSession } from 'next-auth/react';
 
 export type TimelineCardStatus = 'scheduled' | 'published' | 'failed' | 'processing';
 
@@ -56,6 +57,8 @@ export function TimelineCard({ post, item, onClick, onUpdate }: TimelineCardProp
 	const [isDeleting, setIsDeleting] = useState(false);
 
 	const isDesktop = useMediaQuery('(min-width: 1024px)');
+	const { data: session } = useSession();
+	const isDeveloper = session?.user?.role === 'developer';
 
 	const scheduledDate = new Date(post.scheduledTime);
 	const timeStr = scheduledDate.toLocaleTimeString('en-US', {
@@ -224,6 +227,14 @@ export function TimelineCard({ post, item, onClick, onUpdate }: TimelineCardProp
 				>
 					{post.caption || 'No caption'}
 				</p>
+
+				{/* Developer Info: Post ID */}
+				{isDeveloper && (
+					<div className="mt-1 flex items-center gap-1 text-[10px] text-slate-400">
+						<Code className="h-2.5 w-2.5" />
+						<span className="font-mono">{post.id.slice(0, 8)}...</span>
+					</div>
+				)}
 
 				{/* Engagement prediction */}
 				{post.engagement?.predicted && (

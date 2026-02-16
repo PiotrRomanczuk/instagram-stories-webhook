@@ -15,7 +15,9 @@ import {
 	Loader,
 	User,
 	Copy,
+	Code,
 } from 'lucide-react';
+import { useSession } from 'next-auth/react';
 import { ScheduledPostWithUser } from '@/lib/types';
 import { StatusBadge } from '../ui/status-badge';
 import { MediaModal } from '../ui/media-modal';
@@ -69,6 +71,9 @@ export function PostCard({
 	const [showInsights, setShowInsights] = useState(false);
 	const [isProcessing, setIsProcessing] = useState(false);
 	const [expandedError, setExpandedError] = useState(false);
+
+	const { data: session } = useSession();
+	const isDeveloper = session?.user?.role === 'developer';
 
 	// DnD Hooks
 	const {
@@ -341,6 +346,14 @@ export function PostCard({
 							className='text-xs'
 						/>
 					</div>
+
+					{/* Developer Info: Post ID */}
+					{isDeveloper && (
+						<div className='px-1 flex items-center gap-1 text-[9px] text-slate-400'>
+							<Code className='h-2.5 w-2.5' />
+							<span className='font-mono'>{post.id.slice(0, 8)}...</span>
+						</div>
+					)}
 
 					{/* Tags Preview */}
 					{post.userTags && post.userTags.length > 0 && (

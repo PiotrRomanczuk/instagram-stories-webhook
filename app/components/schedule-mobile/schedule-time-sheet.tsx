@@ -20,6 +20,7 @@ import {
 	SelectValue,
 } from '../ui/select';
 import { Label } from '../ui/label';
+import { TimePicker } from '../ui/time-picker';
 
 interface ScheduleTimeSheetProps {
 	item: ContentItem;
@@ -77,12 +78,10 @@ export function ScheduleTimeSheet({
 		return String(idx >= 0 ? idx : 0);
 	}, [selectedDate, dayOptions]);
 
-	// Format time for input type="time" (HH:MM)
-	const timeValue = useMemo(() => {
-		const h = String(selectedDate.getHours()).padStart(2, '0');
-		const m = String(selectedDate.getMinutes()).padStart(2, '0');
-		return `${h}:${m}`;
-	}, [selectedDate]);
+	// Handle time change from TimePicker
+	const handleTimePickerChange = (newDate: Date) => {
+		setSelectedDate(newDate);
+	};
 
 	const handleDayChange = (value: string) => {
 		const idx = parseInt(value, 10);
@@ -93,13 +92,6 @@ export function ScheduleTimeSheet({
 		setSelectedDate(newDate);
 	};
 
-	const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const [hours, minutes] = e.target.value.split(':').map(Number);
-		if (isNaN(hours) || isNaN(minutes)) return;
-		const newDate = new Date(selectedDate);
-		newDate.setHours(hours, minutes, 0, 0);
-		setSelectedDate(newDate);
-	};
 
 	const handleBestTime = (hours: number, minutes: number) => {
 		const newDate = new Date(selectedDate);
@@ -227,17 +219,17 @@ export function ScheduleTimeSheet({
 						</Select>
 					</div>
 
-					{/* Time Input */}
+					{/* Time Picker */}
 					<div className="space-y-1.5">
-						<Label className="text-xs text-gray-500 pl-0.5">
+						<Label className="text-xs text-gray-500 pl-0.5 flex items-center gap-1.5">
 							<Clock className="h-3.5 w-3.5" />
 							Time
 						</Label>
-						<input
-							type="time"
-							value={timeValue}
-							onChange={handleTimeChange}
-							className="w-full h-11 rounded-xl bg-gray-50 border border-gray-200 px-3 text-sm font-medium text-gray-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+						<TimePicker
+							value={selectedDate}
+							onChange={handleTimePickerChange}
+							use12Hour
+							className="w-full"
 						/>
 					</div>
 				</div>
