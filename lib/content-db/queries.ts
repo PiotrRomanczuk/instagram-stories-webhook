@@ -71,16 +71,17 @@ export async function getContentItems(
 
 		switch (sortBy) {
 			case 'oldest':
-				query = query.order('created_at', { ascending: true });
+				query = query.order('created_at', { ascending: true }).order('id', { ascending: true });
 				break;
 			case 'schedule-asc':
 				query = query
 					.order('scheduled_time', { ascending: true })
-					.order('created_at', { ascending: false });
+					.order('created_at', { ascending: false })
+					.order('id', { ascending: false });
 				break;
 			case 'newest':
 			default:
-				query = query.order('created_at', { ascending: false });
+				query = query.order('created_at', { ascending: false }).order('id', { ascending: false });
 		}
 
 		query = query.range(offset, offset + limit - 1);
@@ -139,6 +140,7 @@ export async function getReviewQueue(
 			.eq('source', 'submission')
 			.eq('submission_status', 'pending')
 			.order('created_at', { ascending: false })
+			.order('id', { ascending: false })
 			.range(offset, offset + limit - 1);
 
 		if (error) {
@@ -164,7 +166,8 @@ export async function getScheduledItems(
 			.from('content_items')
 			.select('*')
 			.in('publishing_status', ['scheduled', 'processing'])
-			.order('scheduled_time', { ascending: true });
+			.order('scheduled_time', { ascending: true })
+			.order('id', { ascending: true });
 
 		if (userId) {
 			query = query.eq('user_id', userId);

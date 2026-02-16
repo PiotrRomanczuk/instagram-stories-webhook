@@ -373,14 +373,13 @@ describe('content-db', () => {
 				},
 			];
 
+			const mockResult = { data: mockData, error: null };
 			const mockQuery = {
 				select: vi.fn().mockReturnThis(),
 				in: vi.fn().mockReturnThis(),
 				eq: vi.fn().mockReturnThis(),
-				order: vi.fn().mockResolvedValue({
-					data: mockData,
-					error: null,
-				}),
+				order: vi.fn().mockReturnThis(),
+				then: vi.fn((cb: any) => Promise.resolve(cb(mockResult))),
 			};
 
 			vi.mocked(supabaseAdmin.from).mockReturnValue(mockQuery as any);
