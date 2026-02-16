@@ -226,7 +226,7 @@ test.describe('CP-2: Content Submission Flow', () => {
 
 		// Step 2: Add caption
 		const captionField = page.locator('#caption');
-		await captionField.fill(`E2E Critical Path Test ${Date.now()}`);
+		await captionField.fill('E2E Critical Path Test ' + Date.now());
 
 		// Step 3: Submit
 		await submitButton.click();
@@ -243,8 +243,8 @@ test.describe('CP-2: Content Submission Flow', () => {
 		// Create content via API first (more reliable than UI for test setup)
 		const timestamp = Date.now();
 		const contentId = await createPendingContent(page, {
-			title: `E2E CP-2.7 Test ${timestamp}`,
-			caption: `Critical path verification ${timestamp}`,
+			title: 'E2E CP-2.7 Test ' + timestamp,
+			caption: 'Critical path verification ' + timestamp,
 		});
 		expect(contentId).toBeTruthy();
 
@@ -324,7 +324,7 @@ test.describe('CP-3: Admin Review and Approval', () => {
 	}) => {
 		// Seed pending content for review
 		await createPendingContent(page, {
-			title: `CP-3.3 Review Test ${Date.now()}`,
+			title: 'CP-3.3 Review Test ' + Date.now(),
 			caption: 'Content for review approval test',
 		});
 
@@ -376,7 +376,7 @@ test.describe('CP-3: Admin Review and Approval', () => {
 	}) => {
 		// Seed pending content
 		await createPendingContent(page, {
-			title: `CP-3.4 Reject Test ${Date.now()}`,
+			title: 'CP-3.4 Reject Test ' + Date.now(),
 			caption: 'Content for rejection test',
 		});
 
@@ -424,7 +424,7 @@ test.describe('CP-3: Admin Review and Approval', () => {
 
 	test('CP-3.5: keyboard shortcut A approves item', async ({ page }) => {
 		await createPendingContent(page, {
-			title: `CP-3.5 Keyboard Test ${Date.now()}`,
+			title: 'CP-3.5 Keyboard Test ' + Date.now(),
 			caption: 'Content for keyboard shortcut test',
 		});
 
@@ -629,14 +629,14 @@ test.describe('CP-4: Scheduled Publishing Flow', () => {
 			const mediaIdMatch = resultText.match(/Media ID: (\d+)/);
 			expect(mediaIdMatch).toBeTruthy();
 			console.log(
-				`Published image story, Media ID: ${mediaIdMatch?.[1]}`
+				'Published image story, Media ID: ' + (mediaIdMatch ? mediaIdMatch[1] : 'unknown')
 			);
 		} else {
 			const errorText = await page
 				.locator('text=Publish Failed')
 				.locator('..')
 				.innerText();
-			throw new Error(`Publishing failed: ${errorText}`);
+			throw new Error('Publishing failed: ' + errorText);
 		}
 	});
 
@@ -721,7 +721,7 @@ test.describe('CP-5: Posted Stories Verification', () => {
 				expect(story).toHaveProperty('id');
 				expect(story).toHaveProperty('media_type');
 				console.log(
-					`Found ${stories.length} recent stories, latest: ${story.id}`
+					'Found ' + stories.length + ' recent stories, latest: ' + story.id
 				);
 			}
 		});
@@ -814,7 +814,7 @@ test.describe('CP-5: Posted Stories Verification', () => {
 			expect(publishedStory).toBeDefined();
 			expect(publishedStory.media_type).toBe('IMAGE');
 			console.log(
-				`Story verified on Instagram: ${publishedMediaId}`
+				'Story verified on Instagram: ' + publishedMediaId
 			);
 		});
 	});
