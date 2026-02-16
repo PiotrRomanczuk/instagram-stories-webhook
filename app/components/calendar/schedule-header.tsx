@@ -8,6 +8,7 @@ import { ChevronLeft, ChevronRight, Search, Zap, Plus, Minus, LayoutList, Calend
 import { cn } from '@/lib/utils';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
+import { PublishingToggle } from '@/app/components/schedule/publishing-toggle';
 import { format, addWeeks, subWeeks, addDays, subDays, startOfWeek, endOfWeek, addMonths, subMonths, startOfMonth, endOfMonth } from 'date-fns';
 
 export type ViewMode = 'day' | 'week' | 'month';
@@ -194,6 +195,8 @@ export function ScheduleHeader({
 
 			{/* Right side: Search and actions */}
 			<div className="flex items-center gap-2 sm:gap-4">
+				<PublishingToggle />
+
 				{onSearchChange && (
 					<div className="relative hidden sm:block">
 						<Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
