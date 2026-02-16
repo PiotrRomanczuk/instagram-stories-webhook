@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { requireDeveloper } from '@/lib/auth-helpers';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
+import { getCurrentEnvironment } from '@/lib/content-db/environment';
 
 export async function GET(req: NextRequest) {
 	try {
@@ -13,10 +14,13 @@ export async function GET(req: NextRequest) {
 		const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 		const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
 
+		const env = getCurrentEnvironment();
+
 		// Get posts in queue (scheduled and scheduled_time <= now) from content_items
 		const { count: postsInQueue } = await supabaseAdmin
 			.from('content_items')
 			.select('id', { count: 'exact' })
+			.eq('environment', env)
 			.eq('publishing_status', 'scheduled')
 			.lte('scheduled_time', now.getTime());
 
@@ -24,12 +28,14 @@ export async function GET(req: NextRequest) {
 		const { count: postsProcessing } = await supabaseAdmin
 			.from('content_items')
 			.select('id', { count: 'exact' })
+			.eq('environment', env)
 			.eq('publishing_status', 'processing');
 
 		// Get posts stuck (processing > 5 minutes)
 		const { count: postsStuck } = await supabaseAdmin
 			.from('content_items')
 			.select('id', { count: 'exact' })
+			.eq('environment', env)
 			.eq('publishing_status', 'processing')
 			.lt('processing_started_at', fiveMinutesAgo.toISOString());
 
@@ -37,6 +43,7 @@ export async function GET(req: NextRequest) {
 		const { count: failedLast24h } = await supabaseAdmin
 			.from('content_items')
 			.select('id', { count: 'exact' })
+			.eq('environment', env)
 			.eq('publishing_status', 'failed')
 			.gte('updated_at', twentyFourHoursAgo.toISOString());
 
@@ -44,6 +51,7 @@ export async function GET(req: NextRequest) {
 		const { data: publishedLast24h } = await supabaseAdmin
 			.from('content_items')
 			.select('id, published_at', { count: 'exact' })
+			.eq('environment', env)
 			.eq('publishing_status', 'published')
 			.gte('published_at', twentyFourHoursAgo.toISOString());
 
@@ -51,6 +59,7 @@ export async function GET(req: NextRequest) {
 		const { data: recentPosts } = await supabaseAdmin
 			.from('content_items')
 			.select('publishing_status')
+			.eq('environment', env)
 			.in('publishing_status', ['published', 'failed'])
 			.gte('updated_at', twentyFourHoursAgo.toISOString());
 

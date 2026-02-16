@@ -10,6 +10,7 @@ import {
 	PublishingStatus,
 	mapContentItemRow,
 } from '../types/posts';
+import { getCurrentEnvironment } from './environment';
 
 export async function createContentItem(
 	userId: string,
@@ -43,6 +44,7 @@ export async function createContentItem(
 					created_at: new Date().toISOString(),
 					updated_at: new Date().toISOString(),
 					version: 1,
+					environment: getCurrentEnvironment(),
 				},
 			])
 			.select()

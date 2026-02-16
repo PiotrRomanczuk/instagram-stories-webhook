@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { requireDeveloper, getUserEmail } from '@/lib/auth-helpers';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
+import { getCurrentEnvironment } from '@/lib/content-db/environment';
 import { Logger } from '@/lib/utils/logger';
 import { releaseContentProcessingLock } from '@/lib/content-db';
 
@@ -19,6 +20,7 @@ export async function GET(req: NextRequest) {
 		const { data: stuckPosts, error } = await supabaseAdmin
 			.from('content_items')
 			.select('id, media_url, caption, scheduled_time, processing_started_at, error, retry_count')
+			.eq('environment', getCurrentEnvironment())
 			.eq('publishing_status', 'processing')
 			.lt('processing_started_at', fiveMinutesAgo)
 			.order('processing_started_at', { ascending: true });
@@ -81,6 +83,7 @@ export async function POST(req: NextRequest) {
 			.from('content_items')
 			.select('id, publishing_status')
 			.eq('id', postId)
+			.eq('environment', getCurrentEnvironment())
 			.single();
 
 		if (fetchError || !post) {

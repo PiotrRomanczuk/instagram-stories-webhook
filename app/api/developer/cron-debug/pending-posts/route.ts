@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { requireDeveloper } from '@/lib/auth-helpers';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
+import { getCurrentEnvironment } from '@/lib/content-db/environment';
 import { Logger } from '@/lib/utils/logger';
 
 const MODULE = 'cron-debug:pending-posts';
@@ -23,6 +24,7 @@ export async function GET(req: NextRequest) {
 			.select(
 				'id, media_url, caption, scheduled_time, created_at, publishing_status, title',
 			)
+			.eq('environment', getCurrentEnvironment())
 			.eq('publishing_status', 'scheduled')
 			.lte('scheduled_time', now)
 			.order('scheduled_time', { ascending: true })

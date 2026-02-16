@@ -10,6 +10,7 @@ import {
 	PublishingStatus,
 	mapContentItemRow,
 } from '../types/posts';
+import { getCurrentEnvironment } from './environment';
 
 interface GetContentOptions {
 	userId?: string;
@@ -50,7 +51,8 @@ export async function getContentItems(
 	try {
 		let query = supabaseAdmin
 			.from('content_items')
-			.select('*', { count: 'exact' });
+			.select('*', { count: 'exact' })
+			.eq('environment', getCurrentEnvironment());
 
 		if (!includeArchived) query = query.is('archived_at', null);
 
@@ -71,16 +73,17 @@ export async function getContentItems(
 
 		switch (sortBy) {
 			case 'oldest':
-				query = query.order('created_at', { ascending: true });
+				query = query.order('created_at', { ascending: true }).order('id', { ascending: true });
 				break;
 			case 'schedule-asc':
 				query = query
 					.order('scheduled_time', { ascending: true })
-					.order('created_at', { ascending: false });
+					.order('created_at', { ascending: false })
+					.order('id', { ascending: false });
 				break;
 			case 'newest':
 			default:
-				query = query.order('created_at', { ascending: false });
+				query = query.order('created_at', { ascending: false }).order('id', { ascending: false });
 		}
 
 		query = query.range(offset, offset + limit - 1);
@@ -110,6 +113,7 @@ export async function getContentItemById(
 			.from('content_items')
 			.select('*')
 			.eq('id', id)
+			.eq('environment', getCurrentEnvironment())
 			.single();
 
 		if (error) {
@@ -136,9 +140,11 @@ export async function getReviewQueue(
 		const { data, error, count } = await supabaseAdmin
 			.from('content_items')
 			.select('*', { count: 'exact' })
+			.eq('environment', getCurrentEnvironment())
 			.eq('source', 'submission')
 			.eq('submission_status', 'pending')
 			.order('created_at', { ascending: false })
+			.order('id', { ascending: false })
 			.range(offset, offset + limit - 1);
 
 		if (error) {
@@ -163,8 +169,10 @@ export async function getScheduledItems(
 		let query = supabaseAdmin
 			.from('content_items')
 			.select('*')
+			.eq('environment', getCurrentEnvironment())
 			.in('publishing_status', ['scheduled', 'processing'])
-			.order('scheduled_time', { ascending: true });
+			.order('scheduled_time', { ascending: true })
+			.order('id', { ascending: true });
 
 		if (userId) {
 			query = query.eq('user_id', userId);
@@ -191,6 +199,7 @@ export async function getContentItemForProcessing(
 		const { data, error } = await supabaseAdmin
 			.from('content_items')
 			.select('*')
+			.eq('environment', getCurrentEnvironment())
 			.eq('id', id)
 			.or('publishing_status.eq.scheduled,publishing_status.eq.processing')
 			.single();

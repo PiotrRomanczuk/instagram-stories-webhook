@@ -5,6 +5,7 @@
  */
 
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
+import { getCurrentEnvironment } from '@/lib/content-db/environment';
 
 export interface ConflictResult {
 	hasConflict: boolean;
@@ -99,6 +100,7 @@ async function checkContentItems(
 		let query = supabaseAdmin
 			.from('content_items')
 			.select('id, scheduled_time')
+			.eq('environment', getCurrentEnvironment())
 			.in('publishing_status', ['scheduled', 'processing'])
 			.gte('scheduled_time', minuteStart)
 			.lt('scheduled_time', minuteEnd);

@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { requireDeveloper, getUserEmail } from '@/lib/auth-helpers';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
+import { getCurrentEnvironment } from '@/lib/content-db/environment';
 import { Logger } from '@/lib/utils/logger';
 
 const MODULE = 'cron-debug:failed-posts';
@@ -19,6 +20,7 @@ export async function GET(req: NextRequest) {
 		const { data: failedPosts, error } = await supabaseAdmin
 			.from('content_items')
 			.select('id, media_url, caption, scheduled_time, error, retry_count, updated_at, publishing_status')
+			.eq('environment', getCurrentEnvironment())
 			.eq('publishing_status', 'failed')
 			.order('updated_at', { ascending: false })
 			.limit(limit);
@@ -78,6 +80,7 @@ export async function POST(req: NextRequest) {
 			.from('content_items')
 			.select('id, publishing_status')
 			.eq('id', postId)
+			.eq('environment', getCurrentEnvironment())
 			.single();
 
 		if (fetchError || !post) {
@@ -97,7 +100,8 @@ export async function POST(req: NextRequest) {
 				processing_started_at: null,
 				updated_at: new Date().toISOString(),
 			})
-			.eq('id', postId);
+			.eq('id', postId)
+			.eq('environment', getCurrentEnvironment());
 
 		if (updateError) {
 			Logger.error(MODULE, `Failed to retry post ${postId}`, updateError);

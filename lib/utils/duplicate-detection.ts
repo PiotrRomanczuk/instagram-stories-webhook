@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { supabaseAdmin } from '../config/supabase-admin';
+import { getCurrentEnvironment } from '../content-db/environment';
 import { Logger } from './logger';
 
 const MODULE = 'duplicate-detection';
@@ -48,6 +49,7 @@ export async function checkForRecentPublish(
         const { data, error } = await supabaseAdmin
             .from('content_items')
             .select('id, published_at')
+            .eq('environment', getCurrentEnvironment())
             .eq('content_hash', contentHash)
             .eq('user_id', userId)
             .eq('publishing_status', 'published')
@@ -89,6 +91,7 @@ export async function isMemeAlreadyScheduled(memeId: string): Promise<{
         const { data, error } = await supabaseAdmin
             .from('content_items')
             .select('id, publishing_status')
+            .eq('environment', getCurrentEnvironment())
             .eq('source_id', memeId)
             .in('publishing_status', ['scheduled', 'processing', 'published'])
             .limit(1);

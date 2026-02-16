@@ -21,6 +21,7 @@ describe('checkScheduleConflict', () => {
 		const builder: Record<string, ReturnType<typeof vi.fn>> = {};
 		const self = () => builder;
 		builder.select = vi.fn(self);
+		builder.eq = vi.fn(self);
 		builder.in = vi.fn(self);
 		builder.gte = vi.fn(self);
 		builder.lt = vi.fn(self);

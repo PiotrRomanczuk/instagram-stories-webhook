@@ -143,7 +143,7 @@ describe('process-videos', () => {
 			// Verify the query chain was called correctly
 			expect(mockFrom).toHaveBeenCalledWith('content_items');
 			expect(chain.select).toHaveBeenCalledWith(
-				'id, user_id, user_email, media_url, media_type, storage_path, dimensions, thumbnail_url, video_duration, video_codec, video_framerate, needs_processing, title, caption, user_tags, hashtags, source, submission_status, publishing_status, rejection_reason, reviewed_at, reviewed_by, scheduled_time, processing_started_at, published_at, ig_media_id, error, content_hash, idempotency_key, retry_count, archived_at, version, created_at, updated_at'
+				'id, user_id, user_email, media_url, media_type, storage_path, dimensions, thumbnail_url, video_duration, video_codec, video_framerate, needs_processing, title, caption, user_tags, hashtags, source, submission_status, publishing_status, rejection_reason, reviewed_at, reviewed_by, scheduled_time, processing_started_at, published_at, ig_media_id, error, content_hash, idempotency_key, retry_count, archived_at, environment, version, created_at, updated_at'
 			);
 			expect(chain.eq).toHaveBeenCalledWith('media_type', 'VIDEO');
 			expect(chain.eq).toHaveBeenCalledWith('needs_processing', true);
