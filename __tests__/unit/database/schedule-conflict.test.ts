@@ -168,7 +168,7 @@ describe('checkScheduleConflict', () => {
 		expect(ciBuilder.neq).toHaveBeenCalledWith('id', 'content_self');
 	});
 
-	it('should fail open on scheduled_posts query error', async () => {
+	it('should fail closed on scheduled_posts query error', async () => {
 		mockBothTables(
 			null,
 			[],
@@ -178,10 +178,10 @@ describe('checkScheduleConflict', () => {
 
 		const result = await checkScheduleConflict(1700000100000);
 
-		expect(result.hasConflict).toBe(false);
+		expect(result.hasConflict).toBe(true);
 	});
 
-	it('should fail open on content_items query error', async () => {
+	it('should fail closed on content_items query error', async () => {
 		mockBothTables(
 			[],
 			null,
@@ -191,17 +191,17 @@ describe('checkScheduleConflict', () => {
 
 		const result = await checkScheduleConflict(1700000100000);
 
-		expect(result.hasConflict).toBe(false);
+		expect(result.hasConflict).toBe(true);
 	});
 
-	it('should fail open if both queries throw exceptions', async () => {
+	it('should fail closed if both queries throw exceptions', async () => {
 		(supabaseAdmin.from as Mock).mockImplementation(() => {
 			throw new Error('Connection refused');
 		});
 
 		const result = await checkScheduleConflict(1700000100000);
 
-		expect(result.hasConflict).toBe(false);
+		expect(result.hasConflict).toBe(true);
 	});
 
 	it('should prioritize scheduled_posts conflict over content_items', async () => {

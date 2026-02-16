@@ -6,15 +6,18 @@ import {
 	ChevronLeft, ChevronRight, Clock, CheckCircle2,
 	AlertTriangle, RotateCcw, MoreHorizontal, AlertCircle,
 	Video, ImageIcon, Layers, ChevronDown, ChevronUp,
-	Calendar, Trash2, Loader2, RefreshCw,
+	Calendar, Trash2, Loader2, RefreshCw, Eye,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ContentItem } from '@/lib/types/posts';
 import {
 	format, startOfWeek, addDays, isSameDay, getHours, getMinutes,
+	formatDistanceToNow,
 } from 'date-fns';
 import { getFriendlyError } from '@/lib/utils/friendly-error';
 import { toast } from 'sonner';
+import { ScheduleTimeSheet } from './schedule-time-sheet';
+import { getNextAvailableSlot } from '@/lib/utils/schedule-time';
 
 interface MobileScheduleViewProps {
 	scheduledItems: ContentItem[];
@@ -89,6 +92,8 @@ export function MobileScheduleView({
 	const [expandedSlots, setExpandedSlots] = useState<Set<string>>(new Set());
 	// C6: Dropdown menu state
 	const [menuOpen, setMenuOpen] = useState<string | null>(null);
+	// Reschedule: direct time picker from 3-dot menu
+	const [rescheduleItem, setRescheduleItem] = useState<ContentItem | null>(null);
 	// V3: Day-switch animation
 	const [dayVisible, setDayVisible] = useState(true);
 	const [displayDate, setDisplayDate] = useState(currentDate);
@@ -166,6 +171,43 @@ export function MobileScheduleView({
 	}, [hourlyFreq, maxFreq]);
 
 	const failedCount = dayItems.filter(i => i.publishingStatus === 'failed').length;
+
+	// Overdue count for status filter chips
+	const overdueCount = dayItems.filter(i =>
+		i.publishingStatus === 'scheduled' && i.scheduledTime && i.scheduledTime < Date.now()
+	).length;
+
+	// Suggested time for reschedule picker
+	const suggestedTime = useMemo(() => {
+		const existingTimes = scheduledItems
+			.filter(i => i.scheduledTime)
+			.map(i => i.scheduledTime!);
+		return new Date(getNextAvailableSlot(existingTimes));
+	}, [scheduledItems]);
+
+	// Reschedule confirm handler
+	const handleRescheduleConfirm = useCallback(async (item: ContentItem, scheduledTime: Date) => {
+		setRescheduleItem(null);
+		try {
+			const response = await fetch(`/api/content/${item.id}`, {
+				method: 'PATCH',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					scheduledTime: scheduledTime.getTime(),
+					publishingStatus: 'scheduled',
+					version: item.version,
+				}),
+			});
+			if (!response.ok) {
+				const responseData = await response.json();
+				throw new Error(responseData.error || 'Failed to reschedule');
+			}
+			toast.success(`Rescheduled for ${format(scheduledTime, 'h:mm a')}`);
+			onRefresh?.();
+		} catch (err) {
+			toast.error(err instanceof Error ? err.message : 'Failed to reschedule');
+		}
+	}, [onRefresh]);
 
 	// Items by date for week dots
 	const itemsByDate = useMemo(() => {
@@ -342,7 +384,7 @@ export function MobileScheduleView({
 									: 'bg-gray-100 text-gray-500 hover:bg-gray-200'
 							)}
 						>
-							{label}{count > 0 && ` (${count})`}
+							{label}{count > 0 && ` (${count})`}{key === 'scheduled' && overdueCount > 0 && ` · ${overdueCount} overdue`}
 						</button>
 					);
 				})}
@@ -560,7 +602,7 @@ export function MobileScheduleView({
 									<p className="text-xs text-gray-500">{menuTime}</p>
 								</div>
 							</div>
-							{/* Actions - context-aware for failed vs scheduled */}
+							{/* Actions - context-aware for failed, published, and scheduled */}
 							<div className="px-5 pb-3 flex flex-col gap-2">
 								{menuItem.publishingStatus === 'failed' ? (
 									<>
@@ -580,10 +622,20 @@ export function MobileScheduleView({
 											onDone={() => { setMenuOpen(null); onRefresh?.(); }}
 										/>
 									</>
-								) : (
+								) : menuItem.publishingStatus === 'published' ? (
 									<>
 										<button
 											onClick={() => { setMenuOpen(null); onItemClick?.(menuItem); }}
+											className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-50 text-sm font-semibold text-gray-700 hover:bg-gray-100 transition active:scale-[0.98] min-h-[48px]"
+										>
+											<Eye className="h-5 w-5 text-emerald-500" />
+											View Details &amp; Insights
+										</button>
+									</>
+								) : (
+									<>
+										<button
+											onClick={() => { setMenuOpen(null); setRescheduleItem(menuItem); }}
 											className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-50 text-sm font-semibold text-gray-700 hover:bg-gray-100 transition active:scale-[0.98] min-h-[48px]"
 										>
 											<Clock className="h-5 w-5 text-blue-500" />
@@ -609,6 +661,17 @@ export function MobileScheduleView({
 					</div>
 				);
 			})()}
+
+			{/* Reschedule Time Picker */}
+			{rescheduleItem && (
+				<ScheduleTimeSheet
+					item={rescheduleItem}
+					initialDate={rescheduleItem.scheduledTime ? new Date(rescheduleItem.scheduledTime) : suggestedTime}
+					onConfirm={handleRescheduleConfirm}
+					onCancel={() => setRescheduleItem(null)}
+					existingScheduledTimes={scheduledItems.filter(i => i.scheduledTime && i.id !== rescheduleItem.id).map(i => i.scheduledTime!)}
+				/>
+			)}
 		</div>
 	);
 }
@@ -693,6 +756,7 @@ function TimelineCard({ item, onClick, onRefresh, menuOpen, onMenuToggle, onItem
 
 	const isFailed = item.publishingStatus === 'failed';
 	const isPublished = item.publishingStatus === 'published';
+	const isOverdue = item.publishingStatus === 'scheduled' && !!item.scheduledTime && item.scheduledTime < Date.now();
 	// B3: Consistent 12h time format
 	const time = item.scheduledTime ? format(new Date(item.scheduledTime), 'h:mm a') : '';
 
@@ -725,14 +789,17 @@ function TimelineCard({ item, onClick, onRefresh, menuOpen, onMenuToggle, onItem
 			className={cn(
 				// B1: max-w-full + overflow-hidden for horizontal containment
 				'max-w-full rounded-xl shadow-sm border p-2 flex items-center gap-2.5 overflow-hidden cursor-pointer transition active:scale-[0.98] relative',
-				// V2: Failed cards get red background
+				// V2: Failed cards get red background, overdue get amber
 				isFailed
 					? 'bg-red-50 border-red-200'
-					: 'bg-white border-gray-100'
+					: isOverdue
+						? 'bg-amber-50/50 border-amber-200'
+						: 'bg-white border-gray-100'
 			)}
 		>
-			{/* Red left stripe for failed */}
+			{/* Red left stripe for failed, amber for overdue */}
 			{isFailed && <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-500 rounded-l-xl" />}
+			{isOverdue && <div className="absolute left-0 top-0 bottom-0 w-1 bg-amber-500 rounded-l-xl" />}
 
 			{/* Responsive thumbnail: 64px on small, 80px on sm+ */}
 			<div className={cn(
@@ -788,16 +855,18 @@ function TimelineCard({ item, onClick, onRefresh, menuOpen, onMenuToggle, onItem
 						item.publishingStatus === 'published' && 'bg-emerald-50 text-emerald-600',
 						item.publishingStatus === 'failed' && 'bg-red-50 text-red-600',
 						item.publishingStatus === 'processing' && 'bg-amber-50 text-amber-600',
-						item.publishingStatus === 'scheduled' && 'bg-blue-50 text-blue-600',
+						isOverdue && 'bg-amber-50 text-amber-600',
+						item.publishingStatus === 'scheduled' && !isOverdue && 'bg-blue-50 text-blue-600',
 					)}>
 						<span className={cn(
 							'w-1.5 h-1.5 rounded-full',
 							item.publishingStatus === 'published' && 'bg-emerald-500',
 							item.publishingStatus === 'failed' && 'bg-red-500',
 							item.publishingStatus === 'processing' && 'bg-amber-500 animate-pulse',
-							item.publishingStatus === 'scheduled' && 'bg-blue-500',
+							isOverdue && 'bg-amber-500 animate-pulse',
+							item.publishingStatus === 'scheduled' && !isOverdue && 'bg-blue-500',
 						)} />
-						{item.publishingStatus}
+						{isOverdue ? 'Overdue' : item.publishingStatus}
 						{isFailed && item.retryCount !== undefined && item.retryCount > 0 && (
 							<span className="text-red-400">
 								\u00b7 {item.retryCount}x
@@ -814,12 +883,12 @@ function TimelineCard({ item, onClick, onRefresh, menuOpen, onMenuToggle, onItem
 					'text-[11px] truncate max-w-full',
 					isFailed ? 'text-red-500' : 'text-gray-400'
 				)}>
-					{isFailed ? friendlyError(item.error || 'Publishing failed') : (item.mediaType === 'VIDEO' ? 'Video story' : 'Image story')}
+					{isFailed ? friendlyError(item.error || 'Publishing failed') : isOverdue ? `Due ${formatDistanceToNow(new Date(item.scheduledTime!), { addSuffix: true })}` : (item.mediaType === 'VIDEO' ? 'Video story' : 'Image story')}
 				</p>
 			</div>
 
 			{/* Right action */}
-			<div className="shrink-0">
+			<div className="shrink-0 flex items-center">
 				{isPublished && <CheckCircle2 className="h-5 w-5 text-green-500" />}
 				{isFailed && (
 					<button
@@ -835,8 +904,8 @@ function TimelineCard({ item, onClick, onRefresh, menuOpen, onMenuToggle, onItem
 						)}
 					</button>
 				)}
-				{/* C6: MoreHorizontal button - show for scheduled AND failed */}
-				{!isPublished && (
+				{/* C6: MoreHorizontal button - show for all posts */}
+				{(
 					<button
 						onClick={(e) => {
 							e.stopPropagation();

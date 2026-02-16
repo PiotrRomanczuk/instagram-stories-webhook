@@ -407,6 +407,7 @@ export function MobileReadyToPost({ items, scheduledItems = [], onBack, onItemCl
 					initialDate={suggestedTime}
 					onConfirm={handleConfirmSchedule}
 					onCancel={() => setPendingScheduleItem(null)}
+					existingScheduledTimes={scheduledItems.filter(i => i.scheduledTime).map(i => i.scheduledTime!)}
 				/>
 			)}
 

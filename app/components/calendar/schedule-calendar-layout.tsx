@@ -5,7 +5,7 @@
  * Uses the standard app navbar and integrates with the main layout
  */
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
@@ -79,6 +79,9 @@ export function ScheduleCalendarLayout() {
 	// Modal state
 	const [previewItem, setPreviewItem] = useState<ContentItem | null>(null);
 	const [editItem, setEditItem] = useState<ContentItem | null>(null);
+
+	// Scroll position preservation for preview modal
+	const scrollPositionRef = useRef(0);
 
 	// Determine user role
 	const userRole = (session?.user as { role?: UserRole })?.role;
@@ -235,8 +238,24 @@ export function ScheduleCalendarLayout() {
 	);
 
 	const handleOpenPreview = useCallback((item: ContentItem) => {
+		const timeline = document.querySelector('[data-tour="schedule-timeline"]');
+		if (timeline) {
+			scrollPositionRef.current = timeline.scrollTop;
+		}
 		setPreviewItem(item);
 	}, []);
+
+	// Restore scroll position when preview modal closes
+	useEffect(() => {
+		if (previewItem === null && scrollPositionRef.current > 0) {
+			requestAnimationFrame(() => {
+				const timeline = document.querySelector('[data-tour="schedule-timeline"]');
+				if (timeline) {
+					timeline.scrollTop = scrollPositionRef.current;
+				}
+			});
+		}
+	}, [previewItem]);
 
 	const handlePublishNow = useCallback(() => {
 		router.push('/review');

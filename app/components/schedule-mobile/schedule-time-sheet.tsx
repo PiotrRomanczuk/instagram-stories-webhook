@@ -8,7 +8,7 @@
  */
 
 import { useState, useMemo } from 'react';
-import { Calendar, X, Sparkles, Clock } from 'lucide-react';
+import { Calendar, X, Sparkles, Clock, AlertTriangle } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { ContentItem } from '@/lib/types/posts';
@@ -26,6 +26,7 @@ interface ScheduleTimeSheetProps {
 	initialDate: Date;
 	onConfirm: (item: ContentItem, scheduledTime: Date) => void;
 	onCancel: () => void;
+	existingScheduledTimes?: number[];
 }
 
 const BEST_TIMES = [
@@ -39,6 +40,7 @@ export function ScheduleTimeSheet({
 	initialDate,
 	onConfirm,
 	onCancel,
+	existingScheduledTimes = [],
 }: ScheduleTimeSheetProps) {
 	const [selectedDate, setSelectedDate] = useState<Date>(initialDate);
 
@@ -115,6 +117,16 @@ export function ScheduleTimeSheet({
 	});
 
 	const formattedDay = dayOptions[parseInt(selectedDayValue, 10)]?.label || 'Today';
+
+	// Check if selected time conflicts with an existing scheduled post
+	const hasConflict = useMemo(() => {
+		if (existingScheduledTimes.length === 0) return false;
+		const selectedMinute = selectedDate.getTime() - (selectedDate.getTime() % 60000);
+		return existingScheduledTimes.some(t => {
+			const existingMinute = t - (t % 60000);
+			return existingMinute === selectedMinute;
+		});
+	}, [selectedDate, existingScheduledTimes]);
 
 	return (
 		<div className="fixed inset-0 z-[100]">
@@ -235,6 +247,14 @@ export function ScheduleTimeSheet({
 					<p className="text-xs text-center text-gray-400">
 						Posting {formattedDay} at {formattedTime}
 					</p>
+					{hasConflict && (
+						<div className="flex items-center justify-center gap-1.5 mt-1.5">
+							<AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
+							<p className="text-xs font-semibold text-amber-600">
+								Another post is scheduled at this time
+							</p>
+						</div>
+					)}
 				</div>
 
 				{/* Action buttons - pb-24 clears the bottom nav bar */}
