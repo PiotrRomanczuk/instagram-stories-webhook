@@ -24,7 +24,9 @@
     "setup:ai-analysis": "tsx scripts/setup-ai-analysis.ts",
     "setup:test-media": "bash __tests__/e2e/fixtures/setup-media.sh",
     "release": "bash scripts/release.sh",
-    "release:dry": "bash scripts/release.sh --dry-run"
+    "release:dry": "bash scripts/release.sh --dry-run",
+    "prepare": "husky",
+    "pre-commit": "npm run lint && npx tsc && npm run test"
   },
   "dependencies": {
     "@auth/supabase-adapter": "^1.11.1",
@@ -106,6 +108,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
     "happy-dom": "^20.3.4",
+    "husky": "^9.1.7",
     "jsdom": "^27.0.1",
     "msw": "^2.12.7",
     "nodemon": "^3.1.11",
@@ -116,5 +119,8 @@
     "vercel": "^50.17.1",
     "vite-tsconfig-paths": "^6.0.4",
     "vitest": "^4.0.17"
+  },
+  "overrides": {
+    "undici": ">=6.23.0"
   }
 }
