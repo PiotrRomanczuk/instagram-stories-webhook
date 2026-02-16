@@ -6,13 +6,12 @@ import { requireDeveloper } from '@/lib/auth-helpers';
 import { forceProcessPost } from '@/lib/scheduler/process-service';
 import { Logger } from '@/lib/utils/logger';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
+import { getCurrentEnvironment } from '@/lib/content-db/environment';
 
 const requestSchema = z.object({
 	postIds: z.array(z.string().min(1)).min(1, 'At least one post ID is required'),
 	bypassDuplicates: z.boolean().default(true),
 });
-
-type ForceProcessRequest = z.infer<typeof requestSchema>;
 
 interface ProcessResult {
 	postId: string;
@@ -64,8 +63,9 @@ export async function POST(request: NextRequest) {
 
 		// Verify all posts exist before processing
 		const { data: posts, error: fetchError } = await supabaseAdmin
-			.from('scheduled_posts')
-			.select('id, status')
+			.from('content_items')
+			.select('id, publishing_status')
+			.eq('environment', getCurrentEnvironment())
 			.in('id', postIds);
 
 		if (fetchError) {
