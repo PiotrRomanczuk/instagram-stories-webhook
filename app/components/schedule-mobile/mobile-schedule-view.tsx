@@ -18,6 +18,7 @@ import { getFriendlyError } from '@/lib/utils/friendly-error';
 import { toast } from 'sonner';
 import { ScheduleTimeSheet } from './schedule-time-sheet';
 import { getNextAvailableSlot } from '@/lib/utils/schedule-time';
+import { PublishingToggle } from '@/app/components/schedule/publishing-toggle';
 
 interface MobileScheduleViewProps {
 	scheduledItems: ContentItem[];
@@ -257,6 +258,7 @@ export function MobileScheduleView({
 						</button>
 					</div>
 					<div className="flex items-center gap-2">
+						<PublishingToggle />
 						{!isSameDay(currentDate, new Date()) && (
 							<button
 								onClick={() => onDateChange(new Date())}

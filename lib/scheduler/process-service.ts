@@ -56,6 +56,26 @@ export async function processScheduledPosts(
 	);
 
 	try {
+		// Publishing toggle: check if publishing is enabled (cron path only)
+		if (!postId) {
+			const { data: setting } = await supabaseAdmin
+				.from('system_settings')
+				.select('value')
+				.eq('key', 'publishing_enabled')
+				.single();
+
+			if (setting?.value !== 'true') {
+				await Logger.info(MODULE, '⏸️ Publishing is paused (toggle off). Skipping.');
+				return {
+					message: 'Publishing paused',
+					processed: 0,
+					succeeded: 0,
+					failed: 0,
+					results: [],
+				};
+			}
+		}
+
 		// Maintenance: recover stale locks and expire overdue posts (cron path only)
 		if (!postId) {
 			const recoveredLocks = await recoverStaleLocks();

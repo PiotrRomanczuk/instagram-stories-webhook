@@ -23,6 +23,7 @@ vi.mock('@/lib/config/supabase-admin', () => ({
 			eq: vi.fn().mockReturnThis(),
 			gt: vi.fn().mockReturnThis(),
 			lte: vi.fn().mockReturnThis(),
+			single: vi.fn().mockResolvedValue({ data: { value: 'true' }, error: null }),
 		}),
 	},
 }));
