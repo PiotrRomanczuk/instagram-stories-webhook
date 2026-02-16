@@ -60,14 +60,13 @@ export async function createContentItem(
 	}
 }
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export async function updateContentItem(
 	id: string,
 	input: UpdateContentInput,
 	currentVersion: number,
 ): Promise<ContentItem | null> {
 	try {
-		const updates: Record<string, any> = {
+		const updates: Record<string, unknown> = {
 			version: currentVersion + 1,
 			updated_at: new Date().toISOString(),
 		};
@@ -115,7 +114,7 @@ export async function updateSubmissionStatus(
 	reviewedBy?: string,
 ): Promise<ContentItem | null> {
 	try {
-		const updates: Record<string, any> = {
+		const updates: Record<string, unknown> = {
 			submission_status: status,
 			reviewed_at: new Date().toISOString(),
 			reviewed_by: reviewedBy,
@@ -156,7 +155,7 @@ export async function updatePublishingStatus(
 	},
 ): Promise<ContentItem | null> {
 	try {
-		const updatePayload: Record<string, any> = {
+		const updatePayload: Record<string, unknown> = {
 			publishing_status: status,
 			updated_at: new Date().toISOString(),
 		};
@@ -184,7 +183,6 @@ export async function updatePublishingStatus(
 		return null;
 	}
 }
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
 export async function updateScheduledTime(
 	id: string,

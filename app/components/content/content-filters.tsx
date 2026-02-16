@@ -217,7 +217,7 @@ export function ContentFilters({
 									Source
 								</label>
 								<select
-									onChange={(e) => onSourceChange(e.target.value as string)}
+									onChange={(e) => onSourceChange(e.target.value as ContentSource | 'all')}
 									className="w-full px-3 py-2 border border-gray-300 rounded hover:border-gray-400 focus:outline-none focus:border-indigo-500"
 								>
 									<option value="all">All sources</option>
@@ -234,7 +234,7 @@ export function ContentFilters({
 									Submission Status
 								</label>
 								<select
-									onChange={(e) => onSubmissionStatusChange(e.target.value as string)}
+									onChange={(e) => onSubmissionStatusChange(e.target.value as SubmissionStatus | 'all')}
 									className="w-full px-3 py-2 border border-gray-300 rounded hover:border-gray-400 focus:outline-none focus:border-indigo-500"
 								>
 									<option value="all">All statuses</option>
@@ -252,7 +252,7 @@ export function ContentFilters({
 									Publishing Status
 								</label>
 								<select
-									onChange={(e) => onPublishingStatusChange(e.target.value as string)}
+									onChange={(e) => onPublishingStatusChange(e.target.value as PublishingStatus | 'all')}
 									className="w-full px-3 py-2 border border-gray-300 rounded hover:border-gray-400 focus:outline-none focus:border-indigo-500"
 								>
 									<option value="all">All statuses</option>
@@ -271,7 +271,7 @@ export function ContentFilters({
 								Sort by
 							</label>
 							<select
-								onChange={(e) => onSortChange(e.target.value as string)}
+								onChange={(e) => onSortChange(e.target.value as 'newest' | 'oldest' | 'schedule-asc')}
 								className="w-full px-3 py-2 border border-gray-300 rounded hover:border-gray-400 focus:outline-none focus:border-indigo-500"
 							>
 								<option value="newest">Newest first</option>

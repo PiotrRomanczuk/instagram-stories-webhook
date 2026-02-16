@@ -171,7 +171,7 @@ export async function markContentFailed(
 	retryCount?: number,
 ): Promise<boolean> {
 	try {
-		const updates: Record<string, any> = {
+		const updates: Record<string, unknown> = {
 			error: errorMessage,
 			updated_at: new Date().toISOString(),
 		};

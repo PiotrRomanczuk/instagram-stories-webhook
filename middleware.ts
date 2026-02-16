@@ -32,8 +32,7 @@ export default function middleware(req: NextRequest) {
 	if (isPublicPage) {
 		return intlMiddleware(req);
 	} else {
-		// Cast to any because withAuth typing is intricate
-		return (authMiddleware as any)(req);
+		return (authMiddleware as unknown as typeof intlMiddleware)(req);
 	}
 }
 

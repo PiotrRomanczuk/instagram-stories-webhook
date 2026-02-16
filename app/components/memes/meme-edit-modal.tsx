@@ -53,7 +53,7 @@ export function MemeEditModal({
 			if (editTitle) updates.title = editTitle;
 			if (editCaption) updates.caption = editCaption;
 
-			updates.version = (meme as any).version || 1;
+			updates.version = meme.version || 1;
 
 			onSave(updates);
 			onClose();

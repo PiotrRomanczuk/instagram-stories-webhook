@@ -25,7 +25,7 @@ function mapContentItemToPost(item: ContentItem): TimelineCardPost {
 		url: item.mediaUrl,
 		caption: item.caption || '',
 		scheduledTime: item.scheduledTime || Date.now(),
-		publishingStatus: item.publishingStatus as any,
+		publishingStatus: item.publishingStatus as TimelineCardStatus,
 		mediaType: item.mediaType,
 	};
 }

@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { getMemeSubmission } from '@/lib/memes-db';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
+import type { MemeSubmission } from '@/lib/types/posts';
 import { requireAuth, getUserId } from '@/lib/auth-helpers';
 import { Logger } from '@/lib/utils/logger';
 
@@ -58,7 +59,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 		}
 
 		// Optimistic locking: increment version
-		const currentVersion = (meme as any).version || 1;
+		const currentVersion = (meme as MemeSubmission).version || 1;
 		const newVersion = currentVersion + 1;
 		updates.version = newVersion;
 

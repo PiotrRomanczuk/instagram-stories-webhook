@@ -4,8 +4,6 @@
 
 import { supabaseAdmin } from '../config/supabase-admin';
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 export async function bulkUpdateSubmissionStatus(
 	ids: string[],
 	status: 'approved' | 'rejected',
@@ -13,7 +11,7 @@ export async function bulkUpdateSubmissionStatus(
 	reviewedBy?: string,
 ): Promise<number> {
 	try {
-		const updates: Record<string, any> = {
+		const updates: Record<string, unknown> = {
 			submission_status: status,
 			reviewed_at: new Date().toISOString(),
 			reviewed_by: reviewedBy,
