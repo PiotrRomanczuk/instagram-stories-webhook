@@ -94,6 +94,9 @@ export interface ContentItem {
 	// Archive
 	archivedAt?: string;
 
+	// Environment
+	environment?: string;
+
 	// Timestamps
 	createdAt: string;
 	updatedAt: string;
@@ -168,6 +171,7 @@ export interface ContentItemRow {
 	idempotency_key?: string;
 	retry_count?: number;
 	archived_at?: string;
+	environment?: string;
 	version: number;
 	created_at: string;
 	updated_at: string;
@@ -368,6 +372,7 @@ export function mapContentItemRow(row: ContentItemRow): ContentItem {
 		idempotencyKey: row.idempotency_key,
 		retryCount: row.retry_count,
 		archivedAt: row.archived_at,
+		environment: row.environment,
 		version: row.version,
 		createdAt: row.created_at,
 		updatedAt: row.updated_at,

@@ -3,6 +3,7 @@
  */
 
 import { supabaseAdmin } from '../config/supabase-admin';
+import { getCurrentEnvironment } from './environment';
 
 export async function bulkUpdateSubmissionStatus(
 	ids: string[],
@@ -25,6 +26,7 @@ export async function bulkUpdateSubmissionStatus(
 		const { error, count } = await supabaseAdmin
 			.from('content_items')
 			.update(updates)
+			.eq('environment', getCurrentEnvironment())
 			.in('id', ids)
 			.eq('source', 'submission');
 
@@ -53,7 +55,8 @@ export async function reorderScheduledItems(
 					scheduled_time: item.scheduledTime,
 					updated_at: new Date().toISOString(),
 				})
-				.eq('id', item.id);
+				.eq('id', item.id)
+				.eq('environment', getCurrentEnvironment());
 
 			if (error) {
 				console.error(`Error reordering item ${item.id}:`, error);

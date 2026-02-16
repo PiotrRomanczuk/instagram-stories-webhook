@@ -10,6 +10,7 @@ import { authOptions } from '@/lib/auth';
 import { getUserRole } from '@/lib/auth-helpers';
 import { getContentItemById } from '@/lib/content-db';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
+import { getCurrentEnvironment } from '@/lib/content-db/environment';
 import { rateLimiter } from '@/lib/middleware/rate-limit';
 
 const API_RATE_LIMIT = { limit: 30, windowMs: 60 * 1000 };
@@ -54,7 +55,8 @@ export async function POST(
 				processing_started_at: null,
 				updated_at: new Date().toISOString(),
 			})
-			.eq('id', id);
+			.eq('id', id)
+			.eq('environment', getCurrentEnvironment());
 
 		if (updateError) {
 			console.error('Error retrying content item:', updateError);

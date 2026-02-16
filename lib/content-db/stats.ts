@@ -3,6 +3,7 @@
  */
 
 import { supabaseAdmin } from '../config/supabase-admin';
+import { getCurrentEnvironment } from './environment';
 
 export async function archiveContentItem(id: string): Promise<boolean> {
 	try {
@@ -33,6 +34,7 @@ export async function getOverdueCount(): Promise<number> {
 		const { count, error } = await supabaseAdmin
 			.from('content_items')
 			.select('*', { count: 'exact', head: true })
+			.eq('environment', getCurrentEnvironment())
 			.eq('publishing_status', 'scheduled')
 			.lt('scheduled_time', now);
 
@@ -60,41 +62,50 @@ export async function getContentStats(): Promise<{
 }> {
 	try {
 		const now = Date.now();
+		const env = getCurrentEnvironment();
 		const queries = [
 			supabaseAdmin
 				.from('content_items')
 				.select('*', { count: 'exact', head: true })
+				.eq('environment', env)
 				.eq('source', 'submission'),
 			supabaseAdmin
 				.from('content_items')
 				.select('*', { count: 'exact', head: true })
+				.eq('environment', env)
 				.eq('source', 'submission')
 				.eq('submission_status', 'pending'),
 			supabaseAdmin
 				.from('content_items')
 				.select('*', { count: 'exact', head: true })
+				.eq('environment', env)
 				.eq('source', 'submission')
 				.eq('submission_status', 'approved'),
 			supabaseAdmin
 				.from('content_items')
 				.select('*', { count: 'exact', head: true })
+				.eq('environment', env)
 				.eq('source', 'submission')
 				.eq('submission_status', 'rejected'),
 			supabaseAdmin
 				.from('content_items')
 				.select('*', { count: 'exact', head: true })
+				.eq('environment', env)
 				.eq('publishing_status', 'scheduled'),
 			supabaseAdmin
 				.from('content_items')
 				.select('*', { count: 'exact', head: true })
+				.eq('environment', env)
 				.eq('publishing_status', 'published'),
 			supabaseAdmin
 				.from('content_items')
 				.select('*', { count: 'exact', head: true })
+				.eq('environment', env)
 				.eq('publishing_status', 'failed'),
 			supabaseAdmin
 				.from('content_items')
 				.select('*', { count: 'exact', head: true })
+				.eq('environment', env)
 				.eq('publishing_status', 'scheduled')
 				.lt('scheduled_time', now),
 		];

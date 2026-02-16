@@ -8,6 +8,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { getUserRole, getUserId } from '@/lib/auth-helpers';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
+import { getCurrentEnvironment } from '@/lib/content-db/environment';
 import { rateLimiter } from '@/lib/middleware/rate-limit';
 
 const API_RATE_LIMIT = { limit: 20, windowMs: 60 * 1000 };
@@ -108,6 +109,7 @@ export async function POST(req: NextRequest) {
 					updated_at: new Date().toISOString(),
 				})
 				.eq('id', item.id)
+				.eq('environment', getCurrentEnvironment())
 				.eq('publishing_status', 'scheduled'); // Only update scheduled posts
 
 			if (error) {

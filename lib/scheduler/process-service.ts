@@ -2,6 +2,7 @@ import { publishMedia } from '@/lib/instagram';
 import { processAndUploadStoryImage } from '@/lib/media/story-processor';
 import { processAndUploadStoryVideo } from '@/lib/media/video-processor';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
+import { getCurrentEnvironment } from '@/lib/content-db/environment';
 import { Logger } from '@/lib/utils/logger';
 import {
 	generateContentHash,
@@ -215,6 +216,7 @@ export async function processScheduledPosts(
 			const { count: futureCount } = await supabaseAdmin
 				.from('content_items')
 				.select('id', { count: 'exact', head: true })
+				.eq('environment', getCurrentEnvironment())
 				.eq('publishing_status', 'scheduled')
 				.gt('scheduled_time', now)
 				.lte('scheduled_time', oneDayFromNow);

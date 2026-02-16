@@ -4,6 +4,7 @@
 
 import { supabaseAdmin } from '../config/supabase-admin';
 import { ContentItem, mapContentItemRow } from '../types/posts';
+import { getCurrentEnvironment } from './environment';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -13,6 +14,7 @@ export async function getPendingContentItems(maxItems: number = 25): Promise<Con
 		const { data, error } = await supabaseAdmin
 			.from('content_items')
 			.select('*')
+			.eq('environment', getCurrentEnvironment())
 			.eq('publishing_status', 'scheduled')
 			.lte('scheduled_time', now)
 			.order('scheduled_time', { ascending: true })

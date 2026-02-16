@@ -373,14 +373,13 @@ describe('content-db', () => {
 				},
 			];
 
+			const mockResult = { data: mockData, error: null };
 			const mockQuery = {
 				select: vi.fn().mockReturnThis(),
 				in: vi.fn().mockReturnThis(),
 				eq: vi.fn().mockReturnThis(),
-				order: vi.fn().mockResolvedValue({
-					data: mockData,
-					error: null,
-				}),
+				order: vi.fn().mockReturnThis(),
+				then: vi.fn((cb: any) => Promise.resolve(cb(mockResult))),
 			};
 
 			vi.mocked(supabaseAdmin.from).mockReturnValue(mockQuery as any);
@@ -589,16 +588,15 @@ describe('content-db', () => {
 	});
 
 	describe('bulkUpdateSubmissionStatus', () => {
-		
+
 
 		it('should bulk approve submissions', async () => {
+			const mockResult = { error: null, count: 3 };
 			const mockQuery = {
 				update: vi.fn().mockReturnThis(),
+				eq: vi.fn().mockReturnThis(),
 				in: vi.fn().mockReturnThis(),
-				eq: vi.fn().mockResolvedValue({
-					error: null,
-					count: 3,
-				}),
+				then: vi.fn((cb: any) => Promise.resolve(cb(mockResult))),
 			};
 
 			vi.mocked(supabaseAdmin.from).mockReturnValue(mockQuery as any);
@@ -616,13 +614,12 @@ describe('content-db', () => {
 		});
 
 		it('should bulk reject submissions with reason', async () => {
+			const mockResult = { error: null, count: 2 };
 			const mockQuery = {
 				update: vi.fn().mockReturnThis(),
+				eq: vi.fn().mockReturnThis(),
 				in: vi.fn().mockReturnThis(),
-				eq: vi.fn().mockResolvedValue({
-					error: null,
-					count: 2,
-				}),
+				then: vi.fn((cb: any) => Promise.resolve(cb(mockResult))),
 			};
 
 			vi.mocked(supabaseAdmin.from).mockReturnValue(mockQuery as any);
@@ -640,13 +637,12 @@ describe('content-db', () => {
 		});
 
 		it('should handle errors and return 0', async () => {
+			const mockResult = { error: new Error('DB error'), count: null };
 			const mockQuery = {
 				update: vi.fn().mockReturnThis(),
+				eq: vi.fn().mockReturnThis(),
 				in: vi.fn().mockReturnThis(),
-				eq: vi.fn().mockResolvedValue({
-					error: new Error('DB error'),
-					count: null,
-				}),
+				then: vi.fn((cb: any) => Promise.resolve(cb(mockResult))),
 			};
 
 			vi.mocked(supabaseAdmin.from).mockReturnValue(mockQuery as any);
@@ -658,6 +654,7 @@ describe('content-db', () => {
 		it('should handle exceptions', async () => {
 			const mockQuery = {
 				update: vi.fn().mockReturnThis(),
+				eq: vi.fn().mockReturnThis(),
 				in: vi.fn().mockRejectedValue(new Error('Network error')),
 			};
 
@@ -1271,6 +1268,7 @@ describe('content-db', () => {
 		it('should handle different sort options', async () => {
 			const mockQuery = {
 				select: vi.fn().mockReturnThis(),
+				eq: vi.fn().mockReturnThis(),
 				is: vi.fn().mockReturnThis(),
 				order: vi.fn().mockReturnThis(),
 				range: vi.fn().mockResolvedValue({
