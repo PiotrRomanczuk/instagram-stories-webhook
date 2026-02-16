@@ -23,9 +23,11 @@ import {
 	getContentItemForProcessing,
 	recoverStaleLocks,
 	expireOverdueContent,
+} from '@/lib/content-db';
+import {
 	MAX_RETRY_COUNT,
 	RETRY_BACKOFF_MS,
-} from '@/lib/content-db';
+} from '@/lib/content-db/processing';
 import { parseCronConfig } from '@/lib/validations/cron.schema';
 import { checkPublishingQuota } from '@/lib/scheduler/quota-gate';
 import { generateCronRunId, recordQuotaSnapshot } from '@/lib/scheduler/quota-history';
@@ -356,7 +358,6 @@ export async function processScheduledPosts(
 				// so we do NOT call releaseContentProcessingLock first (that would create a
 				// race window where another cron run picks up the item between the two calls).
 				const retryCount = (item.retryCount || 0) + 1;
-				
 
 				await markContentFailed(
 					item.id,

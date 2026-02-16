@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TimelineHeader } from './timeline-header';
 import { TimelineNavigation } from './timeline-navigation';
-import { TimelineCard, TimelineCardPost } from './timeline-card';
+import { TimelineCard, TimelineCardPost, type TimelineCardStatus } from './timeline-card';
 import { TimelineEmptyState } from './timeline-empty-state';
 import { ConnectionStatus } from './connection-status';
 import type { FilterType } from './timeline-filters';
