@@ -137,9 +137,9 @@ describe('Navbar', () => {
 		expect(screen.getByText('Schedule')).toBeInTheDocument();
 	});
 
-	it('should show notification bell when authenticated', () => {
+	it('should not show notification bell in MVP mode', () => {
 		render(<Navbar />);
-		expect(screen.getByTestId('notification-bell')).toBeInTheDocument();
+		expect(screen.queryByTestId('notification-bell')).not.toBeInTheDocument();
 	});
 
 	it('should show user menu when authenticated', () => {
@@ -186,8 +186,8 @@ describe('Navbar', () => {
 		expect(desktopNav).toBeInTheDocument();
 	});
 
-	it('should have language toggle button', () => {
+	it('should not have language toggle button in MVP mode', () => {
 		render(<Navbar />);
-		expect(screen.getByRole('button', { name: 'Toggle language' })).toBeInTheDocument();
+		expect(screen.queryByRole('button', { name: 'Toggle language' })).not.toBeInTheDocument();
 	});
 });

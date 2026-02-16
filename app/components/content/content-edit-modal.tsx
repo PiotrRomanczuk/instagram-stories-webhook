@@ -281,18 +281,7 @@ export function ContentEditModal({
 								Cancel
 							</button>
 							<div className='flex-1 flex flex-col sm:flex-row gap-3'>
-								{(item.source !== 'submission' ||
-									item.submissionStatus === 'approved') && (
-									<button
-										onClick={handlePublishNow}
-										disabled={isSaving}
-										className='flex-1 px-6 py-4 bg-emerald-500 text-white rounded-2xl hover:bg-emerald-600 active:scale-[0.98] transition-all font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-200/50'
-									>
-										{isSaving && <Loader2 className='h-4 w-4 animate-spin' />}
-										<Send className='h-4 w-4' />
-										Publish Now
-									</button>
-								)}
+								{/* MVP: Instant publish hidden — scheduling only */}
 								<button
 									onClick={handleSchedule}
 									disabled={isSaving}

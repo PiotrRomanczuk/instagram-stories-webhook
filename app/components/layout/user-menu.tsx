@@ -1,7 +1,7 @@
 'use client';
 
 import { signOut } from 'next-auth/react';
-import { User, LogOut, Settings, Instagram, Users } from 'lucide-react';
+import { LogOut, Instagram, Users } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/app/components/ui/avatar';
 import {
 	DropdownMenu,
@@ -88,14 +88,7 @@ export function UserMenu({ user }: UserMenuProps) {
 						</Link>
 					</DropdownMenuItem>
 				)}
-				{user.role === 'developer' && (
-					<DropdownMenuItem asChild>
-						<Link href="/settings" className="cursor-pointer">
-							<Settings className="mr-2 h-4 w-4" />
-							<span>Settings</span>
-						</Link>
-					</DropdownMenuItem>
-				)}
+				{/* MVP: Settings page hidden — re-enable post-MVP */}
 				<DropdownMenuSeparator />
 				<DropdownMenuItem
 					className="cursor-pointer text-destructive focus:text-destructive"
