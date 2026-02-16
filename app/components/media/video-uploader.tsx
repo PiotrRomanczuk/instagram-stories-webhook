@@ -54,7 +54,7 @@ export function VideoUploader({
 	className,
 	disabled,
 	maxSize = 100,
-	autoProcess = false,
+	autoProcess = true,
 	showRequirements = true,
 }: VideoUploaderProps) {
 	const [isDragging, setIsDragging] = useState(false);
