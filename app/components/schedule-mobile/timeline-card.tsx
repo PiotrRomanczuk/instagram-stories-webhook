@@ -12,6 +12,8 @@ import { ContentEditModal } from '../content/content-edit-modal';
 import { ConfirmationDialog } from '../ui/confirmation-dialog';
 import { toast } from 'sonner';
 import { useSession } from 'next-auth/react';
+import { Session } from 'next-auth';
+import { getUserRole } from '@/lib/auth-helpers';
 
 export type TimelineCardStatus = 'scheduled' | 'published' | 'failed' | 'processing';
 
@@ -58,7 +60,7 @@ export function TimelineCard({ post, item, onClick, onUpdate }: TimelineCardProp
 
 	const isDesktop = useMediaQuery('(min-width: 1024px)');
 	const { data: session } = useSession();
-	const isDeveloper = session?.user?.role === 'developer';
+	const isDeveloper = session ? getUserRole(session as Session) === 'developer' : false;
 
 	const scheduledDate = new Date(post.scheduledTime);
 	const timeStr = scheduledDate.toLocaleTimeString('en-US', {
