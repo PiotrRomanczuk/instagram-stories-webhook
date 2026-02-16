@@ -82,7 +82,7 @@ export function BottomNav() {
 							key={tab.href}
 							href={tab.href}
 							className={cn(
-								'flex flex-col items-center gap-0.5 px-3 py-1 transition-colors',
+								'relative flex flex-col items-center gap-0.5 px-3 py-1 transition-colors',
 								active
 									? 'text-[#2b6cee]'
 									: 'text-gray-400'

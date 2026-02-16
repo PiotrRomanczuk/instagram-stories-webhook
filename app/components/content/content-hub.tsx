@@ -196,7 +196,7 @@ export function ContentHub({ initialTab = 'all' }: ContentHubProps) {
 	);
 
 	// Determine user role
-	const userRole = (session?.user as any)?.role as UserRole | undefined;
+	const userRole = session?.user?.role as UserRole | undefined;
 	const isAdmin = userRole === 'admin' || userRole === 'developer';
 
 	// Get items from response (moved up for use in handlers)

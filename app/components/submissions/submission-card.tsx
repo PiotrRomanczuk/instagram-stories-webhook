@@ -123,7 +123,7 @@ export function SubmissionCard({
 					// Published items: show view
 					<button
 						onClick={handleView}
-						className="size-10 rounded-full bg-white text-black flex items-center justify-center hover:bg-[var(--sf-primary)] hover:text-white transition-all transform hover:scale-110"
+						className="size-11 rounded-full bg-white text-black flex items-center justify-center hover:bg-[var(--sf-primary)] hover:text-white transition-all transform hover:scale-110"
 						aria-label="View"
 					>
 						<Eye className="h-5 w-5" />
@@ -133,7 +133,7 @@ export function SubmissionCard({
 					<>
 						<button
 							onClick={handleView}
-							className="size-10 rounded-full bg-white text-black flex items-center justify-center hover:bg-[var(--sf-primary)] hover:text-white transition-all transform hover:scale-110"
+							className="size-11 rounded-full bg-white text-black flex items-center justify-center hover:bg-[var(--sf-primary)] hover:text-white transition-all transform hover:scale-110"
 							aria-label="View"
 						>
 							<Eye className="h-5 w-5" />
@@ -141,7 +141,7 @@ export function SubmissionCard({
 						{canEdit && onEdit && (
 							<button
 								onClick={() => onEdit(submission)}
-								className="size-10 rounded-full bg-white text-black flex items-center justify-center hover:bg-[var(--sf-primary)] hover:text-white transition-all transform hover:scale-110"
+								className="size-11 rounded-full bg-white text-black flex items-center justify-center hover:bg-[var(--sf-primary)] hover:text-white transition-all transform hover:scale-110"
 								aria-label="Edit"
 							>
 								<Edit className="h-5 w-5" />
@@ -150,7 +150,7 @@ export function SubmissionCard({
 						{onDelete && (
 							<button
 								onClick={() => onDelete(submission)}
-								className="size-10 rounded-full bg-white text-black flex items-center justify-center hover:bg-red-500 hover:text-white transition-all transform hover:scale-110"
+								className="size-11 rounded-full bg-white text-black flex items-center justify-center hover:bg-red-500 hover:text-white transition-all transform hover:scale-110"
 								aria-label="Delete"
 							>
 								<Trash2 className="h-5 w-5" />

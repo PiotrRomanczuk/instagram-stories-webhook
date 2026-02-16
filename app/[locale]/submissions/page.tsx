@@ -118,7 +118,7 @@ export default function SubmissionsPage() {
 				{/* Page Header */}
 				<div className="flex flex-wrap justify-between items-end gap-3 mb-8">
 					<div className="flex flex-col gap-2">
-						<h1 className="text-gray-900 text-4xl font-black leading-tight tracking-[-0.033em]">
+						<h1 className="text-gray-900 text-2xl sm:text-4xl font-black leading-tight tracking-[-0.033em]">
 							My Submissions
 						</h1>
 						<p className="text-gray-500 text-base font-normal leading-normal">
@@ -149,13 +149,13 @@ export default function SubmissionsPage() {
 
 				{/* Tab Filters */}
 				<div className="relative mb-6 border-b border-gray-200">
-					<div className="flex gap-8 px-2 overflow-x-auto no-scrollbar">
+					<div className="flex gap-4 sm:gap-8 px-2 overflow-x-auto no-scrollbar">
 						{TABS.map((tab) => (
 							<button
 								key={tab.value}
 								onClick={() => setFilter(tab.value)}
 								className={cn(
-									'flex flex-col items-center justify-center pb-3 pt-2 transition-colors whitespace-nowrap',
+									'flex flex-col items-center justify-center min-h-[44px] pb-3 pt-2 transition-colors whitespace-nowrap',
 									'border-b-2',
 									filter === tab.value
 										? 'border-[#2b6cee] text-gray-900'
