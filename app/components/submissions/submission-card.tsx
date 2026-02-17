@@ -53,7 +53,10 @@ export function SubmissionCard({
 	const isPublished = status === 'published';
 	const canEdit = submission.submissionStatus === 'pending';
 	const isVideo = submission.mediaType === 'VIDEO';
-	const thumbnailSrc = isVideo && submission.thumbnailUrl ? submission.thumbnailUrl : submission.mediaUrl;
+	// For videos, require thumbnailUrl - don't fall back to mediaUrl (video files don't render in <img>)
+	const thumbnailSrc = isVideo
+		? (submission.thumbnailUrl || null)
+		: submission.mediaUrl;
 
 	// Format the time text based on status
 	const getTimeText = () => {
@@ -87,7 +90,7 @@ export function SubmissionCard({
 			)}
 		>
 			{/* Background Image */}
-			{!imageError && hasValidUrl ? (
+			{!imageError && hasValidUrl && thumbnailSrc ? (
 				<>
 					<img
 						src={thumbnailSrc}
@@ -106,7 +109,7 @@ export function SubmissionCard({
 			) : (
 				<div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gray-100 text-gray-500">
 					<ImageOff className="h-12 w-12 opacity-50" />
-					<span className="text-xs">Image unavailable</span>
+					<span className="text-xs">{isVideo ? 'Video thumbnail unavailable' : 'Image unavailable'}</span>
 				</div>
 			)}
 

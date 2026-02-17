@@ -59,7 +59,10 @@ export function ScheduleCalendarItem({
 }: ScheduleCalendarItemProps) {
 	const [imageError, setImageError] = useState(false);
 	const isVideo = item.mediaType === 'VIDEO';
-	const thumbnailSrc = isVideo && item.thumbnailUrl ? item.thumbnailUrl : item.mediaUrl;
+	// For videos, require thumbnailUrl - don't fall back to mediaUrl
+	const thumbnailSrc = isVideo
+		? (item.thumbnailUrl || null)
+		: item.mediaUrl;
 
 	const { attributes, listeners, setNodeRef, transform, isDragging } =
 		useDraggable({
@@ -111,7 +114,7 @@ export function ScheduleCalendarItem({
 			>
 				{/* Thumbnail */}
 				<div className="relative aspect-square h-full flex-shrink-0 overflow-hidden rounded">
-					{!imageError ? (
+					{!imageError && thumbnailSrc ? (
 						<>
 							<div
 								className="absolute inset-0 bg-cover bg-center"
@@ -185,7 +188,7 @@ export function ScheduleCalendarItem({
 			)}
 		>
 			{/* Background Image */}
-			{!imageError ? (
+			{!imageError && thumbnailSrc ? (
 				<div
 					className="absolute inset-0 bg-cover bg-center"
 					style={{ backgroundImage: `url(${thumbnailSrc})` }}

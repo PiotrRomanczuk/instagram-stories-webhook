@@ -99,7 +99,10 @@ export function ReviewList({
 					<TableBody>
 						{items.map((item) => {
 							const isItemVideo = item.mediaType === 'VIDEO';
-							const thumbSrc = isItemVideo && item.thumbnailUrl ? item.thumbnailUrl : item.mediaUrl;
+							// For videos, require thumbnailUrl - don't fall back to mediaUrl
+							const thumbSrc = isItemVideo
+								? (item.thumbnailUrl || null)
+								: item.mediaUrl;
 							return (
 							<TableRow key={item.id}>
 								<TableCell>
@@ -114,22 +117,30 @@ export function ReviewList({
 										onClick={() => setPreviewItem(item)}
 										className="relative h-14 w-14 overflow-hidden rounded-md border hover:opacity-80 transition-opacity"
 									>
-										<Image
-											src={thumbSrc}
-											alt={item.title || 'Submission'}
-											fill
-											className="object-cover"
-											sizes="56px"
-											unoptimized
-										/>
-										{isItemVideo && (
-											<div className="absolute inset-0 flex items-center justify-center">
-												<Play className="h-4 w-4 text-white drop-shadow-md" fill="white" />
+										{thumbSrc ? (
+											<>
+												<Image
+													src={thumbSrc}
+													alt={item.title || 'Submission'}
+													fill
+													className="object-cover"
+													sizes="56px"
+													unoptimized
+												/>
+												{isItemVideo && (
+													<div className="absolute inset-0 flex items-center justify-center">
+														<Play className="h-4 w-4 text-white drop-shadow-md" fill="white" />
+													</div>
+												)}
+												<div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 hover:opacity-100 transition-opacity">
+													<Eye className="h-4 w-4 text-white" />
+												</div>
+											</>
+										) : (
+											<div className="flex h-full w-full items-center justify-center bg-gray-100">
+												<Play className="h-6 w-6 text-gray-400" />
 											</div>
 										)}
-										<div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 hover:opacity-100 transition-opacity">
-											<Eye className="h-4 w-4 text-white" />
-										</div>
 									</button>
 								</TableCell>
 								<TableCell className="max-w-xs">
