@@ -1,203 +1,286 @@
+/**
+ * API Keys Database Queries
+ *
+ * Database operations for API key management.
+ * All operations use supabaseAdmin for service-level access.
+ */
+
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
+import { Logger } from '@/lib/utils/logger';
+import type { ApiKey } from '@/lib/auth/api-keys';
 
-export interface ApiKey {
+const MODULE = 'db:api-keys';
+
+/**
+ * Database representation of API key (snake_case from Postgres)
+ */
+interface ApiKeyRow {
   id: string;
-  userId: string;
-  keyHash: string;
-  keyPrefix: string;
-  name?: string;
+  user_id: string;
+  key_hash: string;
+  key_prefix: string;
+  name: string | null;
   scopes: string[];
-  createdAt: string;
-  expiresAt?: string;
-  lastUsedAt?: string;
-  revokedAt?: string;
-}
-
-interface CreateApiKeyParams {
-  userId: string;
-  keyHash: string;
-  keyPrefix: string;
-  name?: string;
-  scopes: string[];
-  expiresAt?: string;
+  last_used_at: string | null;
+  expires_at: string | null;
+  created_at: string;
+  revoked_at: string | null;
 }
 
 /**
- * Create a new API key record in the database
+ * Convert database row to ApiKey interface
  */
-export async function createApiKey(params: CreateApiKeyParams): Promise<ApiKey | null> {
-  const { data, error } = await supabaseAdmin
-    .from('api_keys')
-    .insert({
-      user_id: params.userId,
-      key_hash: params.keyHash,
-      key_prefix: params.keyPrefix,
-      name: params.name,
-      scopes: params.scopes,
-      expires_at: params.expiresAt,
-    })
-    .select()
-    .single();
-
-  if (error || !data) {
-    console.error('Failed to create API key:', error);
-    return null;
-  }
-
+function rowToApiKey(row: ApiKeyRow): ApiKey {
   return {
-    id: data.id,
-    userId: data.user_id,
-    keyHash: data.key_hash,
-    keyPrefix: data.key_prefix,
-    name: data.name,
-    scopes: data.scopes,
-    createdAt: data.created_at,
-    expiresAt: data.expires_at,
-    lastUsedAt: data.last_used_at,
-    revokedAt: data.revoked_at,
-  };
-}
-
-/**
- * Get all API keys for a user
- */
-export async function getUserApiKeys(userId: string): Promise<ApiKey[]> {
-  const { data, error } = await supabaseAdmin
-    .from('api_keys')
-    .select('*')
-    .eq('user_id', userId)
-    .is('revoked_at', null)
-    .order('created_at', { ascending: false });
-
-  if (error || !data) {
-    console.error('Failed to get user API keys:', error);
-    return [];
-  }
-
-  return data.map((row: {
-    id: string;
-    user_id: string;
-    key_hash: string;
-    key_prefix: string;
-    name?: string;
-    scopes: string[];
-    created_at: string;
-    expires_at?: string;
-    last_used_at?: string;
-    revoked_at?: string;
-  }) => ({
     id: row.id,
     userId: row.user_id,
     keyHash: row.key_hash,
     keyPrefix: row.key_prefix,
-    name: row.name,
+    name: row.name ?? undefined,
     scopes: row.scopes,
+    lastUsedAt: row.last_used_at ?? undefined,
+    expiresAt: row.expires_at ?? undefined,
     createdAt: row.created_at,
-    expiresAt: row.expires_at,
-    lastUsedAt: row.last_used_at,
-    revokedAt: row.revoked_at,
-  }));
-}
-
-/**
- * Alias for getUserApiKeys (for compatibility)
- */
-export const listUserApiKeys = getUserApiKeys;
-
-/**
- * Get a single API key by ID
- */
-export async function getApiKeyById(keyId: string, userId: string): Promise<ApiKey | null> {
-  const { data, error } = await supabaseAdmin
-    .from('api_keys')
-    .select('*')
-    .eq('id', keyId)
-    .eq('user_id', userId)
-    .single();
-
-  if (error || !data) {
-    console.error('Failed to get API key:', error);
-    return null;
-  }
-
-  return {
-    id: data.id,
-    userId: data.user_id,
-    keyHash: data.key_hash,
-    keyPrefix: data.key_prefix,
-    name: data.name,
-    scopes: data.scopes,
-    createdAt: data.created_at,
-    expiresAt: data.expires_at,
-    lastUsedAt: data.last_used_at,
-    revokedAt: data.revoked_at,
+    revokedAt: row.revoked_at ?? undefined,
   };
 }
 
 /**
- * Update an API key
+ * Create a new API key
+ *
+ * @param data - API key data
+ * @returns Created API key or null if error
+ *
+ * @example
+ * ```ts
+ * const { key, hash, prefix } = await generateApiKey();
+ * const apiKey = await createApiKey({
+ *   userId: 'user_123',
+ *   keyHash: hash,
+ *   keyPrefix: prefix,
+ *   name: 'iPhone Widget',
+ *   scopes: ['cron:read', 'logs:read'],
+ *   expiresAt: '2027-01-01T00:00:00Z'
+ * });
+ * ```
  */
-export async function updateApiKey(
-  keyId: string,
-  userId: string,
-  updates: Partial<Pick<ApiKey, 'name' | 'scopes' | 'expiresAt'>>
-): Promise<ApiKey | null> {
-  const dbUpdates: Record<string, unknown> = {};
-  if (updates.name !== undefined) dbUpdates.name = updates.name;
-  if (updates.scopes !== undefined) dbUpdates.scopes = updates.scopes;
-  if (updates.expiresAt !== undefined) dbUpdates.expires_at = updates.expiresAt;
+export async function createApiKey(data: {
+  userId: string;
+  keyHash: string;
+  keyPrefix: string;
+  name?: string;
+  scopes?: string[];
+  expiresAt?: string;
+}): Promise<ApiKey | null> {
+  try {
+    Logger.info(MODULE, `Creating API key for user ${data.userId}`, {
+      name: data.name,
+      scopes: data.scopes,
+    });
 
-  const { data, error } = await supabaseAdmin
-    .from('api_keys')
-    .update(dbUpdates)
-    .eq('id', keyId)
-    .eq('user_id', userId)
-    .select()
-    .single();
+    const { data: result, error } = await supabaseAdmin
+      .from('api_keys')
+      .insert({
+        user_id: data.userId,
+        key_hash: data.keyHash,
+        key_prefix: data.keyPrefix,
+        name: data.name ?? null,
+        scopes: data.scopes ?? ['cron:read', 'logs:read'],
+        expires_at: data.expiresAt ?? null,
+      })
+      .select()
+      .single();
 
-  if (error || !data) {
-    console.error('Failed to update API key:', error);
+    if (error) {
+      Logger.error(MODULE, `Error creating API key: ${error.message}`, error);
+      return null;
+    }
+
+    Logger.info(MODULE, `API key created successfully: ${result.id}`);
+    return rowToApiKey(result);
+  } catch (error) {
+    Logger.error(MODULE, 'Unexpected error creating API key', error);
     return null;
   }
+}
 
-  return {
-    id: data.id,
-    userId: data.user_id,
-    keyHash: data.key_hash,
-    keyPrefix: data.key_prefix,
-    name: data.name,
-    scopes: data.scopes,
-    createdAt: data.created_at,
-    expiresAt: data.expires_at,
-    lastUsedAt: data.last_used_at,
-    revokedAt: data.revoked_at,
-  };
+/**
+ * Get API key by key prefix
+ *
+ * Used for fast lookup during authentication.
+ * Returns all active keys with matching prefix (to handle hash comparison).
+ *
+ * @param keyPrefix - First 16 characters of the key (e.g., "sk_live_abc123de")
+ * @returns Array of matching API keys (may be empty)
+ */
+export async function getApiKeysByPrefix(keyPrefix: string): Promise<ApiKey[]> {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('api_keys')
+      .select('*')
+      .eq('key_prefix', keyPrefix)
+      .is('revoked_at', null);
+
+    if (error) {
+      Logger.error(MODULE, `Error fetching API keys by prefix: ${error.message}`, error);
+      return [];
+    }
+
+    return data ? data.map(rowToApiKey) : [];
+  } catch (error) {
+    Logger.error(MODULE, 'Unexpected error fetching API keys by prefix', error);
+    return [];
+  }
+}
+
+/**
+ * Update last used timestamp for an API key
+ *
+ * Called asynchronously after successful authentication (don't await).
+ *
+ * @param keyId - API key ID
+ */
+export async function updateLastUsedAt(keyId: string): Promise<void> {
+  try {
+    const { error } = await supabaseAdmin
+      .from('api_keys')
+      .update({ last_used_at: new Date().toISOString() })
+      .eq('id', keyId);
+
+    if (error) {
+      Logger.warn(MODULE, `Error updating last_used_at for key ${keyId}: ${error.message}`);
+    }
+  } catch (error) {
+    Logger.warn(MODULE, 'Unexpected error updating last_used_at', error);
+  }
 }
 
 /**
  * Revoke an API key
+ *
+ * Sets revoked_at timestamp, making the key unusable.
+ *
+ * @param keyId - API key ID
+ * @returns True if revoked successfully
  */
-export async function revokeApiKey(keyId: string, userId: string): Promise<boolean> {
-  const { error } = await supabaseAdmin
-    .from('api_keys')
-    .update({ revoked_at: new Date().toISOString() })
-    .eq('id', keyId)
-    .eq('user_id', userId);
+export async function revokeApiKey(keyId: string): Promise<boolean> {
+  try {
+    Logger.info(MODULE, `Revoking API key: ${keyId}`);
 
-  if (error) {
-    console.error('Failed to revoke API key:', error);
+    const { error } = await supabaseAdmin
+      .from('api_keys')
+      .update({ revoked_at: new Date().toISOString() })
+      .eq('id', keyId);
+
+    if (error) {
+      Logger.error(MODULE, `Error revoking API key: ${error.message}`, error);
+      return false;
+    }
+
+    Logger.info(MODULE, `API key revoked successfully: ${keyId}`);
+    return true;
+  } catch (error) {
+    Logger.error(MODULE, 'Unexpected error revoking API key', error);
     return false;
   }
-
-  return true;
 }
 
 /**
- * Update API key last used timestamp
+ * List all active API keys for a user
+ *
+ * Returns only non-revoked keys, ordered by creation date (newest first).
+ *
+ * @param userId - User ID
+ * @returns Array of API keys
  */
-export async function updateApiKeyUsage(keyId: string): Promise<void> {
-  await supabaseAdmin
-    .from('api_keys')
-    .update({ last_used_at: new Date().toISOString() })
-    .eq('id', keyId);
+export async function listUserApiKeys(userId: string): Promise<ApiKey[]> {
+  try {
+    Logger.debug(MODULE, `Fetching API keys for user ${userId}`);
+
+    const { data, error } = await supabaseAdmin
+      .from('api_keys')
+      .select('*')
+      .eq('user_id', userId)
+      .is('revoked_at', null)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      Logger.error(MODULE, `Error fetching user API keys: ${error.message}`, error);
+      return [];
+    }
+
+    return data ? data.map(rowToApiKey) : [];
+  } catch (error) {
+    Logger.error(MODULE, 'Unexpected error fetching user API keys', error);
+    return [];
+  }
+}
+
+/**
+ * Get a specific API key by ID
+ *
+ * @param keyId - API key ID
+ * @returns API key or null if not found
+ */
+export async function getApiKeyById(keyId: string): Promise<ApiKey | null> {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('api_keys')
+      .select('*')
+      .eq('id', keyId)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null;
+      }
+      Logger.error(MODULE, `Error fetching API key by ID: ${error.message}`, error);
+      return null;
+    }
+
+    return rowToApiKey(data);
+  } catch (error) {
+    Logger.error(MODULE, 'Unexpected error fetching API key by ID', error);
+    return null;
+  }
+}
+
+/**
+ * Update API key metadata (name, scopes)
+ *
+ * Cannot update key_hash or key_prefix (security).
+ *
+ * @param keyId - API key ID
+ * @param updates - Fields to update
+ * @returns True if updated successfully
+ */
+export async function updateApiKey(
+  keyId: string,
+  updates: {
+    name?: string;
+    scopes?: string[];
+  }
+): Promise<boolean> {
+  try {
+    Logger.info(MODULE, `Updating API key: ${keyId}`, updates);
+
+    const { error } = await supabaseAdmin
+      .from('api_keys')
+      .update({
+        name: updates.name,
+        scopes: updates.scopes,
+      })
+      .eq('id', keyId);
+
+    if (error) {
+      Logger.error(MODULE, `Error updating API key: ${error.message}`, error);
+      return false;
+    }
+
+    Logger.info(MODULE, `API key updated successfully: ${keyId}`);
+    return true;
+  } catch (error) {
+    Logger.error(MODULE, 'Unexpected error updating API key', error);
+    return false;
+  }
 }
