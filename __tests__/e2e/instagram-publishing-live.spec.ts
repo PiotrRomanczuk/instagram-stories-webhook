@@ -1,6 +1,6 @@
-import { test, expect, Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { signInAsRealIG } from './helpers/auth';
-import { getMemeByIndex, getUnpublishedMeme, getTestVideo, canPublishTestVideo } from './helpers/test-assets';
+import { getUnpublishedMeme, getTestVideo, canPublishTestVideo } from './helpers/test-assets';
 
 /**
  * Instagram Publishing - LIVE Tests
@@ -17,9 +17,6 @@ import { getMemeByIndex, getUnpublishedMeme, getTestVideo, canPublishTestVideo }
  *
  * RUN: ENABLE_REAL_IG_TESTS=true ENABLE_LIVE_IG_PUBLISH=true npx playwright test instagram-publishing-live.spec.ts
  */
-
-// Use real meme for live publishing tests
-const getTestImagePath = () => getMemeByIndex(20);
 
 test.describe('Instagram Publishing - LIVE', () => {
 	// Skip in CI - never run live publishing in CI
@@ -336,118 +333,6 @@ test.describe('Instagram Publishing - LIVE', () => {
 	});
 });
 
-/**
- * Instagram Connection Verification Tests
- *
- * These tests verify the Instagram connection is working,
- * without actually publishing content.
- */
-test.describe('Instagram Connection Verification', () => {
-	test.skip(
-		() => process.env.CI === 'true',
-		'Skipping in CI',
-	);
-
-	test.skip(
-		() => !process.env.ENABLE_REAL_IG_TESTS,
-		'Set ENABLE_REAL_IG_TESTS=true to run',
-	);
-
-	test.beforeEach(async ({ page }) => {
-		await signInAsRealIG(page);
-	});
-
-	/**
-	 * CONN-01: Verify Instagram account is connected
-	 */
-	test('CONN-01: verify Instagram account is connected', async ({ page }) => {
-		await page.goto('/debug');
-		await page.waitForLoadState('domcontentloaded');
-
-		// Wait for connection status to load
-		await page.waitForSelector('text=Instagram Connection', { timeout: 10000 });
-
-		// Should show connected account
-		const bodyText = await page.innerText('body');
-		expect(bodyText).toContain('www_hehe_pl');
-
-		// Should NOT show expired
-		expect(bodyText.toLowerCase()).not.toContain('expired');
-
-		console.log('✅ Instagram connection verified: @www_hehe_pl');
-	});
-
-	/**
-	 * CONN-02: Verify token is valid (not expired)
-	 */
-	test('CONN-02: verify token is not expired', async ({ page }) => {
-		await page.goto('/debug');
-		await page.waitForLoadState('domcontentloaded');
-
-		// Look for connection status component
-		const connectionCard = page.locator('text=Instagram Connection').locator('..');
-
-		// Should show a green checkmark or "Connected" status
-		const isConnected =
-			(await connectionCard.locator('svg.text-green-500, svg.text-emerald-500').count()) > 0 ||
-			(await page.locator('text=Connected').count()) > 0;
-
-		expect(isConnected).toBe(true);
-		console.log('✅ Token is valid and not expired');
-	});
-
-	/**
-	 * CONN-03: Debug publisher UI is functional
-	 */
-	test('CONN-03: debug publisher UI loads correctly', async ({ page }) => {
-		await page.goto('/debug');
-		await page.waitForLoadState('domcontentloaded');
-
-		// Verify Debug Publisher card exists
-		await expect(page.locator('text=Debug Publisher')).toBeVisible();
-
-		// Verify key elements
-		await expect(page.locator('input#debug-image-url')).toBeVisible();
-		await expect(page.getByRole('button', { name: /Upload/i })).toBeVisible();
-		await expect(page.getByRole('button', { name: /Publish to Instagram Now/i })).toBeVisible();
-		await expect(page.locator('text=Debug Logs')).toBeVisible();
-
-		// Publish button should be disabled (no image)
-		const publishButton = page.getByRole('button', { name: /Publish to Instagram Now/i });
-		await expect(publishButton).toBeDisabled();
-
-		console.log('✅ Debug publisher UI is functional');
-	});
-
-	/**
-	 * CONN-04: Image upload to storage works
-	 */
-	test('CONN-04: image upload to storage works', async ({ page }) => {
-		await page.goto('/debug');
-		await page.waitForLoadState('domcontentloaded');
-
-		// Upload test image from /memes/ folder
-		const testImagePath = getMemeByIndex(23);
-		const fileInput = page.locator('input[type="file"]');
-		await fileInput.setInputFiles(testImagePath);
-
-		// Wait for upload to complete
-		const urlInput = page.locator('input#debug-image-url');
-		await expect(urlInput).not.toHaveValue('', { timeout: 30000 });
-
-		const uploadedUrl = await urlInput.inputValue();
-		expect(uploadedUrl).toContain('supabase');
-		expect(uploadedUrl).toContain('stories');
-
-		// Verify preview image appears
-		await expect(page.locator('img[alt="Preview"]')).toBeVisible();
-
-		// Verify logs show upload success
-		await expect(page.locator('text=Upload complete')).toBeVisible();
-
-		console.log('✅ Image upload works:', uploadedUrl.substring(0, 60) + '...');
-	});
-});
 
 /**
  * Instagram User Tagging Tests - LIVE

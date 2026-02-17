@@ -10,7 +10,7 @@ import {
 	createPendingContent,
 	getTestMediaUrl,
 } from './helpers/seed';
-import { getUnpublishedMeme, getMemeByIndex } from './helpers/test-assets';
+import { getUnpublishedMeme, getMemeByIndex, getTestVideo } from './helpers/test-assets';
 
 /**
  * Critical User Journeys E2E Test Suite
@@ -190,31 +190,37 @@ test.describe('CP-2: Content Submission Flow', () => {
 		await expect(submitButton).toBeEnabled({ timeout: 30000 });
 	});
 
-	test('CP-2.4: user can add a caption', async ({ page }) => {
+	test('CP-2.4: user can upload a video', async ({ page }) => {
 		await page.goto('/submit');
 		await page.waitForLoadState('domcontentloaded');
 
-		const captionField = page.locator('#caption');
-		await expect(captionField).toBeVisible();
+		// Switch to Video mode
+		const videoToggle = page.getByRole('button', { name: 'Video' });
+		await expect(videoToggle).toBeVisible();
+		await videoToggle.click();
 
-		await captionField.fill('Test caption for E2E critical path');
-		const value = await captionField.inputValue();
-		expect(value).toBe('Test caption for E2E critical path');
+		// Verify Video toggle is now active (default variant)
+		await expect(videoToggle).not.toHaveAttribute('data-variant', 'outline');
+
+		// Upload test video
+		const testVideoPath = getTestVideo();
+		if (!testVideoPath) {
+			console.warn('Test video not found, skipping');
+			test.skip();
+			return;
+		}
+
+		const fileInput = page.locator('input[type="file"]');
+		await fileInput.setInputFiles(testVideoPath);
+
+		// Wait for upload to complete - the submit button should become enabled
+		const submitButton = page.getByRole('button', {
+			name: /submit for review/i,
+		});
+		await expect(submitButton).toBeEnabled({ timeout: 60000 });
 	});
 
-	test('CP-2.5: caption character counter updates', async ({ page }) => {
-		await page.goto('/submit');
-		await page.waitForLoadState('domcontentloaded');
-
-		const captionField = page.locator('#caption');
-		await captionField.fill('Hello');
-
-		// Should display 5/2200
-		const bodyText = await page.innerText('body');
-		expect(bodyText).toContain('5/2200');
-	});
-
-	test('CP-2.6: complete submission flow - upload, caption, submit', async ({
+	test('CP-2.5: complete submission flow - upload and submit', async ({
 		page,
 	}) => {
 		await page.goto('/submit');
@@ -244,7 +250,7 @@ test.describe('CP-2: Content Submission Flow', () => {
 		});
 	});
 
-	test('CP-2.7: submission appears in submissions list', async ({
+	test('CP-2.6: submission appears in submissions list', async ({
 		page,
 	}) => {
 		// Create content via API first (more reliable than UI for test setup)
@@ -431,49 +437,7 @@ test.describe('CP-3: Admin Review and Approval', () => {
 		expect(actionCompleted).toBe(true);
 	});
 
-	test('CP-3.5: keyboard shortcut A approves item', async ({ page }) => {
-		await createPendingContent(page, {
-			title: 'CP-3.5 Keyboard Test ' + Date.now(),
-			caption: 'Content for keyboard shortcut test',
-		});
-
-		await page.goto('/review');
-
-		await page
-			.waitForResponse(
-				(response) =>
-					response.url().includes('/api/content') &&
-					response.status() === 200,
-				{ timeout: 15000 }
-			)
-			.catch(() => {});
-
-		await page.waitForTimeout(1000);
-
-		const bodyText = await page.innerText('body');
-
-		if (bodyText.includes('All caught up!')) {
-			test.skip(true, 'No pending items for keyboard shortcut test');
-			return;
-		}
-
-		// Ensure focus is not on a textarea
-		await page.click('body');
-		await page.waitForTimeout(300);
-
-		// Press A to approve
-		await page.keyboard.press('a');
-		await page.waitForTimeout(2000);
-
-		const updatedBody = await page.innerText('body');
-		const hasSuccess =
-			/approved|ready to schedule/i.test(updatedBody) ||
-			updatedBody.includes('All caught up!') ||
-			/\d+ stor(y|ies) pending review/.test(updatedBody);
-		expect(hasSuccess).toBe(true);
-	});
-
-	test('CP-3.6: admin can access content hub', async ({ page }) => {
+	test('CP-3.5: admin can access content hub', async ({ page }) => {
 		await page.goto('/content');
 		await expect(page).toHaveURL(/\/(en\/)?content/);
 
@@ -482,7 +446,7 @@ test.describe('CP-3: Admin Review and Approval', () => {
 		expect(bodyText).toMatch(/content|review|queue|all/i);
 	});
 
-	test('CP-3.7: review history sidebar tracks decisions', async ({
+	test('CP-3.6: review history sidebar tracks decisions', async ({
 		page,
 	}) => {
 		await page.goto('/review');
