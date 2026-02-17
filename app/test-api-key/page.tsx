@@ -339,7 +339,7 @@ export default function TestApiKeyPage() {
                 <li>1. Generate an API key at <code>/developer</code> (API Keys tab)</li>
                 <li>2. Copy the full API key (starts with <code>sk_live_</code>)</li>
                 <li>3. Paste it in the input field above</li>
-                <li>4. Click "Test API Key"</li>
+                <li>4. Click &quot;Test API Key&quot;</li>
                 <li>5. If successful, you'll see cron status, metrics, and logs</li>
               </ol>
               <p className="text-xs text-blue-700 mt-4">

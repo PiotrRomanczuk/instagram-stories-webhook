@@ -8,7 +8,7 @@ import type { ApiKey } from '@/lib/auth/api-keys';
 
 const MODULE = 'api:developer:api-keys:list';
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     requireDeveloper(session);
