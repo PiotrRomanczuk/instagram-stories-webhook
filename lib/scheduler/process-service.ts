@@ -25,6 +25,7 @@ import {
 	recoverStaleLocks,
 	expireOverdueContent,
 } from '@/lib/content-db';
+import { fetchUpcomingPosts } from '@/lib/content-db/queries';
 import {
 	MAX_RETRY_COUNT,
 	RETRY_BACKOFF_MS,
@@ -32,8 +33,84 @@ import {
 import { parseCronConfig } from '@/lib/validations/cron.schema';
 import { checkPublishingQuota } from '@/lib/scheduler/quota-gate';
 import { generateCronRunId, recordQuotaSnapshot } from '@/lib/scheduler/quota-history';
+import {
+	getAllLinkedAccounts,
+	calculateDaysRemaining,
+	isTokenExpired,
+	isTokenExpiringSoon,
+} from '@/lib/database/linked-accounts';
 
 const MODULE = 'scheduler';
+
+/**
+ * Logs execution context at cron start for debugging.
+ * Includes: token status, upcoming posts, and queue health.
+ */
+async function logExecutionContext(cronRunId: string | undefined): Promise<void> {
+	try {
+		// 1. Token Status - Fetch all linked accounts and check expiry
+		const accounts = await getAllLinkedAccounts();
+		const tokenStatus = accounts.map((acc) => ({
+			userId: acc.user_id,
+			igUserId: acc.ig_user_id || 'N/A',
+			igUsername: acc.ig_username || 'N/A',
+			expiresAt: acc.expires_at ? new Date(acc.expires_at).toISOString() : 'N/A',
+			daysUntilExpiry: calculateDaysRemaining(acc.expires_at),
+			isExpired: isTokenExpired(acc.expires_at),
+			isExpiringSoon: isTokenExpiringSoon(acc.expires_at),
+		}));
+
+		// 2. Upcoming Posts (next 1 hour)
+		const oneHourFromNow = Date.now() + 60 * 60 * 1000;
+		const upcomingPosts = await fetchUpcomingPosts(oneHourFromNow);
+
+		// 3. Queue Health
+		const postsByUser = upcomingPosts.reduce(
+			(acc: Record<string, number>, post: ContentItem) => {
+				acc[post.userId] = (acc[post.userId] || 0) + 1;
+				return acc;
+			},
+			{} as Record<string, number>,
+		);
+
+		const postsByMediaType = upcomingPosts.reduce(
+			(acc: Record<string, number>, post: ContentItem) => {
+				acc[post.mediaType] = (acc[post.mediaType] || 0) + 1;
+				return acc;
+			},
+			{} as Record<string, number>,
+		);
+
+		const queueHealth = {
+			totalPending: upcomingPosts.length,
+			byUser: postsByUser,
+			byMediaType: postsByMediaType,
+			nextScheduledTime: upcomingPosts[0]?.scheduledTime
+				? new Date(upcomingPosts[0].scheduledTime).toISOString()
+				: 'N/A',
+		};
+
+		// 4. Log everything with structured details
+		await Logger.info(MODULE, '📊 Cron Execution Context', {
+			cronRunId: cronRunId || 'N/A',
+			tokenStatus,
+			upcomingPosts: upcomingPosts
+				.filter((p: ContentItem) => p.scheduledTime !== undefined)
+				.map((p: ContentItem) => ({
+					id: p.id,
+					userId: p.userId,
+					scheduledTime: new Date(p.scheduledTime as number).toISOString(),
+					minutesUntilScheduled: Math.floor(((p.scheduledTime as number) - Date.now()) / 60000),
+					mediaType: p.mediaType,
+					caption: p.caption?.substring(0, 50) || 'N/A', // First 50 chars
+				})),
+			queueHealth,
+		});
+	} catch (error) {
+		// Don't let logging errors break cron execution
+		await Logger.warn(MODULE, 'Failed to log execution context', error);
+	}
+}
 
 /**
  * Core logic for processing pending scheduled posts.
@@ -94,6 +171,9 @@ export async function processScheduledPosts(
 					`⏰ Expired ${expiredCount} overdue post(s) (>24h past scheduled time)`,
 				);
 			}
+
+			// Log execution context for debugging (cron path only)
+			await logExecutionContext(cronRunId);
 		}
 
 		let pendingItems: ContentItem[] = [];

@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app
 import { Button } from '@/app/components/ui/button';
 import { DebugPublisherNew } from '@/app/components/developer/debug-publisher-new';
 import { StoryPreview } from '@/app/components/developer/story-preview';
+import { ApiKeysManager } from '@/app/components/developer/api-keys-manager';
 
 export default async function DeveloperPage() {
 	const session = await getServerSession(authOptions);
@@ -48,7 +49,12 @@ export default async function DeveloperPage() {
 				<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 					<DebugPublisherNew />
 					<StoryPreview />
-				</div>
+			</div>
+
+			{/* API Keys Management */}
+			<ApiKeysManager />
+
+			<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">				</div>
 
 				<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 					{/* Webhook URL Card */}

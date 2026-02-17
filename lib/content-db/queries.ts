@@ -216,3 +216,36 @@ export async function getContentItemForProcessing(
 		return null;
 	}
 }
+
+/**
+ * Fetch upcoming posts scheduled within a time window.
+ * Used for cron execution context logging.
+ * @param maxTime - Maximum scheduled time (timestamp in ms)
+ * @returns Array of upcoming content items
+ */
+export async function fetchUpcomingPosts(
+	maxTime: number,
+): Promise<ContentItem[]> {
+	try {
+		const now = Date.now();
+		const { data, error } = await supabaseAdmin
+			.from('content_items')
+			.select('*')
+			.eq('environment', getCurrentEnvironment())
+			.eq('publishing_status', 'scheduled')
+			.gt('scheduled_time', now)
+			.lte('scheduled_time', maxTime)
+			.order('scheduled_time', { ascending: true })
+			.limit(50); // Reasonable limit for logging
+
+		if (error) {
+			console.error('Error fetching upcoming posts:', error);
+			return [];
+		}
+
+		return (data || []).map(mapContentItemRow);
+	} catch (error) {
+		console.error('Error in fetchUpcomingPosts:', error);
+		return [];
+	}
+}

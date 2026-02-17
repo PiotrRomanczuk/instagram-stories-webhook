@@ -204,3 +204,61 @@ export async function getInstagramUserId(
 	const account = await getLinkedFacebookAccount(userId);
 	return account?.ig_user_id || null;
 }
+
+/**
+ * Get all linked Facebook/Instagram accounts with token status information.
+ * Used for cron execution context logging.
+ */
+export async function getAllLinkedAccounts(): Promise<LinkedAccount[]> {
+	try {
+		Logger.debug(MODULE, 'Fetching all linked accounts');
+		const { data, error } = await supabaseAdmin
+			.from('linked_accounts')
+			.select('id, user_id, provider, provider_account_id, access_token, refresh_token, expires_at, ig_user_id, ig_username, created_at, updated_at')
+			.eq('provider', 'facebook');
+
+		if (error) {
+			Logger.error(
+				MODULE,
+				`Supabase getAllLinkedAccounts Error: ${error.message}`,
+				error,
+			);
+			return [];
+		}
+
+		return (data || []).map((account) =>
+			decryptAccountTokens(account as LinkedAccount),
+		);
+	} catch (error) {
+		Logger.error(MODULE, 'getAllLinkedAccounts exception', error);
+		return [];
+	}
+}
+
+/**
+ * Calculate days remaining until token expires.
+ * Returns negative value if already expired.
+ */
+export function calculateDaysRemaining(expiresAt: number | undefined): number {
+	if (!expiresAt) return -1;
+	const now = Date.now();
+	const diff = expiresAt - now;
+	return Math.floor(diff / (24 * 60 * 60 * 1000));
+}
+
+/**
+ * Check if a token is expired.
+ */
+export function isTokenExpired(expiresAt: number | undefined): boolean {
+	if (!expiresAt) return true;
+	return expiresAt < Date.now();
+}
+
+/**
+ * Check if a token is expiring soon (within 7 days).
+ */
+export function isTokenExpiringSoon(expiresAt: number | undefined): boolean {
+	if (!expiresAt) return false;
+	const daysRemaining = calculateDaysRemaining(expiresAt);
+	return daysRemaining >= 0 && daysRemaining <= 7;
+}

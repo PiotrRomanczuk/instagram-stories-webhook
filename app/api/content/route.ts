@@ -67,7 +67,7 @@ export async function GET(req: NextRequest) {
 		const offset = (page - 1) * limit;
 
 		// Build filter options based on tab
-		let filterOptions: Parameters<typeof getContentItems>[0] = {
+		const filterOptions: Parameters<typeof getContentItems>[0] = {
 			search,
 			sortBy: sortBy || 'newest',
 			limit,

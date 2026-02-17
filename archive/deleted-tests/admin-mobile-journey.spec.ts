@@ -34,7 +34,7 @@ test.use({
 test.describe('Admin Mobile Journey', () => {
 
 	// Track seeded content IDs for cleanup
-	let seededIds: string[] = [];
+	const seededIds: string[] = [];
 
 	test.beforeAll(async ({ browser }) => {
 		const context = await browser.newContext({

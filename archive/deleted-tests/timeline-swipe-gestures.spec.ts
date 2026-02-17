@@ -684,8 +684,8 @@ test.describe('Timeline Swipe Gestures', () => {
 			await page.setViewportSize(DESKTOP_VIEWPORT);
 			await page.waitForTimeout(500);
 
-			let regularCard = page.locator('[data-testid="timeline-card"]').first();
-			let hasRegular = await regularCard.isVisible({ timeout: 2000 }).catch(() => false);
+			const regularCard = page.locator('[data-testid="timeline-card"]').first();
+			const hasRegular = await regularCard.isVisible({ timeout: 2000 }).catch(() => false);
 			expect(hasRegular).toBe(true);
 
 			// Resize to mobile

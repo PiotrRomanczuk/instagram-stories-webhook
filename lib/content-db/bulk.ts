@@ -42,7 +42,7 @@ export async function bulkUpdateSubmissionStatus(
 	}
 }
 
-/* eslint-enable @typescript-eslint/no-explicit-any */
+ 
 
 export async function reorderScheduledItems(
 	items: Array<{ id: string; scheduledTime: number }>,
