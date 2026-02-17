@@ -198,8 +198,7 @@ export function hasOpenModal(snapshot: string): boolean {
 	return (
 		snapshot.includes('role="dialog"') ||
 		snapshot.includes('ContentPreviewModal') ||
-		snapshot.includes('ContentEditModal') ||
-		snapshot.includes('QuickSchedulePopover')
+		snapshot.includes('ContentEditModal')
 	);
 }
 

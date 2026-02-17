@@ -288,7 +288,6 @@ export function ScheduleCalendarLayout() {
 						currentDate={currentDate}
 						onDateChange={setCurrentDate}
 						onItemClick={handleOpenPreview}
-						onRefresh={mutate}
 						readyCount={readyItems.length}
 						onReadyClick={() => setShowMobileSidebar(true)}
 						statusFilter={statusFilter}
@@ -306,7 +305,6 @@ export function ScheduleCalendarLayout() {
 								setShowMobileSidebar(false);
 								handleOpenPreview(item);
 							}}
-							onRefresh={mutate}
 						/>
 					)}
 				</AnimatePresence>
@@ -317,7 +315,6 @@ export function ScheduleCalendarLayout() {
 						item={previewItem}
 						onClose={() => setPreviewItem(null)}
 						onEdit={(item) => { setPreviewItem(null); setEditItem(item); }}
-						onRefresh={mutate}
 						isAdmin={isAdmin}
 						items={displayItems}
 						currentIndex={displayItems.findIndex((i) => i.id === previewItem.id)}
@@ -392,7 +389,6 @@ export function ScheduleCalendarLayout() {
 								{statusFilter === 'failed' && (
 									<FailedPostsBulkActions
 										failedItems={displayItems.filter((i) => i.publishingStatus === 'failed')}
-										onRefresh={mutate}
 									/>
 								)}
 								<ScheduleListView
@@ -409,7 +405,6 @@ export function ScheduleCalendarLayout() {
 							<ReadyToScheduleSidebar
 								items={readyItems}
 								onOpenPreview={handleOpenPreview}
-								onRefresh={mutate}
 							/>
 						</div>
 					</div>
@@ -444,7 +439,6 @@ export function ScheduleCalendarLayout() {
 										setShowMobileSidebar(false);
 										handleOpenPreview(item);
 									}}
-									onRefresh={mutate}
 									onClose={() => setShowMobileSidebar(false)}
 								/>
 							</div>
@@ -500,7 +494,6 @@ export function ScheduleCalendarLayout() {
 						setPreviewItem(null);
 						setEditItem(item);
 					}}
-					onRefresh={mutate}
 					isAdmin={isAdmin}
 					items={displayItems}
 					currentIndex={displayItems.findIndex((i) => i.id === previewItem.id)}
