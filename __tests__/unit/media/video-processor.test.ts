@@ -2,11 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { EventEmitter } from 'events';
 
 // Use vi.hoisted so these are available when vi.mock factories run (hoisted to top)
-const { mockSpawn, mockIsCloudinaryConfigured, mockProcessVideoUrlWithCloudinary, mockExtractThumbnailWithCloudinary } = vi.hoisted(() => ({
+const { mockSpawn } = vi.hoisted(() => ({
 	mockSpawn: vi.fn(),
-	mockIsCloudinaryConfigured: vi.fn().mockReturnValue(false),
-	mockProcessVideoUrlWithCloudinary: vi.fn(),
-	mockExtractThumbnailWithCloudinary: vi.fn(),
 }));
 
 // Mock child_process before importing the module under test
@@ -18,12 +15,6 @@ vi.mock(import('child_process'), async (importOriginal) => {
 		spawn: mockSpawn,
 	};
 });
-
-vi.mock('@/lib/media/cloudinary-video-processor', () => ({
-	isCloudinaryConfigured: mockIsCloudinaryConfigured,
-	processVideoUrlWithCloudinary: mockProcessVideoUrlWithCloudinary,
-	extractThumbnailWithCloudinary: mockExtractThumbnailWithCloudinary,
-}));
 
 vi.mock(import('fs'), async (importOriginal) => {
 	const actual = await importOriginal();
@@ -82,6 +73,10 @@ import {
 	VIDEO_STORY_WIDTH,
 	VIDEO_STORY_HEIGHT,
 } from '@/lib/media/video-processor';
+
+// Store original env and fetch for Railway tests
+const originalEnv = { ...process.env };
+const originalFetch = globalThis.fetch;
 
 // Helper to create a mock child process with EventEmitter behavior
 function createMockProcess() {
@@ -1003,6 +998,10 @@ describe('video-processor', () => {
 	// ======== getVideoProcessingBackend ========
 
 	describe('getVideoProcessingBackend', () => {
+		afterEach(() => {
+			process.env = { ...originalEnv };
+		});
+
 		it('should return ffmpeg when FFmpeg is available', async () => {
 			const mockProc = createMockProcess();
 			mockSpawn.mockReturnValue(mockProc);
@@ -1012,15 +1011,16 @@ describe('video-processor', () => {
 			expect(result).toBe('ffmpeg');
 		});
 
-		it('should return cloudinary when FFmpeg is unavailable but Cloudinary is configured', async () => {
+		it('should return railway when FFmpeg is unavailable but Railway is configured', async () => {
 			const mockProc = createMockProcess();
 			mockSpawn.mockReturnValue(mockProc);
 			process.nextTick(() => mockProc.emit('error', new Error('ENOENT')));
 
-			mockIsCloudinaryConfigured.mockReturnValue(true);
+			process.env.RAILWAY_API_URL = 'https://test.railway.app';
+			process.env.RAILWAY_API_SECRET = 'test-secret';
 
 			const result = await getVideoProcessingBackend();
-			expect(result).toBe('cloudinary');
+			expect(result).toBe('railway');
 		});
 
 		it('should return none when neither backend is available', async () => {
@@ -1028,7 +1028,8 @@ describe('video-processor', () => {
 			mockSpawn.mockReturnValue(mockProc);
 			process.nextTick(() => mockProc.emit('error', new Error('ENOENT')));
 
-			mockIsCloudinaryConfigured.mockReturnValue(false);
+			delete process.env.RAILWAY_API_URL;
+			delete process.env.RAILWAY_API_SECRET;
 
 			const result = await getVideoProcessingBackend();
 			expect(result).toBe('none');
@@ -1038,11 +1039,17 @@ describe('video-processor', () => {
 	// ======== processAndUploadStoryVideo ========
 
 	describe('processAndUploadStoryVideo', () => {
+		afterEach(() => {
+			process.env = { ...originalEnv };
+			globalThis.fetch = originalFetch;
+		});
+
 		it('should return original URL when no backend is available', async () => {
 			const mockProc = createMockProcess();
 			mockSpawn.mockReturnValue(mockProc);
 			process.nextTick(() => mockProc.emit('error', new Error('ENOENT')));
-			mockIsCloudinaryConfigured.mockReturnValue(false);
+			delete process.env.RAILWAY_API_URL;
+			delete process.env.RAILWAY_API_SECRET;
 
 			const result = await processAndUploadStoryVideo(
 				'https://example.com/original.mp4',
@@ -1052,31 +1059,47 @@ describe('video-processor', () => {
 			expect(result).toBe('https://example.com/original.mp4');
 		});
 
-		it('should use Cloudinary when FFmpeg is unavailable but Cloudinary is configured', async () => {
+		it('should use Railway when FFmpeg is unavailable but Railway is configured', async () => {
 			const mockProc = createMockProcess();
 			mockSpawn.mockReturnValue(mockProc);
 			process.nextTick(() => mockProc.emit('error', new Error('ENOENT')));
 
-			mockIsCloudinaryConfigured.mockReturnValue(true);
-			mockProcessVideoUrlWithCloudinary.mockResolvedValue({
-				url: 'https://res.cloudinary.com/test/processed.mp4',
-				publicId: 'test-id',
-				width: 1080,
-				height: 1920,
-				duration: 15,
-				format: 'mp4',
-				processingApplied: ['cloudinary-upload', 'cloudinary-transformation'],
-			});
+			process.env.RAILWAY_API_URL = 'https://test.railway.app';
+			process.env.RAILWAY_API_SECRET = 'test-secret';
+			process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
+			process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-key';
+
+			globalThis.fetch = vi.fn().mockResolvedValue({
+				ok: true,
+				json: () => Promise.resolve({
+					processedUrl: 'https://test.supabase.co/processed.mp4',
+					thumbnailUrl: 'https://test.supabase.co/thumb.jpg',
+					metadata: {
+						width: 1080,
+						height: 1920,
+						duration: 15,
+						codec: 'h264',
+						frameRate: 30,
+						fileSize: 6553600,
+						processingApplied: ['h264-encoding', 'aac-audio'],
+					},
+				}),
+			}) as unknown as typeof fetch;
 
 			const result = await processAndUploadStoryVideo(
 				'https://example.com/original.mp4',
 				'content-456'
 			);
 
-			expect(result).toBe('https://res.cloudinary.com/test/processed.mp4');
-			expect(mockProcessVideoUrlWithCloudinary).toHaveBeenCalledWith(
-				'https://example.com/original.mp4',
-				'content-456'
+			expect(result).toBe('https://test.supabase.co/processed.mp4');
+			expect(globalThis.fetch).toHaveBeenCalledWith(
+				'https://test.railway.app/process-video',
+				expect.objectContaining({
+					method: 'POST',
+					headers: expect.objectContaining({
+						'Authorization': 'Bearer test-secret',
+					}),
+				})
 			);
 		});
 	});
@@ -1084,38 +1107,61 @@ describe('video-processor', () => {
 	// ======== extractVideoThumbnail ========
 
 	describe('extractVideoThumbnail', () => {
-		it('should use Cloudinary when FFmpeg is unavailable but Cloudinary is configured', async () => {
+		afterEach(() => {
+			process.env = { ...originalEnv };
+			globalThis.fetch = originalFetch;
+		});
+
+		it('should use Railway when FFmpeg is unavailable but Railway is configured', async () => {
 			const mockProc = createMockProcess();
 			mockSpawn.mockReturnValue(mockProc);
 			process.nextTick(() => mockProc.emit('error', new Error('ENOENT')));
 
-			mockIsCloudinaryConfigured.mockReturnValue(true);
-			mockExtractThumbnailWithCloudinary.mockResolvedValue({
-				url: 'https://res.cloudinary.com/test/thumb.jpg',
-				width: 540,
-				height: 960,
-			});
+			process.env.RAILWAY_API_URL = 'https://test.railway.app';
+			process.env.RAILWAY_API_SECRET = 'test-secret';
+			process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
+			process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-key';
+
+			globalThis.fetch = vi.fn().mockResolvedValue({
+				ok: true,
+				json: () => Promise.resolve({
+					processedUrl: 'https://test.supabase.co/processed.mp4',
+					thumbnailUrl: 'https://test.supabase.co/thumb.jpg',
+					metadata: {
+						width: 1080,
+						height: 1920,
+						duration: 15,
+						codec: 'h264',
+						frameRate: 30,
+						fileSize: 6553600,
+						processingApplied: ['h264-encoding'],
+					},
+				}),
+			}) as unknown as typeof fetch;
 
 			const result = await extractVideoThumbnail(
 				'https://example.com/video.mp4',
 				'content-789'
 			);
 
-			expect(result).toBe('https://res.cloudinary.com/test/thumb.jpg');
-			expect(mockExtractThumbnailWithCloudinary).toHaveBeenCalledWith(
-				'https://example.com/video.mp4',
-				'content-789',
-				2 // default offset
-			);
+			expect(result).toBe('https://test.supabase.co/thumb.jpg');
 		});
 
-		it('should return null when Cloudinary thumbnail extraction fails', async () => {
+		it('should return null when Railway thumbnail extraction fails', async () => {
 			const mockProc = createMockProcess();
 			mockSpawn.mockReturnValue(mockProc);
 			process.nextTick(() => mockProc.emit('error', new Error('ENOENT')));
 
-			mockIsCloudinaryConfigured.mockReturnValue(true);
-			mockExtractThumbnailWithCloudinary.mockRejectedValue(new Error('Upload failed'));
+			process.env.RAILWAY_API_URL = 'https://test.railway.app';
+			process.env.RAILWAY_API_SECRET = 'test-secret';
+			process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
+			process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-key';
+
+			globalThis.fetch = vi.fn().mockResolvedValue({
+				ok: false,
+				status: 500,
+				text: () => Promise.resolve('Internal Server Error'),
+			}) as unknown as typeof fetch;
 
 			const result = await extractVideoThumbnail(
 				'https://example.com/video.mp4',
@@ -1130,7 +1176,8 @@ describe('video-processor', () => {
 			mockSpawn.mockReturnValue(mockProc);
 			process.nextTick(() => mockProc.emit('error', new Error('ENOENT')));
 
-			mockIsCloudinaryConfigured.mockReturnValue(false);
+			delete process.env.RAILWAY_API_URL;
+			delete process.env.RAILWAY_API_SECRET;
 
 			const result = await extractVideoThumbnail(
 				'https://example.com/video.mp4',
@@ -1138,31 +1185,6 @@ describe('video-processor', () => {
 			);
 
 			expect(result).toBeNull();
-		});
-
-		it('should pass custom offset to Cloudinary extraction', async () => {
-			const mockProc = createMockProcess();
-			mockSpawn.mockReturnValue(mockProc);
-			process.nextTick(() => mockProc.emit('error', new Error('ENOENT')));
-
-			mockIsCloudinaryConfigured.mockReturnValue(true);
-			mockExtractThumbnailWithCloudinary.mockResolvedValue({
-				url: 'https://res.cloudinary.com/test/thumb-5s.jpg',
-				width: 540,
-				height: 960,
-			});
-
-			await extractVideoThumbnail(
-				'https://example.com/video.mp4',
-				'content-custom',
-				5
-			);
-
-			expect(mockExtractThumbnailWithCloudinary).toHaveBeenCalledWith(
-				'https://example.com/video.mp4',
-				'content-custom',
-				5
-			);
 		});
 	});
 });

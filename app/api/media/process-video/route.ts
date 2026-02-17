@@ -23,9 +23,9 @@ import {
     processVideoForStory,
     validateVideoForStories,
     getVideoProcessingBackend,
+    processWithRailway,
     VIDEO_MAX_DURATION_SEC
 } from '@/lib/media/video-processor';
-import { processVideoUrlWithCloudinary } from '@/lib/media/cloudinary-video-processor';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
 import { Logger } from '@/lib/utils/logger';
 
@@ -42,7 +42,7 @@ export async function POST(request: Request) {
         if (backend === 'none') {
             await Logger.error(MODULE, 'No video processing backend available');
             return NextResponse.json({
-                error: 'Video processing is not available. Configure FFmpeg or Cloudinary.',
+                error: 'Video processing is not available. Configure FFmpeg or Railway.',
                 processingUnavailable: true
             }, { status: 503 });
         }
@@ -61,18 +61,18 @@ export async function POST(request: Request) {
 
         await Logger.info(MODULE, `Processing video from: ${videoUrl} (backend: ${backend})`);
 
-        // Cloudinary path: upload directly from URL (no download needed)
-        if (backend === 'cloudinary') {
-            const contentId = crypto.randomUUID();
-            const result = await processVideoUrlWithCloudinary(videoUrl, contentId);
+        // Railway path: send URL to Railway microservice for FFmpeg processing
+        if (backend === 'railway') {
+            const result = await processWithRailway(videoUrl);
             return NextResponse.json({
-                processedUrl: result.url,
-                newDimensions: { width: result.width, height: result.height },
-                duration: result.duration,
+                processedUrl: result.processedUrl,
+                thumbnailUrl: result.thumbnailUrl,
+                newDimensions: { width: result.metadata.width, height: result.metadata.height },
+                duration: result.metadata.duration,
                 wasProcessed: true,
-                processingApplied: result.processingApplied,
-                backend: 'cloudinary',
-                message: `Video processed via Cloudinary: ${result.processingApplied.join(', ')}`
+                processingApplied: result.metadata.processingApplied,
+                backend: 'railway',
+                message: `Video processed via Railway: ${result.metadata.processingApplied.join(', ')}`
             });
         }
 
@@ -164,7 +164,7 @@ export async function GET() {
             available: backend !== 'none',
             backend,
             message: backend === 'none'
-                ? 'No video processing backend available. Configure FFmpeg or Cloudinary.'
+                ? 'No video processing backend available. Configure FFmpeg or Railway.'
                 : `Video processing available via ${backend}`
         });
     } catch (error) {

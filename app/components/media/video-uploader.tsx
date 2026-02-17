@@ -18,18 +18,25 @@ import { VideoMetadata, VideoValidationResult } from '@/lib/types';
 import { uploadToStorage } from '@/lib/storage/upload-client';
 import { validateVideoFile } from '@/lib/media/video-validation-client';
 import { VideoRequirements } from './video-requirements';
+import { VideoProcessingProgress } from './video-processing-progress';
+import {
+	processVideoInBrowser,
+	isFFmpegWasmSupported,
+	type ProcessingStep,
+} from '@/lib/media/ffmpeg-wasm-processor';
 
-type UploadStage = 'idle' | 'uploading' | 'validating' | 'processing' | 'complete';
+type UploadStage = 'idle' | 'uploading' | 'browser-processing' | 'validating' | 'processing' | 'complete';
 
 const STAGE_LABELS: Record<UploadStage, string> = {
 	idle: '',
 	uploading: 'Uploading video...',
+	'browser-processing': 'Processing video in browser...',
 	validating: 'Validating against Instagram requirements...',
-	processing: 'Processing video for Stories...',
+	processing: 'Processing video on server...',
 	complete: 'Complete!',
 };
 
-const STAGE_ORDER: UploadStage[] = ['uploading', 'validating', 'processing', 'complete'];
+const STAGE_ORDER: UploadStage[] = ['uploading', 'browser-processing', 'validating', 'processing', 'complete'];
 
 interface VideoUploaderProps {
 	value: string | null;
@@ -65,7 +72,11 @@ export function VideoUploader({
 	const [validationResult, setValidationResult] =
 		useState<VideoValidationResult | null>(null);
 	const [uploadProgress, setUploadProgress] = useState(0);
+	const [processingStep, setProcessingStep] = useState<ProcessingStep>('loading');
+	const [processingProgress, setProcessingProgress] = useState(0);
+	const [processingError, setProcessingError] = useState<string | null>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
+	const pendingFileRef = useRef<File | null>(null);
 
 	const isActive = stage !== 'idle' && stage !== 'complete';
 
@@ -80,6 +91,7 @@ export function VideoUploader({
 	const clearError = useCallback(() => {
 		setError(null);
 		setErrorGuidance(null);
+		setProcessingError(null);
 	}, []);
 
 	const validateVideo = useCallback(
@@ -112,7 +124,8 @@ export function VideoUploader({
 		[onValidationResult, setErrorWithGuidance]
 	);
 
-	const processVideo = useCallback(async (url: string) => {
+	/** Server-side processing fallback via Railway API */
+	const processVideoOnServer = useCallback(async (url: string) => {
 		setStage('processing');
 		try {
 			const response = await fetch('/api/media/process-video', {
@@ -139,6 +152,54 @@ export function VideoUploader({
 		}
 	}, []);
 
+	/** Process video in the browser using FFmpeg-wasm, then upload the processed result */
+	const processAndUploadInBrowser = useCallback(
+		async (file: File): Promise<{ publicUrl: string; storagePath: string; metadata: VideoMetadata }> => {
+			setStage('browser-processing');
+			setProcessingProgress(0);
+			setProcessingStep('loading');
+			setProcessingError(null);
+
+			const result = await processVideoInBrowser(
+				file,
+				(progress) => setProcessingProgress(progress),
+				(step) => setProcessingStep(step),
+			);
+
+			// Upload the processed blob
+			setStage('uploading');
+			setUploadProgress(0);
+
+			const processedFile = new File(
+				[result.processedBlob],
+				'processed-story.mp4',
+				{ type: 'video/mp4' },
+			);
+
+			const { publicUrl, storagePath } = await uploadToStorage(
+				processedFile,
+				{ path: 'uploads/videos' },
+			);
+
+			setUploadProgress(100);
+
+			const metadata: VideoMetadata = {
+				width: result.metadata.width,
+				height: result.metadata.height,
+				duration: result.metadata.duration,
+				codec: result.metadata.codec,
+				frameRate: result.metadata.frameRate,
+				bitrate: 0,
+				hasAudio: result.metadata.hasAudio,
+				format: 'mp4',
+				fileSize: result.metadata.fileSize,
+			};
+
+			return { publicUrl, storagePath, metadata };
+		},
+		[],
+	);
+
 	const handleFile = useCallback(
 		async (file: File) => {
 			// Client-side validation first
@@ -149,62 +210,103 @@ export function VideoUploader({
 				return;
 			}
 
-			setStage('uploading');
 			clearError();
-			setUploadProgress(0);
+			pendingFileRef.current = file;
 
-			try {
-				// Upload via authenticated API proxy
-				const { publicUrl, storagePath } = await uploadToStorage(
-					file,
-					{ path: 'uploads/videos' }
-				);
-
-				setUploadProgress(100);
-
-				// Validate video
-				const validation = await validateVideo(publicUrl);
-
-				if (validation && !validation.valid && autoProcess) {
-					const processedUrl = await processVideo(publicUrl);
+			// Try browser-based processing first if supported
+			if (autoProcess && isFFmpegWasmSupported()) {
+				try {
+					const { publicUrl, storagePath, metadata } = await processAndUploadInBrowser(file);
 					setStage('complete');
-					onChange(
-						processedUrl,
-						validation.metadata ?? undefined,
-						storagePath
+					onChange(publicUrl, metadata, storagePath);
+				} catch (browserErr) {
+					console.error('Browser processing failed, falling back to server:', browserErr);
+
+					// Fallback: upload raw file, then server-side process
+					try {
+						setStage('uploading');
+						setUploadProgress(0);
+
+						const { publicUrl, storagePath } = await uploadToStorage(
+							file,
+							{ path: 'uploads/videos' },
+						);
+						setUploadProgress(100);
+
+						const validation = await validateVideo(publicUrl);
+
+						if (validation && !validation.valid) {
+							const processedUrl = await processVideoOnServer(publicUrl);
+							setStage('complete');
+							onChange(processedUrl, validation.metadata ?? undefined, storagePath);
+						} else {
+							setStage('complete');
+							onChange(publicUrl, validation?.metadata ?? undefined, storagePath);
+						}
+					} catch (serverErr) {
+						setErrorWithGuidance(
+							serverErr instanceof Error ? serverErr.message : 'Failed to process video',
+							'Both browser and server processing failed. Try a different video file or format.',
+						);
+					}
+				}
+			} else {
+				// No browser processing: upload raw, validate, process on server
+				try {
+					setStage('uploading');
+					setUploadProgress(0);
+
+					const { publicUrl, storagePath } = await uploadToStorage(
+						file,
+						{ path: 'uploads/videos' },
 					);
-				} else {
-					setStage('complete');
-					onChange(
-						publicUrl,
-						validation?.metadata ?? undefined,
-						storagePath
+					setUploadProgress(100);
+
+					const validation = await validateVideo(publicUrl);
+
+					if (validation && !validation.valid && autoProcess) {
+						const processedUrl = await processVideoOnServer(publicUrl);
+						setStage('complete');
+						onChange(processedUrl, validation.metadata ?? undefined, storagePath);
+					} else {
+						setStage('complete');
+						onChange(publicUrl, validation?.metadata ?? undefined, storagePath);
+					}
+				} catch (err) {
+					setErrorWithGuidance(
+						err instanceof Error ? err.message : 'Failed to upload video',
+						'Check your connection and try again. If the problem persists, try a smaller file.',
 					);
 				}
-			} catch (err) {
-				setErrorWithGuidance(
-					err instanceof Error ? err.message : 'Failed to upload video',
-					'Check your connection and try again. If the problem persists, try a smaller file.'
-				);
-				console.error(err);
-			} finally {
-				// Reset stage after a brief delay to show completion
-				setTimeout(() => {
-					setStage('idle');
-					setUploadProgress(0);
-				}, 1500);
 			}
+
+			// Reset stage after a brief delay to show completion
+			setTimeout(() => {
+				setStage('idle');
+				setUploadProgress(0);
+				setProcessingProgress(0);
+				pendingFileRef.current = null;
+			}, 1500);
 		},
 		[
 			maxSize,
 			onChange,
 			validateVideo,
 			autoProcess,
-			processVideo,
+			processVideoOnServer,
+			processAndUploadInBrowser,
 			clearError,
 			setErrorWithGuidance,
 		]
 	);
+
+	const handleRetryProcessing = useCallback(() => {
+		const file = pendingFileRef.current;
+		if (file) {
+			setProcessingError(null);
+			handleFile(file);
+		}
+	}, [handleFile]);
 
 	const handleUrlSubmit = useCallback(async () => {
 		if (!urlInput.trim()) return;
@@ -213,11 +315,11 @@ export function VideoUploader({
 		clearError();
 
 		try {
-			// Validate video from URL
+			// URL uploads always go through server-side processing
 			const validation = await validateVideo(urlInput);
 
 			if (validation && !validation.valid && autoProcess) {
-				const processedUrl = await processVideo(urlInput);
+				const processedUrl = await processVideoOnServer(urlInput);
 				setStage('complete');
 				onChange(processedUrl, validation.metadata ?? undefined);
 			} else {
@@ -242,7 +344,7 @@ export function VideoUploader({
 		onChange,
 		validateVideo,
 		autoProcess,
-		processVideo,
+		processVideoOnServer,
 		clearError,
 		setErrorWithGuidance,
 	]);
@@ -420,7 +522,14 @@ export function VideoUploader({
 					disabled={disabled}
 				/>
 
-				{isActive || stage === 'complete' ? (
+				{stage === 'browser-processing' ? (
+					<VideoProcessingProgress
+						step={processingStep}
+						progress={processingProgress}
+						error={processingError}
+						onRetry={handleRetryProcessing}
+					/>
+				) : isActive || stage === 'complete' ? (
 					<UploadProgressStepper
 						stage={stage}
 						uploadProgress={uploadProgress}
