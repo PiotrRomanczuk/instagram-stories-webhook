@@ -6,7 +6,7 @@ import { supabaseAdmin } from '../config/supabase-admin';
 import { ContentItem, mapContentItemRow } from '../types/posts';
 import { getCurrentEnvironment } from './environment';
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 
 export async function getPendingContentItems(maxItems: number = 25): Promise<ContentItem[]> {
 	try {
@@ -211,7 +211,7 @@ export async function markContentFailed(
 	}
 }
 
-/* eslint-enable @typescript-eslint/no-explicit-any */
+ 
 
 export async function markContentCancelled(
 	id: string,
