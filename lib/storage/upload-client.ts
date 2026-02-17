@@ -1,7 +1,9 @@
 /**
- * Client-side upload helper that proxies through the authenticated API route.
- * Replaces direct supabase.storage.from('stories').upload() calls in components.
+ * Client-side upload helper that uploads directly to Supabase Storage.
+ * Bypasses Vercel serverless function to avoid 4.5MB payload limit.
  */
+
+import { supabase } from '@/lib/config/supabase';
 
 interface UploadOptions {
 	/** Storage path prefix (default: 'uploads') */
@@ -19,25 +21,33 @@ export async function uploadToStorage(
 	file: File | Blob,
 	options?: UploadOptions,
 ): Promise<UploadResult> {
-	const formData = new FormData();
-	formData.append('file', file);
+	const pathPrefix = options?.path || 'uploads';
 
-	if (options?.path) {
-		formData.append('path', options.path);
+	// Determine file type and extension
+	const fileName = file instanceof File ? file.name : 'upload';
+	const contentType = file.type || '';
+	const ext = fileName.split('.').pop() || (contentType.startsWith('video/') ? 'mp4' : 'jpg');
+	const type = contentType.startsWith('video/') ? 'videos' : 'images';
+
+	// Generate storage path
+	const storagePath = `${pathPrefix}/${type}/${crypto.randomUUID()}-${Date.now()}.${ext}`;
+
+	// Upload directly to Supabase Storage (bypasses Vercel function limit)
+	const { error: uploadError } = await supabase.storage
+		.from('stories')
+		.upload(storagePath, file, {
+			cacheControl: '3600',
+			upsert: options?.upsert ?? false,
+			contentType,
+		});
+
+	if (uploadError) {
+		throw new Error(uploadError.message || 'Upload failed');
 	}
-	if (options?.upsert) {
-		formData.append('upsert', 'true');
-	}
 
-	const response = await fetch('/api/media/upload', {
-		method: 'POST',
-		body: formData,
-	});
+	const {
+		data: { publicUrl },
+	} = supabase.storage.from('stories').getPublicUrl(storagePath);
 
-	if (!response.ok) {
-		const errorData = await response.json().catch(() => ({ error: 'Upload failed' }));
-		throw new Error(errorData.error || `Upload failed (${response.status})`);
-	}
-
-	return response.json();
+	return { publicUrl, storagePath };
 }
