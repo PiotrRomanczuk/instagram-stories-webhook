@@ -45,7 +45,10 @@ export function ReadyCard({
 	const approvalTime = getApprovalTime(item);
 	const isGreen = approvalLabel === 'Approved Today';
 	const isVideo = item.mediaType === 'VIDEO';
-	const thumbnailSrc = isVideo && item.thumbnailUrl ? item.thumbnailUrl : item.mediaUrl;
+	// For videos, require thumbnailUrl - don't fall back to mediaUrl
+	const thumbnailSrc = isVideo
+		? (item.thumbnailUrl || null)
+		: item.mediaUrl;
 
 	return (
 		<div
@@ -73,9 +76,9 @@ export function ReadyCard({
 						: 'bg-gray-200',
 				)}
 			>
-				{isVideo && !item.mediaUrl ? (
+				{isVideo && !thumbnailSrc ? (
 					<Video className="h-8 w-8" />
-				) : item.mediaUrl && !imageError ? (
+				) : thumbnailSrc && !imageError ? (
 					<>
 						<Image
 							src={thumbnailSrc}

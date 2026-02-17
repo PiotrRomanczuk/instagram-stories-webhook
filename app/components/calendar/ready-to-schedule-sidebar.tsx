@@ -31,7 +31,10 @@ interface ReadyAssetCardProps {
 function ReadyAssetCard({ item, isScheduled, onOpenPreview }: ReadyAssetCardProps) {
 	const [imageError, setImageError] = useState(false);
 	const isVideo = item.mediaType === 'VIDEO';
-	const thumbnailSrc = isVideo && item.thumbnailUrl ? item.thumbnailUrl : item.mediaUrl;
+	// For videos, require thumbnailUrl - don't fall back to mediaUrl
+	const thumbnailSrc = isVideo
+		? (item.thumbnailUrl || null)
+		: item.mediaUrl;
 
 	const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
 		id: `ready-${item.id}`,
@@ -57,7 +60,7 @@ function ReadyAssetCard({ item, isScheduled, onOpenPreview }: ReadyAssetCardProp
 				isScheduled ? 'cursor-not-allowed opacity-50' : 'cursor-grab hover:ring-2 ring-[#2b6cee] active:cursor-grabbing'
 			)}
 		>
-			{!imageError ? (
+			{!imageError && thumbnailSrc ? (
 				<div className="absolute inset-0 flex items-center justify-center bg-black">
 					<img
 						src={thumbnailSrc}

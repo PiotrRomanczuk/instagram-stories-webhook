@@ -446,7 +446,9 @@ export async function videoNeedsProcessing(inputBuffer: Buffer): Promise<boolean
  * Check if Railway video processing service is configured
  */
 export function isRailwayConfigured(): boolean {
-    return !!(process.env.RAILWAY_API_URL && process.env.RAILWAY_API_SECRET);
+    const url = process.env.RAILWAY_API_URL?.trim().replace(/\\n$/, '');
+    const secret = process.env.RAILWAY_API_SECRET?.trim().replace(/\\n$/, '');
+    return !!(url && secret);
 }
 
 interface RailwayProcessingResult {
@@ -469,8 +471,9 @@ interface RailwayProcessingResult {
  * which runs FFmpeg and uploads the result to Supabase Storage.
  */
 export async function processWithRailway(videoUrl: string): Promise<RailwayProcessingResult> {
-    const railwayUrl = process.env.RAILWAY_API_URL;
-    const railwaySecret = process.env.RAILWAY_API_SECRET;
+    // Trim env vars to handle accidental whitespace/newlines (common copy-paste error)
+    const railwayUrl = process.env.RAILWAY_API_URL?.trim().replace(/\\n$/, '');
+    const railwaySecret = process.env.RAILWAY_API_SECRET?.trim().replace(/\\n$/, '');
 
     if (!railwayUrl || !railwaySecret) {
         throw new Error('Railway API is not configured. Set RAILWAY_API_URL and RAILWAY_API_SECRET.');
@@ -482,6 +485,8 @@ export async function processWithRailway(videoUrl: string): Promise<RailwayProce
     if (!supabaseUrl || !supabaseKey) {
         throw new Error('Supabase credentials are required for Railway video processing.');
     }
+
+    await Logger.info(MODULE, `Sending video to Railway API: ${railwayUrl}/process-video`);
 
     const response = await fetch(`${railwayUrl}/process-video`, {
         method: 'POST',
@@ -501,6 +506,10 @@ export async function processWithRailway(videoUrl: string): Promise<RailwayProce
 
     if (!response.ok) {
         const errorBody = await response.text();
+        await Logger.error(MODULE, `Railway API error (${response.status})`, {
+            url: railwayUrl,
+            error: errorBody
+        });
         throw new Error(`Railway processing failed (${response.status}): ${errorBody}`);
     }
 

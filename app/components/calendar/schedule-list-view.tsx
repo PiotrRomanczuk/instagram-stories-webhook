@@ -39,7 +39,10 @@ function ListItem({ item, onItemClick }: { item: ContentItem; onItemClick?: (ite
 	const borderColor = statusBorderColors[status] || statusBorderColors.draft;
 	const isFailed = status === 'failed';
 	const isVideo = item.mediaType === 'VIDEO';
-	const thumbnailSrc = isVideo && item.thumbnailUrl ? item.thumbnailUrl : item.mediaUrl;
+	// For videos, require thumbnailUrl - don't fall back to mediaUrl
+	const thumbnailSrc = isVideo
+		? (item.thumbnailUrl || null)
+		: item.mediaUrl;
 
 	return (
 		<button
@@ -53,7 +56,7 @@ function ListItem({ item, onItemClick }: { item: ContentItem; onItemClick?: (ite
 		>
 			{/* Thumbnail */}
 			<div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100">
-				{item.mediaUrl && !imageError ? (
+				{thumbnailSrc && !imageError ? (
 					<>
 						<Image
 							src={thumbnailSrc}

@@ -94,7 +94,10 @@ export function ContentQueueCard({
 	const creatorName = formatCreatorName(item.userEmail);
 	const initials = getInitials(creatorName);
 	const isVideo = item.mediaType === 'VIDEO';
-	const thumbnailSrc = isVideo && item.thumbnailUrl ? item.thumbnailUrl : item.mediaUrl;
+	// For videos, require thumbnailUrl - don't fall back to mediaUrl (video files don't render in <img>)
+	const thumbnailSrc = isVideo
+		? (item.thumbnailUrl || null)
+		: item.mediaUrl;
 	const isPending = item.submissionStatus === 'pending';
 	const isRejected = item.submissionStatus === 'rejected';
 
@@ -125,7 +128,7 @@ export function ContentQueueCard({
 				className="relative aspect-[9/16] w-full overflow-hidden bg-[#232f48] cursor-pointer"
 				onClick={() => onPreview(item)}
 			>
-				{!imageError ? (
+				{!imageError && thumbnailSrc ? (
 					<>
 						<img
 							src={thumbnailSrc}
@@ -143,7 +146,7 @@ export function ContentQueueCard({
 					</>
 				) : (
 					<div className="absolute inset-0 flex items-center justify-center text-[#92a4c9]">
-						<span className="text-xs">Image unavailable</span>
+						<span className="text-xs">{isVideo ? 'Video thumbnail unavailable' : 'Image unavailable'}</span>
 					</div>
 				)}
 
