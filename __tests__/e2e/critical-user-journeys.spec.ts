@@ -4,142 +4,28 @@ import {
 	signInAsUser,
 	signInAsRealIG,
 	signOut,
-	isAuthenticated,
 } from './helpers/auth';
-import {
-	createPendingContent,
-	getTestMediaUrl,
-} from './helpers/seed';
-import { getUnpublishedMeme, getMemeByIndex, getTestVideo } from './helpers/test-assets';
+import { createPendingContent } from './helpers/seed';
+import { getMemeByIndex, getTestVideo } from './helpers/test-assets';
 
 /**
  * Critical User Journeys E2E Test Suite
  *
- * Consolidated from:
- * - critical-paths.spec.ts
- * - live-full-journey.spec.ts
- * - approve-reject-workflow.spec.ts
- * - video-upload.spec.ts (selected tests)
- *
  * Covers complete user workflows end-to-end:
- *   CP-1: User Login Flow (Google OAuth via test accounts)
  *   CP-2: Content Submission Flow (image + video)
  *   CP-3: Admin Review and Approval (with rejection workflow)
- *   CP-4: Scheduled Publishing Flow
+ *   CP-4: Scheduled Publishing Flow (REAL Instagram API)
  *   CP-5: Posted Stories Verification
- *   CP-X: Cross-Cutting Concerns (navigation, access control)
+ *   CP-X: Navigation (admin/user)
+ *
+ * Auth/RBAC tests live in auth-and-rbac-core.spec.ts (no duplication).
+ * Live publishing tests live in instagram-publishing-live.spec.ts.
  *
  * IMPORTANT:
- * - CP-1 through CP-3 use test accounts (admin@test.com, user@test.com)
+ * - CP-2, CP-3 use test accounts (admin@test.com, user@test.com)
  * - CP-4 and CP-5 use REAL Instagram account (@www_hehe_pl) with REAL API
  * - E2E tests NEVER mock the Instagram API
- *
- * Run independently:
- *   npx playwright test critical-user-journeys
- *
- * Run with full dependency chain:
- *   ENABLE_REAL_IG_TESTS=true ENABLE_LIVE_IG_PUBLISH=true npx playwright test critical-user-journeys.spec.ts
  */
-
-// ===========================================================================
-// CP-1: User Login Flow
-// ===========================================================================
-
-test.describe('CP-1: User Login Flow', () => {
-	test('CP-1.1: unauthenticated users are redirected to sign-in', async ({
-		page,
-	}) => {
-		await page.goto('/');
-		await expect(page).toHaveURL(/\/(en\/)?auth\/signin/);
-	});
-
-	test('CP-1.2: user can sign in via test account', async ({ page }) => {
-		await signInAsUser(page);
-		expect(await isAuthenticated(page)).toBe(true);
-		await expect(page).not.toHaveURL(/\/(en\/)?auth\/signin/);
-	});
-
-	test('CP-1.3: admin can sign in and access admin routes', async ({
-		page,
-	}) => {
-		await signInAsAdmin(page);
-		expect(await isAuthenticated(page)).toBe(true);
-
-		// Admin should be able to access the review page
-		await page.goto('/review');
-		await expect(page).toHaveURL(/\/(en\/)?review/);
-	});
-
-	test('CP-1.4: session persists across page navigation', async ({
-		page,
-	}) => {
-		await signInAsUser(page);
-		expect(await isAuthenticated(page)).toBe(true);
-
-		// Navigate to submit page
-		await page.goto('/submit');
-		expect(await isAuthenticated(page)).toBe(true);
-
-		// Navigate to submissions page
-		await page.goto('/submissions');
-		expect(await isAuthenticated(page)).toBe(true);
-	});
-
-	test('CP-1.5: session persists after page refresh', async ({ page }) => {
-		await signInAsUser(page);
-		const initialUrl = page.url();
-		expect(await isAuthenticated(page)).toBe(true);
-
-		await page.reload();
-		expect(await isAuthenticated(page)).toBe(true);
-		await expect(page).toHaveURL(initialUrl);
-	});
-
-	test('CP-1.6: sign out clears session and redirects', async ({ page }) => {
-		await signInAsUser(page);
-		expect(await isAuthenticated(page)).toBe(true);
-
-		await signOut(page);
-		await page.goto('/submit');
-
-		// Should redirect unauthenticated user back to sign-in
-		await expect(page).toHaveURL(/\/(en\/)?auth\/signin/);
-	});
-
-	test('CP-1.7: regular user cannot access admin routes', async ({
-		page,
-	}) => {
-		await signInAsUser(page);
-
-		// Review page is admin-only
-		await page.goto('/review');
-		await page.waitForLoadState('domcontentloaded');
-
-		// Should be redirected away from /review
-		const url = page.url();
-		if (url.includes('/review')) {
-			// If still on review route, check for access denied message
-			const bodyText = await page.innerText('body');
-			const hasAccessDenied = bodyText.match(
-				/access denied|unauthorized|forbidden|not authorized/i
-			);
-			expect(hasAccessDenied).toBeTruthy();
-		} else {
-			expect(url).not.toContain('/review');
-		}
-	});
-
-	test('CP-1.8: expired session redirects to sign-in', async ({ page }) => {
-		await signInAsUser(page);
-		expect(await isAuthenticated(page)).toBe(true);
-
-		// Simulate expired session by clearing cookies
-		await page.context().clearCookies();
-		await page.goto('/submit');
-
-		await expect(page).toHaveURL(/\/(en\/)?auth\/signin/);
-	});
-});
 
 // ===========================================================================
 // CP-2: Content Submission Flow
@@ -547,73 +433,9 @@ test.describe('CP-4: Scheduled Publishing Flow', () => {
 		await expect(page.locator('img[alt="Preview"]')).toBeVisible();
 	});
 
-	test('CP-4.4: publish image story to Instagram', async ({
-		page,
-		request,
-	}) => {
-		await page.goto('/debug');
-		await page.waitForLoadState('domcontentloaded');
+	// NOTE: Actual image/video publish tests live in instagram-publishing-live.spec.ts
 
-		// Verify connected
-		await expect(page.locator('text=www_hehe_pl')).toBeVisible({
-			timeout: 10000,
-		});
-
-		// Select unpublished meme (24-hour de-duplication)
-		const testImagePath = await getUnpublishedMeme(request);
-
-		if (!testImagePath) {
-			console.warn(
-				'All memes were published in the last 24 hours, skipping test'
-			);
-			test.skip();
-			return;
-		}
-
-		// Upload
-		const fileInput = page.locator('input[type="file"]');
-		await fileInput.setInputFiles(testImagePath);
-
-		const urlInput = page.locator('input#debug-image-url');
-		await expect(urlInput).not.toHaveValue('', { timeout: 30000 });
-
-		// Publish
-		const publishButton = page.getByRole('button', {
-			name: /Publish to Instagram Now/i,
-		});
-		await expect(publishButton).toBeEnabled();
-		await publishButton.click();
-
-		// Wait for result (real Instagram API, 60s timeout)
-		const successAlert = page.locator('text=Published Successfully!');
-		const failAlert = page.locator('text=Publish Failed');
-		await expect(successAlert.or(failAlert)).toBeVisible({
-			timeout: 60000,
-		});
-
-		if (await successAlert.isVisible()) {
-			// Extract Media ID
-			const resultText = await page
-				.locator(
-					'.font-semibold:has-text("Published Successfully!")'
-				)
-				.locator('..')
-				.innerText();
-			const mediaIdMatch = resultText.match(/Media ID: (\d+)/);
-			expect(mediaIdMatch).toBeTruthy();
-			console.log(
-				'Published image story, Media ID: ' + (mediaIdMatch ? mediaIdMatch[1] : 'unknown')
-			);
-		} else {
-			const errorText = await page
-				.locator('text=Publish Failed')
-				.locator('..')
-				.innerText();
-			throw new Error('Publishing failed: ' + errorText);
-		}
-	});
-
-	test('CP-4.5: schedule page loads for admin', async ({ page }) => {
+	test('CP-4.4: schedule page loads for admin', async ({ page }) => {
 		await page.goto('/schedule');
 		await page.waitForLoadState('domcontentloaded');
 
@@ -699,105 +521,16 @@ test.describe('CP-5: Posted Stories Verification', () => {
 			}
 		});
 
-		test('CP-5.4: debug page shows Instagram connection status', async ({
-			page,
-		}) => {
-			await page.goto('/debug');
-			await page.waitForLoadState('domcontentloaded');
-
-			// Should show connection info
-			await page.waitForSelector('text=Instagram Connection', {
-				timeout: 10000,
-			});
-
-			const bodyText = await page.innerText('body');
-			expect(bodyText).toContain('www_hehe_pl');
-			expect(bodyText.toLowerCase()).not.toContain('expired');
-		});
-
-		test('CP-5.5: published story is verifiable via API', async ({
-			page,
-			request,
-		}) => {
-			// Only verify if LIVE publish is enabled
-			test.skip(
-				process.env.ENABLE_LIVE_IG_PUBLISH !== 'true',
-				'Set ENABLE_LIVE_IG_PUBLISH=true for full verification'
-			);
-
-			await page.goto('/debug');
-			await page.waitForLoadState('domcontentloaded');
-
-			// Verify connected
-			await expect(page.locator('text=www_hehe_pl')).toBeVisible({
-				timeout: 10000,
-			});
-
-			// Select unpublished meme
-			const testImagePath = await getUnpublishedMeme(request);
-			if (!testImagePath) {
-				console.warn(
-					'All memes published recently, skipping verification test'
-				);
-				test.skip();
-				return;
-			}
-
-			// Upload and publish
-			const fileInput = page.locator('input[type="file"]');
-			await fileInput.setInputFiles(testImagePath);
-
-			const urlInput = page.locator('input#debug-image-url');
-			await expect(urlInput).not.toHaveValue('', { timeout: 30000 });
-
-			const publishButton = page.getByRole('button', {
-				name: /Publish to Instagram Now/i,
-			});
-			await publishButton.click();
-
-			// Wait for success
-			await expect(
-				page.locator('text=Published Successfully!')
-			).toBeVisible({ timeout: 60000 });
-
-			// Extract Media ID
-			const resultText = await page
-				.locator(
-					'.font-semibold:has-text("Published Successfully!")'
-				)
-				.locator('..')
-				.innerText();
-			const mediaIdMatch = resultText.match(/Media ID: (\d+)/);
-			expect(mediaIdMatch).toBeTruthy();
-			const publishedMediaId = mediaIdMatch![1];
-
-			// Allow processing time
-			await page.waitForTimeout(2000);
-
-			// Verify via recent stories API
-			const storiesResponse = await request.get(
-				'/api/instagram/recent-stories?limit=10'
-			);
-			expect(storiesResponse.ok()).toBe(true);
-
-			const stories = await storiesResponse.json();
-			const publishedStory = stories.find(
-				(s: Record<string, unknown>) => s.id === publishedMediaId
-			);
-			expect(publishedStory).toBeDefined();
-			expect(publishedStory.media_type).toBe('IMAGE');
-			console.log(
-				'Story verified on Instagram: ' + publishedMediaId
-			);
-		});
+		// NOTE: IG connection check is in CP-4.1, publish+verify is in instagram-publishing-live.spec.ts
 	});
 });
 
 // ===========================================================================
-// CP-Cross: Cross-Cutting Concerns
+// CP-Cross: Navigation
 // ===========================================================================
 
-test.describe('CP-Cross: Navigation and Access Control', () => {
+// NOTE: Auth/RBAC/API permission tests live in auth-and-rbac-core.spec.ts
+test.describe('CP-Cross: Navigation', () => {
 	test('CP-X.1: navigation menu contains expected links for admin', async ({
 		page,
 	}) => {
@@ -820,38 +553,5 @@ test.describe('CP-Cross: Navigation and Access Control', () => {
 		const nav = page.getByRole('navigation');
 		const linkCount = await nav.locator('a').count();
 		expect(linkCount).toBeGreaterThan(0);
-	});
-
-	test('CP-X.3: all protected routes redirect when unauthenticated', async ({
-		page,
-	}) => {
-		const protectedRoutes = [
-			'/submit',
-			'/submissions',
-			'/review',
-			'/schedule',
-			'/content',
-		];
-
-		for (const route of protectedRoutes) {
-			await page.goto(route);
-			await page.waitForLoadState('domcontentloaded');
-
-			const url = page.url();
-			// Should redirect to sign-in or home
-			const redirectedToSignIn = url.includes('/auth/signin');
-			const redirectedHome = url.endsWith('/') || url.includes('/en');
-			expect(redirectedToSignIn || redirectedHome).toBe(true);
-		}
-	});
-
-	test('CP-X.4: content API requires authentication', async ({
-		request,
-	}) => {
-		// Attempt to fetch content without auth
-		const response = await request.get('/api/content');
-
-		// Should return 401 or redirect
-		expect([401, 403, 302, 307].includes(response.status())).toBe(true);
 	});
 });

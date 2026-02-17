@@ -157,29 +157,7 @@ test.describe('Mobile 375px - User pages', () => {
 	});
 });
 
-// ---------------------------------------------------------------------------
-// 414px - Regular user pages
-// ---------------------------------------------------------------------------
-
-test.describe('Mobile 414px - User pages', () => {
-	test.use({ viewport: { width: 414, height: 896 } });
-
-	test.beforeEach(async ({ page }) => {
-		await signInAsUser(page);
-	});
-
-	test('Dashboard: no horizontal scroll', async ({ page }) => {
-		await page.goto('/');
-		await page.waitForLoadState('networkidle');
-		await assertNoHorizontalScroll(page);
-	});
-
-	test('Submissions: no horizontal scroll', async ({ page }) => {
-		await page.goto('/submissions');
-		await page.waitForLoadState('networkidle');
-		await assertNoHorizontalScroll(page);
-	});
-});
+// NOTE: 414px tests removed — 375px covers small phones, 768px covers tablet.
 
 // ---------------------------------------------------------------------------
 // 375px - Admin pages
@@ -469,8 +447,5 @@ test.describe('Mobile 390px - Schedule Timeline', () => {
 		}
 	});
 
-	test('Schedule page has no horizontal scroll', async ({ page }) => {
-		await page.goto('/schedule', { waitUntil: 'networkidle' });
-		await assertNoHorizontalScroll(page);
-	});
+	// NOTE: Schedule no-horizontal-scroll covered by 375px admin tests
 });
