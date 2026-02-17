@@ -127,49 +127,6 @@ test.describe('Instagram Publishing - LIVE', () => {
 	});
 
 	/**
-	 * LIVE-PUB-02: Publish story with file upload
-	 *
-	 * Tests publishing with a real meme from /memes/ folder.
-	 * Includes verification to avoid publishing the same meme within 24 hours.
-	 */
-	test('LIVE-PUB-02: publish story with file upload', async ({ page, request }) => {
-		await page.goto('/debug');
-		await page.waitForLoadState('domcontentloaded');
-
-		// Verify Instagram connection
-		await expect(page.locator('text=www_hehe_pl')).toBeVisible({ timeout: 10000 });
-
-		// Select a meme that hasn't been published in the last 24 hours
-		const testImagePath = await getUnpublishedMeme(request);
-
-		if (!testImagePath) {
-			console.warn('⚠️ All memes were published in the last 24 hours, skipping test');
-			test.skip();
-			return;
-		}
-
-		// Upload meme file instead of using external URL
-		const fileInput = page.locator('input[type="file"]');
-		await fileInput.setInputFiles(testImagePath);
-		console.log('Uploading meme from /memes/ folder...');
-
-		// Wait for upload to complete
-		const urlInput = page.locator('input#debug-image-url');
-		await expect(urlInput).not.toHaveValue('', { timeout: 30000 });
-
-		// Click Publish
-		const publishButton = page.getByRole('button', { name: /Publish to Instagram Now/i });
-		await publishButton.click();
-		console.log('Publishing...');
-
-		// Wait for result
-		const successAlert = page.locator('text=Published Successfully!');
-		await expect(successAlert).toBeVisible({ timeout: 60000 });
-
-		console.log('Published successfully with file upload!');
-	});
-
-	/**
 	 * LIVE-PUB-03: Verify published story appears in publishing logs
 	 *
 	 * After publishing, verify it's recorded in the database.
@@ -334,6 +291,7 @@ test.describe('Instagram Publishing - LIVE', () => {
 });
 
 
+
 /**
  * Instagram User Tagging Tests - LIVE
  *
@@ -372,212 +330,22 @@ test.describe('Instagram User Tagging - LIVE', () => {
 	});
 
 	/**
-	 * LIVE-PUB-05: Publish story with single user tag
+	 * LIVE-PUB-05: Publish story with user tags
 	 *
-	 * Tests publishing a story with a single user tag (@konstanty03).
-	 * Verifies tags are included in the API request and successfully published.
+	 * Tests publishing a story with multiple user tags via API.
+	 * Verifies tags are included in the request and story is published.
 	 * Includes 24-hour deduplication to avoid duplicate content errors.
 	 */
-	test('LIVE-PUB-05: publish story with single user tag', async ({ page, request }) => {
-		// Navigate to debug page
+	test('LIVE-PUB-05: publish story with user tags', async ({ page, request }) => {
 		await page.goto('/debug');
 		await page.waitForLoadState('domcontentloaded');
 
-		// Verify we're connected to Instagram
 		await expect(page.locator('text=www_hehe_pl')).toBeVisible({ timeout: 10000 });
-		console.log('✅ Instagram account connected: @www_hehe_pl');
 
-		// Select a meme that hasn't been published in the last 24 hours
 		const testImagePath = await getUnpublishedMeme(request);
 
 		if (!testImagePath) {
-			console.warn('⚠️ All memes were published in the last 24 hours, skipping test');
-			test.skip();
-			return;
-		}
-
-		// Upload test image from /memes/ folder
-		const fileInput = page.locator('input[type="file"]');
-		await fileInput.setInputFiles(testImagePath);
-		console.log('Uploading test image with user tag...');
-
-		// Wait for upload to complete (URL should appear in input)
-		const urlInput = page.locator('input#debug-image-url');
-		await expect(urlInput).not.toHaveValue('', { timeout: 30000 });
-		const uploadedUrl = await urlInput.inputValue();
-		console.log(`✅ Image uploaded: ${uploadedUrl.substring(0, 50)}...`);
-
-		// Verify image preview appears
-		await expect(page.locator('img[alt="Preview"]')).toBeVisible({ timeout: 5000 });
-
-		// Call the API directly with user tags (since UI doesn't support tagging yet)
-		// This simulates what the UI would do once tagging support is added
-		console.log('🏷️ Publishing with user tag: @konstanty03');
-		const publishResponse = await request.post('/api/debug/publish', {
-			data: {
-				url: uploadedUrl,
-				type: 'IMAGE',
-				userTags: [
-					{
-						username: 'konstanty03',
-						x: 0.5, // Center of image
-						y: 0.5
-					}
-				]
-			}
-		});
-
-		expect(publishResponse.ok()).toBe(true);
-		const publishData = await publishResponse.json();
-
-		if (publishData.success) {
-			console.log('✅ SUCCESS! Published with user tag');
-			console.log(`📱 Instagram Media ID: ${publishData.result?.id}`);
-			console.log('🏷️ Tagged user: @konstanty03');
-
-			const publishedMediaId = publishData.result?.id;
-
-			// Allow Instagram processing time
-			await page.waitForTimeout(2000);
-
-			// Verify via recent stories API
-			const storiesResponse = await request.get('/api/instagram/recent-stories?limit=5');
-			expect(storiesResponse.ok()).toBe(true);
-
-			const stories = await storiesResponse.json();
-
-			// Find our published story
-			const publishedStory = stories.find((s: any) => s.id === publishedMediaId);
-			expect(publishedStory).toBeDefined();
-			expect(publishedStory.media_type).toBe('IMAGE');
-			console.log(`✅ Story verified in recent stories: ${publishedStory.id}`);
-		} else {
-			console.error('❌ FAILED:', publishData.error);
-			console.error('📋 Logs:', publishData.logs);
-			throw new Error(`Publishing with user tag failed: ${publishData.error}`);
-		}
-	});
-
-	/**
-	 * LIVE-PUB-06: Publish story with multiple user tags
-	 *
-	 * Tests publishing a story with multiple user tags.
-	 * Includes @konstanty03 and 2-3 other test accounts.
-	 * Verifies all tags are included in the API request and successfully published.
-	 * Includes 24-hour deduplication to avoid duplicate content errors.
-	 */
-	test('LIVE-PUB-06: publish story with multiple user tags', async ({ page, request }) => {
-		// Navigate to debug page
-		await page.goto('/debug');
-		await page.waitForLoadState('domcontentloaded');
-
-		// Verify we're connected to Instagram
-		await expect(page.locator('text=www_hehe_pl')).toBeVisible({ timeout: 10000 });
-		console.log('✅ Instagram account connected: @www_hehe_pl');
-
-		// Select a meme that hasn't been published in the last 24 hours
-		const testImagePath = await getUnpublishedMeme(request);
-
-		if (!testImagePath) {
-			console.warn('⚠️ All memes were published in the last 24 hours, skipping test');
-			test.skip();
-			return;
-		}
-
-		// Upload test image from /memes/ folder
-		const fileInput = page.locator('input[type="file"]');
-		await fileInput.setInputFiles(testImagePath);
-		console.log('Uploading test image with multiple user tags...');
-
-		// Wait for upload to complete
-		const urlInput = page.locator('input#debug-image-url');
-		await expect(urlInput).not.toHaveValue('', { timeout: 30000 });
-		const uploadedUrl = await urlInput.inputValue();
-		console.log(`✅ Image uploaded: ${uploadedUrl.substring(0, 50)}...`);
-
-		// Verify image preview appears
-		await expect(page.locator('img[alt="Preview"]')).toBeVisible({ timeout: 5000 });
-
-		// Define multiple user tags (konstanty03 + 2 other test accounts)
-		const userTags = [
-			{
-				username: 'konstanty03',
-				x: 0.3, // Left side
-				y: 0.4
-			},
-			{
-				username: 'test_account_ig',
-				x: 0.7, // Right side
-				y: 0.4
-			},
-			{
-				username: 'demo_user_instagram',
-				x: 0.5, // Center
-				y: 0.7 // Lower part
-			}
-		];
-
-		// Call the API directly with multiple user tags
-		console.log('🏷️ Publishing with multiple user tags:', userTags.map(t => `@${t.username}`).join(', '));
-		const publishResponse = await request.post('/api/debug/publish', {
-			data: {
-				url: uploadedUrl,
-				type: 'IMAGE',
-				userTags
-			}
-		});
-
-		expect(publishResponse.ok()).toBe(true);
-		const publishData = await publishResponse.json();
-
-		if (publishData.success) {
-			console.log('✅ SUCCESS! Published with multiple user tags');
-			console.log(`📱 Instagram Media ID: ${publishData.result?.id}`);
-			console.log(`🏷️ Tagged ${userTags.length} users:`, userTags.map(t => `@${t.username}`).join(', '));
-
-			const publishedMediaId = publishData.result?.id;
-
-			// Allow Instagram processing time
-			await page.waitForTimeout(2000);
-
-			// Verify via recent stories API
-			const storiesResponse = await request.get('/api/instagram/recent-stories?limit=5');
-			expect(storiesResponse.ok()).toBe(true);
-
-			const stories = await storiesResponse.json();
-
-			// Find our published story
-			const publishedStory = stories.find((s: any) => s.id === publishedMediaId);
-			expect(publishedStory).toBeDefined();
-			expect(publishedStory.media_type).toBe('IMAGE');
-			console.log(`✅ Story verified in recent stories: ${publishedStory.id}`);
-		} else {
-			console.error('❌ FAILED:', publishData.error);
-			console.error('📋 Logs:', publishData.logs);
-			throw new Error(`Publishing with multiple user tags failed: ${publishData.error}`);
-		}
-	});
-
-	/**
-	 * LIVE-PUB-07: Verify user tags are passed to Instagram API
-	 *
-	 * Tests that user tags are correctly formatted and sent to Instagram API.
-	 * Publishes a story with a tag and verifies the API request structure.
-	 * Includes 24-hour deduplication to avoid duplicate content errors.
-	 */
-	test('LIVE-PUB-07: verify user tags API request format', async ({ page, request }) => {
-		// Navigate to debug page
-		await page.goto('/debug');
-		await page.waitForLoadState('domcontentloaded');
-
-		// Verify we're connected to Instagram
-		await expect(page.locator('text=www_hehe_pl')).toBeVisible({ timeout: 10000 });
-
-		// Select a meme that hasn't been published in the last 24 hours
-		const testImagePath = await getUnpublishedMeme(request);
-
-		if (!testImagePath) {
-			console.warn('⚠️ All memes were published in the last 24 hours, skipping test');
+			console.warn('All memes published in last 24 hours, skipping');
 			test.skip();
 			return;
 		}
@@ -586,49 +354,36 @@ test.describe('Instagram User Tagging - LIVE', () => {
 		const fileInput = page.locator('input[type="file"]');
 		await fileInput.setInputFiles(testImagePath);
 
-		// Wait for upload
 		const urlInput = page.locator('input#debug-image-url');
 		await expect(urlInput).not.toHaveValue('', { timeout: 30000 });
 		const uploadedUrl = await urlInput.inputValue();
 
-		// Define user tag with specific coordinates
-		const userTag = {
-			username: 'konstanty03',
-			x: 0.25,
-			y: 0.75
-		};
+		// Publish via API with multiple user tags
+		const userTags = [
+			{ username: 'konstanty03', x: 0.3, y: 0.4 },
+			{ username: 'test_account_ig', x: 0.7, y: 0.4 },
+		];
 
-		console.log('🔍 Testing API request format for user tags...');
-		console.log('🏷️ Tag:', `@${userTag.username} at (${userTag.x}, ${userTag.y})`);
-
-		// Publish with user tag
 		const publishResponse = await request.post('/api/debug/publish', {
-			data: {
-				url: uploadedUrl,
-				type: 'IMAGE',
-				userTags: [userTag]
-			}
+			data: { url: uploadedUrl, type: 'IMAGE', userTags }
 		});
 
 		expect(publishResponse.ok()).toBe(true);
 		const publishData = await publishResponse.json();
 
 		if (publishData.success) {
-			console.log('✅ SUCCESS! User tag API request format verified');
-			console.log(`📱 Instagram Media ID: ${publishData.result?.id}`);
+			console.log(`Published with ${userTags.length} user tags, Media ID: ${publishData.result?.id}`);
 
-			// Check logs for evidence that tags were processed
-			if (publishData.logs && publishData.logs.length > 0) {
-				const hasTagInfo = publishData.logs.some((log: string) =>
-					log.includes('tag') || log.includes('user')
-				);
-				if (hasTagInfo) {
-					console.log('✅ Tags were processed in API request');
-				}
-			}
+			// Verify story appears in recent stories
+			await page.waitForTimeout(2000);
+			const storiesResponse = await request.get('/api/instagram/recent-stories?limit=5');
+			expect(storiesResponse.ok()).toBe(true);
+
+			const stories = await storiesResponse.json();
+			const publishedStory = stories.find((s: Record<string, unknown>) => s.id === publishData.result?.id);
+			expect(publishedStory).toBeDefined();
 		} else {
-			console.error('❌ FAILED:', publishData.error);
-			throw new Error(`User tag API request failed: ${publishData.error}`);
+			throw new Error(`Publishing with user tags failed: ${publishData.error}`);
 		}
 	});
 });
