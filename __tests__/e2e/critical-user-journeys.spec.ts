@@ -257,7 +257,9 @@ test.describe('CP-2: Content Submission Flow', () => {
 
 		// Navigate to submissions page
 		await page.goto('/submissions');
-		await page.waitForLoadState('networkidle', { timeout: 10000 });
+		await page.waitForLoadState('domcontentloaded');
+		// Wait for page content to render (more reliable than networkidle with SWR)
+		await page.waitForTimeout(1000);
 
 		// Should show submissions content
 		const bodyText = await page.innerText('body');

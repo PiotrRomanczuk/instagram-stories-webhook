@@ -63,3 +63,4 @@ test-results
 
 # Playwright MCP logs
 .playwright-mcp/
+.env*.local
