@@ -1,0 +1,16 @@
+{
+  "name": "railway-video-processor",
+  "version": "1.0.0",
+  "description": "Railway microservice for processing videos to Instagram Stories standards using FFmpeg",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.1",
+    "express": "^4.21.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

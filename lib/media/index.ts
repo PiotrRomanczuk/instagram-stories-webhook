@@ -12,6 +12,8 @@ export {
     getVideoProcessingBackend,
     processAndUploadStoryVideo,
     extractVideoThumbnail,
+    isRailwayConfigured,
+    processWithRailway,
     THUMBNAIL_OFFSET_SEC,
     VIDEO_STORY_WIDTH,
     VIDEO_STORY_HEIGHT,
@@ -23,20 +25,6 @@ export {
     AUDIO_BITRATE,
     MAX_FILE_SIZE_MB
 } from './video-processor';
-
-// Cloudinary Video Processing Exports
-export {
-    isCloudinaryConfigured,
-    processVideoUrlWithCloudinary,
-    getCloudinaryVideoThumbnail,
-    extractThumbnailWithCloudinary,
-    deleteCloudinaryVideo,
-} from './cloudinary-video-processor';
-
-export type {
-    CloudinaryProcessingResult,
-    CloudinaryThumbnailResult,
-} from './cloudinary-video-processor';
 
 export type {
     MediaDimensions,

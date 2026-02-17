@@ -51,13 +51,22 @@ const nextConfig: NextConfig = {
 						value: 'max-age=31536000; includeSubDomains; preload',
 					},
 					{
+						key: 'Cross-Origin-Embedder-Policy',
+						value: 'require-corp',
+					},
+					{
+						key: 'Cross-Origin-Opener-Policy',
+						value: 'same-origin',
+					},
+					{
 						key: 'Content-Security-Policy',
 						value: [
 							"default-src 'self'",
-							"script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+							"script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:",
 							"style-src 'self' 'unsafe-inline'",
 							"img-src 'self' data: blob: https://*.supabase.co https://*.googleusercontent.com https://picsum.photos https://fastly.picsum.photos",
-							"connect-src 'self' https://*.supabase.co https://graph.facebook.com https://graph.instagram.com",
+							"connect-src 'self' https://*.supabase.co https://graph.facebook.com https://graph.instagram.com https://unpkg.com",
+							"worker-src 'self' blob:",
 							"frame-ancestors 'none'",
 						].join('; '),
 					},

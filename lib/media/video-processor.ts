@@ -23,7 +23,6 @@ import os from 'os';
 import { Logger } from '@/lib/utils/logger';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
 import { VideoMetadata, VideoValidationResult, VideoProcessingOptions, VideoProcessingResult } from '@/lib/types';
-import { isCloudinaryConfigured, processVideoUrlWithCloudinary, extractThumbnailWithCloudinary } from './cloudinary-video-processor';
 
 const MODULE = 'video-processor';
 
@@ -444,13 +443,78 @@ export async function videoNeedsProcessing(inputBuffer: Buffer): Promise<boolean
 }
 
 /**
- * Determine which video processing backend is available.
- * Returns 'ffmpeg' for local dev, 'cloudinary' for Vercel, or 'none'.
+ * Check if Railway video processing service is configured
  */
-export async function getVideoProcessingBackend(): Promise<'ffmpeg' | 'cloudinary' | 'none'> {
+export function isRailwayConfigured(): boolean {
+    return !!(process.env.RAILWAY_API_URL && process.env.RAILWAY_API_SECRET);
+}
+
+interface RailwayProcessingResult {
+    processedUrl: string;
+    thumbnailUrl: string;
+    metadata: {
+        width: number;
+        height: number;
+        duration: number;
+        codec: string;
+        frameRate: number;
+        fileSize: number;
+        processingApplied: string[];
+    };
+}
+
+/**
+ * Process a video via the Railway microservice.
+ * Sends the video URL and Supabase credentials to Railway,
+ * which runs FFmpeg and uploads the result to Supabase Storage.
+ */
+export async function processWithRailway(videoUrl: string): Promise<RailwayProcessingResult> {
+    const railwayUrl = process.env.RAILWAY_API_URL;
+    const railwaySecret = process.env.RAILWAY_API_SECRET;
+
+    if (!railwayUrl || !railwaySecret) {
+        throw new Error('Railway API is not configured. Set RAILWAY_API_URL and RAILWAY_API_SECRET.');
+    }
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+        throw new Error('Supabase credentials are required for Railway video processing.');
+    }
+
+    const response = await fetch(`${railwayUrl}/process-video`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${railwaySecret}`,
+        },
+        body: JSON.stringify({
+            videoUrl,
+            supabaseConfig: {
+                url: supabaseUrl,
+                key: supabaseKey,
+                bucket: 'stories',
+            },
+        }),
+    });
+
+    if (!response.ok) {
+        const errorBody = await response.text();
+        throw new Error(`Railway processing failed (${response.status}): ${errorBody}`);
+    }
+
+    return response.json() as Promise<RailwayProcessingResult>;
+}
+
+/**
+ * Determine which video processing backend is available.
+ * Returns 'ffmpeg' for local dev, 'railway' for Vercel, or 'none'.
+ */
+export async function getVideoProcessingBackend(): Promise<'ffmpeg' | 'railway' | 'none'> {
     const ffmpegAvailable = await checkFfmpegAvailable();
     if (ffmpegAvailable) return 'ffmpeg';
-    if (isCloudinaryConfigured()) return 'cloudinary';
+    if (isRailwayConfigured()) return 'railway';
     return 'none';
 }
 
@@ -460,7 +524,7 @@ export async function getVideoProcessingBackend(): Promise<'ffmpeg' | 'cloudinar
  *
  * Uses a 3-tier fallback:
  *  1. FFmpeg (local/Docker) - preferred
- *  2. Cloudinary (production/Vercel) - cloud-based
+ *  2. Railway microservice (production/Vercel) - remote FFmpeg
  *  3. Accept as-is - no processing available
  */
 export async function processAndUploadStoryVideo(
@@ -476,13 +540,13 @@ export async function processAndUploadStoryVideo(
         return videoUrl;
     }
 
-    if (backend === 'cloudinary') {
-        await Logger.info(MODULE, `Using Cloudinary backend for content: ${contentId}`);
-        const result = await processVideoUrlWithCloudinary(videoUrl, contentId);
-        await Logger.info(MODULE, `Cloudinary processing complete: ${result.url}`, {
-            processingApplied: result.processingApplied,
+    if (backend === 'railway') {
+        await Logger.info(MODULE, `Using Railway backend for content: ${contentId}`);
+        const result = await processWithRailway(videoUrl);
+        await Logger.info(MODULE, `Railway processing complete: ${result.processedUrl}`, {
+            processingApplied: result.metadata.processingApplied,
         });
-        return result.url;
+        return result.processedUrl;
     }
 
     // FFmpeg path: download, validate, process, upload
@@ -534,7 +598,7 @@ export async function processAndUploadStoryVideo(
  *
  * Backend selection:
  *  - FFmpeg: writes a temp file, extracts a frame via `ffmpeg -ss`, uploads to Supabase.
- *  - Cloudinary: uploads the video URL and uses video-to-image transformation.
+ *  - Railway: processes video and returns thumbnail URL alongside processed video.
  *
  * Returns the public URL of the thumbnail image, or null if extraction fails.
  */
@@ -547,13 +611,13 @@ export async function extractVideoThumbnail(
 
     const backend = await getVideoProcessingBackend();
 
-    if (backend === 'cloudinary') {
+    if (backend === 'railway') {
         try {
-            const result = await extractThumbnailWithCloudinary(videoUrl, contentId, offsetSeconds);
-            await Logger.info(MODULE, `Cloudinary thumbnail extracted: ${result.url}`);
-            return result.url;
+            const result = await processWithRailway(videoUrl);
+            await Logger.info(MODULE, `Railway thumbnail extracted: ${result.thumbnailUrl}`);
+            return result.thumbnailUrl;
         } catch (error) {
-            await Logger.warn(MODULE, 'Cloudinary thumbnail extraction failed', error);
+            await Logger.warn(MODULE, 'Railway thumbnail extraction failed', error);
             return null;
         }
     }
