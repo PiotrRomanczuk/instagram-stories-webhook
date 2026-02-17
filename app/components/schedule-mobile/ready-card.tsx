@@ -7,7 +7,7 @@
  */
 
 import Image from 'next/image';
-import { Check, Video, ImageIcon } from 'lucide-react';
+import { Check, Video, ImageIcon, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ContentItem } from '@/lib/types/posts';
 import { format, isToday, isYesterday } from 'date-fns';
@@ -45,6 +45,7 @@ export function ReadyCard({
 	const approvalTime = getApprovalTime(item);
 	const isGreen = approvalLabel === 'Approved Today';
 	const isVideo = item.mediaType === 'VIDEO';
+	const thumbnailSrc = isVideo && item.thumbnailUrl ? item.thumbnailUrl : item.mediaUrl;
 
 	return (
 		<div
@@ -75,14 +76,23 @@ export function ReadyCard({
 				{isVideo && !item.mediaUrl ? (
 					<Video className="h-8 w-8" />
 				) : item.mediaUrl && !imageError ? (
-					<Image
-						src={item.mediaUrl}
-						alt={item.caption || 'Content preview'}
+					<>
+						<Image
+							src={thumbnailSrc}
+							alt={item.caption || 'Content preview'}
 						fill
 						className="object-cover"
 						unoptimized
-						onError={onImageError}
-					/>
+							onError={onImageError}
+						/>
+						{isVideo && (
+							<div className="absolute inset-0 flex items-center justify-center">
+								<div className="rounded-full bg-black/50 p-1.5 backdrop-blur-sm">
+									<Play className="h-4 w-4 text-white" fill="white" />
+								</div>
+							</div>
+						)}
+					</>
 				) : (
 					<div className="flex h-full w-full items-center justify-center">
 						<ImageIcon className="h-8 w-8 text-gray-400" />

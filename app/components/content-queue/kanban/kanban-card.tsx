@@ -65,6 +65,7 @@ export function KanbanCard({ item, onPreview, onEdit, status }: KanbanCardProps)
 	const creatorName = formatCreatorName(item.userEmail);
 	const initials = getInitials(creatorName);
 	const isVideo = item.mediaType === 'VIDEO';
+	const thumbnailSrc = isVideo && item.thumbnailUrl ? item.thumbnailUrl : item.mediaUrl;
 
 	// Card styling based on status
 	const cardStyles: Record<PublishingStatus, string> = {
@@ -106,7 +107,7 @@ export function KanbanCard({ item, onPreview, onEdit, status }: KanbanCardProps)
 			>
 				{!imageError && item.mediaUrl ? (
 					<img
-						src={item.mediaUrl}
+						src={thumbnailSrc}
 						alt={item.title || 'Story thumbnail'}
 						className="absolute inset-0 h-full w-full object-cover"
 						onError={() => setImageError(true)}
@@ -119,8 +120,10 @@ export function KanbanCard({ item, onPreview, onEdit, status }: KanbanCardProps)
 
 				{/* Video indicator */}
 				{isVideo && (
-					<div className="absolute right-2 top-2 rounded-full bg-black/40 p-1 backdrop-blur-sm">
-						<Play className="h-3 w-3 text-white" fill="white" />
+					<div className="absolute inset-0 flex items-center justify-center">
+						<div className="rounded-full bg-black/50 p-2 backdrop-blur-sm">
+							<Play className="h-5 w-5 text-white" fill="white" />
+						</div>
 					</div>
 				)}
 			</div>
