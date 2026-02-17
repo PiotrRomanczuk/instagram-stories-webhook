@@ -217,7 +217,7 @@ interface ContentPreviewModalProps {
 	item: ContentItem;
 	onClose: () => void;
 	onEdit: (item: ContentItem) => void;
-	onRefresh: () => void;
+	onRefresh?: () => void;
 	isAdmin?: boolean;
 	// Navigation props for streamlined review
 	items?: ContentItem[];
@@ -302,7 +302,7 @@ export function ContentPreviewModal({
 				method: 'POST',
 			});
 			if (response.ok) {
-				onRefresh();
+				onRefresh?.();
 				onClose();
 			}
 		} catch (err) {
@@ -320,7 +320,7 @@ export function ContentPreviewModal({
 			});
 			if (response.ok) {
 				toast.success('Post queued for retry');
-				onRefresh();
+				onRefresh?.();
 				onClose();
 			} else {
 				const data = await response.json();
@@ -343,7 +343,7 @@ export function ContentPreviewModal({
 				body: JSON.stringify({ action: 'approve' }),
 			});
 			if (response.ok) {
-				onRefresh();
+				onRefresh?.();
 				onClose();
 			}
 		} catch (err) {
@@ -363,7 +363,7 @@ export function ContentPreviewModal({
 				body: JSON.stringify({ action: 'reject', rejectionReason }),
 			});
 			if (response.ok) {
-				onRefresh();
+				onRefresh?.();
 				onClose();
 			}
 		} catch (err) {
@@ -381,7 +381,7 @@ export function ContentPreviewModal({
 				method: 'DELETE',
 			});
 			if (response.ok) {
-				onRefresh();
+				onRefresh?.();
 				onClose();
 			}
 		} catch (err) {

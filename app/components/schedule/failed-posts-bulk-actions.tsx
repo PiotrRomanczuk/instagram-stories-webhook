@@ -8,7 +8,7 @@ import { ConfirmationDialog } from '../ui/confirmation-dialog';
 
 interface FailedPostsBulkActionsProps {
 	failedItems: ContentItem[];
-	onRefresh: () => void;
+	onRefresh?: () => void;
 }
 
 export function FailedPostsBulkActions({ failedItems, onRefresh }: FailedPostsBulkActionsProps) {
@@ -44,7 +44,7 @@ export function FailedPostsBulkActions({ failedItems, onRefresh }: FailedPostsBu
 		}
 
 		setIsRetrying(false);
-		onRefresh();
+		onRefresh?.();
 	};
 
 	const handleDeleteAll = async () => {
@@ -74,7 +74,7 @@ export function FailedPostsBulkActions({ failedItems, onRefresh }: FailedPostsBu
 
 		setIsDeleting(false);
 		setShowDeleteConfirm(false);
-		onRefresh();
+		onRefresh?.();
 	};
 
 	return (
