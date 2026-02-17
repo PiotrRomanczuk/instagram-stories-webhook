@@ -1,12 +1,16 @@
 import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
 import { withSentryConfig } from '@sentry/nextjs';
+import packageJson from './package.json';
 
 const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 
 const nextConfig: NextConfig = {
 	/* config options here */
 	reactCompiler: true,
+	env: {
+		NEXT_PUBLIC_APP_VERSION: packageJson.version,
+	},
 	images: {
 		remotePatterns: [
 			{
