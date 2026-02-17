@@ -71,7 +71,7 @@ export async function loadFFmpeg(
 	const ffmpeg = new FFmpeg();
 
 	if (onProgress) {
-		ffmpeg.on('progress', ({ progress }) => {
+		ffmpeg.on('progress', ({ progress }: { progress: number }) => {
 			onProgress(Math.min(Math.round(progress * 100), 100));
 		});
 	}
@@ -187,7 +187,7 @@ export async function processVideoInBrowser(
 
 	// Set up progress tracking for the processing step
 	if (onProgress) {
-		ffmpeg.on('progress', ({ progress }) => {
+		ffmpeg.on('progress', ({ progress }: { progress: number }) => {
 			// Map FFmpeg progress (0-1) to our range (15-80)
 			const mapped = 15 + Math.round(progress * 65);
 			onProgress(Math.min(mapped, 80));
