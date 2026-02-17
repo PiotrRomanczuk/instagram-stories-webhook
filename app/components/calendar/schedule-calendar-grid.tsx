@@ -250,7 +250,7 @@ function CurrentTimeIndicator({ hourHeight }: { hourHeight: number }) {
 			<div className="flex items-center">
 				<div className="w-12 sm:w-16 flex justify-end pr-2">
 					<span className="rounded bg-[#2b6cee] px-1.5 py-0.5 text-[10px] font-bold text-white">
-						{format(now, 'h:mm a')}
+						{format(now, 'HH:mm')}
 					</span>
 				</div>
 				<div className="relative flex-1 h-0.5 bg-[#2b6cee]">

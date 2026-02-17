@@ -135,7 +135,7 @@ export function MobileReadyToPost({ items, scheduledItems = [], onBack, onItemCl
 				throw new Error(responseData.error || 'Failed to schedule');
 			}
 
-			toast.success(`Scheduled for ${format(scheduledTime, 'h:mm a')}`);
+			toast.success(`Scheduled for ${format(scheduledTime, 'HH:mm')}`);
 
 			setTimeout(() => {
 				setDismissingCards(prev => {
@@ -367,7 +367,7 @@ export function MobileReadyToPost({ items, scheduledItems = [], onBack, onItemCl
 											const times = Array.from({ length: selectedIds.size }, (_, i) =>
 												new Date(now.getTime() + i * 30 * 60 * 1000)
 											);
-											const shown = times.slice(0, 3).map(t => format(t, 'h:mm'));
+											const shown = times.slice(0, 3).map(t => format(t, 'HH:mm'));
 											const lastTime = times[Math.min(2, times.length - 1)];
 											const ampm = format(lastTime, 'a');
 											const remaining = times.length - 3;

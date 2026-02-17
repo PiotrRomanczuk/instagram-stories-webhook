@@ -30,9 +30,9 @@ interface DateTimePickerProps {
 }
 
 const BEST_TIMES = [
-	{ label: '9:00 AM', hours: 9, minutes: 0 },
-	{ label: '12:00 PM', hours: 12, minutes: 0 },
-	{ label: '6:30 PM', hours: 18, minutes: 30 },
+	{ label: '09:00', hours: 9, minutes: 0 },
+	{ label: '12:00', hours: 12, minutes: 0 },
+	{ label: '18:30', hours: 18, minutes: 30 },
 ];
 
 export function DateTimePicker({
@@ -276,7 +276,7 @@ export function DateTimePicker({
 									<Clock className="h-3.5 w-3.5" />
 									Time
 								</Label>
-								<TimePicker value={value} onChange={onChange} use12Hour />
+								<TimePicker value={value} onChange={onChange} />
 							</div>
 						</div>
 
@@ -372,7 +372,7 @@ export function DateTimePicker({
 							<label className="block text-xs font-bold text-muted-foreground mb-2 uppercase">
 								Time
 							</label>
-							<TimePicker value={value} onChange={onChange} use12Hour />
+							<TimePicker value={value} onChange={onChange} />
 						</div>
 					</div>
 				</div>

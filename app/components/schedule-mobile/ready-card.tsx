@@ -21,7 +21,7 @@ export function getApprovalLabel(item: ContentItem): string {
 
 export function getApprovalTime(item: ContentItem): string {
 	const d = new Date(item.reviewedAt || item.updatedAt || item.createdAt);
-	return format(d, 'h:mm a');
+	return format(d, 'HH:mm');
 }
 
 interface ReadyCardProps {

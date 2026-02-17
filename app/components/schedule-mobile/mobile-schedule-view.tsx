@@ -48,7 +48,6 @@ function groupByTimeSlots(items: ContentItem[]): TimeSlot[] {
 		const half = getMinutes(d) >= 30;
 		const key = `${h}:${half ? '30' : '00'}`;
 		if (!slots.has(key)) {
-			const dh = h === 0 ? 12 : h > 12 ? h - 12 : h;
 			slots.set(key, {
 				hour: h, halfHour: half,
 				label: `${dh}:${half ? '30' : '00'} ${h < 12 ? 'AM' : 'PM'}`,
@@ -203,7 +202,7 @@ export function MobileScheduleView({
 				const responseData = await response.json();
 				throw new Error(responseData.error || 'Failed to reschedule');
 			}
-			toast.success(`Rescheduled for ${format(scheduledTime, 'h:mm a')}`);
+			toast.success(`Rescheduled for ${format(scheduledTime, 'HH:mm')}`);
 			onRefresh?.();
 		} catch (err) {
 			toast.error(err instanceof Error ? err.message : 'Failed to reschedule');
@@ -563,7 +562,7 @@ export function MobileScheduleView({
 			{menuOpen && (() => {
 				const menuItem = scheduledItems.find(i => i.id === menuOpen);
 				if (!menuItem) return null;
-				const menuTime = menuItem.scheduledTime ? format(new Date(menuItem.scheduledTime), 'h:mm a') : '';
+				const menuTime = menuItem.scheduledTime ? format(new Date(menuItem.scheduledTime), 'HH:mm') : '';
 				const menuTitle = menuItem.caption || menuItem.title
 					|| `${menuItem.mediaType === 'VIDEO' ? 'Video' : 'Image'} \u00b7 ${menuTime}`;
 				return (
@@ -759,8 +758,8 @@ function TimelineCard({ item, onClick, onRefresh, menuOpen, onMenuToggle, onItem
 	const isFailed = item.publishingStatus === 'failed';
 	const isPublished = item.publishingStatus === 'published';
 	const isOverdue = item.publishingStatus === 'scheduled' && !!item.scheduledTime && item.scheduledTime < Date.now();
-	// B3: Consistent 12h time format
-	const time = item.scheduledTime ? format(new Date(item.scheduledTime), 'h:mm a') : '';
+	// B3: Consistent 24h time format
+	const time = item.scheduledTime ? format(new Date(item.scheduledTime), 'HH:mm') : '';
 
 	// C4: Fallback title
 	const displayTitle = item.caption || item.title

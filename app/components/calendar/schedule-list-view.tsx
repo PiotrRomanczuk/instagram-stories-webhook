@@ -78,7 +78,7 @@ function ListItem({ item, onItemClick }: { item: ContentItem; onItemClick?: (ite
 					{scheduledDate && (
 						<span className="flex items-center gap-1 text-xs font-semibold text-gray-900">
 							<Clock className="h-3 w-3" />
-							{format(scheduledDate, 'h:mm a')}
+							{format(scheduledDate, 'HH:mm')}
 						</span>
 					)}
 					{/* Status badge */}

@@ -88,7 +88,7 @@ function getTimeLabel(scheduledTime: number) {
 	if (isPast(date)) {
 		return (
 			<span className="text-destructive font-medium">
-				{format(date, 'MMM d, h:mm a')}
+				{format(date, 'MMM d, HH:mm')}
 			</span>
 		);
 	}
@@ -96,14 +96,14 @@ function getTimeLabel(scheduledTime: number) {
 	if (isToday(date)) {
 		return (
 			<span className="font-medium">
-				Today at {format(date, 'h:mm a')}
+				Today at {format(date, 'HH:mm')}
 			</span>
 		);
 	}
 
 	if (isTomorrow(date)) {
 		return (
-			<span>Tomorrow at {format(date, 'h:mm a')}</span>
+			<span>Tomorrow at {format(date, 'HH:mm')}</span>
 		);
 	}
 

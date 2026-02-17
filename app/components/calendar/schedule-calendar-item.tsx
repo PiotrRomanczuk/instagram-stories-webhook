@@ -149,7 +149,7 @@ export function ScheduleCalendarItem({
 					</p>
 					{scheduledTime && (
 						<p className="truncate text-[8px] font-medium text-gray-500">
-							{format(scheduledTime, 'h:mm a')}
+							{format(scheduledTime, 'HH:mm')}
 						</p>
 					)}
 				</div>
@@ -230,7 +230,7 @@ export function ScheduleCalendarItem({
 					</p>
 					{scheduledTime && (
 						<p className="mt-0.5 text-[7px] text-white/70">
-							{format(scheduledTime, 'h:mm a')}
+							{format(scheduledTime, 'HH:mm')}
 						</p>
 					)}
 				</div>
