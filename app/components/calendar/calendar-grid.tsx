@@ -120,7 +120,7 @@ export function CalendarGrid({
 							key={`time-${hour}`}
 							className="flex h-24 items-start justify-end border-b border-r border-[#2a3649] p-2 text-[10px] font-medium text-[#92a4c9]"
 						>
-							{hour <= 12 ? `${hour} AM` : `${hour - 12} PM`}
+							{`${String(hour).padStart(2, '0')}:00`}
 						</div>
 						{days.map((day, dayIndex) => (
 							<TimeSlot

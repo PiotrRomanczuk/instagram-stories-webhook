@@ -86,7 +86,7 @@ export function QuickSchedulePopover({
 			});
 
 			if (response.ok) {
-				toast.success(`Scheduled for ${format(scheduledTime, 'MMM d, h:mm a')}`);
+				toast.success(`Scheduled for ${format(scheduledTime, 'MMM d, HH:mm')}`);
 				onOpenChange(false);
 				onScheduleComplete();
 			} else {

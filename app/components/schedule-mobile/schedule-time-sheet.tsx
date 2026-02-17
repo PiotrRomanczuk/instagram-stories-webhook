@@ -31,9 +31,9 @@ interface ScheduleTimeSheetProps {
 }
 
 const BEST_TIMES = [
-	{ label: '9:00 AM', hours: 9, minutes: 0 },
-	{ label: '12:00 PM', hours: 12, minutes: 0 },
-	{ label: '6:30 PM', hours: 18, minutes: 30 },
+	{ label: '09:00', hours: 9, minutes: 0 },
+	{ label: '12:00', hours: 12, minutes: 0 },
+	{ label: '18:30', hours: 18, minutes: 30 },
 ];
 
 export function ScheduleTimeSheet({
@@ -104,9 +104,9 @@ export function ScheduleTimeSheet({
 
 	// Format the selected time for display
 	const formattedTime = selectedDate.toLocaleTimeString([], {
-		hour: 'numeric',
+		hour: '2-digit',
 		minute: '2-digit',
-	});
+		hour12: false,	});
 
 	const formattedDay = dayOptions[parseInt(selectedDayValue, 10)]?.label || 'Today';
 
@@ -228,7 +228,6 @@ export function ScheduleTimeSheet({
 						<TimePicker
 							value={selectedDate}
 							onChange={handleTimePickerChange}
-							use12Hour
 							className="w-full"
 						/>
 					</div>

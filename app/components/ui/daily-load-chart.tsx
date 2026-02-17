@@ -10,7 +10,7 @@ interface DailyLoadChartProps {
 	className?: string;
 }
 
-const HOURS = Array.from({ length: 18 }, (_, i) => i + 6); // 6 AM to 11 PM
+const HOURS = Array.from({ length: 18 }, (_, i) => i + 6); // 06:00 to 23:00
 
 export function DailyLoadChart({
 	hourlyLoad,
@@ -50,7 +50,7 @@ export function DailyLoadChart({
 										: 'bg-gray-200 hover:bg-gray-300'
 							)}
 							style={{ height: `${heightPct}%` }}
-							title={`${hour > 12 ? hour - 12 : hour}${hour >= 12 ? 'PM' : 'AM'}: ${count} ${count === 1 ? 'post' : 'posts'}`}
+							title={`${String(hour).padStart(2, '0')}:00: ${count} ${count === 1 ? 'post' : 'posts'}`}
 						/>
 					);
 				})}
@@ -62,7 +62,7 @@ export function DailyLoadChart({
 						key={hour}
 						className="flex-1 text-center text-[8px] text-gray-400"
 					>
-						{hour > 12 ? hour - 12 : hour}{hour >= 12 ? 'p' : 'a'}
+						{String(hour).padStart(2, '0')}
 					</span>
 				))}
 			</div>
