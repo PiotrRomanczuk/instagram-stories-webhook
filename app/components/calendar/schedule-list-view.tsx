@@ -1,7 +1,7 @@
 'use client';
 
 import { format, isSameDay } from 'date-fns';
-import { Clock, Image as ImageIcon, Video, AlertCircle, Eye, Heart } from 'lucide-react';
+import { Clock, Image as ImageIcon, Video, AlertCircle, Eye, Heart, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ContentItem } from '@/lib/types/posts';
 import Image from 'next/image';
@@ -38,6 +38,8 @@ function ListItem({ item, onItemClick }: { item: ContentItem; onItemClick?: (ite
 	const config = statusConfig[status] || statusConfig.draft;
 	const borderColor = statusBorderColors[status] || statusBorderColors.draft;
 	const isFailed = status === 'failed';
+	const isVideo = item.mediaType === 'VIDEO';
+	const thumbnailSrc = isVideo && item.thumbnailUrl ? item.thumbnailUrl : item.mediaUrl;
 
 	return (
 		<button
@@ -52,14 +54,21 @@ function ListItem({ item, onItemClick }: { item: ContentItem; onItemClick?: (ite
 			{/* Thumbnail */}
 			<div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100">
 				{item.mediaUrl && !imageError ? (
-					<Image
-						src={item.mediaUrl}
-						alt=""
-						fill
-						className="object-cover"
-						unoptimized
-						onError={() => setImageError(true)}
-					/>
+					<>
+						<Image
+							src={thumbnailSrc}
+							alt=""
+							fill
+							className="object-cover"
+							unoptimized
+							onError={() => setImageError(true)}
+						/>
+						{isVideo && (
+							<div className="absolute inset-0 flex items-center justify-center">
+								<Play className="h-3 w-3 text-white drop-shadow" fill="white" />
+							</div>
+						)}
+					</>
 				) : (
 					<div className="flex h-full w-full items-center justify-center">
 						{item.mediaType === 'VIDEO' ? (

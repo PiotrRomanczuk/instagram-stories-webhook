@@ -8,7 +8,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { ContentItem } from '@/lib/types/posts';
 import { cn, formatRelativeTime } from '@/lib/utils';
-import { CheckCircle, Clock, Grid2X2, List, MoreVertical, Eye, X } from 'lucide-react';
+import { CheckCircle, Clock, Grid2X2, List, MoreVertical, Eye, X, Play } from 'lucide-react';
 import { QuickSchedulePopover } from './quick-schedule-popover';
 
 interface ReadyToScheduleSidebarProps {
@@ -43,6 +43,8 @@ function ReadyAssetCard({
 }: ReadyAssetCardProps) {
 	const [imageError, setImageError] = useState(false);
 	const [showMenu, setShowMenu] = useState(false);
+	const isVideo = item.mediaType === 'VIDEO';
+	const thumbnailSrc = isVideo && item.thumbnailUrl ? item.thumbnailUrl : item.mediaUrl;
 	const menuRef = useRef<HTMLDivElement>(null);
 
 	const { attributes, listeners, setNodeRef, transform, isDragging } =
@@ -133,11 +135,18 @@ function ReadyAssetCard({
 				{!imageError ? (
 					<div className="absolute inset-0 flex items-center justify-center bg-black">
 						<img
-							src={item.mediaUrl}
+							src={thumbnailSrc}
 							alt={title}
 							className="h-full w-full object-contain"
 							onError={() => setImageError(true)}
 						/>
+						{isVideo && (
+							<div className="absolute inset-0 flex items-center justify-center">
+								<div className="rounded-full bg-black/50 p-2 backdrop-blur-sm">
+									<Play className="h-5 w-5 text-white" fill="white" />
+								</div>
+							</div>
+						)}
 					</div>
 				) : (
 					<div className="absolute inset-0 flex items-center justify-center bg-gray-200">

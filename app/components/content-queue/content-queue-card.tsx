@@ -94,6 +94,7 @@ export function ContentQueueCard({
 	const creatorName = formatCreatorName(item.userEmail);
 	const initials = getInitials(creatorName);
 	const isVideo = item.mediaType === 'VIDEO';
+	const thumbnailSrc = isVideo && item.thumbnailUrl ? item.thumbnailUrl : item.mediaUrl;
 	const isPending = item.submissionStatus === 'pending';
 	const isRejected = item.submissionStatus === 'rejected';
 
@@ -125,12 +126,21 @@ export function ContentQueueCard({
 				onClick={() => onPreview(item)}
 			>
 				{!imageError ? (
-					<img
-						src={item.mediaUrl}
-						alt={item.title || 'Story thumbnail'}
-						className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-						onError={() => setImageError(true)}
-					/>
+					<>
+						<img
+							src={thumbnailSrc}
+							alt={item.title || 'Story thumbnail'}
+							className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+							onError={() => setImageError(true)}
+						/>
+						{isVideo && (
+							<div className="absolute inset-0 flex items-center justify-center">
+								<div className="rounded-full bg-black/50 p-2.5 backdrop-blur-sm">
+									<Play className="h-5 w-5 text-white" fill="white" />
+								</div>
+							</div>
+						)}
+					</>
 				) : (
 					<div className="absolute inset-0 flex items-center justify-center text-[#92a4c9]">
 						<span className="text-xs">Image unavailable</span>
@@ -140,12 +150,6 @@ export function ContentQueueCard({
 				{/* Gradient overlay */}
 				<div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60" />
 
-				{/* Video indicator */}
-				{isVideo && (
-					<div className="absolute right-3 top-3 rounded-full bg-black/40 p-1 backdrop-blur-sm">
-						<Play className="h-4 w-4 text-white" fill="white" />
-					</div>
-				)}
 
 				{/* Grayscale for rejected */}
 				{isRejected && (
