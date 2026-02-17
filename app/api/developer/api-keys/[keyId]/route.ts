@@ -16,11 +16,11 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ k
     if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { keyId } = await params;
-    const apiKey = await getApiKeyById(keyId, session.user.id);
+    const apiKey = await getApiKeyById(keyId);
     if (!apiKey) return NextResponse.json({ error: 'API key not found' }, { status: 404 });
     if (apiKey.userId !== session.user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-    const success = await revokeApiKey(keyId, session.user.id);
+    const success = await revokeApiKey(keyId);
     if (!success) return NextResponse.json({ error: 'Failed to revoke API key' }, { status: 500 });
 
     Logger.info(MODULE, 'API key revoked', { userId: session.user.id, keyId });
@@ -38,7 +38,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ ke
     if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { keyId } = await params;
-    const apiKey = await getApiKeyById(keyId, session.user.id);
+    const apiKey = await getApiKeyById(keyId);
     if (!apiKey) return NextResponse.json({ error: 'API key not found' }, { status: 404 });
     if (apiKey.userId !== session.user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
@@ -46,10 +46,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ ke
     const validation = UpdateApiKeySchema.safeParse(body);
     if (!validation.success) return NextResponse.json({ error: 'Invalid request body', details: validation.error.issues }, { status: 400 });
 
-    const success = await updateApiKey(keyId, session.user.id, validation.data);
+    const success = await updateApiKey(keyId, validation.data);
     if (!success) return NextResponse.json({ error: 'Failed to update API key' }, { status: 500 });
 
-    const updatedKey = await getApiKeyById(keyId, session.user.id);
+    const updatedKey = await getApiKeyById(keyId);
     Logger.info(MODULE, 'API key updated', { userId: session.user.id, keyId });
 
     return NextResponse.json({
