@@ -368,10 +368,8 @@ export function MobileReadyToPost({ items, scheduledItems = [], onBack, onItemCl
 												new Date(now.getTime() + i * 30 * 60 * 1000)
 											);
 											const shown = times.slice(0, 3).map(t => format(t, 'HH:mm'));
-											const lastTime = times[Math.min(2, times.length - 1)];
-											const ampm = format(lastTime, 'a');
 											const remaining = times.length - 3;
-											return `→ ${shown.join(', ')} ${ampm}${remaining > 0 ? ` + ${remaining} more` : ''}`;
+											return `→ ${shown.join(', ')}${remaining > 0 ? ` + ${remaining} more` : ''}`;
 										})()}
 									</span>
 								</div>

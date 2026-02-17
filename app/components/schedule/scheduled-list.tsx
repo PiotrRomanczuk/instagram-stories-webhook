@@ -109,11 +109,11 @@ function getTimeLabel(scheduledTime: number) {
 
 	if (hoursUntil < 24 * 7) {
 		return (
-			<span>{format(date, 'EEEE \'at\' h:mm a')}</span>
+			<span>{format(date, 'EEEE \'at\' HH:mm')}</span>
 		);
 	}
 
-	return <span>{format(date, 'MMM d \'at\' h:mm a')}</span>;
+	return <span>{format(date, 'MMM d \'at\' HH:mm')}</span>;
 }
 
 export function ScheduledList({

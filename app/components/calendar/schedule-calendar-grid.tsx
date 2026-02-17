@@ -33,7 +33,7 @@ interface ScheduleCalendarGridProps {
 	onDecreaseGranularity?: () => void;
 }
 
-// Time slots from 6 AM to 11 PM
+// Time slots from 06:00 to 23:00
 const TIME_SLOTS = Array.from({ length: 18 }, (_, i) => i + 6);
 
 // Base height of each hour slot in pixels
@@ -90,9 +90,7 @@ function TimeBlock({ day, hour, blockIndex, startMinute, granularity, blockHeigh
 	}, [setNodeRef]);
 
 	const formatTimeLabel = () => {
-		const h = hour === 12 ? 12 : hour < 12 ? hour : hour - 12;
-		const ampm = hour < 12 ? 'AM' : 'PM';
-		return `${h}:${String(startMinute).padStart(2, '0')} ${ampm}`;
+		return `${String(hour).padStart(2, '0')}:${String(startMinute).padStart(2, '0')}`;
 	};
 
 	return (
@@ -193,12 +191,9 @@ function HourRow({ day, hour, items, onItemClick, granularity, blocksPerHour, bl
 	return (
 		<div className="flex" style={{ height: `${hourHeight}px` }}>
 			{/* Time label */}
-			<div className="flex w-12 sm:w-16 flex-shrink-0 flex-col items-center justify-start border-r border-gray-200 bg-white pt-1">
+			<div className="flex w-12 sm:w-16 flex-shrink-0 items-center justify-center border-r border-gray-200 bg-white pt-1">
 				<span className="text-[11px] font-medium text-gray-500">
-					{hour === 12 ? '12' : hour < 12 ? hour : hour - 12}
-				</span>
-				<span className="text-[8px] text-gray-400">
-					{hour < 12 ? 'AM' : 'PM'}
+					{String(hour).padStart(2, '0')}:00
 				</span>
 			</div>
 

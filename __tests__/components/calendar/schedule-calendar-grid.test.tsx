@@ -48,18 +48,18 @@ describe('ScheduleCalendarGrid', () => {
 		expect(screen.getByText('15')).toBeInTheDocument();
 	});
 
-	it('should render time slots from 6 AM to 11 PM', () => {
-		const { container } = renderWithDnd(
+	it('should render time slots from 06:00 to 23:00', () => {
+		renderWithDnd(
 			<ScheduleCalendarGrid
 				currentDate={defaultDate}
 				scheduledItems={[]}
 			/>
 		);
 
-		// Check that 18 hour rows exist (6 AM to 11 PM)
-		// Each hour has a time label div
-		expect(screen.getAllByText('AM').length).toBeGreaterThan(0);
-		expect(screen.getAllByText('PM').length).toBeGreaterThan(0);
+		// Check that 24h time labels are rendered
+		expect(screen.getByText('06:00')).toBeInTheDocument();
+		expect(screen.getByText('12:00')).toBeInTheDocument();
+		expect(screen.getByText('23:00')).toBeInTheDocument();
 	});
 
 	it('should display timezone indicator', () => {
