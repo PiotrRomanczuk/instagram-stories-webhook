@@ -88,14 +88,19 @@ export function Navbar() {
 			<div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 				<div className="flex h-16 items-center justify-between">
 					{/* Logo */}
-					<Link href="/" className="flex items-center gap-2">
-						<span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-xl font-black tracking-tighter text-transparent">
-							MARSZAL
+					<div className="flex items-center gap-2">
+						<Link href="/" className="flex items-center gap-2">
+							<span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-xl font-black tracking-tighter text-transparent">
+								MARSZAL
+							</span>
+							<span className="text-xl font-black tracking-tighter text-foreground">
+								ARTS
+							</span>
+						</Link>
+						<span className="text-[10px] font-medium text-muted-foreground">
+							v{process.env.NEXT_PUBLIC_APP_VERSION}
 						</span>
-						<span className="text-xl font-black tracking-tighter text-foreground">
-							ARTS
-						</span>
-					</Link>
+					</div>
 
 					{/* Desktop Navigation */}
 					<div className="hidden items-center gap-1 md:flex">

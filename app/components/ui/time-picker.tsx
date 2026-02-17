@@ -2,7 +2,7 @@
 
 /**
  * TimePicker - shadcn-based time selection component
- * Uses Select components for hours and minutes instead of custom drum picker
+ * Uses Select components for hours and minutes in 24-hour format
  */
 
 import * as React from 'react';
@@ -20,29 +20,18 @@ interface TimePickerProps {
 	value: Date;
 	onChange: (date: Date) => void;
 	className?: string;
-	use12Hour?: boolean;
 }
 
 export function TimePicker({
 	value,
 	onChange,
 	className,
-	use12Hour = true,
 }: TimePickerProps) {
 	const hours = value.getHours();
 	const minutes = value.getMinutes();
 
-	// 12-hour format helpers
-	const hours12 = hours % 12 || 12;
-	const isPM = hours >= 12;
-
 	const handleHourChange = (hourStr: string) => {
-		let hour = parseInt(hourStr, 10);
-		if (use12Hour) {
-			// Convert 12-hour to 24-hour
-			if (isPM && hour !== 12) hour += 12;
-			if (!isPM && hour === 12) hour = 0;
-		}
+		const hour = parseInt(hourStr, 10);
 		const newDate = new Date(value);
 		newDate.setHours(hour);
 		onChange(newDate);
@@ -55,21 +44,8 @@ export function TimePicker({
 		onChange(newDate);
 	};
 
-	const handlePeriodChange = (period: string) => {
-		const newDate = new Date(value);
-		const currentHour = newDate.getHours();
-		if (period === 'PM' && currentHour < 12) {
-			newDate.setHours(currentHour + 12);
-		} else if (period === 'AM' && currentHour >= 12) {
-			newDate.setHours(currentHour - 12);
-		}
-		onChange(newDate);
-	};
-
-	// Generate hour options
-	const hourOptions = use12Hour
-		? Array.from({ length: 12 }, (_, i) => i + 1)
-		: Array.from({ length: 24 }, (_, i) => i);
+	// Generate hour options (0-23)
+	const hourOptions = Array.from({ length: 24 }, (_, i) => i);
 
 	// Generate minute options (every minute)
 	const minuteOptions = Array.from({ length: 60 }, (_, i) => i);
@@ -80,7 +56,7 @@ export function TimePicker({
 
 			{/* Hour Select */}
 			<Select
-				value={use12Hour ? String(hours12) : String(hours)}
+				value={String(hours)}
 				onValueChange={handleHourChange}
 			>
 				<SelectTrigger className="w-[70px]">
@@ -110,19 +86,6 @@ export function TimePicker({
 					))}
 				</SelectContent>
 			</Select>
-
-			{/* AM/PM Select (if 12-hour format) */}
-			{use12Hour && (
-				<Select value={isPM ? 'PM' : 'AM'} onValueChange={handlePeriodChange}>
-					<SelectTrigger className="w-[70px]">
-						<SelectValue />
-					</SelectTrigger>
-					<SelectContent>
-						<SelectItem value="AM">AM</SelectItem>
-						<SelectItem value="PM">PM</SelectItem>
-					</SelectContent>
-				</Select>
-			)}
 		</div>
 	);
 }
@@ -135,7 +98,7 @@ export function TimePickerInput({
 	value,
 	onChange,
 	className,
-}: Omit<TimePickerProps, 'use12Hour'>) {
+}: TimePickerProps) {
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const [hours, minutes] = e.target.value.split(':').map(Number);
 		if (isNaN(hours) || isNaN(minutes)) return;

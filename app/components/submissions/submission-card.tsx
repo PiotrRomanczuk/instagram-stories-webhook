@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { Eye, Edit, Trash2, ImageOff, X } from 'lucide-react';
+import { Eye, Edit, Trash2, ImageOff, X, Play } from 'lucide-react';
 import { ContentItem } from '@/lib/types';
 import { SfAvatar, SfStatusBadge } from '@/app/components/storyflow';
 import { Dialog, DialogContent, DialogTitle } from '@/app/components/ui/dialog';
@@ -52,6 +52,8 @@ export function SubmissionCard({
 	const status = getDisplayStatus(submission);
 	const isPublished = status === 'published';
 	const canEdit = submission.submissionStatus === 'pending';
+	const isVideo = submission.mediaType === 'VIDEO';
+	const thumbnailSrc = isVideo && submission.thumbnailUrl ? submission.thumbnailUrl : submission.mediaUrl;
 
 	// Format the time text based on status
 	const getTimeText = () => {
@@ -86,12 +88,21 @@ export function SubmissionCard({
 		>
 			{/* Background Image */}
 			{!imageError && hasValidUrl ? (
-				<img
-					src={submission.mediaUrl}
-					alt={submission.title || 'Submission'}
+				<>
+					<img
+						src={thumbnailSrc}
+						alt={submission.title || 'Submission'}
 					className="absolute inset-0 h-full w-full object-contain"
-					onError={() => setImageError(true)}
-				/>
+						onError={() => setImageError(true)}
+					/>
+					{isVideo && (
+						<div className="absolute inset-0 flex items-center justify-center z-[1]">
+							<div className="rounded-full bg-black/50 p-3 backdrop-blur-sm">
+								<Play className="h-6 w-6 text-white" fill="white" />
+							</div>
+						</div>
+					)}
+				</>
 			) : (
 				<div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gray-100 text-gray-500">
 					<ImageOff className="h-12 w-12 opacity-50" />
@@ -187,11 +198,20 @@ export function SubmissionCard({
 						<X className="h-4 w-4" />
 					</button>
 					{hasValidUrl && (
-						<img
-							src={submission.mediaUrl}
-							alt={submission.title || 'Submission'}
-							className="w-full max-h-[80vh] object-contain"
-						/>
+						isVideo ? (
+							<video
+								src={submission.mediaUrl}
+								poster={submission.thumbnailUrl}
+								controls
+								className="w-full max-h-[80vh]"
+							/>
+						) : (
+							<img
+								src={submission.mediaUrl}
+								alt={submission.title || 'Submission'}
+								className="w-full max-h-[80vh] object-contain"
+							/>
+						)
 					)}
 					<div className="p-4 bg-black">
 						<div className="flex items-center gap-2">

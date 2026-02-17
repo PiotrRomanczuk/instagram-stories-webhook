@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import Image from 'next/image';
-import { Eye, CheckSquare, Square } from 'lucide-react';
+import { Eye, CheckSquare, Play } from 'lucide-react';
 import {
 	Table,
 	TableBody,
@@ -12,7 +12,6 @@ import {
 	TableHeader,
 	TableRow,
 } from '@/app/components/ui/table';
-import { Button } from '@/app/components/ui/button';
 import { Checkbox } from '@/app/components/ui/checkbox';
 import { Skeleton } from '@/app/components/ui/skeleton';
 import {
@@ -98,7 +97,10 @@ export function ReviewList({
 						</TableRow>
 					</TableHeader>
 					<TableBody>
-						{items.map((item) => (
+						{items.map((item) => {
+							const isItemVideo = item.mediaType === 'VIDEO';
+							const thumbSrc = isItemVideo && item.thumbnailUrl ? item.thumbnailUrl : item.mediaUrl;
+							return (
 							<TableRow key={item.id}>
 								<TableCell>
 									<Checkbox
@@ -113,12 +115,18 @@ export function ReviewList({
 										className="relative h-14 w-14 overflow-hidden rounded-md border hover:opacity-80 transition-opacity"
 									>
 										<Image
-											src={item.mediaUrl}
+											src={thumbSrc}
 											alt={item.title || 'Submission'}
 											fill
 											className="object-cover"
 											sizes="56px"
+											unoptimized
 										/>
+										{isItemVideo && (
+											<div className="absolute inset-0 flex items-center justify-center">
+												<Play className="h-4 w-4 text-white drop-shadow-md" fill="white" />
+											</div>
+										)}
 										<div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 hover:opacity-100 transition-opacity">
 											<Eye className="h-4 w-4 text-white" />
 										</div>
@@ -159,7 +167,8 @@ export function ReviewList({
 									</div>
 								</TableCell>
 							</TableRow>
-						))}
+							);
+						})}
 					</TableBody>
 				</Table>
 			</div>
@@ -175,12 +184,22 @@ export function ReviewList({
 					{previewItem && (
 						<div className="space-y-4">
 							<div className="relative aspect-[9/16] max-h-[60vh] w-full overflow-hidden rounded-lg bg-muted">
-								<Image
-									src={previewItem.mediaUrl}
-									alt={previewItem.title || 'Submission'}
-									fill
-									className="object-contain"
-								/>
+								{previewItem.mediaType === 'VIDEO' ? (
+									<video
+										src={previewItem.mediaUrl}
+										poster={previewItem.thumbnailUrl}
+										controls
+										className="h-full w-full object-contain"
+									/>
+								) : (
+									<Image
+										src={previewItem.mediaUrl}
+										alt={previewItem.title || 'Submission'}
+										fill
+										className="object-contain"
+										unoptimized
+									/>
+								)}
 							</div>
 							{previewItem.caption && (
 								<div className="space-y-2">

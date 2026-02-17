@@ -12,7 +12,7 @@ import { useDraggable } from '@dnd-kit/core';
 import { ContentItem } from '@/lib/types/posts';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { MoreVertical, Clock, AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
+import { MoreVertical, Clock, AlertTriangle, CheckCircle, Loader2, Play } from 'lucide-react';
 
 interface ScheduleCalendarItemProps {
 	item: ContentItem;
@@ -58,6 +58,8 @@ export function ScheduleCalendarItem({
 	variant = 'card',
 }: ScheduleCalendarItemProps) {
 	const [imageError, setImageError] = useState(false);
+	const isVideo = item.mediaType === 'VIDEO';
+	const thumbnailSrc = isVideo && item.thumbnailUrl ? item.thumbnailUrl : item.mediaUrl;
 
 	const { attributes, listeners, setNodeRef, transform, isDragging } =
 		useDraggable({
@@ -113,14 +115,19 @@ export function ScheduleCalendarItem({
 						<>
 							<div
 								className="absolute inset-0 bg-cover bg-center"
-								style={{ backgroundImage: `url(${item.mediaUrl})` }}
+								style={{ backgroundImage: `url(${thumbnailSrc})` }}
 							/>
 							<img
-								src={item.mediaUrl}
+								src={thumbnailSrc}
 								alt=""
 								className="sr-only"
 								onError={() => setImageError(true)}
 							/>
+							{isVideo && (
+								<div className="absolute inset-0 flex items-center justify-center">
+									<Play className="h-2.5 w-2.5 text-white drop-shadow" fill="white" />
+								</div>
+							)}
 						</>
 					) : (
 						<div className="flex h-full w-full items-center justify-center bg-gray-200">
@@ -149,7 +156,7 @@ export function ScheduleCalendarItem({
 					</p>
 					{scheduledTime && (
 						<p className="truncate text-[8px] font-medium text-gray-500">
-							{format(scheduledTime, 'h:mm a')}
+							{format(scheduledTime, 'HH:mm')}
 						</p>
 					)}
 				</div>
@@ -181,18 +188,28 @@ export function ScheduleCalendarItem({
 			{!imageError ? (
 				<div
 					className="absolute inset-0 bg-cover bg-center"
-					style={{ backgroundImage: `url(${item.mediaUrl})` }}
+					style={{ backgroundImage: `url(${thumbnailSrc})` }}
 				>
 					<img
-						src={item.mediaUrl}
+						src={thumbnailSrc}
 						alt=""
 						className="sr-only"
 						onError={() => setImageError(true)}
 					/>
 				</div>
-			) : (
+			)
+			: (
 				<div className="absolute inset-0 flex items-center justify-center bg-gray-200">
 					<span className="text-[8px] text-gray-500">No preview</span>
+				</div>
+			)}
+
+			{/* Video play indicator overlay */}
+			{isVideo && (
+				<div className="absolute inset-0 flex items-center justify-center z-10">
+					<div className="rounded-full bg-black/50 p-1.5 backdrop-blur-sm">
+						<Play className="h-4 w-4 text-white" fill="white" />
+					</div>
 				</div>
 			)}
 
@@ -230,7 +247,7 @@ export function ScheduleCalendarItem({
 					</p>
 					{scheduledTime && (
 						<p className="mt-0.5 text-[7px] text-white/70">
-							{format(scheduledTime, 'h:mm a')}
+							{format(scheduledTime, 'HH:mm')}
 						</p>
 					)}
 				</div>

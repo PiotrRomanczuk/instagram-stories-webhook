@@ -48,10 +48,9 @@ function groupByTimeSlots(items: ContentItem[]): TimeSlot[] {
 		const half = getMinutes(d) >= 30;
 		const key = `${h}:${half ? '30' : '00'}`;
 		if (!slots.has(key)) {
-			const dh = h === 0 ? 12 : h > 12 ? h - 12 : h;
 			slots.set(key, {
 				hour: h, halfHour: half,
-				label: `${dh}:${half ? '30' : '00'} ${h < 12 ? 'AM' : 'PM'}`,
+				label: `${String(h).padStart(2, '0')}:${half ? '30' : '00'}`,
 				items: [],
 			});
 		}
@@ -165,7 +164,7 @@ export function MobileScheduleView({
 		if (maxFreq <= 0) return null;
 		const peak = hourlyFreq.indexOf(maxFreq);
 		if (peak < 0) return null;
-		const fmt = (h: number) => `${h === 0 ? 12 : h > 12 ? h - 12 : h}${h < 12 ? 'am' : 'pm'}`;
+		const fmt = (h: number) => `${String(h).padStart(2, '0')}:00`;
 		let end = peak;
 		for (let i = peak + 1; i < 24 && hourlyFreq[i] >= maxFreq * 0.5; i++) end = i;
 		return `${fmt(peak)} - ${fmt(end + 1)}`;
@@ -203,7 +202,7 @@ export function MobileScheduleView({
 				const responseData = await response.json();
 				throw new Error(responseData.error || 'Failed to reschedule');
 			}
-			toast.success(`Rescheduled for ${format(scheduledTime, 'h:mm a')}`);
+			toast.success(`Rescheduled for ${format(scheduledTime, 'HH:mm')}`);
 			onRefresh?.();
 		} catch (err) {
 			toast.error(err instanceof Error ? err.message : 'Failed to reschedule');
@@ -362,7 +361,7 @@ export function MobileScheduleView({
 									})}
 								</div>
 								<div className="flex justify-between text-[9px] text-gray-400 mt-1 font-medium px-0.5">
-									<span>12 AM</span><span>6 AM</span><span>12 PM</span><span>6 PM</span><span>12 AM</span>
+									<span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>00:00</span>
 								</div>
 							</div>
 						)}
@@ -563,7 +562,7 @@ export function MobileScheduleView({
 			{menuOpen && (() => {
 				const menuItem = scheduledItems.find(i => i.id === menuOpen);
 				if (!menuItem) return null;
-				const menuTime = menuItem.scheduledTime ? format(new Date(menuItem.scheduledTime), 'h:mm a') : '';
+				const menuTime = menuItem.scheduledTime ? format(new Date(menuItem.scheduledTime), 'HH:mm') : '';
 				const menuTitle = menuItem.caption || menuItem.title
 					|| `${menuItem.mediaType === 'VIDEO' ? 'Video' : 'Image'} \u00b7 ${menuTime}`;
 				return (
@@ -759,8 +758,8 @@ function TimelineCard({ item, onClick, onRefresh, menuOpen, onMenuToggle, onItem
 	const isFailed = item.publishingStatus === 'failed';
 	const isPublished = item.publishingStatus === 'published';
 	const isOverdue = item.publishingStatus === 'scheduled' && !!item.scheduledTime && item.scheduledTime < Date.now();
-	// B3: Consistent 12h time format
-	const time = item.scheduledTime ? format(new Date(item.scheduledTime), 'h:mm a') : '';
+	// B3: Consistent 24h time format
+	const time = item.scheduledTime ? format(new Date(item.scheduledTime), 'HH:mm') : '';
 
 	// C4: Fallback title
 	const displayTitle = item.caption || item.title

@@ -131,7 +131,7 @@ export function StoryCardEnhanced({
 						<div className="mb-1.5 flex items-center gap-1.5">
 							<Clock className="h-3.5 w-3.5 text-[#2b6cee]" />
 							<span className="text-xs font-bold uppercase tracking-wide text-gray-900">
-								Scheduled for {format(scheduledDate, 'h:mm a')}
+								Scheduled for {format(scheduledDate, 'HH:mm')}
 							</span>
 						</div>
 					)}
