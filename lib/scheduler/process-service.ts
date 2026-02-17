@@ -4,6 +4,7 @@ import { processAndUploadStoryVideo } from '@/lib/media/video-processor';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
 import { getCurrentEnvironment } from '@/lib/content-db/environment';
 import { Logger } from '@/lib/utils/logger';
+import { getFacebookAccessToken } from '@/lib/database/linked-accounts';
 import {
 	generateContentHash,
 	checkForRecentPublish,
@@ -400,17 +401,33 @@ export async function processScheduledPosts(
 					}
 				}
 
-				// 5. Publish the media using the associated user's tokens
+				// 5. Resolve which user's Instagram tokens to use for publishing.
+				// For submissions: the submitter may not have a linked IG account,
+				// so fall back to the admin who reviewed/approved the content.
+				let publishUserId = item.userId;
+				if (item.source === 'submission' && item.reviewedBy) {
+					const submitterToken = await getFacebookAccessToken(item.userId);
+					if (!submitterToken) {
+						await Logger.info(
+							MODULE,
+							`Submitter ${item.userId} has no linked IG account, using reviewer ${item.reviewedBy} for publishing`,
+							{ postId: item.id },
+						);
+						publishUserId = item.reviewedBy;
+					}
+				}
+
+				// 6. Publish the media using the resolved user's tokens
 				const result = await publishMedia(
 					publishUrl,
 					item.mediaType,
 					postType,
 					item.caption,
-					item.userId,
+					publishUserId,
 					item.userTags,
 				);
 
-				// 6. Update status to published with content hash
+				// 7. Update status to published with content hash
 				// BMS-157: Retry DB update to handle publish success + DB failure
 				let dbUpdateSuccess = false;
 				for (let dbAttempt = 0; dbAttempt < 3; dbAttempt++) {
@@ -441,7 +458,7 @@ export async function processScheduledPosts(
 					result,
 				});
 
-				// 7. Inter-publish delay (skip for last item and postId path)
+				// 8. Inter-publish delay (skip for last item and postId path)
 				const isLastItem = i === pendingItems.length - 1;
 				if (!postId && !isLastItem && config.publishDelayMs > 0) {
 					await Logger.info(MODULE, `⏱️ Waiting ${config.publishDelayMs}ms before next publish...`);
