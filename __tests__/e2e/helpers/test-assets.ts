@@ -7,6 +7,13 @@ const FIXTURE_IMAGES_DIR = path.join(process.cwd(), '__tests__/e2e/fixtures/test
 const TEST_VIDEO_PATH = path.join(process.cwd(), '__tests__/fixtures/test-video.mp4');
 
 /**
+ * Public URL for the Big Buck Bunny test video (1080p, 10s, ~1MB).
+ * Used for API-seeded video content where a publicly accessible URL is needed.
+ */
+export const TEST_VIDEO_URL =
+  'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/1080/Big_Buck_Bunny_1080_10s_1MB.mp4';
+
+/**
  * Returns the directory containing test images.
  * Prefers /memes (local dev with real memes) but falls back to
  * __tests__/e2e/fixtures/test-images/ (always available in CI).

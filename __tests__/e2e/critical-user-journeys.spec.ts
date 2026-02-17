@@ -5,7 +5,15 @@ import {
 	signInAsRealIG,
 	signOut,
 } from './helpers/auth';
-import { createPendingContent } from './helpers/seed';
+import {
+	createPendingContent,
+	createApprovedContent,
+	createScheduledContent,
+	cleanupTestContent,
+	fetchContent,
+	getContentById,
+} from './helpers/seed';
+import { getSafeScheduleTime } from './helpers/calendar';
 import { getMemeByIndex, getTestVideo } from './helpers/test-assets';
 
 /**
@@ -16,6 +24,8 @@ import { getMemeByIndex, getTestVideo } from './helpers/test-assets';
  *   CP-3: Admin Review and Approval (with rejection workflow)
  *   CP-4: Scheduled Publishing Flow (REAL Instagram API)
  *   CP-5: Posted Stories Verification
+ *   CP-6: Scheduling Workflow (REAL Instagram API)
+ *   CP-7: End-to-End Content Lifecycle (REAL Instagram publishing)
  *   CP-X: Navigation (admin/user)
  *
  * Auth/RBAC tests live in auth-and-rbac-core.spec.ts (no duplication).
@@ -23,7 +33,7 @@ import { getMemeByIndex, getTestVideo } from './helpers/test-assets';
  *
  * IMPORTANT:
  * - CP-2, CP-3 use test accounts (admin@test.com, user@test.com)
- * - CP-4 and CP-5 use REAL Instagram account (@www_hehe_pl) with REAL API
+ * - CP-4, CP-5, CP-6, CP-7 use REAL Instagram account (@www_hehe_pl) with REAL API
  * - E2E tests NEVER mock the Instagram API
  */
 
@@ -154,6 +164,52 @@ test.describe('CP-2: Content Submission Flow', () => {
 		await page.waitForTimeout(1000);
 
 		// Should show submissions content
+		const bodyText = await page.innerText('body');
+		const hasContent =
+			bodyText.includes('Submission') ||
+			bodyText.includes('Pending') ||
+			bodyText.includes('Content');
+		expect(hasContent).toBeTruthy();
+	});
+
+	test('CP-2.7: user can submit three separate image submissions', async ({
+		page,
+	}) => {
+		test.slow();
+
+		for (let i = 0; i < 3; i++) {
+			await page.goto('/submit');
+			await page.waitForLoadState('domcontentloaded');
+
+			// Upload image
+			const testImagePath = getMemeByIndex(20 + i);
+			const fileInput = page.locator('input[type="file"]');
+			await fileInput.setInputFiles(testImagePath);
+
+			// Wait for upload
+			const submitButton = page.getByRole('button', {
+				name: /submit for review/i,
+			});
+			await expect(submitButton).toBeEnabled({ timeout: 30000 });
+
+			// Fill unique caption
+			const captionField = page.locator('#caption');
+			await captionField.fill(`CP-2.7 Multi-Submit #${i + 1} ${Date.now()}`);
+
+			// Submit
+			await submitButton.click();
+
+			// Should redirect to submissions
+			await expect(page).toHaveURL(/\/(en\/)?submissions/, {
+				timeout: 15000,
+			});
+		}
+
+		// Verify submissions page has content
+		await page.goto('/submissions');
+		await page.waitForLoadState('domcontentloaded');
+		await page.waitForTimeout(1000);
+
 		const bodyText = await page.innerText('body');
 		const hasContent =
 			bodyText.includes('Submission') ||
@@ -522,6 +578,284 @@ test.describe('CP-5: Posted Stories Verification', () => {
 		});
 
 		// NOTE: IG connection check is in CP-4.1, publish+verify is in instagram-publishing-live.spec.ts
+	});
+});
+
+// ===========================================================================
+// CP-6: Scheduling Workflow (REAL Instagram API)
+// ===========================================================================
+
+test.describe('CP-6: Scheduling Workflow', () => {
+	test.skip(
+		() => process.env.CI === 'true',
+		'NEVER run live publishing tests in CI'
+	);
+	test.skip(
+		() => !process.env.ENABLE_REAL_IG_TESTS,
+		'Set ENABLE_REAL_IG_TESTS=true to run'
+	);
+	test.skip(
+		() => process.env.ENABLE_LIVE_IG_PUBLISH !== 'true',
+		'Set ENABLE_LIVE_IG_PUBLISH=true'
+	);
+
+	const createdIds: string[] = [];
+
+	test.beforeEach(async ({ page }) => {
+		await signInAsRealIG(page);
+	});
+
+	test.afterEach(async ({ page }) => {
+		if (createdIds.length > 0) {
+			await cleanupTestContent(page, createdIds);
+			createdIds.length = 0;
+		}
+	});
+
+	test('CP-6.1: admin can schedule approved content via API', async ({
+		page,
+	}) => {
+		// Create approved content
+		const contentId = await createApprovedContent(page, {
+			title: 'CP-6.1 Schedule Test ' + Date.now(),
+			caption: 'Testing scheduling workflow',
+		});
+		createdIds.push(contentId);
+
+		// Schedule it via the schedule endpoint
+		const { date, hour } = getSafeScheduleTime();
+		const scheduledTime = new Date(date);
+		scheduledTime.setHours(hour, 0, 0, 0);
+
+		const scheduleResponse = await page.request.post(
+			`/api/content/${contentId}/schedule`,
+			{ data: { scheduledTime: scheduledTime.getTime() } }
+		);
+		expect(scheduleResponse.ok()).toBe(true);
+
+		// Verify content is now scheduled
+		const content = await getContentById(page, contentId);
+		expect(content).not.toBeNull();
+		expect(content!.publishingStatus).toBe('scheduled');
+	});
+
+	test('CP-6.2: admin can reschedule content to a different time', async ({
+		page,
+	}) => {
+		// Create scheduled content
+		const { date, hour } = getSafeScheduleTime();
+		const originalTime = new Date(date);
+		originalTime.setHours(hour, 0, 0, 0);
+
+		const contentId = await createScheduledContent(page, originalTime, {
+			title: 'CP-6.2 Reschedule Test ' + Date.now(),
+			caption: 'Testing rescheduling workflow',
+		});
+		createdIds.push(contentId);
+
+		// Reschedule to a different time (+2 hours)
+		const newTime = new Date(originalTime.getTime() + 2 * 60 * 60 * 1000);
+		const rescheduleResponse = await page.request.post(
+			`/api/content/${contentId}/schedule`,
+			{ data: { scheduledTime: newTime.getTime() } }
+		);
+		expect(rescheduleResponse.ok()).toBe(true);
+
+		// Verify the scheduled time was updated
+		const content = await getContentById(page, contentId);
+		expect(content).not.toBeNull();
+		expect(content!.publishingStatus).toBe('scheduled');
+		expect(content!.scheduledTime).toBe(newTime.getTime());
+	});
+
+	test('CP-6.3: scheduled content appears correctly in queue', async ({
+		page,
+	}) => {
+		// Create 2 scheduled items at different times
+		const { date, hour } = getSafeScheduleTime();
+		const time1 = new Date(date);
+		time1.setHours(hour, 0, 0, 0);
+		const time2 = new Date(time1.getTime() + 24 * 60 * 60 * 1000); // +24h
+
+		const id1 = await createScheduledContent(page, time1, {
+			title: 'CP-6.3 Queue Test A ' + Date.now(),
+			caption: 'Queue item A',
+		});
+		createdIds.push(id1);
+
+		const id2 = await createScheduledContent(page, time2, {
+			title: 'CP-6.3 Queue Test B ' + Date.now(),
+			caption: 'Queue item B',
+		});
+		createdIds.push(id2);
+
+		// Verify both items exist as scheduled via API
+		const scheduledItems = await fetchContent(page, {
+			publishingStatus: 'scheduled',
+		});
+
+		const ourItems = scheduledItems.filter(
+			(item) => item.id === id1 || item.id === id2
+		);
+		expect(ourItems.length).toBe(2);
+	});
+});
+
+// ===========================================================================
+// CP-7: End-to-End Content Lifecycle (REAL Instagram publishing)
+// ===========================================================================
+
+test.describe('CP-7: End-to-End Content Lifecycle', () => {
+	test.skip(
+		() => process.env.CI === 'true',
+		'NEVER run live publishing tests in CI'
+	);
+	test.skip(
+		() => !process.env.ENABLE_REAL_IG_TESTS,
+		'Set ENABLE_REAL_IG_TESTS=true to run'
+	);
+	test.skip(
+		() => process.env.ENABLE_LIVE_IG_PUBLISH !== 'true',
+		'Set ENABLE_LIVE_IG_PUBLISH=true'
+	);
+
+	test.beforeEach(async ({ page }) => {
+		await signInAsRealIG(page);
+	});
+
+	test('CP-7.1: complete lifecycle - approve, schedule, force-publish image', async ({
+		page,
+	}) => {
+		test.slow(); // Multi-step flow with real publishing (~60-120s)
+
+		// Step 1: Create approved content via API
+		const contentId = await createApprovedContent(page, {
+			title: 'CP-7.1 Lifecycle Test ' + Date.now(),
+			caption: 'Full lifecycle E2E test - image',
+			mediaIndex: 42,
+		});
+		console.log('Created approved content:', contentId);
+
+		// Step 2: Schedule content (future time required by API)
+		const scheduleTime = Date.now() + 5 * 60 * 1000; // 5 minutes from now
+		const scheduleResponse = await page.request.post(
+			`/api/content/${contentId}/schedule`,
+			{ data: { scheduledTime: scheduleTime } }
+		);
+		expect(scheduleResponse.ok()).toBe(true);
+		console.log('Scheduled content at:', new Date(scheduleTime).toISOString());
+
+		// Step 3: Force-process to publish to Instagram
+		const forceResponse = await page.request.post(
+			'/api/developer/cron-debug/force-process',
+			{
+				data: { postIds: [contentId], bypassDuplicates: true },
+				timeout: 120000,
+			}
+		);
+		expect(forceResponse.ok()).toBe(true);
+
+		const result = await forceResponse.json();
+		console.log('Force-process result:', JSON.stringify(result));
+		expect(result.success).toBe(1);
+
+		// Step 4: Verify published
+		const published = await getContentById(page, contentId);
+		expect(published).not.toBeNull();
+		expect(published!.publishingStatus).toBe('published');
+		console.log('Published to Instagram! Content ID:', contentId);
+	});
+
+	test('CP-7.2: complete lifecycle - video upload, approve, schedule, force-publish', async ({
+		page,
+	}) => {
+		test.slow(); // Video processing + real publishing (~120s+)
+
+		// Step 1: Submit video via UI
+		await page.goto('/submit');
+		await page.waitForLoadState('domcontentloaded');
+
+		// Switch to Video mode
+		const videoToggle = page.getByRole('button', { name: 'Video' });
+		await expect(videoToggle).toBeVisible();
+		await videoToggle.click();
+
+		// Upload Big Buck Bunny test video
+		const testVideoPath = getTestVideo();
+		if (!testVideoPath) {
+			test.skip(true, 'Test video file not found');
+			return;
+		}
+
+		const fileInput = page.locator('input[type="file"]');
+		await fileInput.setInputFiles(testVideoPath);
+
+		// Wait for upload
+		const submitButton = page.getByRole('button', {
+			name: /submit for review/i,
+		});
+		await expect(submitButton).toBeEnabled({ timeout: 60000 });
+
+		// Fill caption
+		const caption = `CP-7.2 Video Lifecycle ${Date.now()}`;
+		const captionField = page.locator('#caption');
+		await captionField.fill(caption);
+
+		// Submit
+		await submitButton.click();
+		await expect(page).toHaveURL(/\/(en\/)?submissions/, {
+			timeout: 15000,
+		});
+		console.log('Video submitted via UI');
+
+		// Step 2: Find the submitted content via API
+		const allContent = await fetchContent(page, {
+			source: 'submission',
+			submissionStatus: 'pending',
+		});
+		const ourContent = allContent.find((item) =>
+			item.caption?.includes('CP-7.2 Video Lifecycle')
+		);
+		expect(ourContent).toBeTruthy();
+		const contentId = ourContent!.id!;
+		console.log('Found submitted video content:', contentId);
+
+		// Step 3: Approve via API
+		const approveResponse = await page.request.post(
+			`/api/content/${contentId}/review`,
+			{ data: { action: 'approve' } }
+		);
+		expect(approveResponse.ok()).toBe(true);
+		console.log('Video content approved');
+
+		// Step 4: Schedule (future time)
+		const scheduleTime = Date.now() + 5 * 60 * 1000;
+		const scheduleResponse = await page.request.post(
+			`/api/content/${contentId}/schedule`,
+			{ data: { scheduledTime: scheduleTime } }
+		);
+		expect(scheduleResponse.ok()).toBe(true);
+		console.log('Video scheduled at:', new Date(scheduleTime).toISOString());
+
+		// Step 5: Force-process to publish
+		const forceResponse = await page.request.post(
+			'/api/developer/cron-debug/force-process',
+			{
+				data: { postIds: [contentId], bypassDuplicates: true },
+				timeout: 120000,
+			}
+		);
+		expect(forceResponse.ok()).toBe(true);
+
+		const result = await forceResponse.json();
+		console.log('Force-process result:', JSON.stringify(result));
+		expect(result.success).toBe(1);
+
+		// Step 6: Verify published
+		const published = await getContentById(page, contentId);
+		expect(published).not.toBeNull();
+		expect(published!.publishingStatus).toBe('published');
+		console.log('Video published to Instagram! Content ID:', contentId);
 	});
 });
 
