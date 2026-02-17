@@ -51,6 +51,16 @@ export class Logger {
         'No pending posts to publish'
     ];
 
+    /**
+     * Masks sensitive tokens to prevent leakage in logs.
+     * Shows first 6 and last 4 characters for debugging purposes.
+     */
+    static maskToken(token: string | undefined | null): string {
+        if (!token) return 'N/A';
+        if (token.length < 10) return '***';
+        return `${token.substring(0, 6)}...${token.substring(token.length - 4)}`;
+    }
+
     private static formatMessage(level: LogLevel, module: string, message: string): string {
         const timestamp = new Date().toISOString();
         return `[${timestamp}] [${level.toUpperCase()}] [${module}] ${message}`;
