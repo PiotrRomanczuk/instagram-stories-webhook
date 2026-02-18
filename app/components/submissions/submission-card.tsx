@@ -8,6 +8,7 @@ import { SfAvatar, SfStatusBadge } from '@/app/components/storyflow';
 import { Dialog, DialogContent, DialogTitle } from '@/app/components/ui/dialog';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { cn } from '@/lib/utils';
+import ReactPlayer from 'react-player';
 
 /** Extract a thumbnail frame from a video URL at the given time (default 0.5s) */
 async function extractThumbnailFromVideo(videoUrl: string, timeSeconds = 0.5): Promise<string | null> {
@@ -267,12 +268,16 @@ export function SubmissionCard({
 					</button>
 					{hasValidUrl && (
 						isVideo ? (
-							<video
-								src={submission.mediaUrl}
-								poster={submission.thumbnailUrl}
-								controls
-								className="w-full max-h-[80vh]"
-							/>
+							<div className="w-full max-h-[80vh]">
+								<ReactPlayer
+									src={submission.mediaUrl}
+									light={submission.thumbnailUrl || undefined}
+									controls
+									width="100%"
+									height="100%"
+									playsInline
+								/>
+							</div>
 						) : (
 							<img
 								src={submission.mediaUrl}

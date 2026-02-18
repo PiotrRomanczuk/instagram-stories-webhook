@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { Clock, CheckCircle2, AlertCircle, Calendar, Info, Edit2, Trash2 } from 'lucide-react';
 import { MemeSubmission } from '@/lib/types';
 import { ExpandableCaption } from '../ui/expandable-caption';
+import ReactPlayer from 'react-player';
 
 interface MemeCardProps {
     meme: MemeSubmission;
@@ -52,11 +53,17 @@ export function MemeCard({ meme, onEdit, onDelete, onPreview }: MemeCardProps) {
                 className="relative w-full aspect-square bg-slate-100 overflow-hidden cursor-pointer border-0 p-0 hover:bg-slate-50 transition-colors"
             >
                 {isVideo ? (
-                    <video
-                        src={meme.media_url}
-                        className="w-full h-full object-cover"
-                        controls={false}
-                    />
+                    <div className="w-full h-full">
+                        <ReactPlayer
+                            src={meme.media_url}
+                            width="100%"
+                            height="100%"
+                            playsInline
+                            muted
+                            loop
+                            playing
+                        />
+                    </div>
                 ) : (
                     <Image
                         src={meme.media_url}
