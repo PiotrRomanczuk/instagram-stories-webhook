@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { TimelineHeader } from './timeline-header';
 import { TimelineNavigation } from './timeline-navigation';
 import { TimelineCard, TimelineCardPost, type TimelineCardStatus } from './timeline-card';
+import { TimelineCardSwipeable } from './timeline-card-swipeable';
 import { TimelineEmptyState } from './timeline-empty-state';
 import { ConnectionStatus } from './connection-status';
 import type { FilterType } from './timeline-filters';
@@ -89,6 +90,7 @@ export function TimelinePage() {
 	const [searchQuery, setSearchQuery] = useState('');
 	const [activeFilter, setActiveFilter] = useState<FilterType>('all');
 	const [realtimeConnected, setRealtimeConnected] = useState(false);
+	const [openSwipeId, setOpenSwipeId] = useState<string | null>(null);
 
 	// Fetch content with SWR
 	const { data, error, isLoading, mutate } = useSWR<{
@@ -334,11 +336,15 @@ export function TimelinePage() {
 														layout: { duration: 0.2 },
 													}}
 												>
-													<TimelineCard
+													<TimelineCardSwipeable
 														post={mapContentItemToPost(item)}
 														item={item}
 														onClick={handlePostClick}
 														onUpdate={handleRefresh}
+														isOpen={openSwipeId === item.id}
+														onOpenChange={(isOpen) =>
+															setOpenSwipeId(isOpen ? item.id : null)
+														}
 													/>
 												</motion.div>
 											))}
