@@ -267,12 +267,33 @@ export function VideoUploader({
 			// Extract thumbnail from original file (runs in parallel with upload/processing)
 			const thumbnail = await extractVideoThumbnail(file).catch(() => null);
 
+			// Upload thumbnail to Supabase Storage
+			let thumbnailUrl: string | undefined;
+			if (thumbnail) {
+				try {
+					const response = await fetch(thumbnail);
+					const blob = await response.blob();
+					const thumbnailFile = new File([blob], 'thumbnail.jpg', { type: 'image/jpeg' });
+
+					const { publicUrl: thumbUrl } = await uploadToStorage(
+						thumbnailFile,
+						{ path: 'thumbnails' }
+					);
+
+					thumbnailUrl = thumbUrl;
+					console.log('[VideoUploader] Thumbnail uploaded:', thumbUrl);
+				} catch (err) {
+					console.error('[VideoUploader] Thumbnail upload failed:', err);
+					// Continue without thumbnail (non-blocking)
+				}
+			}
+
 			// Try browser-based processing first if supported
 			if (autoProcess && isFFmpegWasmSupported()) {
 				try {
 					const { publicUrl, storagePath, metadata } = await processAndUploadInBrowser(file);
 					setStage('complete');
-					onChange(publicUrl, metadata, storagePath, thumbnail ?? undefined);
+					onChange(publicUrl, metadata, storagePath, thumbnailUrl);
 				} catch (browserErr) {
 					console.error('Browser processing failed, falling back to server:', browserErr);
 
@@ -292,10 +313,10 @@ export function VideoUploader({
 						if (validation && !validation.valid) {
 							const processedUrl = await processVideoOnServer(publicUrl);
 							setStage('complete');
-							onChange(processedUrl, validation.metadata ?? undefined, storagePath, thumbnail ?? undefined);
+							onChange(processedUrl, validation.metadata ?? undefined, storagePath, thumbnailUrl);
 						} else {
 							setStage('complete');
-							onChange(publicUrl, validation?.metadata ?? undefined, storagePath, thumbnail ?? undefined);
+							onChange(publicUrl, validation?.metadata ?? undefined, storagePath, thumbnailUrl);
 						}
 					} catch (serverErr) {
 						setErrorWithGuidance(
@@ -321,10 +342,10 @@ export function VideoUploader({
 					if (validation && !validation.valid && autoProcess) {
 						const processedUrl = await processVideoOnServer(publicUrl);
 						setStage('complete');
-						onChange(processedUrl, validation.metadata ?? undefined, storagePath, thumbnail ?? undefined);
+						onChange(processedUrl, validation.metadata ?? undefined, storagePath, thumbnailUrl);
 					} else {
 						setStage('complete');
-						onChange(publicUrl, validation?.metadata ?? undefined, storagePath, thumbnail ?? undefined);
+						onChange(publicUrl, validation?.metadata ?? undefined, storagePath, thumbnailUrl);
 					}
 				} catch (err) {
 					setErrorWithGuidance(

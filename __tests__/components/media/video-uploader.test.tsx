@@ -197,6 +197,34 @@ describe('VideoUploader', () => {
 		});
 
 		it('should extract a thumbnail from a video file during upload', async () => {
+			// Mock uploadToStorage to return different URLs for video and thumbnail
+			const { uploadToStorage } = await import('@/lib/storage/upload-client');
+			vi.mocked(uploadToStorage).mockImplementation(async (file) => {
+				if (file instanceof File && file.name === 'thumbnail.jpg') {
+					return {
+						publicUrl: 'https://storage.example.com/thumbnails/thumbnail.jpg',
+						storagePath: 'thumbnails/thumbnail.jpg',
+					};
+				}
+				return {
+					publicUrl: 'https://storage.example.com/video.mp4',
+					storagePath: 'uploads/videos/video.mp4',
+				};
+			});
+
+			// Mock fetch for data URL → blob conversion
+			const mockBlob = new Blob(['thumbnail-data'], { type: 'image/jpeg' });
+			const originalFetch = global.fetch;
+			global.fetch = vi.fn().mockImplementation((url: string) => {
+				if (typeof url === 'string' && url.startsWith('data:image/jpeg')) {
+					return Promise.resolve({
+						ok: true,
+						blob: () => Promise.resolve(mockBlob),
+					});
+				}
+				return originalFetch(url);
+			});
+
 			const onChange = vi.fn();
 			render(
 				<VideoUploader
@@ -220,9 +248,12 @@ describe('VideoUploader', () => {
 				expect(onChange).toHaveBeenCalled();
 			});
 
-			// Verify the thumbnail URL (4th argument) was passed
+			// Verify the thumbnail URL (4th argument) was passed as Supabase Storage URL
 			const lastCall = onChange.mock.calls[onChange.mock.calls.length - 1];
-			expect(lastCall[3]).toBe('data:image/jpeg;base64,mockThumbnailData');
+			expect(lastCall[3]).toBe('https://storage.example.com/thumbnails/thumbnail.jpg');
+
+			// Restore fetch
+			global.fetch = originalFetch;
 		});
 
 		it('should pass thumbnailUrl as undefined when extraction fails', async () => {

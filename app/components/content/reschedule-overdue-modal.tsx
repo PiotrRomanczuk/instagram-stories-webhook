@@ -20,6 +20,7 @@ import {
 	Square,
 } from 'lucide-react';
 import { ContentItem } from '@/lib/types/posts';
+import { combineDateAndTime } from '@/lib/utils/date-time';
 
 interface RescheduleOverdueModalProps {
 	onClose: () => void;
@@ -224,7 +225,7 @@ export function RescheduleOverdueModal({
 	const calculateScheduledTimes = useCallback(() => {
 		if (!startDate || !startTime) return [];
 
-		const baseTime = new Date(`${startDate}T${startTime}`).getTime();
+		const baseTime = combineDateAndTime(startDate, startTime).getTime();
 		return posts.map((post, index) => {
 			const baseOffset = index * intervalMinutes * 60 * 1000;
 			const randomOffset = randomize && randomOffsets[index] ? randomOffsets[index] : 0;
@@ -238,7 +239,7 @@ export function RescheduleOverdueModal({
 	// Format time for display
 	const formatScheduledTime = (index: number): string => {
 		if (!startDate || !startTime) return '--:--';
-		const baseTime = new Date(`${startDate}T${startTime}`).getTime();
+		const baseTime = combineDateAndTime(startDate, startTime).getTime();
 		const baseOffset = index * intervalMinutes * 60 * 1000;
 		const randomOffset = randomize && randomOffsets[index] ? randomOffsets[index] : 0;
 		const time = new Date(baseTime + baseOffset + randomOffset);

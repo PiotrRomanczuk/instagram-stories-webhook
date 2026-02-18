@@ -21,6 +21,7 @@ import {
 } from '../ui/select';
 import { Label } from '../ui/label';
 import { TimePicker } from '../ui/time-picker';
+import { BEST_TIMES, generateDayOptions, hasTimeConflict } from '@/lib/utils/date-time';
 
 interface ScheduleTimeSheetProps {
 	item: ContentItem;
@@ -29,12 +30,6 @@ interface ScheduleTimeSheetProps {
 	onCancel: () => void;
 	existingScheduledTimes?: number[];
 }
-
-const BEST_TIMES = [
-	{ label: '09:00', hours: 9, minutes: 0 },
-	{ label: '12:00', hours: 12, minutes: 0 },
-	{ label: '18:30', hours: 18, minutes: 30 },
-];
 
 export function ScheduleTimeSheet({
 	item,
@@ -47,25 +42,7 @@ export function ScheduleTimeSheet({
 
 	// Generate day options (next 30 days)
 	const dayOptions = useMemo(() => {
-		const options: { value: string; label: string; date: Date }[] = [];
-		const now = new Date();
-		for (let i = 0; i < 30; i++) {
-			const d = new Date(now);
-			d.setDate(d.getDate() + i);
-			d.setHours(0, 0, 0, 0);
-			const label =
-				i === 0
-					? 'Today'
-					: i === 1
-						? 'Tomorrow'
-						: d.toLocaleDateString([], {
-								weekday: 'short',
-								month: 'short',
-								day: 'numeric',
-							});
-			options.push({ value: String(i), label, date: d });
-		}
-		return options;
+		return generateDayOptions(30);
 	}, []);
 
 	// Find selected day index
@@ -112,12 +89,7 @@ export function ScheduleTimeSheet({
 
 	// Check if selected time conflicts with an existing scheduled post
 	const hasConflict = useMemo(() => {
-		if (existingScheduledTimes.length === 0) return false;
-		const selectedMinute = selectedDate.getTime() - (selectedDate.getTime() % 60000);
-		return existingScheduledTimes.some(t => {
-			const existingMinute = t - (t % 60000);
-			return existingMinute === selectedMinute;
-		});
+		return hasTimeConflict(selectedDate, existingScheduledTimes);
 	}, [selectedDate, existingScheduledTimes]);
 
 	return (
