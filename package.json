@@ -1,6 +1,6 @@
 {
   "name": "instagram-stories-webhook",
-  "version": "0.19.5",
+  "version": "0.19.4",
   "private": true,
   "scripts": {
     "dev": "concurrently -n next,cron -c blue,magenta \"next dev\" \"npm run dev:cron\"",
@@ -31,10 +31,10 @@
   "dependencies": {
     "@auth/supabase-adapter": "^1.11.1",
     "@dnd-kit/core": "^6.3.1",
-    "@dnd-kit/sortable": "^10.0.0",
-    "@dnd-kit/utilities": "^3.2.2",
     "@ffmpeg/ffmpeg": "^0.12.15",
     "@ffmpeg/util": "^0.12.2",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@hookform/resolvers": "^5.2.2",
     "@next-auth/supabase-adapter": "^0.2.1",
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -83,7 +83,6 @@
     "react-day-picker": "^9.13.0",
     "react-dom": "19.2.3",
     "react-hook-form": "^7.71.1",
-    "react-player": "^3.4.0",
     "sharp": "^0.34.5",
     "sonner": "^2.0.7",
     "swr": "^2.3.8",
