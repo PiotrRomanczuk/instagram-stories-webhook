@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import useSWR, { mutate } from 'swr';
 import { toast } from 'sonner';
 import { Loader2, AlertTriangle, Inbox, Layers, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
@@ -111,36 +111,118 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 		setReviewHistory((prev) => [historyItem, ...prev].slice(0, 20)); // Keep last 20
 	}, []);
 
-	// Action handlers
-	const handleApprove = async () => {
-		if (!currentItem || isActionLoading) return;
-		setIsActionLoading(true);
+	// Pending undo action ref
+	const pendingActionRef = useRef<{
+		timeout: ReturnType<typeof setTimeout>;
+		itemId: string;
+		action: 'approve' | 'reject';
+	} | null>(null);
+
+	// Cleanup pending action on unmount
+	useEffect(() => {
+		return () => {
+			if (pendingActionRef.current) {
+				clearTimeout(pendingActionRef.current.timeout);
+			}
+		};
+	}, []);
+
+	// Execute the actual review API call
+	const executeReviewAction = useCallback(async (
+		itemId: string,
+		action: 'approve' | 'reject',
+		payload: Record<string, unknown>,
+	) => {
 		try {
-			const response = await fetch(`/api/content/${currentItem.id}/review`, {
+			const response = await fetch(`/api/content/${itemId}/review`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ action: 'approve', feedback: reviewComment || undefined }),
+				body: JSON.stringify(payload),
 			});
 
 			if (!response.ok) {
 				const errorData = await response.json();
-				throw new Error(errorData.error || 'Failed to approve');
+				throw new Error(errorData.error || `Failed to ${action}`);
 			}
 
-			addToHistory(currentItem, 'approved');
-			toast.success('Story approved and ready to schedule');
-			setReviewComment('');
 			refreshList();
-
-			// Adjust index if needed
-			if (currentIndex >= items.length - 1) {
-				setCurrentIndex(Math.max(0, currentIndex - 1));
-			}
 		} catch (err) {
-			toast.error(err instanceof Error ? err.message : 'Failed to approve');
-		} finally {
-			setIsActionLoading(false);
+			toast.error(err instanceof Error ? err.message : `Failed to ${action}`);
+			// Remove from history on failure
+			setReviewHistory((prev) => prev.filter((h) => h.id !== itemId));
 		}
+	}, [refreshList]);
+
+	// Delayed action with undo
+	const scheduleAction = useCallback((
+		item: ContentItem,
+		action: 'approve' | 'reject',
+		payload: Record<string, unknown>,
+		toastMessage: string,
+	) => {
+		// Cancel any existing pending action
+		if (pendingActionRef.current) {
+			clearTimeout(pendingActionRef.current.timeout);
+			// Execute the previous pending action immediately
+			executeReviewAction(
+				pendingActionRef.current.itemId,
+				pendingActionRef.current.action,
+				payload,
+			);
+		}
+
+		const savedIndex = currentIndex;
+
+		// Optimistically update UI
+		addToHistory(item, action === 'approve' ? 'approved' : 'rejected');
+		setReviewComment('');
+
+		// Adjust index
+		if (currentIndex >= items.length - 1) {
+			setCurrentIndex(Math.max(0, currentIndex - 1));
+		}
+
+		// Schedule delayed execution
+		const timeout = setTimeout(() => {
+			pendingActionRef.current = null;
+			executeReviewAction(item.id, action, payload);
+		}, 5000);
+
+		pendingActionRef.current = {
+			timeout,
+			itemId: item.id,
+			action,
+		};
+
+		// Toast with undo
+		toast(toastMessage, {
+			action: {
+				label: 'Undo',
+				onClick: () => {
+					if (pendingActionRef.current?.itemId === item.id) {
+						clearTimeout(pendingActionRef.current.timeout);
+						pendingActionRef.current = null;
+						// Revert history
+						setReviewHistory((prev) => prev.filter((h) => h.id !== item.id));
+						// Restore index
+						setCurrentIndex(savedIndex);
+						toast.info('Action undone');
+					}
+				},
+			},
+			duration: 5000,
+		});
+	}, [currentIndex, items.length, addToHistory, executeReviewAction]);
+
+	// Action handlers
+	const handleApprove = () => {
+		if (!currentItem || isActionLoading) return;
+		scheduleAction(
+			currentItem,
+			'approve',
+			{ action: 'approve', feedback: reviewComment || undefined },
+			'Story approved and ready to schedule',
+		);
 	};
 
 	// Opens rejection dialog instead of immediately rejecting
@@ -152,36 +234,13 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 	// Actual rejection API call (triggered from dialog confirmation)
 	const handleRejectConfirm = async (reason: string) => {
 		if (!currentItem || isActionLoading) return;
-		setIsActionLoading(true);
-		try {
-			const response = await fetch(`/api/content/${currentItem.id}/review`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					action: 'reject',
-					rejectionReason: reason
-				}),
-			});
-
-			if (!response.ok) {
-				const errorData = await response.json();
-				throw new Error(errorData.error || 'Failed to reject');
-			}
-
-			addToHistory(currentItem, 'rejected');
-			toast.success('Story rejected');
-			setReviewComment('');
-			setShowRejectDialog(false);
-			refreshList();
-
-			if (currentIndex >= items.length - 1) {
-				setCurrentIndex(Math.max(0, currentIndex - 1));
-			}
-		} catch (err) {
-			toast.error(err instanceof Error ? err.message : 'Failed to reject');
-		} finally {
-			setIsActionLoading(false);
-		}
+		setShowRejectDialog(false);
+		scheduleAction(
+			currentItem,
+			'reject',
+			{ action: 'reject', rejectionReason: reason },
+			'Story rejected',
+		);
 	};
 
 	// Page tour
