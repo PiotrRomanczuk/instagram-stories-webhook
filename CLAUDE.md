@@ -70,7 +70,8 @@ npm run lint && npx tsc && npm run test
 # 2. Get Linear ticket (ISW-XXX)
 # 3. Create branch IMMEDIATELY: git checkout -b feature/ISW-XXX-description
 # 4. Make changes and commit
-# 5. Run quality gates
+# 5. Bump the version (MANDATORY — see Versioning section below)
+# 6. Run quality gates
 /ship                # Validates, tests, pushes, creates PR, updates Linear
 ```
 
@@ -204,6 +205,37 @@ Agent files: `.claude/agents/*.md`
 
 ---
 
+## Versioning (MANDATORY on Every PR)
+
+**Every PR merged to `master` MUST include a version bump.** No exceptions.
+
+```bash
+# Bump version BEFORE committing your final changes (on your feature branch)
+npm version patch --no-git-tag-version   # bug fixes, small improvements
+npm version minor --no-git-tag-version   # new features, UX improvements
+npm version major --no-git-tag-version   # breaking changes
+```
+
+**Which bump type?**
+| Change Type | Bump |
+|-------------|------|
+| Bug fix, small improvement, refactor, chore | `patch` (0.20.0 → 0.20.1) |
+| New feature, UX improvement, new page/flow | `minor` (0.20.0 → 0.21.0) |
+| Breaking API change, major architecture shift | `major` (0.20.0 → 1.0.0) |
+
+**After merging to master**, create the release tag:
+```bash
+git checkout master && git pull
+npm run release      # creates + pushes git tag → triggers GitHub release
+```
+
+**PR checklist** (every PR must have all of these):
+- [ ] Version bumped in `package.json` on the feature branch
+- [ ] Quality gates pass (`npm run lint && npx tsc && npm run test`)
+- [ ] Linear ticket updated
+
+---
+
 ## Operational Quick Reference
 
 **Debugging:**
@@ -214,7 +246,7 @@ Agent files: `.claude/agents/*.md`
 **Deployment:**
 - PRs → Vercel preview deployment with unique URL
 - Merge to `master` → Auto-deploys to production
-- Version bumping → Manual in PR (`npm version minor/patch --no-git-tag-version`), then `npm run release` after merge
+- After merge → Run `npm run release` to tag the version (see Versioning above)
 
 **File Conventions:**
 - Components: `PascalCase.tsx`

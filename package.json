@@ -1,6 +1,6 @@
 {
   "name": "instagram-stories-webhook",
-  "version": "0.20.0",
+  "version": "0.21.0",
   "private": true,
   "scripts": {
     "dev": "concurrently -n next,cron -c blue,magenta \"next dev\" \"npm run dev:cron\"",
