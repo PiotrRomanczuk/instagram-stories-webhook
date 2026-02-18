@@ -20,6 +20,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from '@/app/components/ui/dialog';
+import { VideoPreview } from '@/app/components/media/video-preview';
 import { ReviewActions } from './review-actions';
 import { ContentItem } from '@/lib/types';
 
@@ -196,10 +197,13 @@ export function ReviewList({
 						<div className="space-y-4">
 							<div className="relative aspect-[9/16] max-h-[60vh] w-full overflow-hidden rounded-lg bg-muted">
 								{previewItem.mediaType === 'VIDEO' ? (
-									<video
-										src={previewItem.mediaUrl}
-										poster={previewItem.thumbnailUrl}
-										controls
+									<VideoPreview
+										videoUrl={previewItem.mediaUrl}
+										thumbnailUrl={previewItem.thumbnailUrl}
+										duration={previewItem.videoDuration}
+										resolution={previewItem.dimensions ? { width: previewItem.dimensions.width, height: previewItem.dimensions.height } : undefined}
+										codec={previewItem.videoCodec}
+										framerate={previewItem.videoFramerate}
 										className="h-full w-full object-contain"
 									/>
 								) : (

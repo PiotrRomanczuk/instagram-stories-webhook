@@ -36,11 +36,11 @@ export function SubmitForm() {
 		setStoragePath(path || null);
 	};
 
-	const handleVideoChange = (url: string | null, metadata?: VideoMetadata, path?: string) => {
+	const handleVideoChange = (url: string | null, metadata?: VideoMetadata, path?: string, thumb?: string) => {
 		setVideoUrl(url);
 		setVideoMetadata(metadata);
 		setStoragePath(path || null);
-		// Note: thumbnailUrl will be generated server-side during validation
+		setThumbnailUrl(thumb || null);
 	};
 
 	const mediaUrl = mediaType === 'VIDEO' ? videoUrl : imageUrl;
@@ -207,7 +207,9 @@ export function SubmitForm() {
 							{mediaType === 'VIDEO' ? (
 								<VideoPreview
 									videoUrl={videoUrl!}
+									thumbnailUrl={thumbnailUrl ?? undefined}
 									duration={videoMetadata?.duration}
+									compact
 								/>
 							) : (
 								<StoryPreview imageUrl={imageUrl!} compact />
@@ -222,6 +224,7 @@ export function SubmitForm() {
 					{mediaType === 'VIDEO' && videoUrl ? (
 						<VideoPreview
 							videoUrl={videoUrl}
+							thumbnailUrl={thumbnailUrl ?? undefined}
 							duration={videoMetadata?.duration}
 							resolution={videoMetadata ? { width: videoMetadata.width, height: videoMetadata.height } : undefined}
 							codec={videoMetadata?.codec}
