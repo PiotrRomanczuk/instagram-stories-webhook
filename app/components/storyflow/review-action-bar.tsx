@@ -47,7 +47,7 @@ export function ReviewActionBar({
 						<X className="h-5 w-5" />
 					)}
 					<span>Reject</span>
-					<kbd className="hidden group-hover:inline-block bg-white/20 px-1.5 rounded text-[10px] ml-2">
+					<kbd className="hidden sm:group-hover:inline-block bg-white/20 px-1.5 rounded text-[10px] ml-2">
 						R
 					</kbd>
 				</button>
@@ -69,7 +69,7 @@ export function ReviewActionBar({
 						<Check className="h-5 w-5" />
 					)}
 					<span>Approve</span>
-					<kbd className="hidden group-hover:inline-block bg-white/20 px-1.5 rounded text-[10px] ml-2">
+					<kbd className="hidden sm:group-hover:inline-block bg-white/20 px-1.5 rounded text-[10px] ml-2">
 						A
 					</kbd>
 				</button>
@@ -79,9 +79,9 @@ export function ReviewActionBar({
 			<div data-tour="review-navigation" className="mt-4 sm:mt-8 flex gap-4">
 				<button
 					onClick={onPrevious}
-					disabled={!hasPrevious || disabled}
+					disabled={!hasPrevious || disabled || isLoading}
 					className={cn(
-						'flex items-center gap-2 min-h-[44px] px-3 text-slate-500 hover:text-slate-900 transition-colors',
+						'flex items-center gap-2 min-h-[48px] min-w-[48px] px-4 text-slate-500 hover:text-slate-900 transition-colors',
 						'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-slate-500'
 					)}
 				>
@@ -91,9 +91,9 @@ export function ReviewActionBar({
 
 				<button
 					onClick={onSkip}
-					disabled={!hasNext || disabled}
+					disabled={!hasNext || disabled || isLoading}
 					className={cn(
-						'flex items-center gap-2 min-h-[44px] px-3 text-slate-500 hover:text-slate-900 transition-colors',
+						'flex items-center gap-2 min-h-[48px] min-w-[48px] px-4 text-slate-500 hover:text-slate-900 transition-colors',
 						'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-slate-500'
 					)}
 				>

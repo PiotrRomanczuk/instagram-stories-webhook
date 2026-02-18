@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { TimelineHeader } from './timeline-header';
 import { TimelineNavigation } from './timeline-navigation';
 import { TimelineCard, TimelineCardPost, type TimelineCardStatus } from './timeline-card';
+import { TimelineCardSwipeable } from './timeline-card-swipeable';
 import { TimelineEmptyState } from './timeline-empty-state';
 import { ConnectionStatus } from './connection-status';
 import type { FilterType } from './timeline-filters';
@@ -48,6 +49,7 @@ function groupItemsByTime(items: ContentItem[]): TimelineGroup[] {
 	const weekEnd = todayStart + 7 * 24 * 60 * 60 * 1000;
 
 	const groups: TimelineGroup[] = [
+		{ label: 'OVERDUE', items: [] },
 		{ label: 'TODAY', items: [] },
 		{ label: 'TOMORROW', items: [] },
 		{ label: 'THIS WEEK', items: [] },
@@ -62,16 +64,17 @@ function groupItemsByTime(items: ContentItem[]): TimelineGroup[] {
 	// Group items
 	for (const item of sortedItems) {
 		const scheduledTime = item.scheduledTime || 0;
-		if (scheduledTime < todayStart) {
+		if (scheduledTime < now && item.publishingStatus !== 'published') {
+			// Past-due and not published → OVERDUE
 			groups[0].items.push(item);
 		} else if (scheduledTime < tomorrowStart) {
-			groups[0].items.push(item);
-		} else if (scheduledTime < weekStart) {
 			groups[1].items.push(item);
-		} else if (scheduledTime < weekEnd) {
+		} else if (scheduledTime < weekStart) {
 			groups[2].items.push(item);
-		} else {
+		} else if (scheduledTime < weekEnd) {
 			groups[3].items.push(item);
+		} else {
+			groups[4].items.push(item);
 		}
 	}
 
@@ -89,6 +92,7 @@ export function TimelinePage() {
 	const [searchQuery, setSearchQuery] = useState('');
 	const [activeFilter, setActiveFilter] = useState<FilterType>('all');
 	const [realtimeConnected, setRealtimeConnected] = useState(false);
+	const [openSwipeId, setOpenSwipeId] = useState<string | null>(null);
 
 	// Fetch content with SWR
 	const { data, error, isLoading, mutate } = useSWR<{
@@ -309,8 +313,9 @@ export function TimelinePage() {
 										data-testid="timeline-group-header"
 										className="flex items-center justify-between mb-4 px-1"
 									>
-										<h2 className="text-xs font-black text-slate-400 uppercase tracking-widest">
-											{group.label} • {group.items.length}{' '}
+										<h2 className={`text-xs font-black uppercase tracking-widest ${group.label === 'OVERDUE' ? 'text-red-500' : 'text-slate-400'
+											}`}>
+											{group.label === 'OVERDUE' ? '⚠ ' : ''}{group.label} • {group.items.length}{' '}
 											{group.items.length === 1 ? 'POST' : 'POSTS'}
 										</h2>
 									</div>
@@ -334,11 +339,15 @@ export function TimelinePage() {
 														layout: { duration: 0.2 },
 													}}
 												>
-													<TimelineCard
+													<TimelineCardSwipeable
 														post={mapContentItemToPost(item)}
 														item={item}
 														onClick={handlePostClick}
 														onUpdate={handleRefresh}
+														isOpen={openSwipeId === item.id}
+														onOpenChange={(isOpen) =>
+															setOpenSwipeId(isOpen ? item.id : null)
+														}
 													/>
 												</motion.div>
 											))}

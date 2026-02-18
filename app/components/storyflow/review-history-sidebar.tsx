@@ -16,9 +16,10 @@ interface ReviewedItem {
 interface ReviewHistorySidebarProps {
 	history: ReviewedItem[];
 	className?: string;
+	onItemClick?: (item: ReviewedItem) => void;
 }
 
-export function ReviewHistorySidebar({ history, className }: ReviewHistorySidebarProps) {
+export function ReviewHistorySidebar({ history, className, onItemClick }: ReviewHistorySidebarProps) {
 	const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
 
 	const handleImageError = (id: string) => {
@@ -28,7 +29,7 @@ export function ReviewHistorySidebar({ history, className }: ReviewHistorySideba
 	return (
 		<aside
 			className={cn(
-				'w-80 border-r border-slate-200 bg-slate-50 flex-col hidden xl:flex',
+				'w-80 border-r border-slate-200 bg-slate-50 flex-col flex',
 				className
 			)}
 		>
@@ -48,12 +49,13 @@ export function ReviewHistorySidebar({ history, className }: ReviewHistorySideba
 					</div>
 				) : (
 					history.map((item) => (
-						<HistoryItem
-							key={item.id}
-							item={item}
-							hasImageError={imageErrors.has(item.id)}
-							onImageError={() => handleImageError(item.id)}
-						/>
+						<div key={item.id} onClick={() => onItemClick?.(item)}>
+							<HistoryItem
+								item={item}
+								hasImageError={imageErrors.has(item.id)}
+								onImageError={() => handleImageError(item.id)}
+							/>
+						</div>
 					))
 				)}
 			</div>

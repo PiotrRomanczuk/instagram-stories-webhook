@@ -180,8 +180,8 @@ export function TimelineCard({ post, item, onClick, onUpdate }: TimelineCardProp
 								src={post.url}
 								alt="Story preview"
 								fill
+								sizes="(max-width: 640px) 64px, 80px"
 								className="object-cover transition-transform duration-300 group-hover:scale-105"
-								unoptimized
 								onError={() => setImageError(true)}
 							/>
 						) : (

@@ -24,8 +24,8 @@ export function FilterChip({ label, active, onClick, count }: FilterChipProps) {
             onClick={onClick}
             data-testid={`filter-chip-${label.toLowerCase()}`}
             className={cn(
-                'px-4 py-2 rounded-full font-medium text-sm transition-all duration-200',
-                'hover:scale-105 active:scale-95',
+                'px-4 py-2.5 min-h-[44px] rounded-full font-medium text-sm transition-all duration-200',
+                'active:scale-95',
                 'flex items-center gap-2 whitespace-nowrap',
                 active
                     ? 'bg-[#2b6cee] text-white shadow-lg shadow-blue-500/20'

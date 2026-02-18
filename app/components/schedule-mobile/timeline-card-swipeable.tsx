@@ -20,13 +20,16 @@ import { useGesture } from '@use-gesture/react';
 import { motion, useMotionValue, useSpring } from 'framer-motion';
 import { Edit2, Calendar, X } from 'lucide-react';
 import { TimelineCard, TimelineCardPost } from './timeline-card';
+import type { ContentItem } from '@/lib/types/posts';
 
 interface TimelineCardSwipeableProps {
 	post: TimelineCardPost;
+	item?: ContentItem;
 	onClick?: (post: TimelineCardPost) => void;
 	onEdit?: (post: TimelineCardPost) => void;
 	onReschedule?: (post: TimelineCardPost) => void;
 	onCancel?: (post: TimelineCardPost) => void;
+	onUpdate?: () => void;
 	isOpen?: boolean;
 	onOpenChange?: (isOpen: boolean) => void;
 }
@@ -39,10 +42,12 @@ const HAPTIC_DURATION = 50; // ms
 
 export function TimelineCardSwipeable({
 	post,
+	item,
 	onClick,
 	onEdit,
 	onReschedule,
 	onCancel,
+	onUpdate,
 	isOpen = false,
 	onOpenChange,
 }: TimelineCardSwipeableProps) {
@@ -71,7 +76,7 @@ export function TimelineCardSwipeable({
 			setTimeout(() => x.set(0), 300);
 		}, 800);
 		return () => clearTimeout(timer);
-	// eslint-disable-next-line react-hooks/exhaustive-deps
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [isMobile]);
 
 	// Sync isOpen state with x position
@@ -154,7 +159,7 @@ export function TimelineCardSwipeable({
 
 	// Desktop: No swipe wrapper
 	if (!isMobile) {
-		return <TimelineCard post={post} onClick={onClick} />;
+		return <TimelineCard post={post} item={item} onClick={onClick} onUpdate={onUpdate} />;
 	}
 
 	// Action button handlers
@@ -238,7 +243,7 @@ export function TimelineCardSwipeable({
 				style={{ x: springX }}
 				className="relative z-10"
 			>
-				<TimelineCard post={post} onClick={onClick} />
+				<TimelineCard post={post} item={item} onClick={onClick} onUpdate={onUpdate} />
 			</motion.div>
 		</div>
 	);

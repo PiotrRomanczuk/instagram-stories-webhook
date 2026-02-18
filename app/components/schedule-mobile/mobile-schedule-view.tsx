@@ -261,7 +261,7 @@ export function MobileScheduleView({
 						{!isSameDay(currentDate, new Date()) && (
 							<button
 								onClick={() => onDateChange(new Date())}
-								className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full text-xs font-bold transition-all min-h-[36px]"
+								className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full text-xs font-bold transition-all min-h-[44px]"
 							>
 								Today
 							</button>
@@ -379,7 +379,7 @@ export function MobileScheduleView({
 							key={key}
 							onClick={() => setStatusFilter(key)}
 							className={cn(
-								'shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition min-h-[32px]',
+								'shrink-0 px-3 py-2.5 rounded-full text-xs font-semibold transition min-h-[44px]',
 								isActive
 									? 'bg-blue-500 text-white shadow-sm'
 									: 'bg-gray-100 text-gray-500 hover:bg-gray-200'
@@ -588,7 +588,7 @@ export function MobileScheduleView({
 											alt={menuTitle}
 											fill
 											className="object-cover"
-											unoptimized
+											sizes="44px"
 										/>
 									) : (
 										<div className="flex h-full w-full items-center justify-center">
@@ -813,7 +813,7 @@ function TimelineCard({ item, onClick, onRefresh, menuOpen, onMenuToggle, onItem
 						alt={item.caption || 'Story preview'}
 						fill
 						className={cn('object-cover', isFailed && 'grayscale opacity-70')}
-						unoptimized
+						sizes="64px"
 						onError={() => setImgError(true)}
 					/>
 				) : (

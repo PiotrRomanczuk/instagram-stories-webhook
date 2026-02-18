@@ -1,13 +1,21 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import useSWR, { mutate } from 'swr';
 import { toast } from 'sonner';
-import { Loader2, AlertTriangle, Inbox, Layers, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2, AlertTriangle, Inbox, Layers, MessageSquare, ChevronDown, ChevronUp, Clock, X } from 'lucide-react';
+import {
+	Drawer,
+	DrawerContent,
+	DrawerHeader,
+	DrawerTitle,
+} from '@/app/components/ui/drawer';
 import { ReviewHistorySidebar } from './review-history-sidebar';
+
 import { PhonePreview } from './phone-preview';
 import { ReviewDetailsSidebar } from './review-details-sidebar';
 import { ReviewActionBar } from './review-action-bar';
+import { RejectionReasonDialog } from './rejection-reason-dialog';
 import { useKeyboardNav } from '../story-review/use-keyboard-nav';
 import { Button } from '@/app/components/ui/button';
 import { TourTriggerButton } from '@/app/components/tour/tour-trigger-button';
@@ -32,10 +40,36 @@ interface StoryflowReviewLayoutProps {
 
 export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps) {
 	const [currentIndex, setCurrentIndex] = useState(0);
-	const [reviewHistory, setReviewHistory] = useState<ReviewedItem[]>([]);
+	const [reviewHistory, setReviewHistory] = useState<ReviewedItem[]>(() => {
+		if (typeof window === 'undefined') return [];
+		try {
+			const stored = localStorage.getItem('reviewHistory');
+			if (!stored) return [];
+			const parsed = JSON.parse(stored) as Array<ReviewedItem & { timestamp: string }>;
+			// Only keep today's reviews and rehydrate dates
+			const todayStart = new Date();
+			todayStart.setHours(0, 0, 0, 0);
+			return parsed
+				.map((item) => ({ ...item, timestamp: new Date(item.timestamp) }))
+				.filter((item) => item.timestamp >= todayStart);
+		} catch {
+			return [];
+		}
+	});
 	const [reviewComment, setReviewComment] = useState('');
 	const [isActionLoading, setIsActionLoading] = useState(false);
 	const [showMobileDetails, setShowMobileDetails] = useState(false);
+	const [showRejectDialog, setShowRejectDialog] = useState(false);
+	const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+
+	// Persist review history to localStorage
+	useEffect(() => {
+		try {
+			localStorage.setItem('reviewHistory', JSON.stringify(reviewHistory));
+		} catch {
+			// localStorage full or unavailable
+		}
+	}, [reviewHistory]);
 
 	// Fetch pending submissions
 	const { data, isLoading, error } = useSWR<{ items: ContentItem[] }>(
@@ -63,6 +97,42 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 		}
 	}, [currentIndex, items.length]);
 
+	// Re-review handler for history items
+	const handleHistoryItemClick = useCallback(async (item: ReviewedItem) => {
+		setIsHistoryOpen(false); // Close drawer
+		setIsActionLoading(true);
+
+		try {
+			// Fetch fresh item data
+			const res = await fetch(`/api/content/${item.id}`);
+			if (!res.ok) throw new Error('Failed to fetch item details');
+			const json = await res.json();
+			const freshItem = json.data || json; // Handle potential API response wrapper
+
+			// Optimistically inject into current list at the front
+			// This allows reviewing even if status is not 'pending'
+			mutate(
+				'/api/content?source=submission&submissionStatus=pending',
+				(currentData: any) => {
+					const existingItems = currentData?.items || [];
+					// Remove if already exists to avoid duplicates
+					const filtered = existingItems.filter((i: any) => i.id !== freshItem.id);
+					return { ...currentData, items: [freshItem, ...filtered] };
+				},
+				false // Do not revalidate immediately to keep our injected item
+			);
+
+			// Set to view this new item
+			setCurrentIndex(0);
+			toast.info(`Re-reviewing: ${item.title}`);
+		} catch (error) {
+			toast.error('Could not load item details');
+			console.error(error);
+		} finally {
+			setIsActionLoading(false);
+		}
+	}, []);
+
 	const goToPrevious = useCallback(() => {
 		if (currentIndex > 0) {
 			setCurrentIndex(currentIndex - 1);
@@ -85,69 +155,136 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 		setReviewHistory((prev) => [historyItem, ...prev].slice(0, 20)); // Keep last 20
 	}, []);
 
-	// Action handlers
-	const handleApprove = async () => {
-		if (!currentItem || isActionLoading) return;
-		setIsActionLoading(true);
+	// Pending undo action ref
+	const pendingActionRef = useRef<{
+		timeout: ReturnType<typeof setTimeout>;
+		itemId: string;
+		action: 'approve' | 'reject';
+	} | null>(null);
+
+	// Cleanup pending action on unmount
+	useEffect(() => {
+		return () => {
+			if (pendingActionRef.current) {
+				clearTimeout(pendingActionRef.current.timeout);
+			}
+		};
+	}, []);
+
+	// Execute the actual review API call
+	const executeReviewAction = useCallback(async (
+		itemId: string,
+		action: 'approve' | 'reject',
+		payload: Record<string, unknown>,
+	) => {
 		try {
-			const response = await fetch(`/api/content/${currentItem.id}/review`, {
+			const response = await fetch(`/api/content/${itemId}/review`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ action: 'approve', feedback: reviewComment || undefined }),
+				body: JSON.stringify(payload),
 			});
 
 			if (!response.ok) {
 				const errorData = await response.json();
-				throw new Error(errorData.error || 'Failed to approve');
+				throw new Error(errorData.error || `Failed to ${action}`);
 			}
 
-			addToHistory(currentItem, 'approved');
-			toast.success('Story approved and ready to schedule');
-			setReviewComment('');
 			refreshList();
-
-			// Adjust index if needed
-			if (currentIndex >= items.length - 1) {
-				setCurrentIndex(Math.max(0, currentIndex - 1));
-			}
 		} catch (err) {
-			toast.error(err instanceof Error ? err.message : 'Failed to approve');
-		} finally {
-			setIsActionLoading(false);
+			toast.error(err instanceof Error ? err.message : `Failed to ${action}`);
+			// Remove from history on failure
+			setReviewHistory((prev) => prev.filter((h) => h.id !== itemId));
 		}
+	}, [refreshList]);
+
+	// Delayed action with undo
+	const scheduleAction = useCallback((
+		item: ContentItem,
+		action: 'approve' | 'reject',
+		payload: Record<string, unknown>,
+		toastMessage: string,
+	) => {
+		// Cancel any existing pending action
+		if (pendingActionRef.current) {
+			clearTimeout(pendingActionRef.current.timeout);
+			// Execute the previous pending action immediately
+			executeReviewAction(
+				pendingActionRef.current.itemId,
+				pendingActionRef.current.action,
+				payload,
+			);
+		}
+
+		const savedIndex = currentIndex;
+
+		// Optimistically update UI
+		addToHistory(item, action === 'approve' ? 'approved' : 'rejected');
+		setReviewComment('');
+
+		// Adjust index
+		if (currentIndex >= items.length - 1) {
+			setCurrentIndex(Math.max(0, currentIndex - 1));
+		}
+
+		// Schedule delayed execution
+		const timeout = setTimeout(() => {
+			pendingActionRef.current = null;
+			executeReviewAction(item.id, action, payload);
+		}, 5000);
+
+		pendingActionRef.current = {
+			timeout,
+			itemId: item.id,
+			action,
+		};
+
+		// Toast with undo
+		toast(toastMessage, {
+			action: {
+				label: 'Undo',
+				onClick: () => {
+					if (pendingActionRef.current?.itemId === item.id) {
+						clearTimeout(pendingActionRef.current.timeout);
+						pendingActionRef.current = null;
+						// Revert history
+						setReviewHistory((prev) => prev.filter((h) => h.id !== item.id));
+						// Restore index
+						setCurrentIndex(savedIndex);
+						toast.info('Action undone');
+					}
+				},
+			},
+			duration: 5000,
+		});
+	}, [currentIndex, items.length, addToHistory, executeReviewAction]);
+
+	// Action handlers
+	const handleApprove = () => {
+		if (!currentItem || isActionLoading) return;
+		scheduleAction(
+			currentItem,
+			'approve',
+			{ action: 'approve', feedback: reviewComment || undefined },
+			'Story approved and ready to schedule',
+		);
 	};
 
-	const handleReject = async () => {
+	// Opens rejection dialog instead of immediately rejecting
+	const handleReject = () => {
 		if (!currentItem || isActionLoading) return;
-		setIsActionLoading(true);
-		try {
-			const response = await fetch(`/api/content/${currentItem.id}/review`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					action: 'reject',
-					rejectionReason: reviewComment || 'Content does not meet guidelines'
-				}),
-			});
+		setShowRejectDialog(true);
+	};
 
-			if (!response.ok) {
-				const errorData = await response.json();
-				throw new Error(errorData.error || 'Failed to reject');
-			}
-
-			addToHistory(currentItem, 'rejected');
-			toast.success('Story rejected');
-			setReviewComment('');
-			refreshList();
-
-			if (currentIndex >= items.length - 1) {
-				setCurrentIndex(Math.max(0, currentIndex - 1));
-			}
-		} catch (err) {
-			toast.error(err instanceof Error ? err.message : 'Failed to reject');
-		} finally {
-			setIsActionLoading(false);
-		}
+	// Actual rejection API call (triggered from dialog confirmation)
+	const handleRejectConfirm = async (reason: string) => {
+		if (!currentItem || isActionLoading) return;
+		setShowRejectDialog(false);
+		scheduleAction(
+			currentItem,
+			'reject',
+			{ action: 'reject', rejectionReason: reason },
+			'Story rejected',
+		);
 	};
 
 	// Page tour
@@ -211,7 +348,27 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 	return (
 		<div className={cn('flex h-[calc(100vh-120px)] bg-white', className)}>
 			{/* Left Sidebar: Review History (desktop only) */}
-			<ReviewHistorySidebar history={reviewHistory} />
+			<ReviewHistorySidebar
+				history={reviewHistory}
+				className="hidden xl:flex"
+				onItemClick={handleHistoryItemClick}
+			/>
+
+			{/* Mobile History Drawer */}
+			<Drawer open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
+				<DrawerContent className="h-[85vh] outline-none">
+					<DrawerHeader className="border-b border-slate-100 pb-4">
+						<DrawerTitle className="text-center text-slate-900">Review History</DrawerTitle>
+					</DrawerHeader>
+					<div className="flex-1 overflow-y-auto bg-slate-50">
+						<ReviewHistorySidebar
+							history={reviewHistory}
+							className="flex w-full border-none bg-transparent shadow-none"
+							onItemClick={handleHistoryItemClick}
+						/>
+					</div>
+				</DrawerContent>
+			</Drawer>
 
 			{/* Main Content */}
 			<main className="flex-1 flex flex-col bg-slate-50 overflow-y-auto">
@@ -221,6 +378,14 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 						<div className="flex items-center justify-center gap-2 mb-1">
 							<h1 className="text-lg sm:text-2xl font-bold text-slate-900">Story Review Queue</h1>
 							<TourTriggerButton onStartTour={startTour} />
+							{/* Mobile History Toggle */}
+							<button
+								onClick={() => setIsHistoryOpen(true)}
+								className="xl:hidden p-2 rounded-full hover:bg-slate-200 text-slate-500 transition-colors"
+								aria-label="View History"
+							>
+								<Clock className="w-5 h-5" />
+							</button>
 						</div>
 						<p className="text-slate-500 text-xs sm:text-sm">
 							{remainingCount} {remainingCount === 1 ? 'story' : 'stories'} pending review
@@ -321,6 +486,14 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 				remainingCount={remainingCount}
 				reviewComment={reviewComment}
 				onReviewCommentChange={setReviewComment}
+			/>
+			{/* Rejection Reason Dialog */}
+			<RejectionReasonDialog
+				isOpen={showRejectDialog}
+				onClose={() => setShowRejectDialog(false)}
+				onConfirm={handleRejectConfirm}
+				isLoading={isActionLoading}
+				initialReason={reviewComment}
 			/>
 		</div>
 	);
