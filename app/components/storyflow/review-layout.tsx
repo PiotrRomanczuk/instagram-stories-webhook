@@ -11,6 +11,7 @@ import {
 	DrawerTitle,
 } from '@/app/components/ui/drawer';
 import { ReviewHistorySidebar } from './review-history-sidebar';
+import { ReviewCardSwipeable } from './review-card-swipeable';
 
 import { PhonePreview } from './phone-preview';
 import { ReviewDetailsSidebar } from './review-details-sidebar';
@@ -397,14 +398,23 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 						</p>
 					</div>
 
-					{/* Phone Preview */}
-					<div data-tour="review-phone-preview">
-						<PhonePreview
-							item={currentItem}
-							onImageError={() => {
-								// Handle image error gracefully - the component handles this internally
-							}}
-						/>
+					{/* Phone Preview with Swipe Gestures */}
+					<div data-tour="review-phone-preview" className="relative touch-none">
+						<ReviewCardSwipeable
+							key={currentItem?.id} // Force new instance on item change
+							onSwipeRight={currentIndex > 0 ? goToPrevious : undefined}
+							onSwipeLeft={currentIndex < items.length - 1 ? goToNext : undefined}
+							onSwipeUp={handleApprove}
+							onSwipeDown={() => setShowMobileDetails(true)}
+							disabled={isActionLoading || !currentItem}
+						>
+							<PhonePreview
+								item={currentItem}
+								onImageError={() => {
+									// Handle image error gracefully - the component handles this internally
+								}}
+							/>
+						</ReviewCardSwipeable>
 					</div>
 
 					{/* Action Buttons */}
