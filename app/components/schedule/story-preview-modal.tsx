@@ -14,6 +14,7 @@ import Image from 'next/image';
 import { ScheduledPostWithUser } from '@/lib/types';
 import { useQuickAspectCheck } from '@/app/hooks/use-media-validation';
 import { AspectRatioIndicator } from '../media/aspect-ratio-indicator';
+import ReactPlayer from 'react-player';
 
 interface StoryPreviewModalProps {
 	isOpen: boolean;
@@ -87,13 +88,15 @@ export function StoryPreviewModal({
 					{/* Media Content */}
 					<div className='relative w-full h-full flex items-center justify-center bg-zinc-900'>
 						{isVideo ? (
-							<video
+							<ReactPlayer
 								src={post.url}
-								className='w-full h-full object-contain'
-								autoPlay
+								controls
+								width="100%"
+								height="100%"
+								playsInline
+								playing
 								loop
 								muted
-								playsInline
 							/>
 						) : (
 							<div className='relative w-full h-full'>
