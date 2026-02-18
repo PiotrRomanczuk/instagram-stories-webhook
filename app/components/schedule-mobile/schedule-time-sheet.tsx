@@ -117,7 +117,7 @@ export function ScheduleTimeSheet({
 								alt={displayTitle}
 								fill
 								className="object-cover"
-								unoptimized
+								sizes="44px"
 							/>
 						) : (
 							<div className="flex h-full w-full items-center justify-center">
