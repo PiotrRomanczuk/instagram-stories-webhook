@@ -15,6 +15,7 @@ import {
 	SelectValue,
 } from './select';
 import { Label } from './label';
+import { BEST_TIMES, generateDayOptions, getTimezoneDisplay } from '@/lib/utils/date-time';
 
 interface DateTimePickerProps {
 	value: Date;
@@ -28,12 +29,6 @@ interface DateTimePickerProps {
 	/** Callback for story preview */
 	onPreview?: () => void;
 }
-
-const BEST_TIMES = [
-	{ label: '09:00', hours: 9, minutes: 0 },
-	{ label: '12:00', hours: 12, minutes: 0 },
-	{ label: '18:30', hours: 18, minutes: 30 },
-];
 
 export function DateTimePicker({
 	value,
@@ -50,25 +45,7 @@ export function DateTimePicker({
 
 	// Generate day items for mobile select (next 30 days)
 	const dayItems = useMemo(() => {
-		const items: { label: string; value: string; date: Date }[] = [];
-		const now = new Date();
-		for (let i = 0; i < 30; i++) {
-			const d = new Date(now);
-			d.setDate(d.getDate() + i);
-			d.setHours(0, 0, 0, 0);
-			const label =
-				i === 0
-					? 'Today'
-					: i === 1
-						? 'Tomorrow'
-						: d.toLocaleDateString([], {
-								weekday: 'short',
-								month: 'short',
-								day: 'numeric',
-							});
-			items.push({ label, value: String(i), date: d });
-		}
-		return items;
+		return generateDayOptions(30);
 	}, []);
 
 	const selectedDayValue = useMemo(() => {
@@ -155,7 +132,15 @@ export function DateTimePicker({
 	// Handle quick pick
 	const handleQuickPick = (getDate: () => Date) => {
 		const newDate = getDate();
-		onChange(newDate);
+
+		// Validate against minDate
+		if (minDate && newDate < minDate) {
+			console.warn('Quick pick time is in the past, using minDate instead');
+			onChange(minDate);
+		} else {
+			onChange(newDate);
+		}
+
 		setIsOpen(false);
 	};
 
