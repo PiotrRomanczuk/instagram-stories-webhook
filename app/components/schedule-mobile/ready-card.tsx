@@ -83,9 +83,9 @@ export function ReadyCard({
 						<Image
 							src={thumbnailSrc}
 							alt={item.caption || 'Content preview'}
-						fill
-						className="object-cover"
-						unoptimized
+							fill
+							className="object-cover"
+							sizes="96px"
 							onError={onImageError}
 						/>
 						{isVideo && (
