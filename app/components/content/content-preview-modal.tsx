@@ -31,6 +31,7 @@ import {
 	Trash2,
 } from 'lucide-react';
 import { ConfirmationDialog } from '../ui/confirmation-dialog';
+import { VideoPreview } from '@/app/components/media/video-preview';
 import { getFriendlyError } from '@/lib/utils/friendly-error';
 import { toast } from 'sonner';
 
@@ -471,10 +472,13 @@ export function ContentPreviewModal({
 								)}
 								{/* Main Media */}
 								{item.mediaType === 'VIDEO' ? (
-									<video
-										src={item.mediaUrl}
-										controls
-										poster={item.thumbnailUrl}
+									<VideoPreview
+										videoUrl={item.mediaUrl}
+										thumbnailUrl={item.thumbnailUrl}
+										duration={item.videoDuration}
+										resolution={item.dimensions ? { width: item.dimensions.width, height: item.dimensions.height } : undefined}
+										codec={item.videoCodec}
+										framerate={item.videoFramerate}
 										className='relative z-10 max-h-full max-w-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]'
 									/>
 								) : (
@@ -532,10 +536,13 @@ export function ContentPreviewModal({
 						) : (
 							<div className='relative w-full h-full flex items-center justify-center p-8'>
 								{item.mediaType === 'VIDEO' ? (
-									<video
-										src={item.mediaUrl}
-										controls
-										poster={item.thumbnailUrl}
+									<VideoPreview
+										videoUrl={item.mediaUrl}
+										thumbnailUrl={item.thumbnailUrl}
+										duration={item.videoDuration}
+										resolution={item.dimensions ? { width: item.dimensions.width, height: item.dimensions.height } : undefined}
+										codec={item.videoCodec}
+										framerate={item.videoFramerate}
 										className='max-h-full max-w-full object-contain rounded-2xl shadow-2xl'
 									/>
 								) : (

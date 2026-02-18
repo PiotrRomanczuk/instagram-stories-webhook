@@ -25,6 +25,56 @@ import {
 	type ProcessingStep,
 } from '@/lib/media/ffmpeg-wasm-processor';
 
+/** Extract a thumbnail frame from a video file at the given time (default 0.5s) */
+function extractVideoThumbnail(file: File, timeSeconds = 0.5): Promise<string | null> {
+	return new Promise((resolve) => {
+		const video = document.createElement('video');
+		const objectUrl = URL.createObjectURL(file);
+		video.src = objectUrl;
+		video.muted = true;
+		video.preload = 'metadata';
+
+		const cleanup = () => URL.revokeObjectURL(objectUrl);
+		const timeout = setTimeout(() => {
+			cleanup();
+			resolve(null);
+		}, 10_000);
+
+		video.addEventListener('loadedmetadata', () => {
+			// Seek to the requested time or 0 if video is shorter
+			video.currentTime = Math.min(timeSeconds, video.duration);
+		}, { once: true });
+
+		video.addEventListener('seeked', () => {
+			clearTimeout(timeout);
+			try {
+				const canvas = document.createElement('canvas');
+				canvas.width = video.videoWidth;
+				canvas.height = video.videoHeight;
+				const ctx = canvas.getContext('2d');
+				if (!ctx) {
+					cleanup();
+					resolve(null);
+					return;
+				}
+				ctx.drawImage(video, 0, 0);
+				const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+				cleanup();
+				resolve(dataUrl);
+			} catch {
+				cleanup();
+				resolve(null);
+			}
+		}, { once: true });
+
+		video.addEventListener('error', () => {
+			clearTimeout(timeout);
+			cleanup();
+			resolve(null);
+		}, { once: true });
+	});
+}
+
 type UploadStage = 'idle' | 'uploading' | 'browser-processing' | 'validating' | 'processing' | 'complete';
 
 const STAGE_LABELS: Record<UploadStage, string> = {
@@ -43,7 +93,8 @@ interface VideoUploaderProps {
 	onChange: (
 		url: string | null,
 		metadata?: VideoMetadata,
-		storagePath?: string
+		storagePath?: string,
+		thumbnailUrl?: string
 	) => void;
 	onValidationResult?: (result: VideoValidationResult | null) => void;
 	className?: string;
@@ -213,12 +264,15 @@ export function VideoUploader({
 			clearError();
 			pendingFileRef.current = file;
 
+			// Extract thumbnail from original file (runs in parallel with upload/processing)
+			const thumbnail = await extractVideoThumbnail(file).catch(() => null);
+
 			// Try browser-based processing first if supported
 			if (autoProcess && isFFmpegWasmSupported()) {
 				try {
 					const { publicUrl, storagePath, metadata } = await processAndUploadInBrowser(file);
 					setStage('complete');
-					onChange(publicUrl, metadata, storagePath);
+					onChange(publicUrl, metadata, storagePath, thumbnail ?? undefined);
 				} catch (browserErr) {
 					console.error('Browser processing failed, falling back to server:', browserErr);
 
@@ -238,10 +292,10 @@ export function VideoUploader({
 						if (validation && !validation.valid) {
 							const processedUrl = await processVideoOnServer(publicUrl);
 							setStage('complete');
-							onChange(processedUrl, validation.metadata ?? undefined, storagePath);
+							onChange(processedUrl, validation.metadata ?? undefined, storagePath, thumbnail ?? undefined);
 						} else {
 							setStage('complete');
-							onChange(publicUrl, validation?.metadata ?? undefined, storagePath);
+							onChange(publicUrl, validation?.metadata ?? undefined, storagePath, thumbnail ?? undefined);
 						}
 					} catch (serverErr) {
 						setErrorWithGuidance(
@@ -267,10 +321,10 @@ export function VideoUploader({
 					if (validation && !validation.valid && autoProcess) {
 						const processedUrl = await processVideoOnServer(publicUrl);
 						setStage('complete');
-						onChange(processedUrl, validation.metadata ?? undefined, storagePath);
+						onChange(processedUrl, validation.metadata ?? undefined, storagePath, thumbnail ?? undefined);
 					} else {
 						setStage('complete');
-						onChange(publicUrl, validation?.metadata ?? undefined, storagePath);
+						onChange(publicUrl, validation?.metadata ?? undefined, storagePath, thumbnail ?? undefined);
 					}
 				} catch (err) {
 					setErrorWithGuidance(
