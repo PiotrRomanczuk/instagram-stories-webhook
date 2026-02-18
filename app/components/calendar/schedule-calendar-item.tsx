@@ -7,12 +7,65 @@
  * - 'compact': Small horizontal card (for calendar grid)
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { ContentItem } from '@/lib/types/posts';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { MoreVertical, Clock, AlertTriangle, CheckCircle, Loader2, Play } from 'lucide-react';
+
+/** Extract a thumbnail frame from a video URL at the given time (default 0.5s) */
+async function extractThumbnailFromVideo(videoUrl: string, timeSeconds = 0.5): Promise<string | null> {
+	return new Promise((resolve) => {
+		const video = document.createElement('video');
+		video.src = videoUrl;
+		video.muted = true;
+		video.crossOrigin = 'anonymous';
+		video.preload = 'metadata';
+
+		const cleanup = () => {
+			video.src = '';
+			video.load();
+		};
+
+		const timeout = setTimeout(() => {
+			cleanup();
+			resolve(null);
+		}, 10_000);
+
+		video.addEventListener('loadedmetadata', () => {
+			video.currentTime = Math.min(timeSeconds, video.duration || 0.5);
+		}, { once: true });
+
+		video.addEventListener('seeked', () => {
+			clearTimeout(timeout);
+			try {
+				const canvas = document.createElement('canvas');
+				canvas.width = video.videoWidth || 360;
+				canvas.height = video.videoHeight || 640;
+				const ctx = canvas.getContext('2d');
+				if (!ctx) {
+					cleanup();
+					resolve(null);
+					return;
+				}
+				ctx.drawImage(video, 0, 0);
+				const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+				cleanup();
+				resolve(dataUrl);
+			} catch {
+				cleanup();
+				resolve(null);
+			}
+		}, { once: true });
+
+		video.addEventListener('error', () => {
+			clearTimeout(timeout);
+			cleanup();
+			resolve(null);
+		}, { once: true });
+	});
+}
 
 interface ScheduleCalendarItemProps {
 	item: ContentItem;
@@ -58,10 +111,21 @@ export function ScheduleCalendarItem({
 	variant = 'card',
 }: ScheduleCalendarItemProps) {
 	const [imageError, setImageError] = useState(false);
+	const [generatedThumbnail, setGeneratedThumbnail] = useState<string | null>(null);
 	const isVideo = item.mediaType === 'VIDEO';
-	// For videos, require thumbnailUrl - don't fall back to mediaUrl
+
+	// Generate thumbnail from video if not available in database
+	useEffect(() => {
+		if (isVideo && !item.thumbnailUrl && item.mediaUrl && !imageError) {
+			extractThumbnailFromVideo(item.mediaUrl)
+				.then((dataUrl) => setGeneratedThumbnail(dataUrl))
+				.catch(() => setImageError(true));
+		}
+	}, [isVideo, item.thumbnailUrl, item.mediaUrl, imageError]);
+
+	// For videos, use: DB thumbnail → generated thumbnail → null
 	const thumbnailSrc = isVideo
-		? (item.thumbnailUrl || null)
+		? (item.thumbnailUrl || generatedThumbnail || null)
 		: item.mediaUrl;
 
 	const { attributes, listeners, setNodeRef, transform, isDragging } =
