@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import useSWR, { mutate } from 'swr';
 import { toast } from 'sonner';
 import { Loader2, AlertTriangle, Inbox, Layers, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
@@ -8,6 +8,7 @@ import { ReviewHistorySidebar } from './review-history-sidebar';
 import { PhonePreview } from './phone-preview';
 import { ReviewDetailsSidebar } from './review-details-sidebar';
 import { ReviewActionBar } from './review-action-bar';
+import { RejectionReasonDialog } from './rejection-reason-dialog';
 import { useKeyboardNav } from '../story-review/use-keyboard-nav';
 import { Button } from '@/app/components/ui/button';
 import { TourTriggerButton } from '@/app/components/tour/tour-trigger-button';
@@ -32,10 +33,35 @@ interface StoryflowReviewLayoutProps {
 
 export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps) {
 	const [currentIndex, setCurrentIndex] = useState(0);
-	const [reviewHistory, setReviewHistory] = useState<ReviewedItem[]>([]);
+	const [reviewHistory, setReviewHistory] = useState<ReviewedItem[]>(() => {
+		if (typeof window === 'undefined') return [];
+		try {
+			const stored = localStorage.getItem('reviewHistory');
+			if (!stored) return [];
+			const parsed = JSON.parse(stored) as Array<ReviewedItem & { timestamp: string }>;
+			// Only keep today's reviews and rehydrate dates
+			const todayStart = new Date();
+			todayStart.setHours(0, 0, 0, 0);
+			return parsed
+				.map((item) => ({ ...item, timestamp: new Date(item.timestamp) }))
+				.filter((item) => item.timestamp >= todayStart);
+		} catch {
+			return [];
+		}
+	});
 	const [reviewComment, setReviewComment] = useState('');
 	const [isActionLoading, setIsActionLoading] = useState(false);
 	const [showMobileDetails, setShowMobileDetails] = useState(false);
+	const [showRejectDialog, setShowRejectDialog] = useState(false);
+
+	// Persist review history to localStorage
+	useEffect(() => {
+		try {
+			localStorage.setItem('reviewHistory', JSON.stringify(reviewHistory));
+		} catch {
+			// localStorage full or unavailable
+		}
+	}, [reviewHistory]);
 
 	// Fetch pending submissions
 	const { data, isLoading, error } = useSWR<{ items: ContentItem[] }>(
@@ -117,7 +143,14 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 		}
 	};
 
-	const handleReject = async () => {
+	// Opens rejection dialog instead of immediately rejecting
+	const handleReject = () => {
+		if (!currentItem || isActionLoading) return;
+		setShowRejectDialog(true);
+	};
+
+	// Actual rejection API call (triggered from dialog confirmation)
+	const handleRejectConfirm = async (reason: string) => {
 		if (!currentItem || isActionLoading) return;
 		setIsActionLoading(true);
 		try {
@@ -126,7 +159,7 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					action: 'reject',
-					rejectionReason: reviewComment || 'Content does not meet guidelines'
+					rejectionReason: reason
 				}),
 			});
 
@@ -138,6 +171,7 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 			addToHistory(currentItem, 'rejected');
 			toast.success('Story rejected');
 			setReviewComment('');
+			setShowRejectDialog(false);
 			refreshList();
 
 			if (currentIndex >= items.length - 1) {
@@ -321,6 +355,14 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 				remainingCount={remainingCount}
 				reviewComment={reviewComment}
 				onReviewCommentChange={setReviewComment}
+			/>
+			{/* Rejection Reason Dialog */}
+			<RejectionReasonDialog
+				isOpen={showRejectDialog}
+				onClose={() => setShowRejectDialog(false)}
+				onConfirm={handleRejectConfirm}
+				isLoading={isActionLoading}
+				initialReason={reviewComment}
 			/>
 		</div>
 	);
