@@ -11,6 +11,7 @@ interface NavTab {
 	label: string;
 	icon: React.ComponentType<{ className?: string }>;
 	isFab?: boolean;
+	roles?: UserRole[];
 }
 
 export function BottomNav() {
@@ -25,18 +26,24 @@ export function BottomNav() {
 
 	const tabs: NavTab[] = [
 		{ href: '/', label: 'Home', icon: Home },
-		{ href: '/schedule', label: 'Schedule', icon: Calendar },
+		{ href: '/schedule', label: 'Schedule', icon: Calendar, roles: ['admin', 'developer'] },
 		{ href: '/submit', label: 'New', icon: Plus, isFab: true },
-		{ href: '/review', label: 'Review', icon: ClipboardCheck },
+		{ href: '/review', label: 'Review', icon: ClipboardCheck, roles: ['admin', 'developer'] },
 		{ href: '/submissions', label: 'Profile', icon: User },
 	];
+
+	// Filter tabs based on user role
+	const visibleTabs = tabs.filter((tab) => {
+		if (!tab.roles) return true;
+		return tab.roles.includes(userRole as UserRole);
+	});
 
 	const isActive = (path: string) => pathname === path;
 
 	return (
 		<nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/95 backdrop-blur-lg lg:hidden">
 			<div className="mx-auto flex h-16 max-w-lg items-center justify-around px-2">
-				{tabs.map((tab) => {
+				{visibleTabs.map((tab) => {
 					const Icon = tab.icon;
 					const active = isActive(tab.href);
 
