@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Smartphone, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ContentItem } from '@/lib/types';
+import ReactPlayer from 'react-player';
 
 interface PhonePreviewProps {
 	item: ContentItem | null;
@@ -40,6 +41,8 @@ export function PhonePreview({ item, onImageError, className }: PhonePreviewProp
 		setRetryKey((k) => k + 1);
 	};
 
+	const isVideo = item?.mediaType === 'VIDEO';
+
 	return (
 		<div className={cn('flex flex-col items-center gap-2', className)}>
 			<div
@@ -58,7 +61,7 @@ export function PhonePreview({ item, onImageError, className }: PhonePreviewProp
 							{imageError ? (
 								<div className="flex h-full w-full flex-col items-center justify-center gap-3 text-muted-foreground">
 									<Smartphone className="h-12 w-12" />
-									<span className="text-sm">Failed to load image</span>
+									<span className="text-sm">Failed to load {isVideo ? 'video' : 'image'}</span>
 									<button
 										onClick={handleRetry}
 										className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
@@ -66,6 +69,19 @@ export function PhonePreview({ item, onImageError, className }: PhonePreviewProp
 										<RefreshCw className="h-3 w-3" />
 										Retry
 									</button>
+								</div>
+							) : isVideo ? (
+								<div className="h-full w-full">
+									<ReactPlayer
+										src={item.mediaUrl}
+										controls
+										width="100%"
+										height="100%"
+										light={item.thumbnailUrl || undefined}
+										playsInline
+										onReady={handleImageLoad}
+										onError={handleImageError}
+									/>
 								</div>
 							) : (
 								<>
