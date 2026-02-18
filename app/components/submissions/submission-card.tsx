@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { Eye, Edit, Trash2, ImageOff, X, Play } from 'lucide-react';
 import { ContentItem } from '@/lib/types';
@@ -8,6 +8,60 @@ import { SfAvatar, SfStatusBadge } from '@/app/components/storyflow';
 import { Dialog, DialogContent, DialogTitle } from '@/app/components/ui/dialog';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { cn } from '@/lib/utils';
+
+/** Extract a thumbnail frame from a video URL at the given time (default 0.5s) */
+async function extractThumbnailFromVideo(videoUrl: string, timeSeconds = 0.5): Promise<string | null> {
+	return new Promise((resolve) => {
+		const video = document.createElement('video');
+		video.src = videoUrl;
+		video.muted = true;
+		video.crossOrigin = 'anonymous';
+		video.preload = 'metadata';
+
+		const cleanup = () => {
+			video.src = '';
+			video.load();
+		};
+
+		const timeout = setTimeout(() => {
+			cleanup();
+			resolve(null);
+		}, 10_000);
+
+		video.addEventListener('loadedmetadata', () => {
+			// Seek to the requested time or 0 if video is shorter
+			video.currentTime = Math.min(timeSeconds, video.duration || 0.5);
+		}, { once: true });
+
+		video.addEventListener('seeked', () => {
+			clearTimeout(timeout);
+			try {
+				const canvas = document.createElement('canvas');
+				canvas.width = video.videoWidth || 360;
+				canvas.height = video.videoHeight || 640;
+				const ctx = canvas.getContext('2d');
+				if (!ctx) {
+					cleanup();
+					resolve(null);
+					return;
+				}
+				ctx.drawImage(video, 0, 0);
+				const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+				cleanup();
+				resolve(dataUrl);
+			} catch {
+				cleanup();
+				resolve(null);
+			}
+		}, { once: true });
+
+		video.addEventListener('error', () => {
+			clearTimeout(timeout);
+			cleanup();
+			resolve(null);
+		}, { once: true });
+	});
+}
 
 interface SubmissionCardProps {
 	submission: ContentItem;
@@ -48,14 +102,25 @@ export function SubmissionCard({
 }: SubmissionCardProps) {
 	const [imageError, setImageError] = useState(false);
 	const [previewOpen, setPreviewOpen] = useState(false);
+	const [generatedThumbnail, setGeneratedThumbnail] = useState<string | null>(null);
 	const hasValidUrl = submission.mediaUrl && !submission.mediaUrl.startsWith('blob:');
 	const status = getDisplayStatus(submission);
 	const isPublished = status === 'published';
 	const canEdit = submission.submissionStatus === 'pending';
 	const isVideo = submission.mediaType === 'VIDEO';
+
+	// Generate thumbnail from video if not available in database
+	useEffect(() => {
+		if (isVideo && !submission.thumbnailUrl && submission.mediaUrl && !imageError) {
+			extractThumbnailFromVideo(submission.mediaUrl)
+				.then((dataUrl) => setGeneratedThumbnail(dataUrl))
+				.catch(() => setImageError(true));
+		}
+	}, [isVideo, submission.thumbnailUrl, submission.mediaUrl, imageError]);
+
 	// For videos, require thumbnailUrl - don't fall back to mediaUrl (video files don't render in <img>)
 	const thumbnailSrc = isVideo
-		? (submission.thumbnailUrl || null)
+		? (submission.thumbnailUrl || generatedThumbnail || null)
 		: submission.mediaUrl;
 
 	// Format the time text based on status

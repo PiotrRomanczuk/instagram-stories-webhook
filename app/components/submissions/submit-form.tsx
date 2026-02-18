@@ -66,6 +66,7 @@ export function SubmitForm() {
 					caption: caption.trim() || undefined,
 					dimensions,
 					storagePath: storagePath || undefined,
+					thumbnailUrl: mediaType === 'VIDEO' ? (thumbnailUrl || undefined) : undefined,
 					...(mediaType === 'VIDEO' && videoMetadata ? {
 						videoDuration: videoMetadata.duration,
 						videoCodec: videoMetadata.codec,
