@@ -1,23 +1,23 @@
 Billable Module,Feature Name,Status,Category,Priority,Estimated Hours,Actual Hours,Notes
-Foundation V1,Webhook Security,Implemented,Authentication & Security,High,2,13.3,Validated secret token for /api/webhook/story
-Foundation V1,Cron Security,Implemented,Authentication & Security,High,1,17.5,API_KEY header requirement for /api/schedule/process
+Foundation V1,Webhook Security,Implemented,Authentication & Security,High,2,2,Validated secret token for /api/webhook/story
+Foundation V1,Cron Security,Implemented,Authentication & Security,High,1,1,API_KEY header requirement for /api/schedule/process
 Foundation V1,Supabase Storage Integration,Implemented,Core Features & Stability,High,4,4,Direct file uploads to Supabase buckets
-Foundation V1,Media Auto-Cleanup,Implemented,Core Features & Stability,Medium,2,7.3,Auto-delete files after publishing
+Foundation V1,Media Auto-Cleanup,Implemented,Core Features & Stability,Medium,2,2,Auto-delete files after publishing
 Foundation V1,Supabase Realtime,Implemented,User Experience & UI,Medium,3,3,Real-time status updates on dashboard
-Foundation V1,Media Preview,Implemented,User Experience & UI,High,2,3.0,Live preview of image/video in scheduling form
+Foundation V1,Media Preview,Implemented,User Experience & UI,High,2,2,Live preview of image/video in scheduling form
 Foundation V1,Auto-Extension,Implemented,Authentication & Security,High,2,2,Auto-refresh Meta long-lived token
 Foundation V1,Initial Meta OAuth implementation,Implemented,Authentication & Security,High,8,8,Base authentication flow
-Foundation V1,Story publishing via Webhook,Implemented,Core Features & Stability,High,6,6.0,Core publishing logic
-Foundation V1,Basic scheduling UI and storage,Implemented,User Experience & UI,High,8,21.0,MVP Interface
-Foundation V1,Migration to Supabase,Implemented,Core Features & Stability,High,6,3.0,Moved from JSON to PostgreSQL
-Foundation V1,Refactored components for SRP,Implemented,Code Quality & Maintenance,Medium,4,4.3,Clean architecture improvements
-Foundation V1,Unified documentation structure,Implemented,Documentation & DevOps,Medium,2,7.3,Consolidated docs
+Foundation V1,Story publishing via Webhook,Implemented,Core Features & Stability,High,6,6,Core publishing logic
+Foundation V1,Basic scheduling UI and storage,Implemented,User Experience & UI,High,8,8,MVP Interface
+Foundation V1,Migration to Supabase,Implemented,Core Features & Stability,High,6,6,Moved from JSON to PostgreSQL
+Foundation V1,Refactored components for SRP,Implemented,Code Quality & Maintenance,Medium,4,4,Clean architecture improvements
+Foundation V1,Unified documentation structure,Implemented,Documentation & DevOps,Medium,2,2,Consolidated docs
 Reliability & Health,Retry Logic,Planned,Core Features & Stability,High,3,,Exponential backoff for API calls
 Reliability & Health,Token Health Monitor,Planned,Authentication & Security,High,5,,Check token expiration and alert
 Reliability & Health,Permission Audit,Planned,Authentication & Security,Medium,3,,Verify Meta permissions
 Reliability & Health,Error Logs UI,Planned,Analytics & Insights,Medium,4,,Detailed error logs view
 Reliability & Health,Environment Validation,Planned,Documentation & DevOps,Low,1,,Validate .env vars on startup
-Reliability & Health,Rate Limit Monitoring,Implemented,Core Features & Stability,Low,3,1.5,Integrate confirmed /content_publishing_limit
+Reliability & Health,Rate Limit Monitoring,Implemented,Core Features & Stability,Low,3,2,Integrate confirmed /content_publishing_limit
 Enhanced Scheduling,Edit Schedules,Planned,Core Features & Stability,High,5,,Edit existing scheduled posts (url/time)
 Enhanced Scheduling,Multi-Post Support,Planned,Core Features & Stability,Medium,10,,Carousels or story sequences
 Enhanced Scheduling,Cloud Drive Picker,Planned,Core Features & Stability,Low,6,,Google Drive/Dropbox integration
@@ -26,7 +26,7 @@ User Tagging System,User Tagging (Phase 1: DB Schema),Planned,Core Features & St
 User Tagging System,User Tagging (Phase 2: Publish Logic),Planned,Core Features & Stability,High,4,,Handle user tags in publishMedia
 User Tagging System,User Tagging (Phase 3: Frontend),Planned,Core Features & Stability,Medium,4,,UI for entering usernames
 Analytics Suite,Post Analytics,Implemented,Analytics & Insights,Medium,5,3,Implemented via InsightsPanel and API
-Analytics Suite,Performance Dashboard,Implemented,Analytics & Insights,Low,6,3.3,Basic /insights page listing published posts
+Analytics Suite,Performance Dashboard,Implemented,Analytics & Insights,Low,6,2,Basic /insights page listing published posts
 Analytics Suite,Audit Trail,Planned,Analytics & Insights,Low,4,,History of config changes
 UX Polish,Calendar View,Planned,User Experience & UI,Medium,8,,Visual calendar for content
 UX Polish,Dark Mode,Planned,User Experience & UI,Low,4,,Glassmorphic dark theme

@@ -56,7 +56,7 @@ const nextConfig: NextConfig = {
 					},
 					{
 						key: 'Cross-Origin-Embedder-Policy',
-						value: 'require-corp',
+						value: 'unsafe-none',
 					},
 					{
 						key: 'Cross-Origin-Opener-Policy',
@@ -69,6 +69,7 @@ const nextConfig: NextConfig = {
 							"script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:",
 							"style-src 'self' 'unsafe-inline'",
 							"img-src 'self' data: blob: https://*.supabase.co https://*.googleusercontent.com https://picsum.photos https://fastly.picsum.photos",
+							"media-src 'self' blob: https://*.supabase.co",
 							"connect-src 'self' https://*.supabase.co https://graph.facebook.com https://graph.instagram.com https://unpkg.com",
 							"worker-src 'self' blob:",
 							"frame-ancestors 'none'",
