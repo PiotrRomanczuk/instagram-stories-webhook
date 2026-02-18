@@ -67,7 +67,7 @@ export function TimelineCardActions({ item, onUpdate }: TimelineCardActionsProps
 			>
 				<button
 					onClick={handleEdit}
-					className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 hover:text-blue-300 rounded-lg transition-colors text-xs font-semibold"
+					className="flex-1 flex items-center justify-center gap-1.5 px-3 py-3 min-h-[44px] bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 hover:text-blue-300 rounded-lg transition-colors text-xs font-semibold"
 					title="Edit post"
 				>
 					<Pencil className="w-3.5 h-3.5" />
@@ -76,7 +76,7 @@ export function TimelineCardActions({ item, onUpdate }: TimelineCardActionsProps
 
 				<button
 					onClick={handleEdit}
-					className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 hover:text-amber-300 rounded-lg transition-colors text-xs font-semibold"
+					className="flex-1 flex items-center justify-center gap-1.5 px-3 py-3 min-h-[44px] bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 hover:text-amber-300 rounded-lg transition-colors text-xs font-semibold"
 					title="Reschedule"
 				>
 					<Clock className="w-3.5 h-3.5" />
@@ -85,7 +85,7 @@ export function TimelineCardActions({ item, onUpdate }: TimelineCardActionsProps
 
 				<button
 					onClick={handleCancel}
-					className="flex items-center justify-center gap-1.5 px-3 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 rounded-lg transition-colors text-xs font-semibold"
+					className="flex items-center justify-center gap-1.5 px-3 py-3 min-h-[44px] bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 rounded-lg transition-colors text-xs font-semibold"
 					title="Cancel post"
 				>
 					<Trash2 className="w-3.5 h-3.5" />
