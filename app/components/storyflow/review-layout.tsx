@@ -3,8 +3,15 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import useSWR, { mutate } from 'swr';
 import { toast } from 'sonner';
-import { Loader2, AlertTriangle, Inbox, Layers, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2, AlertTriangle, Inbox, Layers, MessageSquare, ChevronDown, ChevronUp, Clock, X } from 'lucide-react';
+import {
+	Drawer,
+	DrawerContent,
+	DrawerHeader,
+	DrawerTitle,
+} from '@/app/components/ui/drawer';
 import { ReviewHistorySidebar } from './review-history-sidebar';
+
 import { PhonePreview } from './phone-preview';
 import { ReviewDetailsSidebar } from './review-details-sidebar';
 import { ReviewActionBar } from './review-action-bar';
@@ -53,6 +60,7 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 	const [isActionLoading, setIsActionLoading] = useState(false);
 	const [showMobileDetails, setShowMobileDetails] = useState(false);
 	const [showRejectDialog, setShowRejectDialog] = useState(false);
+	const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
 	// Persist review history to localStorage
 	useEffect(() => {
@@ -88,6 +96,42 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 			setCurrentIndex(currentIndex + 1);
 		}
 	}, [currentIndex, items.length]);
+
+	// Re-review handler for history items
+	const handleHistoryItemClick = useCallback(async (item: ReviewedItem) => {
+		setIsHistoryOpen(false); // Close drawer
+		setIsActionLoading(true);
+
+		try {
+			// Fetch fresh item data
+			const res = await fetch(`/api/content/${item.id}`);
+			if (!res.ok) throw new Error('Failed to fetch item details');
+			const json = await res.json();
+			const freshItem = json.data || json; // Handle potential API response wrapper
+
+			// Optimistically inject into current list at the front
+			// This allows reviewing even if status is not 'pending'
+			mutate(
+				'/api/content?source=submission&submissionStatus=pending',
+				(currentData: any) => {
+					const existingItems = currentData?.items || [];
+					// Remove if already exists to avoid duplicates
+					const filtered = existingItems.filter((i: any) => i.id !== freshItem.id);
+					return { ...currentData, items: [freshItem, ...filtered] };
+				},
+				false // Do not revalidate immediately to keep our injected item
+			);
+
+			// Set to view this new item
+			setCurrentIndex(0);
+			toast.info(`Re-reviewing: ${item.title}`);
+		} catch (error) {
+			toast.error('Could not load item details');
+			console.error(error);
+		} finally {
+			setIsActionLoading(false);
+		}
+	}, []);
 
 	const goToPrevious = useCallback(() => {
 		if (currentIndex > 0) {
@@ -304,7 +348,27 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 	return (
 		<div className={cn('flex h-[calc(100vh-120px)] bg-white', className)}>
 			{/* Left Sidebar: Review History (desktop only) */}
-			<ReviewHistorySidebar history={reviewHistory} />
+			<ReviewHistorySidebar
+				history={reviewHistory}
+				className="hidden xl:flex"
+				onItemClick={handleHistoryItemClick}
+			/>
+
+			{/* Mobile History Drawer */}
+			<Drawer open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
+				<DrawerContent className="h-[85vh] outline-none">
+					<DrawerHeader className="border-b border-slate-100 pb-4">
+						<DrawerTitle className="text-center text-slate-900">Review History</DrawerTitle>
+					</DrawerHeader>
+					<div className="flex-1 overflow-y-auto bg-slate-50">
+						<ReviewHistorySidebar
+							history={reviewHistory}
+							className="flex w-full border-none bg-transparent shadow-none"
+							onItemClick={handleHistoryItemClick}
+						/>
+					</div>
+				</DrawerContent>
+			</Drawer>
 
 			{/* Main Content */}
 			<main className="flex-1 flex flex-col bg-slate-50 overflow-y-auto">
@@ -314,6 +378,14 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 						<div className="flex items-center justify-center gap-2 mb-1">
 							<h1 className="text-lg sm:text-2xl font-bold text-slate-900">Story Review Queue</h1>
 							<TourTriggerButton onStartTour={startTour} />
+							{/* Mobile History Toggle */}
+							<button
+								onClick={() => setIsHistoryOpen(true)}
+								className="xl:hidden p-2 rounded-full hover:bg-slate-200 text-slate-500 transition-colors"
+								aria-label="View History"
+							>
+								<Clock className="w-5 h-5" />
+							</button>
 						</div>
 						<p className="text-slate-500 text-xs sm:text-sm">
 							{remainingCount} {remainingCount === 1 ? 'story' : 'stories'} pending review

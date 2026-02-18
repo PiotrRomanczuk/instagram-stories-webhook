@@ -66,8 +66,10 @@ export async function POST(
 			);
 		}
 
-		// Check if it's pending
-		if (item.submissionStatus !== 'pending') {
+
+		// Check if it's pending (unless admin override)
+		// We allow admins to change their mind and re-review items
+		if (item.submissionStatus !== 'pending' && role !== 'admin') {
 			return NextResponse.json(
 				{ error: `Submission is already ${item.submissionStatus}` },
 				{ status: 400 },
