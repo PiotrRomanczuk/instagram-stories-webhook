@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import Image from 'next/image';
 import { Eye, CheckSquare, Play } from 'lucide-react';
@@ -24,6 +24,59 @@ import { VideoPreview } from '@/app/components/media/video-preview';
 import { ReviewActions } from './review-actions';
 import { ContentItem } from '@/lib/types';
 
+/** Extract a thumbnail frame from a video URL at the given time (default 0.5s) */
+async function extractThumbnailFromVideo(videoUrl: string, timeSeconds = 0.5): Promise<string | null> {
+	return new Promise((resolve) => {
+		const video = document.createElement('video');
+		video.src = videoUrl;
+		video.muted = true;
+		video.crossOrigin = 'anonymous';
+		video.preload = 'metadata';
+
+		const cleanup = () => {
+			video.src = '';
+			video.load();
+		};
+
+		const timeout = setTimeout(() => {
+			cleanup();
+			resolve(null);
+		}, 10_000);
+
+		video.addEventListener('loadedmetadata', () => {
+			video.currentTime = Math.min(timeSeconds, video.duration || 0.5);
+		}, { once: true });
+
+		video.addEventListener('seeked', () => {
+			clearTimeout(timeout);
+			try {
+				const canvas = document.createElement('canvas');
+				canvas.width = video.videoWidth || 360;
+				canvas.height = video.videoHeight || 640;
+				const ctx = canvas.getContext('2d');
+				if (!ctx) {
+					cleanup();
+					resolve(null);
+					return;
+				}
+				ctx.drawImage(video, 0, 0);
+				const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+				cleanup();
+				resolve(dataUrl);
+			} catch {
+				cleanup();
+				resolve(null);
+			}
+		}, { once: true });
+
+		video.addEventListener('error', () => {
+			clearTimeout(timeout);
+			cleanup();
+			resolve(null);
+		}, { once: true });
+	});
+}
+
 interface ReviewListProps {
 	items: ContentItem[];
 	isLoading?: boolean;
@@ -44,6 +97,28 @@ export function ReviewList({
 	onSchedule,
 }: ReviewListProps) {
 	const [previewItem, setPreviewItem] = useState<ContentItem | null>(null);
+	const [generatedThumbnails, setGeneratedThumbnails] = useState<Map<string, string>>(new Map());
+
+	// Generate thumbnails for videos without stored thumbnails
+	useEffect(() => {
+		const videosNeedingThumbnails = items.filter(
+			item => item.mediaType === 'VIDEO' && !item.thumbnailUrl && item.mediaUrl
+		);
+
+		videosNeedingThumbnails.forEach(async (item) => {
+			// Skip if we already generated a thumbnail for this item
+			if (generatedThumbnails.has(item.id)) return;
+
+			try {
+				const thumbnail = await extractThumbnailFromVideo(item.mediaUrl);
+				if (thumbnail) {
+					setGeneratedThumbnails(prev => new Map(prev).set(item.id, thumbnail));
+				}
+			} catch (error) {
+				console.error(`Failed to generate thumbnail for ${item.id}:`, error);
+			}
+		});
+	}, [items, generatedThumbnails]);
 
 	const handleSelectAll = () => {
 		if (selectedIds.length === items.length) {
@@ -100,9 +175,9 @@ export function ReviewList({
 					<TableBody>
 						{items.map((item) => {
 							const isItemVideo = item.mediaType === 'VIDEO';
-							// For videos, require thumbnailUrl - don't fall back to mediaUrl
+							// For videos, use: DB thumbnail → generated thumbnail → null
 							const thumbSrc = isItemVideo
-								? (item.thumbnailUrl || null)
+								? (item.thumbnailUrl || generatedThumbnails.get(item.id) || null)
 								: item.mediaUrl;
 							return (
 							<TableRow key={item.id}>
