@@ -1,91 +1,122 @@
 # 📸 Instagram Story Automation & Webhook
 
-A powerful Next.js application for programmatically publishing and scheduling Instagram Stories via the Meta Graph API.
+[![Deployment](https://img.shields.io/badge/Deploy-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com)
+[![Framework](https://img.shields.io/badge/Framework-Next.js%2016-000000?style=for-the-badge&logo=next.js)](https://nextjs.org)
+[![Database](https://img.shields.io/badge/Database-Supabase-3ECF8E?style=for-the-badge&logo=supabase)](https://supabase.com)
+[![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
+
+A high-performance, enterprise-grade Next.js application designed to streamline programmatically publishing and scheduling Instagram Stories via the **Meta Graph API**. Featuring a mobile-first "Swipe to Review" workflow and direct-to-storage video processing.
 
 ---
 
-## Documentation
+## ✨ Core Features
 
-https://developers.facebook.com/docs/instagram-platform/content-publishing/
-https://developers.facebook.com/docs/permissions
+| 🚀 Instant Publishing | 🗓 Smart Scheduling | 📱 Mobile UX | 🛡 Secure Auth |
+|:---:|:---:|:---:|:---:|
+| Send stories instantly via Webhooks or the Admin UI. | Queue content for the perfect engagement window. | Tinder-style swipe gestures for rapid content review. | Long-lived token management with automatic refresh. |
 
+> [!IMPORTANT]
+> This application requires a **Facebook Business Account** linked to an **Instagram Professional Account**.
+
+---
+
+## 🛠️ Technology Stack
+
+| Category | Tech | Description |
+| :--- | :--- | :--- |
+| **Frontend** | `React 19`, `Next.js 16` | App Router, Server Components, Streaming SSR. |
+| **Styling** | `Tailwind CSS 4` | Utility-first aesthetics with modern design tokens. |
+| **Backend** | `Next.js API Routes` | Serverless architecture for webhooks and cron jobs. |
+| **Database** | `PostgreSQL` | Managed by Supabase with Realtime capabilities. |
+| **Media** | `FFmpeg`, `Sharp` | Professional-grade video processing and image optimization. |
+| **Testing** | `Vitest`, `Playwright` | 83% faster CI/CD pipeline with E2E coverage. |
+
+---
 
 ## 🚀 Quick Start (5 Minutes)
 
-### 1. Initial Setup
+### 1️⃣ Initial Setup
 ```bash
-# Install dependencies
+# Clone and install
+git clone https://github.com/PiotrRomanczuk/instagram-stories-webhook.git
+cd instagram-stories-webhook
 npm install
 
-# Start the development server
+# Launch development environment
 npm run dev
 ```
 
-### 2. Connect to Meta
-1. Open an **Incognito Browser**
-2. Navigate to [http://localhost:3000](http://localhost:3000)
-3. Click **"Connect Facebook"**
-4. Grant the 4 required permissions
-5. Verify status shows **"Fully Authenticated"** ✅
+### 2️⃣ Connect to Meta
+1. Open your browser to [http://localhost:3000](http://localhost:3000) (Use **Incognito** for best results).
+2. Click **"Connect Facebook"** and authorize the required permissions.
+3. Once verified as **"Fully Authenticated"**, you're ready to go!
 
-### 3. Test a Story
-Once authenticated, use the **"Quick Test Suite"** on the homepage to publish your first story!
+### 3️⃣ Test your first Story
+Use the **"Quick Test Suite"** on the dashboard to verify your connection by publishing a test image or video.
 
 ---
 
-## 🛠️ Main Features
+## 🔄 Core Workflows
 
-| Feature | Description | Link |
-|---------|-------------|------|
-| **Instant Publishing** | Send stories immediately via Webhook or UI | `/` |
-| **Story Scheduling** | Schedule posts for future dates/times | `/schedule` |
-| **Meta Auth Flow** | Seamless Facebook/Instagram integration | `/api/auth` |
-| **Debug Dashboard** | Real-time connection status & API insights | `/debug` |
-| **Permissions Guide** | Detailed Meta API scope reference | `docs/META_PERMISSIONS.md` |
+The system is built around three primary automation loops:
+1.  **Meme Submission**: Users submit content → Deduplication check → Review Queue.
+2.  **Admin Review**: Mobile-first swipe interface → Approve & Schedule or Reject.
+3.  **Auto-Publishing**: A high-reliability cron runner picks up pending posts and pushes them to the Meta API.
+
+> [!TIP]
+> Check out the [Architecture & Workflows Diagram](docs/comprehensive/ARCHITECTURE_AND_WORKFLOWS.md) for a technical deep-dive.
 
 ---
 
-## 📊 System Status Dashboard
+## 🚀 Recent Release History
 
-*   **App ID:** `798644479898983`
-*   **Redirect URI:** `http://localhost:3000/api/auth/callback`
-*   **Required Scopes:** `instagram_basic`, `instagram_content_publish`, `pages_read_engagement`, `pages_show_list`
-*   **Storage:** Supabase PostgreSQL (Tokens & Scheduled Posts)
+### **v0.21.1 - Documentation & Polish** (Feb 18, 2026)
+*   **📚 Documentation Overhaul**: Complete restructuring of technical and non-technical guides for faster onboarding.
+*   **🏗 Architecture Diagrams**: Added visual flows for all major system processes (publishing, scheduling, authentication).
+*   **📱 Mobile Polish**: Minor UI improvements for the new swipe gestures.
+
+### **v0.20.0 - The "Mobile UX" Update** (Feb 18, 2026)
+*   **👆 Swipe to Review**: Introduced a Tinder-like "Swipe Left/Right" interface for admins to quick-review pending memes on mobile.
+*   **👮‍♀️ History Permission Control**: Admins can now re-review previously processed items directly from their mobile history view.
+
+### **v0.19.5 - Video Upload & Preview Engine** (Feb 17-18, 2026)
+*   **🚀 Direct-to-Storage Uploads**: Re-architected system to bypass Vercel limits via direct Supabase Storage uploads.
+*   **🎥 Unified Video Player**: Fixed playback issues on iOS/Safari across all dashboards.
+*   **🖼 Intelligent Thumbnails**: Automatic generation of video thumbnails for the grid view.
 
 ---
 
 ## 📖 Complete Documentation
 
-Check out our unified guides for detailed information:
+Explore our comprehensive guides to master the system:
 
-1.  **[GUIDES.md](./docs/GUIDES.md)** - Feature deep-dives, API references, and production setup.
-2.  **[TROUBLESHOOTING.md](./docs/TROUBLESHOOTING.md)** - Solve common issues, Meta account setup, and debug tools.
-3.  **[META_PERMISSIONS.md](./docs/META_PERMISSIONS.md)** - Detailed reference for API scopes and future features.
-4.  **[CLIENT_SETUP_GUIDE.md](./docs/CLIENT_SETUP_GUIDE.md)** - Complete step-by-step guide for new client deployments.
-5.  **[PI_DEPLOYMENT.md](./docs/PI_DEPLOYMENT.md)** - Raspberry Pi local deployment instructions.
-6.  **[CI/CD Pipeline](.github/workflows/ci.yml)** - Automated testing and deployment configuration.
+| Guide | Description |
+| :--- | :--- |
+| 📖 **[GUIDES.md](./docs/GUIDES.md)** | Feature deep-dives and production setup. |
+| 🛠 **[TROUBLESHOOTING.md](./docs/TROUBLESHOOTING.md)** | Solve common Meta API & deployment issues. |
+| 🛡 **[META_PERMISSIONS.md](./docs/META_PERMISSIONS.md)** | Detailed reference for API scopes. |
+| 🚀 **[CLIENT_SETUP_GUIDE.md](./docs/CLIENT_SETUP_GUIDE.md)** | Step-by-step branding for new clients. |
+| 🥧 **[PI_DEPLOYMENT.md](./docs/PI_DEPLOYMENT.md)** | Running local worker on Raspberry Pi. |
+| 🏗 **[Architecture](docs/comprehensive/ARCHITECTURE_AND_WORKFLOWS.md)** | System diagrams and data flows. |
+| 📜 **[History](docs/non-technical/FEATURE_IMPLEMENTATION_HISTORY.md)** | Full feature implementation timeline. |
 
-### 🧪 CI/CD Features
-- **CI**: Automated Linting, TypeScript type checking, and Vitest unit testing on every push.
-- **CD**: Automatic deployment to Vercel on every push to `master`/`main`.
-- **E2E**: Playwright tests available as separate workflow (manual trigger or on-demand).
+---
 
-### ⚙️ Application Settings
+## ⚙️ Application Settings
 
-For new deployments, use the built-in Settings page to configure credentials:
-
+Configure your production environment via the built-in Settings dashboard:
 1. Navigate to **Developer Tools** → **Application Settings** (`/settings`)
-2. Enter all API keys and secrets via the web interface
-3. Settings are stored locally in `data/app-config.json` (gitignored for security)
+2. Update API keys, Supabase credentials, and Webhook secrets.
+3. Settings are stored securely in `data/app-config.json`.
 
 ---
 
 ## 🆘 Need Help?
 
-*   Run the interactive debug script: `.\scripts\debug-auth.bat`
-*   Visit the live debug center: `http://localhost:3000/debug`
-*   Follow the automated workflow: `/fresh-meta-auth`
+*   **Interactive Debug**: Run `./scripts/debug-auth.bat`
+*   **Status Center**: Visit `http://localhost:3000/debug`
+*   **Discord**: Join our community for real-time support.
 
 ---
 
-Built with ❤️ by Antigravity
+Built with ❤️ by **Antigravity**
