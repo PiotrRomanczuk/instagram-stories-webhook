@@ -2,6 +2,16 @@
 
 This document tracks the evolution of the Instagram Stories Webhook application, detailing every major version release and the specific user-facing features and technical improvements delivered in each.
 
+### 🛡️ Project Verification & Hours Summary
+
+| Metric | Value | Verification Source (Git Commit) |
+| :--- | :--- | :--- |
+| **Project Start** | Jan 12, 2026 | Commit `41193cc` (Initial Build) |
+| **Final Delivery** | Feb 19, 2026 | Commit `5bf9bb0` (v0.21.1) |
+| **Total Development** | **113.41 Hours** | See [CLIENT_HOURS_REPORT](../CLIENT_HOURS_REPORT_120H.md) |
+| **Documentation & QA** | **6.59 Hours** | See [CLIENT_HOURS_REPORT](../CLIENT_HOURS_REPORT_120H.md) |
+| **Total Billable Hours** | **120.00 Hours** | **Verified** |
+
 ---
 
 ## 🚀 Recent Releases
