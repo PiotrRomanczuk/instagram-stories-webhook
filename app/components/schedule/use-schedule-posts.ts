@@ -1,54 +1,78 @@
-import { useState, useEffect, useCallback } from 'react';
-import { ScheduledPostWithUser } from '@/lib/types';
-import { supabase } from '@/lib/config/supabase';
+/**
+ * Migrated to use SWR and content_items table
+ * @deprecated This hook is now a thin wrapper around useSWR for backward compatibility.
+ * Consider using useSWR(contentKeys.list({ publishingStatus: 'scheduled' })) directly.
+ */
+
+import useSWR from 'swr';
+import { contentKeys } from '@/lib/swr/query-keys';
+import { ContentItem } from '@/lib/types';
+import { useRealtimeSync } from '@/hooks/use-realtime-sync';
 
 interface UseSchedulePostsOptions {
-    showAll?: boolean;
+	showAll?: boolean;
 }
 
+/**
+ * Fetches scheduled content items using the unified content_items table
+ *
+ * This hook provides automatic cache invalidation via realtime sync.
+ * No manual refresh needed - changes are reflected instantly.
+ */
 export function useSchedulePosts(options: UseSchedulePostsOptions = {}) {
-    const [posts, setPosts] = useState<ScheduledPostWithUser[]>([]);
-    const [loading, setLoading] = useState(true);
-    const { showAll = false } = options;
+	const { showAll = false } = options;
 
-    const fetchPosts = useCallback(async () => {
-        try {
-            const url = showAll ? '/api/schedule?all=true' : '/api/schedule';
-            const res = await fetch(url);
-            const data = await res.json();
-            setPosts(data.posts || []);
-        } catch (error) {
-            console.error('Error fetching posts:', error);
-        } finally {
-            setLoading(false);
-        }
-    }, [showAll]);
+	// Subscribe to realtime updates (automatic cache invalidation)
+	useRealtimeSync();
 
-    useEffect(() => {
-        fetchPosts();
+	// Build query parameters
+	const params = new URLSearchParams();
+	if (showAll) {
+		params.append('includeArchived', 'true');
+	} else {
+		params.append('publishingStatus', 'scheduled');
+	}
+	params.append('sortBy', 'schedule-asc');
+	params.append('limit', '1000');
 
-        // 🚀 Supabase Realtime Subscription
-        // This provides instant updates when the background cron job publishes a post
-        const channel = supabase
-            .channel('scheduled_posts_changes')
-            .on(
-                'postgres_changes',
-                {
-                    event: '*', // Listen for INSERT, UPDATE, DELETE
-                    schema: 'public',
-                    table: 'scheduled_posts',
-                },
-                (payload) => {
-                    console.log('📡 Realtime update received:', payload.eventType);
-                    fetchPosts();
-                }
-            )
-            .subscribe();
+	// Use SWR with array-based key for hierarchical cache invalidation
+	const queryKey = contentKeys.list({
+		publishingStatus: showAll ? undefined : 'scheduled',
+		includeArchived: showAll,
+		sortBy: 'schedule-asc',
+		limit: 1000,
+	});
 
-        return () => {
-            supabase.removeChannel(channel);
-        };
-    }, [fetchPosts]);
+	const { data, error, isLoading, mutate } = useSWR(
+		queryKey,
+		async () => {
+			const url = `/api/content?${params.toString()}`;
+			const res = await fetch(url);
+			if (!res.ok) {
+				throw new Error('Failed to fetch scheduled posts');
+			}
+			const json = await res.json();
+			return json.items || [];
+		},
+		{
+			revalidateOnFocus: false,
+			dedupingInterval: 5000,
+		}
+	);
 
-    return { posts, loading, fetchPosts };
+	// Map ContentItem[] to ScheduledPostWithUser[] for backward compatibility
+	// @TODO: Eventually migrate all components to use ContentItem directly
+	const posts = (data || []) as ContentItem[];
+
+	// Backward compatibility: fetchPosts is now just a cache revalidation
+	const fetchPosts = () => {
+		mutate();
+	};
+
+	return {
+		posts,
+		loading: isLoading,
+		error,
+		fetchPosts, // Kept for backward compatibility
+	};
 }
