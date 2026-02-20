@@ -78,8 +78,9 @@ export function ScheduleManager() {
         // 1. Get the original times from the posts, sorted
         // We assume the reorderedPosts passed in are just the PENDING ones
         const originalTimes = posts
-            .filter(p => p.status === 'pending')
+            .filter(p => p.publishingStatus === 'scheduled')
             .map(p => p.scheduledTime)
+            .filter((time): time is number => time !== undefined)
             .sort((a, b) => a - b);
 
         // 2. Assign these times to the new order
@@ -197,7 +198,7 @@ export function ScheduleManager() {
                         <LoadingSpinner />
                     ) : (
                         <PostList
-                            posts={posts}
+                            posts={posts as unknown as import('@/lib/types').ScheduledPostWithUser[]}
                             onCancel={handleCancel}
                             onReschedule={handleReschedule}
                             onReorder={handleReorder}

@@ -38,6 +38,9 @@ import { useMediaQuery } from '@/app/hooks/use-media-query';
 import { usePageTour } from '@/app/hooks/use-page-tour';
 import { adminScheduleTourSteps } from '@/lib/tour/admin-schedule-tour';
 import { TourTriggerButton } from '@/app/components/tour/tour-trigger-button';
+import { contentKeys } from '@/lib/swr/query-keys';
+import { useRealtimeSync } from '@/hooks/use-realtime-sync';
+import { useUpdateContent } from '@/lib/swr/mutations';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -87,10 +90,20 @@ export function ScheduleCalendarLayout() {
 	const userRole = (session?.user as { role?: UserRole })?.role;
 	const isAdmin = userRole === 'admin' || userRole === 'developer';
 
-	// Fetch all content items
+	// Subscribe to realtime updates (automatic cache invalidation)
+	useRealtimeSync();
+
+	// Centralized mutations
+	const updateContent = useUpdateContent();
+
+	// Fetch all content items using array-based key for hierarchical cache invalidation
 	const { data, error, isLoading, mutate } = useSWR(
-		`/api/content?limit=100&sortBy=newest`,
-		fetcher,
+		contentKeys.list({ limit: 100, sortBy: 'newest' }),
+		async () => {
+			const res = await fetch('/api/content?limit=100&sortBy=newest');
+			if (!res.ok) throw new Error('Failed to fetch content');
+			return res.json();
+		},
 		{
 			revalidateOnFocus: false,
 			dedupingInterval: 5000,
@@ -208,33 +221,25 @@ export function ScheduleCalendarLayout() {
 			}
 
 			try {
-				const response = await fetch(`/api/content/${item.id}`, {
-					method: 'PATCH',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({
-						scheduledTime: scheduledTime.getTime(),
-						publishingStatus: 'scheduled',
-						version: item.version,
-					}),
+				// Use centralized mutation with optimistic updates
+				await updateContent(item.id, {
+					scheduledTime: scheduledTime.getTime(),
+					publishingStatus: 'scheduled',
+					version: item.version,
 				});
 
-				if (response.ok) {
-					toast.success(
-						isFromReady
-							? `Scheduled for ${format(scheduledTime, 'MMM d, h:mm a')}`
-							: `Rescheduled to ${format(scheduledTime, 'MMM d, h:mm a')}`
-					);
-					mutate();
-				} else {
-					const data = await response.json();
-					toast.error(data.error || 'Failed to schedule');
-				}
+				toast.success(
+					isFromReady
+						? `Scheduled for ${format(scheduledTime, 'MMM d, h:mm a')}`
+						: `Rescheduled to ${format(scheduledTime, 'MMM d, h:mm a')}`
+				);
+				// No need to call mutate() - mutation hook handles cache invalidation
 			} catch (err) {
 				console.error('Failed to schedule:', err);
 				toast.error('Failed to schedule item');
 			}
 		},
-		[allItems, mutate]
+		[allItems, updateContent]
 	);
 
 	const handleOpenPreview = useCallback((item: ContentItem) => {

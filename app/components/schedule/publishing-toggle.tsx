@@ -5,41 +5,36 @@ import useSWR from 'swr';
 import { toast } from 'sonner';
 import { Switch } from '@/app/components/ui/switch';
 import { Radio } from 'lucide-react';
+import { settingsKeys } from '@/lib/swr/query-keys';
+import { useUpdatePublishing } from '@/lib/swr/mutations';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 export function PublishingToggle() {
-	const { data, mutate, isLoading } = useSWR(
-		'/api/settings/publishing',
-		fetcher,
+	const { data, isLoading } = useSWR(
+		settingsKeys.publishing(),
+		async () => {
+			const res = await fetch('/api/settings/publishing');
+			if (!res.ok) throw new Error('Failed to fetch setting');
+			return res.json();
+		},
 		{ revalidateOnFocus: true, dedupingInterval: 10000 }
 	);
+
+	// Centralized mutation with automatic optimistic updates
+	const updatePublishing = useUpdatePublishing();
 
 	const enabled = data?.enabled ?? true;
 
 	const handleToggle = useCallback(async (checked: boolean) => {
-		// Optimistic update
-		mutate({ enabled: checked }, false);
-
 		try {
-			const res = await fetch('/api/settings/publishing', {
-				method: 'PATCH',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ enabled: checked }),
-			});
-
-			if (!res.ok) {
-				throw new Error('Failed to update');
-			}
-
+			// Use centralized mutation (handles optimistic updates + rollback automatically)
+			await updatePublishing(checked);
 			toast.success(checked ? 'Publishing enabled' : 'Publishing paused');
-			mutate();
 		} catch {
-			// Revert on error
-			mutate({ enabled: !checked }, false);
 			toast.error('Failed to update publishing setting');
 		}
-	}, [mutate]);
+	}, [updatePublishing]);
 
 	return (
 		<div className="flex items-center gap-2">

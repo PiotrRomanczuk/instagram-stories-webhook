@@ -18,8 +18,8 @@ export function InsightsDashboard() {
 
     // Filter only published posts
     const publishedPosts = posts
-        .filter(p => p.status === 'published')
-        .sort((a, b) => b.publishedAt! - a.publishedAt!); // Newest first
+        .filter(p => p.publishingStatus === 'published' && p.publishedAt)
+        .sort((a, b) => new Date(b.publishedAt!).getTime() - new Date(a.publishedAt!).getTime()); // Newest first
 
     if (loading) {
         return <LoadingSpinner />;
@@ -75,11 +75,11 @@ export function InsightsDashboard() {
                                     >
                                         {/* Thumbnail */}
                                         <div className="relative w-full md:w-24 aspect-square rounded-xl overflow-hidden bg-slate-200 shrink-0">
-                                            {post.type === 'VIDEO' ? (
-                                                <video src={post.url} className="w-full h-full object-cover" />
+                                            {post.mediaType === 'VIDEO' ? (
+                                                <video src={post.mediaUrl} className="w-full h-full object-cover" />
                                             ) : (
                                                 <Image
-                                                    src={post.url}
+                                                    src={post.mediaUrl}
                                                     alt="Post thumbnail"
                                                     fill
                                                     className="object-cover"
@@ -93,7 +93,7 @@ export function InsightsDashboard() {
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 mb-1">
                                                 <Badge className="bg-blue-100 text-blue-700 text-[10px] font-black uppercase tracking-widest border-0">
-                                                    {post.postType || 'STORY'}
+                                                    STORY
                                                 </Badge>
                                                 <span className="text-xs text-slate-400 font-medium flex items-center gap-1">
                                                     <Calendar className="w-3 h-3" />

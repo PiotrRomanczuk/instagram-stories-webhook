@@ -5,6 +5,8 @@ import useSWR from 'swr';
 import { toast } from 'sonner';
 import { Switch } from '@/app/components/ui/switch';
 import { Clapperboard } from 'lucide-react';
+import { settingsKeys } from '@/lib/swr/query-keys';
+import { useUpdateAutoProcess } from '@/lib/swr/mutations';
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -14,43 +16,36 @@ const fetcher = (url: string) => fetch(url).then((r) => r.json());
  * Instagram Stories requirements (resolution, codec, frame rate).
  */
 export function AutoProcessToggle() {
-	const { data, mutate, isLoading } = useSWR(
-		'/api/settings/auto-process',
-		fetcher,
+	const { data, isLoading } = useSWR(
+		settingsKeys.autoProcess(),
+		async () => {
+			const res = await fetch('/api/settings/auto-process');
+			if (!res.ok) throw new Error('Failed to fetch setting');
+			return res.json();
+		},
 		{ revalidateOnFocus: true, dedupingInterval: 10_000 }
 	);
+
+	// Centralized mutation with automatic optimistic updates
+	const updateAutoProcess = useUpdateAutoProcess();
 
 	const enabled = data?.enabled ?? true;
 
 	const handleToggle = useCallback(
 		async (checked: boolean) => {
-			// Optimistic update
-			mutate({ enabled: checked }, false);
-
 			try {
-				const res = await fetch('/api/settings/auto-process', {
-					method: 'PATCH',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ enabled: checked }),
-				});
-
-				if (!res.ok) {
-					throw new Error('Failed to update');
-				}
-
+				// Use centralized mutation (handles optimistic updates + rollback automatically)
+				await updateAutoProcess(checked);
 				toast.success(
 					checked
 						? 'Auto-processing enabled'
 						: 'Auto-processing disabled'
 				);
-				mutate();
 			} catch {
-				// Revert on error
-				mutate({ enabled: !checked }, false);
 				toast.error('Failed to update auto-processing setting');
 			}
 		},
-		[mutate]
+		[updateAutoProcess]
 	);
 
 	return (
