@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { getAllowedUsers, addAllowedUser, UserRole } from '@/lib/memes-db';
-import { requireAdmin, requireDeveloper, getUserId } from '@/lib/auth-helpers';
+import { requireAdmin, requireDeveloper, getUserId, isDeveloper } from '@/lib/auth-helpers';
 import { Logger } from '@/lib/utils/logger';
 import { addUserSchema, validateUserInput } from '@/lib/validations/user.schema';
 
@@ -38,7 +38,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
-        requireDeveloper(session);
+        requireAdmin(session);
 
         const adminId = getUserId(session);
         const body = await request.json();
@@ -50,6 +50,11 @@ export async function POST(request: NextRequest) {
         }
 
         const { email, role, display_name } = validation.data;
+
+        // Prevent admins from creating developers
+        if (role === 'developer' && !isDeveloper(session)) {
+            return NextResponse.json({ error: 'Only developers can create developer accounts' }, { status: 403 });
+        }
 
         const user = await addAllowedUser({
             email,

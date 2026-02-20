@@ -12,13 +12,12 @@ export async function addAllowedUser(
 	user: Omit<AllowedUser, 'id' | 'created_at'>,
 ): Promise<AllowedUser | null> {
 	try {
+		Logger.info(MODULE, `Attempting to add user ${user.email} with role ${user.role} by ${user.added_by}`);
 		const { data, error } = await supabaseAdmin
 			.from('email_whitelist')
 			.insert({
 				email: user.email.toLowerCase(),
 				role: user.role,
-				display_name: user.display_name,
-				added_by: user.added_by,
 			})
 			.select()
 			.single();
@@ -26,16 +25,20 @@ export async function addAllowedUser(
 		if (error) {
 			Logger.error(
 				MODULE,
-				`Error adding allowed user: ${error.message}`,
+				`Error adding allowed user: ${error.message} (Code: ${error.code}, Details: ${error.details}, Hint: ${error.hint})`,
 				error,
 			);
-			return null;
+			// Throw the specific error instead of returning null so the API route can handle it
+			throw new Error(`DB Error: ${error.message} (${error.code})`);
 		}
 
 		Logger.info(MODULE, `Added ${user.email} to whitelist as ${user.role}`);
 		return data as AllowedUser;
 	} catch (error) {
 		Logger.error(MODULE, 'Exception in addAllowedUser', error);
+		if (error instanceof Error && error.message.includes('DB Error')) {
+			throw error;
+		}
 		return null;
 	}
 }
