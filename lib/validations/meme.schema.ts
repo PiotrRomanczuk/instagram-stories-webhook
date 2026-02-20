@@ -65,10 +65,7 @@ export const reviewMemeSchema = z
 				message: 'Scheduled time cannot be in the past (more than 2 mins)',
 			}),
 
-		rejectionReason: z
-			.string()
-			.min(1, 'Rejection reason is required when rejecting')
-			.optional(),
+		rejectionReason: z.string().optional(),
 	})
 	.refine(
 		(data) => {
@@ -81,19 +78,6 @@ export const reviewMemeSchema = z
 		{
 			message: 'Scheduled time is required when scheduling',
 			path: ['scheduledFor'],
-		},
-	)
-	.refine(
-		(data) => {
-			// If action is 'reject', rejectionReason must be provided
-			if (data.action === 'reject') {
-				return !!data.rejectionReason;
-			}
-			return true;
-		},
-		{
-			message: 'Rejection reason is required when rejecting',
-			path: ['rejectionReason'],
 		},
 	);
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, X, Keyboard } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatRelativeTime } from '@/lib/utils';
 
@@ -60,19 +60,6 @@ export function ReviewHistorySidebar({ history, className, onItemClick }: Review
 				)}
 			</div>
 
-			{/* Keyboard Shortcuts */}
-			<div className="p-4 bg-blue-50 mt-auto">
-				<div className="flex items-center gap-2 text-slate-500 text-xs mb-3">
-					<Keyboard className="h-4 w-4" />
-					<span>Power User Shortcuts</span>
-				</div>
-				<div className="grid grid-cols-2 gap-2">
-					<ShortcutKey keyLabel="A" action="Approve" />
-					<ShortcutKey keyLabel="R" action="Reject" />
-					<ShortcutKey keyLabel="J" action="Next" />
-					<ShortcutKey keyLabel="K" action="Previous" />
-				</div>
-			</div>
 		</aside>
 	);
 }
@@ -133,18 +120,3 @@ function HistoryItem({ item, hasImageError, onImageError }: HistoryItemProps) {
 	);
 }
 
-interface ShortcutKeyProps {
-	keyLabel: string;
-	action: string;
-}
-
-function ShortcutKey({ keyLabel, action }: ShortcutKeyProps) {
-	return (
-		<div className="flex items-center gap-2 bg-white p-2 rounded border border-slate-200">
-			<kbd className="bg-slate-200 px-1.5 py-0.5 rounded text-[10px] font-bold text-slate-700">
-				{keyLabel}
-			</kbd>
-			<span className="text-[11px] text-slate-500">{action}</span>
-		</div>
-	);
-}

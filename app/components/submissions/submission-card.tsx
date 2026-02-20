@@ -1,5 +1,3 @@
-'use client';
-
 import { useState, useCallback, useEffect } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { Eye, Edit, Trash2, ImageOff, X, Play } from 'lucide-react';
@@ -8,61 +6,8 @@ import { SfAvatar, SfStatusBadge } from '@/app/components/storyflow';
 import { Dialog, DialogContent, DialogTitle } from '@/app/components/ui/dialog';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { cn } from '@/lib/utils';
-import ReactPlayer from 'react-player';
-
-/** Extract a thumbnail frame from a video URL at the given time (default 0.5s) */
-async function extractThumbnailFromVideo(videoUrl: string, timeSeconds = 0.5): Promise<string | null> {
-	return new Promise((resolve) => {
-		const video = document.createElement('video');
-		video.src = videoUrl;
-		video.muted = true;
-		video.crossOrigin = 'anonymous';
-		video.preload = 'metadata';
-
-		const cleanup = () => {
-			video.src = '';
-			video.load();
-		};
-
-		const timeout = setTimeout(() => {
-			cleanup();
-			resolve(null);
-		}, 10_000);
-
-		video.addEventListener('loadedmetadata', () => {
-			// Seek to the requested time or 0 if video is shorter
-			video.currentTime = Math.min(timeSeconds, video.duration || 0.5);
-		}, { once: true });
-
-		video.addEventListener('seeked', () => {
-			clearTimeout(timeout);
-			try {
-				const canvas = document.createElement('canvas');
-				canvas.width = video.videoWidth || 360;
-				canvas.height = video.videoHeight || 640;
-				const ctx = canvas.getContext('2d');
-				if (!ctx) {
-					cleanup();
-					resolve(null);
-					return;
-				}
-				ctx.drawImage(video, 0, 0);
-				const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-				cleanup();
-				resolve(dataUrl);
-			} catch {
-				cleanup();
-				resolve(null);
-			}
-		}, { once: true });
-
-		video.addEventListener('error', () => {
-			clearTimeout(timeout);
-			cleanup();
-			resolve(null);
-		}, { once: true });
-	});
-}
+import { UniversalVideoPlayer } from '@/app/components/media/universal-video-player';
+import { extractThumbnailFromVideo } from '@/lib/media/client-utils';
 
 interface SubmissionCardProps {
 	submission: ContentItem;
@@ -161,7 +106,7 @@ export function SubmissionCard({
 					<img
 						src={thumbnailSrc}
 						alt={submission.title || 'Submission'}
-					className="absolute inset-0 h-full w-full object-contain"
+						className="absolute inset-0 h-full w-full object-contain"
 						onError={() => setImageError(true)}
 					/>
 					{isVideo && (
@@ -269,13 +214,11 @@ export function SubmissionCard({
 					{hasValidUrl && (
 						isVideo ? (
 							<div className="w-full max-h-[80vh]">
-								<ReactPlayer
-									src={submission.mediaUrl}
-									light={submission.thumbnailUrl || undefined}
-									controls
-									width="100%"
-									height="100%"
-									playsInline
+								<UniversalVideoPlayer
+									url={submission.mediaUrl}
+									thumbnailUrl={submission.thumbnailUrl || generatedThumbnail}
+									contain
+									playing
 								/>
 							</div>
 						) : (

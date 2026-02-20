@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { Smartphone, Play } from 'lucide-react';
+import { UniversalVideoPlayer } from '@/app/components/media/universal-video-player';
 
 interface SfPhoneFrameProps {
 	imageUrl?: string | null;
@@ -65,17 +66,21 @@ export function SfPhoneFrame({
 
 					{mediaUrl ? (
 						<div className="relative h-full w-full">
-							<img src={isVideo && imageUrl ? imageUrl : mediaUrl} alt={alt} className="h-full w-full object-cover" />
-							{isVideo && (
-								<button
-									type="button"
-									onClick={onPlayClick}
-									className="absolute inset-0 flex items-center justify-center bg-black/20 transition-colors hover:bg-black/30"
-								>
-									<div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/90 shadow-lg">
-										<Play className="h-6 w-6 text-slate-900 ml-1" fill="currentColor" />
-									</div>
-								</button>
+							{isVideo ? (
+								<UniversalVideoPlayer
+									url={mediaUrl}
+									thumbnailUrl={imageUrl}
+									playing={false}
+									controls={false}
+									light={imageUrl || true}
+									contain={false}
+								/>
+							) : (
+								<img
+									src={mediaUrl}
+									alt={alt}
+									className="h-full w-full object-cover"
+								/>
 							)}
 						</div>
 					) : (

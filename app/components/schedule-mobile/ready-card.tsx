@@ -7,10 +7,11 @@
  */
 
 import Image from 'next/image';
-import { Check, Video, ImageIcon, Play } from 'lucide-react';
+import { Check, Video, ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ContentItem } from '@/lib/types/posts';
 import { format, isToday, isYesterday } from 'date-fns';
+import { UniversalVideoPlayer } from '@/app/components/media/universal-video-player';
 
 export function getApprovalLabel(item: ContentItem): string {
 	const d = new Date(item.reviewedAt || item.updatedAt || item.createdAt);
@@ -76,26 +77,30 @@ export function ReadyCard({
 						: 'bg-gray-200',
 				)}
 			>
-				{isVideo && !thumbnailSrc ? (
-					<Video className="h-8 w-8" />
-				) : thumbnailSrc && !imageError ? (
-					<>
-						<Image
-							src={thumbnailSrc}
-							alt={item.caption || 'Content preview'}
-							fill
-							className="object-cover"
-							sizes="96px"
-							onError={onImageError}
+				{isVideo ? (
+					item.mediaUrl ? (
+						<UniversalVideoPlayer
+							url={item.mediaUrl}
+							thumbnailUrl={item.thumbnailUrl}
+							controls={false}
+							light={item.thumbnailUrl || true}
+							width="100%"
+							height="100%"
+							className="absolute inset-0"
+							showPlaceholder={true}
 						/>
-						{isVideo && (
-							<div className="absolute inset-0 flex items-center justify-center">
-								<div className="rounded-full bg-black/50 p-1.5 backdrop-blur-sm">
-									<Play className="h-4 w-4 text-white" fill="white" />
-								</div>
-							</div>
-						)}
-					</>
+					) : (
+						<Video className="h-8 w-8" />
+					)
+				) : thumbnailSrc && !imageError ? (
+					<Image
+						src={thumbnailSrc}
+						alt={item.caption || 'Content preview'}
+						fill
+						className="object-cover"
+						sizes="96px"
+						onError={onImageError}
+					/>
 				) : (
 					<div className="flex h-full w-full items-center justify-center">
 						<ImageIcon className="h-8 w-8 text-gray-400" />

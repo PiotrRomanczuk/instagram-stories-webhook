@@ -75,13 +75,7 @@ export async function POST(req: NextRequest) {
 			);
 		}
 
-		// Validate rejection reason
-		if (action === 'reject' && !rejectionReason) {
-			return NextResponse.json(
-				{ error: 'rejectionReason is required when rejecting' },
-				{ status: 400 },
-			);
-		}
+
 
 		// Perform bulk update
 		const updated = await bulkUpdateSubmissionStatus(

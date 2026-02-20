@@ -16,8 +16,6 @@ import { ReviewCardSwipeable } from './review-card-swipeable';
 import { PhonePreview } from './phone-preview';
 import { ReviewDetailsSidebar } from './review-details-sidebar';
 import { ReviewActionBar } from './review-action-bar';
-import { RejectionReasonDialog } from './rejection-reason-dialog';
-import { useKeyboardNav } from '../story-review/use-keyboard-nav';
 import { Button } from '@/app/components/ui/button';
 import { TourTriggerButton } from '@/app/components/tour/tour-trigger-button';
 import { cn } from '@/lib/utils';
@@ -60,7 +58,6 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 	const [reviewComment, setReviewComment] = useState('');
 	const [isActionLoading, setIsActionLoading] = useState(false);
 	const [showMobileDetails, setShowMobileDetails] = useState(false);
-	const [showRejectDialog, setShowRejectDialog] = useState(false);
 	const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
 	// Persist review history to localStorage
@@ -156,21 +153,7 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 		setReviewHistory((prev) => [historyItem, ...prev].slice(0, 20)); // Keep last 20
 	}, []);
 
-	// Pending undo action ref
-	const pendingActionRef = useRef<{
-		timeout: ReturnType<typeof setTimeout>;
-		itemId: string;
-		action: 'approve' | 'reject';
-	} | null>(null);
 
-	// Cleanup pending action on unmount
-	useEffect(() => {
-		return () => {
-			if (pendingActionRef.current) {
-				clearTimeout(pendingActionRef.current.timeout);
-			}
-		};
-	}, []);
 
 	// Execute the actual review API call
 	const executeReviewAction = useCallback(async (
@@ -198,95 +181,62 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 		}
 	}, [refreshList]);
 
-	// Delayed action with undo
-	const scheduleAction = useCallback((
-		item: ContentItem,
-		action: 'approve' | 'reject',
-		payload: Record<string, unknown>,
-		toastMessage: string,
-	) => {
-		// Cancel any existing pending action
-		if (pendingActionRef.current) {
-			clearTimeout(pendingActionRef.current.timeout);
-			// Execute the previous pending action immediately
-			executeReviewAction(
-				pendingActionRef.current.itemId,
-				pendingActionRef.current.action,
-				payload,
-			);
-		}
+	// Action handlers
+	const optimisticRemoveItem = useCallback((itemId: string) => {
+		mutate(
+			'/api/content?source=submission&submissionStatus=pending',
+			(currentData: any) => {
+				if (!currentData) return currentData;
+				return {
+					...currentData,
+					items: currentData.items.filter((item: any) => item.id !== itemId),
+				};
+			},
+			false // Do not revalidate immediately
+		);
+	}, []);
 
-		const savedIndex = currentIndex;
+	const handleApprove = useCallback(() => {
+		if (!currentItem || isActionLoading) return;
+
+		const item = currentItem;
+		const payload = { action: 'approve' as const, feedback: reviewComment || undefined };
 
 		// Optimistically update UI
-		addToHistory(item, action === 'approve' ? 'approved' : 'rejected');
+		addToHistory(item, 'approved');
 		setReviewComment('');
+		optimisticRemoveItem(item.id);
 
 		// Adjust index
 		if (currentIndex >= items.length - 1) {
 			setCurrentIndex(Math.max(0, currentIndex - 1));
 		}
 
-		// Schedule delayed execution
-		const timeout = setTimeout(() => {
-			pendingActionRef.current = null;
-			executeReviewAction(item.id, action, payload);
-		}, 5000);
+		// Execute immediately
+		executeReviewAction(item.id, 'approve', payload);
+		toast.success('Story approved');
+	}, [currentItem, isActionLoading, reviewComment, addToHistory, optimisticRemoveItem, currentIndex, items.length, executeReviewAction]);
 
-		pendingActionRef.current = {
-			timeout,
-			itemId: item.id,
-			action,
-		};
-
-		// Toast with undo
-		toast(toastMessage, {
-			action: {
-				label: 'Undo',
-				onClick: () => {
-					if (pendingActionRef.current?.itemId === item.id) {
-						clearTimeout(pendingActionRef.current.timeout);
-						pendingActionRef.current = null;
-						// Revert history
-						setReviewHistory((prev) => prev.filter((h) => h.id !== item.id));
-						// Restore index
-						setCurrentIndex(savedIndex);
-						toast.info('Action undone');
-					}
-				},
-			},
-			duration: 5000,
-		});
-	}, [currentIndex, items.length, addToHistory, executeReviewAction]);
-
-	// Action handlers
-	const handleApprove = () => {
+	const handleReject = useCallback(() => {
 		if (!currentItem || isActionLoading) return;
-		scheduleAction(
-			currentItem,
-			'approve',
-			{ action: 'approve', feedback: reviewComment || undefined },
-			'Story approved and ready to schedule',
-		);
-	};
 
-	// Opens rejection dialog instead of immediately rejecting
-	const handleReject = () => {
-		if (!currentItem || isActionLoading) return;
-		setShowRejectDialog(true);
-	};
+		const item = currentItem;
+		const payload = { action: 'reject' as const, feedback: reviewComment || undefined };
 
-	// Actual rejection API call (triggered from dialog confirmation)
-	const handleRejectConfirm = async (reason: string) => {
-		if (!currentItem || isActionLoading) return;
-		setShowRejectDialog(false);
-		scheduleAction(
-			currentItem,
-			'reject',
-			{ action: 'reject', rejectionReason: reason },
-			'Story rejected',
-		);
-	};
+		// Optimistically update UI
+		addToHistory(item, 'rejected');
+		setReviewComment('');
+		optimisticRemoveItem(item.id);
+
+		// Adjust index
+		if (currentIndex >= items.length - 1) {
+			setCurrentIndex(Math.max(0, currentIndex - 1));
+		}
+
+		// Execute immediately
+		executeReviewAction(item.id, 'reject', payload);
+		toast.success('Story rejected');
+	}, [currentItem, isActionLoading, reviewComment, addToHistory, optimisticRemoveItem, currentIndex, items.length, executeReviewAction]);
 
 	// Page tour
 	const { startTour } = usePageTour({
@@ -294,14 +244,6 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 		steps: adminReviewTourSteps,
 	});
 
-	// Keyboard navigation
-	useKeyboardNav({
-		onNext: goToNext,
-		onPrevious: goToPrevious,
-		onApprove: handleApprove,
-		onReject: handleReject,
-		enabled: items.length > 0 && !isActionLoading,
-	});
 
 	// Loading state
 	if (isLoading) {
@@ -427,6 +369,8 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 						hasNext={currentIndex < items.length - 1}
 						disabled={!currentItem || isActionLoading}
 						isLoading={isActionLoading}
+						currentIndex={currentIndex}
+						totalCount={items.length}
 					/>
 
 					{/* Mobile Details Section (visible below lg) */}
@@ -496,14 +440,6 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 				remainingCount={remainingCount}
 				reviewComment={reviewComment}
 				onReviewCommentChange={setReviewComment}
-			/>
-			{/* Rejection Reason Dialog */}
-			<RejectionReasonDialog
-				isOpen={showRejectDialog}
-				onClose={() => setShowRejectDialog(false)}
-				onConfirm={handleRejectConfirm}
-				isLoading={isActionLoading}
-				initialReason={reviewComment}
 			/>
 		</div>
 	);
