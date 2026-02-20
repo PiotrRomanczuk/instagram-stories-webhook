@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import useSWR, { mutate } from 'swr';
+import useSWR from 'swr';
 import { toast } from 'sonner';
 import { Check, X, AlertTriangle } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
@@ -11,6 +11,9 @@ import { RejectDialog } from './reject-dialog';
 import { ScheduleDialog } from './schedule-dialog';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { ContentItem } from '@/lib/types';
+import { contentKeys } from '@/lib/swr/query-keys';
+import { useRealtimeSync } from '@/hooks/use-realtime-sync';
+import { useApproveContent, useRejectContent } from '@/lib/swr/mutations';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -20,35 +23,32 @@ export function ReviewManager() {
 	const [schedulingId, setSchedulingId] = useState<string | null>(null);
 	const [isBulkProcessing, setIsBulkProcessing] = useState(false);
 
-	// Fetch pending submissions
-	const { data, isLoading, error } = useSWR<{ items: ContentItem[] }>(
-		'/api/content?source=submission&submissionStatus=pending',
-		fetcher
+	// Subscribe to realtime updates
+	useRealtimeSync();
+
+	// Centralized mutations
+	const approveContent = useApproveContent();
+	const rejectContent = useRejectContent();
+
+	// Fetch pending submissions using array-based key
+	const { data, isLoading, error, mutate: revalidate } = useSWR<{ items: ContentItem[] }>(
+		contentKeys.list({ source: 'submission', submissionStatus: 'pending' }),
+		async () => {
+			const res = await fetch('/api/content?source=submission&submissionStatus=pending');
+			if (!res.ok) throw new Error('Failed to fetch submissions');
+			return res.json();
+		}
 	);
 
 	const items = data?.items || [];
 	const rejectingItem = items.find((item) => item.id === rejectingId);
 	const schedulingItem = items.find((item) => item.id === schedulingId);
 
-	const refreshList = useCallback(() => {
-		mutate('/api/content?source=submission&submissionStatus=pending');
-	}, []);
-
 	const handleApprove = async (id: string) => {
 		try {
-			const response = await fetch(`/api/content/${id}/review`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ action: 'approve' }),
-			});
-
-			if (!response.ok) {
-				const data = await response.json();
-				throw new Error(data.error || 'Failed to approve');
-			}
-
+			// Use centralized mutation with automatic cache invalidation
+			await approveContent(id);
 			toast.success('Submission approved');
-			refreshList();
 			setSelectedIds((prev) => prev.filter((selectedId) => selectedId !== id));
 		} catch (error) {
 			toast.error(error instanceof Error ? error.message : 'Failed to approve');
@@ -60,19 +60,9 @@ export function ReviewManager() {
 		if (!rejectingId) return;
 
 		try {
-			const response = await fetch(`/api/content/${rejectingId}/review`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ action: 'reject', rejectionReason: reason }),
-			});
-
-			if (!response.ok) {
-				const data = await response.json();
-				throw new Error(data.error || 'Failed to reject');
-			}
-
+			// Use centralized mutation with automatic cache invalidation
+			await rejectContent(rejectingId, reason);
 			toast.success('Submission rejected');
-			refreshList();
 			setSelectedIds((prev) => prev.filter((id) => id !== rejectingId));
 		} catch (error) {
 			toast.error(error instanceof Error ? error.message : 'Failed to reject');
@@ -84,17 +74,8 @@ export function ReviewManager() {
 		if (!schedulingId) return;
 
 		try {
-			// First approve the submission
-			const approveResponse = await fetch(`/api/content/${schedulingId}/review`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ action: 'approve' }),
-			});
-
-			if (!approveResponse.ok) {
-				const data = await approveResponse.json();
-				throw new Error(data.error || 'Failed to approve');
-			}
+			// First approve the submission using centralized mutation
+			await approveContent(schedulingId);
 
 			// Then schedule it
 			const scheduleResponse = await fetch(`/api/content/${schedulingId}/schedule`, {
@@ -109,7 +90,7 @@ export function ReviewManager() {
 			}
 
 			toast.success('Submission approved and scheduled');
-			refreshList();
+			// No manual refresh needed - realtime sync handles it automatically
 			setSelectedIds((prev) => prev.filter((id) => id !== schedulingId));
 		} catch (error) {
 			toast.error(error instanceof Error ? error.message : 'Failed to schedule');
@@ -152,7 +133,7 @@ export function ReviewManager() {
 				<p className="mt-2 text-sm text-muted-foreground">
 					{error.message || 'An error occurred while fetching submissions.'}
 				</p>
-				<Button variant="outline" className="mt-4" onClick={refreshList}>
+				<Button variant="outline" className="mt-4" onClick={() => revalidate()}>
 					Try Again
 				</Button>
 			</div>
