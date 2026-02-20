@@ -113,9 +113,9 @@ npm run release
 
 ---
 
-### Phase 4: Trigger Production E2E (Optional)
+### Phase 4: Trigger Production E2E and Wait for Completion
 
-**Default**: Trigger unless `--skip-tests` flag provided
+**Default**: Trigger E2E workflow and wait for completion (unless `--skip-tests` or `--no-wait` flags provided)
 
 ```bash
 # Trigger production E2E workflow
@@ -131,9 +131,8 @@ gh workflow run e2e-production.yml
 
 **If successful**:
 - ✅ Report workflow triggered
-- Optionally wait for completion (ask user if they want to wait)
 
-**If waiting for completion**:
+**Wait for completion** (default behavior):
 ```bash
 # Watch workflow execution
 gh run watch
@@ -142,6 +141,11 @@ gh run watch
 - Report progress every 30 seconds
 - Timeout after 20 minutes
 - If timeout: Report ID, user can check manually
+
+**If `--no-wait` flag provided**:
+- ⏭️ Skip waiting for completion
+- Report workflow URL for manual monitoring
+- Continue to Phase 5
 
 **If E2E tests fail**:
 - ❌ Report failure details
@@ -182,12 +186,14 @@ Only run if `--smoke-only` or `--full` flag provided.
 
 Parse user input for these flags:
 
-- `--skip-tests` or `--fast`: Skip quality gates and E2E workflow
+- `--skip-tests` or `--fast`: Skip quality gates and E2E workflow entirely
+- `--no-wait`: Trigger E2E but don't wait for completion (fast mode)
 - `--smoke-only`: Skip full E2E, run only smoke tests
-- `--full`: Run all checks, wait for E2E completion
 - `--help`: Show usage information
 
-**Default** (no flags): Run quality gates, create tag, trigger E2E (don't wait)
+**Default** (no flags): Run quality gates, create tag, trigger E2E, **wait for completion**
+
+**Note**: The `--full` flag is deprecated - it's now the default behavior
 
 ---
 
