@@ -37,29 +37,29 @@ Handles the full production deployment workflow after a PR has been merged to `m
 
 ## Usage
 
-### Basic Usage (Default) - Comprehensive Verification
+### Basic Usage (Default)
 ```bash
 /deploy
 ```
-Runs all quality gates, creates release tag, triggers production E2E tests, **waits for completion** (~15-20 min).
+Creates release tag and triggers production E2E tests.
 
-### Fast Mode - Don't Wait for E2E
-```bash
-/deploy --no-wait
-```
-Triggers E2E tests but continues without waiting (~5-7 min). E2E results can be monitored separately.
-
-### Skip Tests - Fastest
+### Skip Tests (Fast)
 ```bash
 /deploy --skip-tests
 ```
-Creates release tag only, skips E2E workflow trigger entirely (~2-3 min).
+Creates release tag only, skips E2E workflow trigger.
 
-### Smoke Tests Only
+### Skip E2E, Run Only Smoke Tests
 ```bash
 /deploy --smoke-only
 ```
-Creates release tag, skips full E2E suite, runs only production smoke tests (~4-5 min).
+Creates release tag, skips full E2E suite, runs only production smoke tests.
+
+### Full Verification (Comprehensive)
+```bash
+/deploy --full
+```
+Runs all quality gates, creates tag, triggers E2E, waits for completion, verifies deployment.
 
 ---
 
@@ -250,30 +250,28 @@ This skill integrates with the following workflows:
 | Quality gates | 2-3 min | Yes (--skip-tests) |
 | Create release tag | <1 min | No |
 | Trigger E2E workflow | <1 min | Yes (--skip-tests) |
-| Wait for E2E completion | 10-12 min | Yes (--no-wait) |
+| Wait for E2E completion | 10-12 min | Yes (don't wait) |
 | Verify deployment | 1-2 min | No |
-| **Total (default)** | **15-20 min** | - |
-| **Total (--no-wait)** | **5-7 min** | - |
-| **Total (--skip-tests)** | **2-3 min** | - |
+| **Total (full)** | **15-20 min** | - |
+| **Total (fast)** | **3-5 min** | - |
 
 ---
 
 ## Examples
 
-### Example 1: Standard Production Deployment (Default - Comprehensive)
+### Example 1: Standard Production Deployment
 ```bash
 # After PR merged to master
 git checkout master
 git pull
 
-# Deploy to production (waits for E2E completion)
+# Deploy to production (creates tag, triggers E2E)
 /deploy
 
 # Output:
 # ✅ On master branch
 # ✅ Working tree clean
 # ✅ Latest changes pulled
-# ✅ Quality gates passed
 # ✅ Git tag v0.24.0 created
 # ✅ Tag pushed to GitHub
 # ✅ GitHub release created
@@ -285,27 +283,9 @@ git pull
 # ✅ Deployment complete! 🚀
 ```
 
-### Example 2: Fast Deployment (Don't Wait for E2E)
+### Example 2: Fast Deployment (Skip E2E)
 ```bash
-# Deploy quickly, trigger E2E but don't wait
-/deploy --no-wait
-
-# Output:
-# ✅ On master branch
-# ✅ Working tree clean
-# ✅ Quality gates passed
-# ✅ Git tag v0.24.0 created
-# ✅ Tag pushed to GitHub
-# ✅ Production E2E workflow triggered (ID: 123456789)
-# ℹ️  View at: https://github.com/.../actions/runs/123456789
-# ⏭️  Not waiting for completion (monitor manually)
-# ✅ Production URL responding (200 OK)
-# ✅ Deployment complete! 🚀
-```
-
-### Example 3: Fastest Deployment (Skip E2E Entirely)
-```bash
-# Deploy without any E2E tests
+# Deploy quickly without waiting for E2E
 /deploy --skip-tests
 
 # Output:
