@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ContentItem, UserTag } from '@/lib/types/posts';
 import {
 	X,
@@ -10,10 +10,20 @@ import {
 	AlignLeft,
 	Send,
 	Tag as TagIcon,
+	Clock,
 } from 'lucide-react';
-import { DateTimePicker } from '../ui/datetime-picker';
 import { StoryPreview } from '../media/story-preview';
 import { TagInput } from '../ui/tag-input';
+import { TimePicker } from '../ui/time-picker';
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '../ui/select';
+import { Label } from '../ui/label';
+import { generateDayOptions } from '@/lib/utils/date-time';
 
 interface ContentEditModalProps {
 	item: ContentItem;
@@ -28,21 +38,54 @@ export function ContentEditModal({
 }: ContentEditModalProps) {
 	const [caption, setCaption] = useState(item.caption || '');
 	const [title, setTitle] = useState(item.title || '');
-	const [scheduledDate, setScheduledDate] = useState<Date>(
-		item.scheduledTime
-			? new Date(item.scheduledTime)
-			: new Date(Date.now() + 3600000),
-	);
+	const [scheduledDate, setScheduledDate] = useState<Date>(() => {
+		const minTime = new Date(Date.now() + 3 * 60 * 1000); // 3 minutes from now
+		if (item.scheduledTime) {
+			const existingTime = new Date(item.scheduledTime);
+			return existingTime > minTime ? existingTime : minTime;
+		}
+		return minTime;
+	});
 	const [tags, setTags] = useState<string[]>(
 		item.userTags?.map((t) => t.username) || [],
 	);
 	const [isSaving, setIsSaving] = useState(false);
 	const [error, setError] = useState('');
 
+	// Generate day items for date select (next 30 days)
+	const dayItems = useMemo(() => {
+		return generateDayOptions(30);
+	}, []);
+
+	const selectedDayValue = useMemo(() => {
+		const valueDate = new Date(scheduledDate);
+		valueDate.setHours(0, 0, 0, 0);
+		const idx = dayItems.findIndex((item) => {
+			const itemDate = new Date(item.date);
+			itemDate.setHours(0, 0, 0, 0);
+			return itemDate.getTime() === valueDate.getTime();
+		});
+		return String(idx >= 0 ? idx : 0);
+	}, [scheduledDate, dayItems]);
+
+	const handleDayChange = (dayValue: string) => {
+		const idx = parseInt(dayValue, 10);
+		const newDate = new Date(dayItems[idx].date);
+		newDate.setHours(scheduledDate.getHours(), scheduledDate.getMinutes(), 0, 0);
+		setScheduledDate(newDate);
+	};
+
 	const handleSchedule = async () => {
 		try {
 			setIsSaving(true);
 			setError('');
+
+			// Validate: must be at least 3 minutes from now
+			const now = new Date();
+			const minTime = new Date(now.getTime() + 3 * 60 * 1000); // 3 minutes
+			if (scheduledDate < minTime) {
+				throw new Error('Scheduled time must be at least 3 minutes from now');
+			}
 
 			// Map tags to UserTag objects, preserving existing positions or defaulting to center
 			const userTags: UserTag[] = tags.map((username) => {
@@ -189,15 +232,40 @@ export function ContentEditModal({
 									</h3>
 								</div>
 
-								<div className='p-1 bg-gray-50 rounded-2xl border border-gray-100'>
-									<DateTimePicker
-										value={scheduledDate}
-										onChange={setScheduledDate}
-										minDate={new Date()}
-									/>
+								{/* Inline Date & Time Pickers */}
+								<div className='space-y-4 p-4 bg-gray-50 rounded-2xl border border-gray-100'>
+									{/* Date Select */}
+									<div className='space-y-2'>
+										<Label className='text-xs font-semibold text-gray-600 flex items-center gap-1.5'>
+											<Calendar className='h-3.5 w-3.5' />
+											Date
+										</Label>
+										<Select value={selectedDayValue} onValueChange={handleDayChange}>
+											<SelectTrigger className='w-full bg-white'>
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent>
+												{dayItems.map((item) => (
+													<SelectItem key={item.value} value={item.value}>
+														{item.label}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</div>
+
+									{/* Time Picker */}
+									<div className='space-y-2'>
+										<Label className='text-xs font-semibold text-gray-600 flex items-center gap-1.5'>
+											<Clock className='h-3.5 w-3.5' />
+											Time
+										</Label>
+										<TimePicker value={scheduledDate} onChange={setScheduledDate} />
+									</div>
 								</div>
+
 								<p className='text-xs text-gray-400 pl-2 font-medium'>
-									Select a future date and time for automatic publishing.
+									Schedule at least 3 minutes from now for automatic publishing.
 								</p>
 							</section>
 
@@ -211,7 +279,8 @@ export function ContentEditModal({
 								</div>
 
 								<div className='space-y-4'>
-									<div className='group'>
+									{/* Internal Title - Hidden per user request */}
+									{/* <div className='group'>
 										<label className='block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1 transition-colors group-focus-within:text-pink-600'>
 											Internal Title
 										</label>
@@ -225,7 +294,7 @@ export function ContentEditModal({
 												className='w-full pl-11 pr-4 py-3 bg-gray-50 border border-transparent rounded-xl focus:bg-white focus:border-pink-200 focus:ring-4 focus:ring-pink-50/50 outline-none transition-all font-medium text-gray-900'
 											/>
 										</div>
-									</div>
+									</div> */}
 
 									<div className='group'>
 										<label className='block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1 transition-colors group-focus-within:text-pink-600'>
@@ -245,7 +314,8 @@ export function ContentEditModal({
 										</div>
 									</div>
 
-									<div className='group'>
+									{/* User Tags - Hidden per user request */}
+									{/* <div className='group'>
 										<label className='block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1 transition-colors group-focus-within:text-pink-600'>
 											User Tags
 										</label>
@@ -258,7 +328,7 @@ export function ContentEditModal({
 										<p className='text-[10px] text-gray-400 pl-1 mt-1.5'>
 											Tag up to 20 Instagram users on this story
 										</p>
-									</div>
+									</div> */}
 								</div>
 							</section>
 

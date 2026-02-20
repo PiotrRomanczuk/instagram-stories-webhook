@@ -87,7 +87,7 @@ export function RejectDialog({
 					<Button
 						variant="destructive"
 						onClick={handleConfirm}
-						disabled={isSubmitting}
+						disabled={isSubmitting || !reason.trim()}
 					>
 						{isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
 						Reject Submission

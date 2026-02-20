@@ -1,11 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Image from 'next/image';
-import { X, Check, Clock, ZoomIn, Loader2 } from 'lucide-react';
+import { X, Check, Clock, ZoomIn, Loader2, Calendar } from 'lucide-react';
 import { ScheduledPostWithUser } from '@/lib/types';
 import { TagInput } from '../ui/tag-input';
-import { DateTimePicker } from '../ui/datetime-picker';
+import { TimePicker } from '../ui/time-picker';
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '../ui/select';
+import { Label } from '../ui/label';
+import { generateDayOptions } from '@/lib/utils/date-time';
 import { useMediaValidation } from '@/app/hooks/use-media-validation';
 import {
 	AspectRatioIndicator,
@@ -51,6 +60,29 @@ export function PostEditModal({
 		}
 	});
 
+	// Generate day items for date select (next 30 days)
+	const dayItems = useMemo(() => {
+		return generateDayOptions(30);
+	}, []);
+
+	const selectedDayValue = useMemo(() => {
+		const valueDate = new Date(editDate);
+		valueDate.setHours(0, 0, 0, 0);
+		const idx = dayItems.findIndex((item) => {
+			const itemDate = new Date(item.date);
+			itemDate.setHours(0, 0, 0, 0);
+			return itemDate.getTime() === valueDate.getTime();
+		});
+		return String(idx >= 0 ? idx : 0);
+	}, [editDate, dayItems]);
+
+	const handleDayChange = (dayValue: string) => {
+		const idx = parseInt(dayValue, 10);
+		const newDate = new Date(dayItems[idx].date);
+		newDate.setHours(editDate.getHours(), editDate.getMinutes(), 0, 0);
+		setEditDate(newDate);
+	};
+
 	const handleSave = async () => {
 		setUrlError('');
 
@@ -63,6 +95,14 @@ export function PostEditModal({
 			new URL(editUrl);
 		} catch {
 			setUrlError('Please enter a valid URL');
+			return;
+		}
+
+		// Validate: must be at least 3 minutes from now
+		const now = new Date();
+		const minTime = new Date(now.getTime() + 3 * 60 * 1000); // 3 minutes
+		if (editDate < minTime) {
+			setUrlError('Scheduled time must be at least 3 minutes from now');
 			return;
 		}
 
@@ -252,17 +292,44 @@ export function PostEditModal({
 								</p>
 							</div>
 
-							{/* Date & Time */}
+							{/* Date & Time - Inline */}
 							<div>
-								<label className='block text-sm font-bold text-gray-700 mb-2'>
+								<label className='block text-sm font-bold text-gray-700 mb-3'>
 									<Clock className='w-4 h-4 inline mr-1.5' />
 									Scheduled Time
 								</label>
-								<DateTimePicker
-									value={editDate}
-									onChange={setEditDate}
-									minDate={new Date()}
-								/>
+
+								<div className='space-y-3 p-3 bg-gray-50 rounded-xl border border-gray-200'>
+									{/* Date Select */}
+									<div className='space-y-2'>
+										<Label className='text-xs font-semibold text-gray-600 flex items-center gap-1.5'>
+											<Calendar className='h-3.5 w-3.5' />
+											Date
+										</Label>
+										<Select value={selectedDayValue} onValueChange={handleDayChange}>
+											<SelectTrigger className='w-full bg-white'>
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent>
+												{dayItems.map((item) => (
+													<SelectItem key={item.value} value={item.value}>
+														{item.label}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+									</div>
+
+									{/* Time Picker */}
+									<div className='space-y-2'>
+										<Label className='text-xs font-semibold text-gray-600 flex items-center gap-1.5'>
+											<Clock className='h-3.5 w-3.5' />
+											Time
+										</Label>
+										<TimePicker value={editDate} onChange={setEditDate} />
+									</div>
+								</div>
+
 								<p className='text-[10px] text-gray-400 mt-1.5 pl-1'>
 									Timezone:{' '}
 									{new Intl.DateTimeFormat().resolvedOptions().timeZone}
@@ -297,8 +364,8 @@ export function PostEditModal({
 								</div>
 							</div>
 
-							{/* Tags */}
-							<div>
+							{/* Tags - Hidden per user request */}
+							{/* <div>
 								<label className='block text-sm font-bold text-gray-700 mb-2'>
 									Edit Tags
 								</label>
@@ -308,7 +375,7 @@ export function PostEditModal({
 									placeholder='@username'
 									maxTags={20}
 								/>
-							</div>
+							</div> */}
 						</div>
 
 						{/* Error if exists */}

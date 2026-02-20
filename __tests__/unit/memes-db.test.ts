@@ -690,13 +690,13 @@ describe('Memes Database Layer', () => {
 		it('addAllowedUser should handle duplicate email errors', async () => {
 			setupSupabaseMock(null, { code: '23505', message: 'duplicate key' });
 
-			const result = await addAllowedUser({
-				email: 'existing@test.com',
-				role: 'user',
-				added_by: 'admin1',
-			});
-
-			expect(result).toBe(null);
+			await expect(
+				addAllowedUser({
+					email: 'existing@test.com',
+					role: 'user',
+					added_by: 'admin1',
+				})
+			).rejects.toThrow('DB Error: duplicate key (23505)');
 		});
 
 		it('removeAllowedUser should return false on errors', async () => {
