@@ -297,8 +297,8 @@ export function PostEditModal({
 								</div>
 							</div>
 
-							{/* Tags */}
-							<div>
+							{/* Tags - Hidden per user request */}
+							{/* <div>
 								<label className='block text-sm font-bold text-gray-700 mb-2'>
 									Edit Tags
 								</label>
@@ -308,7 +308,7 @@ export function PostEditModal({
 									placeholder='@username'
 									maxTags={20}
 								/>
-							</div>
+							</div> */}
 						</div>
 
 						{/* Error if exists */}

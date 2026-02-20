@@ -211,7 +211,8 @@ export function ContentEditModal({
 								</div>
 
 								<div className='space-y-4'>
-									<div className='group'>
+									{/* Internal Title - Hidden per user request */}
+									{/* <div className='group'>
 										<label className='block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1 transition-colors group-focus-within:text-pink-600'>
 											Internal Title
 										</label>
@@ -225,7 +226,7 @@ export function ContentEditModal({
 												className='w-full pl-11 pr-4 py-3 bg-gray-50 border border-transparent rounded-xl focus:bg-white focus:border-pink-200 focus:ring-4 focus:ring-pink-50/50 outline-none transition-all font-medium text-gray-900'
 											/>
 										</div>
-									</div>
+									</div> */}
 
 									<div className='group'>
 										<label className='block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1 transition-colors group-focus-within:text-pink-600'>
@@ -245,7 +246,8 @@ export function ContentEditModal({
 										</div>
 									</div>
 
-									<div className='group'>
+									{/* User Tags - Hidden per user request */}
+									{/* <div className='group'>
 										<label className='block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1 transition-colors group-focus-within:text-pink-600'>
 											User Tags
 										</label>
@@ -258,7 +260,7 @@ export function ContentEditModal({
 										<p className='text-[10px] text-gray-400 pl-1 mt-1.5'>
 											Tag up to 20 Instagram users on this story
 										</p>
-									</div>
+									</div> */}
 								</div>
 							</section>
 
