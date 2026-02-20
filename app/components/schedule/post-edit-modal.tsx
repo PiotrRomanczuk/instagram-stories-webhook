@@ -98,6 +98,14 @@ export function PostEditModal({
 			return;
 		}
 
+		// Validate: must be at least 3 minutes from now
+		const now = new Date();
+		const minTime = new Date(now.getTime() + 3 * 60 * 1000); // 3 minutes
+		if (editDate < minTime) {
+			setUrlError('Scheduled time must be at least 3 minutes from now');
+			return;
+		}
+
 		setIsSaving(true);
 		try {
 			onSave(editDate, editTags, {

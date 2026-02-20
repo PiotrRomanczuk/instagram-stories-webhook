@@ -38,11 +38,14 @@ export function ContentEditModal({
 }: ContentEditModalProps) {
 	const [caption, setCaption] = useState(item.caption || '');
 	const [title, setTitle] = useState(item.title || '');
-	const [scheduledDate, setScheduledDate] = useState<Date>(
-		item.scheduledTime
-			? new Date(item.scheduledTime)
-			: new Date(Date.now() + 3600000),
-	);
+	const [scheduledDate, setScheduledDate] = useState<Date>(() => {
+		const minTime = new Date(Date.now() + 3 * 60 * 1000); // 3 minutes from now
+		if (item.scheduledTime) {
+			const existingTime = new Date(item.scheduledTime);
+			return existingTime > minTime ? existingTime : minTime;
+		}
+		return minTime;
+	});
 	const [tags, setTags] = useState<string[]>(
 		item.userTags?.map((t) => t.username) || [],
 	);
@@ -76,6 +79,13 @@ export function ContentEditModal({
 		try {
 			setIsSaving(true);
 			setError('');
+
+			// Validate: must be at least 3 minutes from now
+			const now = new Date();
+			const minTime = new Date(now.getTime() + 3 * 60 * 1000); // 3 minutes
+			if (scheduledDate < minTime) {
+				throw new Error('Scheduled time must be at least 3 minutes from now');
+			}
 
 			// Map tags to UserTag objects, preserving existing positions or defaulting to center
 			const userTags: UserTag[] = tags.map((username) => {
@@ -255,7 +265,7 @@ export function ContentEditModal({
 								</div>
 
 								<p className='text-xs text-gray-400 pl-2 font-medium'>
-									Select a future date and time for automatic publishing.
+									Schedule at least 3 minutes from now for automatic publishing.
 								</p>
 							</section>
 
