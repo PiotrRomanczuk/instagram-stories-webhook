@@ -12,6 +12,8 @@ interface ReviewActionBarProps {
 	hasNext: boolean;
 	disabled?: boolean;
 	isLoading?: boolean;
+	totalCount: number;
+	currentIndex: number;
 	className?: string;
 }
 
@@ -24,6 +26,8 @@ export function ReviewActionBar({
 	hasNext,
 	disabled = false,
 	isLoading = false,
+	totalCount,
+	currentIndex,
 	className,
 }: ReviewActionBarProps) {
 	return (
@@ -47,9 +51,6 @@ export function ReviewActionBar({
 						<X className="h-5 w-5" />
 					)}
 					<span>Reject</span>
-					<kbd className="hidden sm:group-hover:inline-block bg-white/20 px-1.5 rounded text-[10px] ml-2">
-						R
-					</kbd>
 				</button>
 
 				{/* Approve Button */}
@@ -69,9 +70,6 @@ export function ReviewActionBar({
 						<Check className="h-5 w-5" />
 					)}
 					<span>Approve</span>
-					<kbd className="hidden sm:group-hover:inline-block bg-white/20 px-1.5 rounded text-[10px] ml-2">
-						A
-					</kbd>
 				</button>
 			</div>
 
@@ -93,13 +91,26 @@ export function ReviewActionBar({
 					onClick={onSkip}
 					disabled={!hasNext || disabled || isLoading}
 					className={cn(
-						'flex items-center gap-2 min-h-[48px] min-w-[48px] px-4 text-slate-500 hover:text-slate-900 transition-colors',
+						'flex items-center gap-2 min-h-[48px] px-4 text-slate-500 hover:text-slate-900 transition-colors',
 						'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-slate-500'
 					)}
 				>
 					<span className="text-sm">Skip Story</span>
 					<ChevronRight className="h-5 w-5" />
 				</button>
+			</div>
+
+			{/* Progress Indicator Mobile-friendly */}
+			<div className="mt-4 flex items-center gap-2 px-4 py-1.5 bg-slate-100 rounded-full border border-slate-200 shadow-inner">
+				<span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Progress</span>
+				<div className="h-4 w-[1px] bg-slate-200 mx-1" />
+				<span className="text-xs font-bold text-slate-900">
+					{currentIndex + 1} <span className="text-slate-400 font-medium mx-0.5">/</span> {totalCount}
+				</span>
+				<div className="h-4 w-[1px] bg-slate-200 mx-1" />
+				<span className="text-[10px] font-black text-[#2b6cee] uppercase tracking-widest">
+					{totalCount - currentIndex - 1} more
+				</span>
 			</div>
 		</div>
 	);

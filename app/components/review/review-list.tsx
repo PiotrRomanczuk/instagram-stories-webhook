@@ -20,62 +20,10 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from '@/app/components/ui/dialog';
+import { extractThumbnailFromVideo } from '@/lib/media/client-utils';
 import { VideoPreview } from '@/app/components/media/video-preview';
 import { ReviewActions } from './review-actions';
 import { ContentItem } from '@/lib/types';
-
-/** Extract a thumbnail frame from a video URL at the given time (default 0.5s) */
-async function extractThumbnailFromVideo(videoUrl: string, timeSeconds = 0.5): Promise<string | null> {
-	return new Promise((resolve) => {
-		const video = document.createElement('video');
-		video.src = videoUrl;
-		video.muted = true;
-		video.crossOrigin = 'anonymous';
-		video.preload = 'metadata';
-
-		const cleanup = () => {
-			video.src = '';
-			video.load();
-		};
-
-		const timeout = setTimeout(() => {
-			cleanup();
-			resolve(null);
-		}, 10_000);
-
-		video.addEventListener('loadedmetadata', () => {
-			video.currentTime = Math.min(timeSeconds, video.duration || 0.5);
-		}, { once: true });
-
-		video.addEventListener('seeked', () => {
-			clearTimeout(timeout);
-			try {
-				const canvas = document.createElement('canvas');
-				canvas.width = video.videoWidth || 360;
-				canvas.height = video.videoHeight || 640;
-				const ctx = canvas.getContext('2d');
-				if (!ctx) {
-					cleanup();
-					resolve(null);
-					return;
-				}
-				ctx.drawImage(video, 0, 0);
-				const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-				cleanup();
-				resolve(dataUrl);
-			} catch {
-				cleanup();
-				resolve(null);
-			}
-		}, { once: true });
-
-		video.addEventListener('error', () => {
-			clearTimeout(timeout);
-			cleanup();
-			resolve(null);
-		}, { once: true });
-	});
-}
 
 interface ReviewListProps {
 	items: ContentItem[];
@@ -101,24 +49,31 @@ export function ReviewList({
 
 	// Generate thumbnails for videos without stored thumbnails
 	useEffect(() => {
-		const videosNeedingThumbnails = items.filter(
-			item => item.mediaType === 'VIDEO' && !item.thumbnailUrl && item.mediaUrl
-		);
+		let isMounted = true;
+		const generateThumbnails = async () => {
+			const videosNeedingThumbnails = items.filter(
+				(item) => item.mediaType === 'VIDEO' && !item.thumbnailUrl && item.mediaUrl && !generatedThumbnails.has(item.id)
+			);
 
-		videosNeedingThumbnails.forEach(async (item) => {
-			// Skip if we already generated a thumbnail for this item
-			if (generatedThumbnails.has(item.id)) return;
-
-			try {
-				const thumbnail = await extractThumbnailFromVideo(item.mediaUrl);
-				if (thumbnail) {
-					setGeneratedThumbnails(prev => new Map(prev).set(item.id, thumbnail));
+			// Process sequentially to avoid browser overload
+			for (const item of videosNeedingThumbnails) {
+				if (!isMounted) break;
+				try {
+					const thumbnail = await extractThumbnailFromVideo(item.mediaUrl);
+					if (thumbnail && isMounted) {
+						setGeneratedThumbnails((prev) => new Map(prev).set(item.id, thumbnail));
+					}
+				} catch (error) {
+					console.error(`Failed to generate thumbnail for ${item.id}:`, error);
 				}
-			} catch (error) {
-				console.error(`Failed to generate thumbnail for ${item.id}:`, error);
 			}
-		});
-	}, [items, generatedThumbnails]);
+		};
+
+		generateThumbnails();
+		return () => {
+			isMounted = false;
+		};
+	}, [items]); // Only re-run when items change
 
 	const handleSelectAll = () => {
 		if (selectedIds.length === items.length) {
@@ -180,80 +135,80 @@ export function ReviewList({
 								? (item.thumbnailUrl || generatedThumbnails.get(item.id) || null)
 								: item.mediaUrl;
 							return (
-							<TableRow key={item.id}>
-								<TableCell>
-									<Checkbox
-										checked={selectedIds.includes(item.id)}
-										onCheckedChange={() => handleSelectItem(item.id)}
-										aria-label={`Select submission from ${item.userEmail}`}
-									/>
-								</TableCell>
-								<TableCell>
-									<button
-										onClick={() => setPreviewItem(item)}
-										className="relative h-14 w-14 overflow-hidden rounded-md border hover:opacity-80 transition-opacity"
-									>
-										{thumbSrc ? (
-											<>
-												<Image
-													src={thumbSrc}
-													alt={item.title || 'Submission'}
-													fill
-													className="object-cover"
-													sizes="56px"
-													unoptimized
-												/>
-												{isItemVideo && (
-													<div className="absolute inset-0 flex items-center justify-center">
-														<Play className="h-4 w-4 text-white drop-shadow-md" fill="white" />
+								<TableRow key={item.id}>
+									<TableCell>
+										<Checkbox
+											checked={selectedIds.includes(item.id)}
+											onCheckedChange={() => handleSelectItem(item.id)}
+											aria-label={`Select submission from ${item.userEmail}`}
+										/>
+									</TableCell>
+									<TableCell>
+										<button
+											onClick={() => setPreviewItem(item)}
+											className="relative h-14 w-14 overflow-hidden rounded-md border hover:opacity-80 transition-opacity"
+										>
+											{thumbSrc ? (
+												<>
+													<Image
+														src={thumbSrc}
+														alt={item.title || 'Submission'}
+														fill
+														className="object-cover"
+														sizes="56px"
+														unoptimized
+													/>
+													{isItemVideo && (
+														<div className="absolute inset-0 flex items-center justify-center">
+															<Play className="h-4 w-4 text-white drop-shadow-md" fill="white" />
+														</div>
+													)}
+													<div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 hover:opacity-100 transition-opacity">
+														<Eye className="h-4 w-4 text-white" />
 													</div>
-												)}
-												<div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 hover:opacity-100 transition-opacity">
-													<Eye className="h-4 w-4 text-white" />
+												</>
+											) : (
+												<div className="flex h-full w-full items-center justify-center bg-gray-100">
+													<Play className="h-6 w-6 text-gray-400" />
 												</div>
-											</>
-										) : (
-											<div className="flex h-full w-full items-center justify-center bg-gray-100">
-												<Play className="h-6 w-6 text-gray-400" />
-											</div>
-										)}
-									</button>
-								</TableCell>
-								<TableCell className="max-w-xs">
-									<p className="truncate text-sm" title={item.caption}>
-										{item.caption || item.title || 'No caption'}
-									</p>
-								</TableCell>
-								<TableCell>
-									<span className="text-sm text-muted-foreground">
-										{item.userEmail}
-									</span>
-								</TableCell>
-								<TableCell>
-									<span className="text-sm text-muted-foreground">
-										{format(new Date(item.createdAt), 'MMM d, yyyy')}
-									</span>
-								</TableCell>
-								<TableCell className="text-right">
-									<div className="hidden lg:block">
-										<ReviewActions
-											itemId={item.id}
-											onApprove={onApprove}
-											onReject={onReject}
-											onSchedule={onSchedule}
-										/>
-									</div>
-									<div className="lg:hidden">
-										<ReviewActions
-											itemId={item.id}
-											onApprove={onApprove}
-											onReject={onReject}
-											onSchedule={onSchedule}
-											compact
-										/>
-									</div>
-								</TableCell>
-							</TableRow>
+											)}
+										</button>
+									</TableCell>
+									<TableCell className="max-w-xs">
+										<p className="truncate text-sm" title={item.caption}>
+											{item.caption || item.title || 'No caption'}
+										</p>
+									</TableCell>
+									<TableCell>
+										<span className="text-sm text-muted-foreground">
+											{item.userEmail}
+										</span>
+									</TableCell>
+									<TableCell>
+										<span className="text-sm text-muted-foreground">
+											{format(new Date(item.createdAt), 'MMM d, yyyy')}
+										</span>
+									</TableCell>
+									<TableCell className="text-right">
+										<div className="hidden lg:block">
+											<ReviewActions
+												itemId={item.id}
+												onApprove={onApprove}
+												onReject={onReject}
+												onSchedule={onSchedule}
+											/>
+										</div>
+										<div className="lg:hidden">
+											<ReviewActions
+												itemId={item.id}
+												onApprove={onApprove}
+												onReject={onReject}
+												onSchedule={onSchedule}
+												compact
+											/>
+										</div>
+									</TableCell>
+								</TableRow>
 							);
 						})}
 					</TableBody>

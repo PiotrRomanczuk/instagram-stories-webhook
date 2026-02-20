@@ -3,7 +3,7 @@
 import { ExternalLink } from 'lucide-react';
 import Image from 'next/image';
 import { Dialog, DialogContent } from './dialog';
-import ReactPlayer from 'react-player';
+import { UniversalVideoPlayer } from '@/app/components/media/universal-video-player';
 
 interface MediaModalProps {
     isOpen: boolean;
@@ -41,12 +41,9 @@ export function MediaModal({ isOpen, onClose, url, type }: MediaModalProps) {
                 <div className="relative rounded-3xl overflow-hidden shadow-2xl shadow-black/50 bg-black flex items-center justify-center min-h-[300px]">
                     {type === 'VIDEO' ? (
                         <div className="max-w-full max-h-[80vh]">
-                            <ReactPlayer
-                                src={url}
-                                controls
-                                width="100%"
-                                height="100%"
-                                playsInline
+                            <UniversalVideoPlayer
+                                url={url}
+                                contain
                                 playing
                             />
                         </div>

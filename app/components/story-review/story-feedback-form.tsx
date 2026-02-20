@@ -48,7 +48,7 @@ export function StoryFeedbackForm({
 	const handleReject = async () => {
 		setIsRejecting(true);
 		try {
-			await onReject(feedback || 'Content does not meet guidelines');
+			await onReject(feedback);
 			setFeedback('');
 		} finally {
 			setIsRejecting(false);

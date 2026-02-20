@@ -31,7 +31,7 @@ import {
 	Trash2,
 } from 'lucide-react';
 import { ConfirmationDialog } from '../ui/confirmation-dialog';
-import { VideoPreview } from '@/app/components/media/video-preview';
+import { UniversalVideoPlayer } from '@/app/components/media/universal-video-player';
 import { getFriendlyError } from '@/lib/utils/friendly-error';
 import { toast } from 'sonner';
 
@@ -411,11 +411,10 @@ export function ContentPreviewModal({
 						<button
 							onClick={goToPrevious}
 							disabled={!canGoPrevious}
-							className={`hidden md:flex fixed left-4 md:left-8 top-1/2 -translate-y-1/2 z-[95] p-4 rounded-full bg-white/90 backdrop-blur shadow-2xl transition-all ${
-								canGoPrevious
-									? 'hover:bg-white hover:scale-110 text-gray-700'
-									: 'opacity-30 cursor-not-allowed text-gray-400'
-							}`}
+							className={`hidden md:flex fixed left-4 md:left-8 top-1/2 -translate-y-1/2 z-[95] p-4 rounded-full bg-white/90 backdrop-blur shadow-2xl transition-all ${canGoPrevious
+								? 'hover:bg-white hover:scale-110 text-gray-700'
+								: 'opacity-30 cursor-not-allowed text-gray-400'
+								}`}
 							title='Previous (←)'
 						>
 							<ChevronLeft className='h-6 w-6' />
@@ -424,11 +423,10 @@ export function ContentPreviewModal({
 						<button
 							onClick={goToNext}
 							disabled={!canGoNext}
-							className={`hidden md:flex fixed right-4 md:right-8 top-1/2 -translate-y-1/2 z-[95] p-4 rounded-full bg-white/90 backdrop-blur shadow-2xl transition-all ${
-								canGoNext
-									? 'hover:bg-white hover:scale-110 text-gray-700'
-									: 'opacity-30 cursor-not-allowed text-gray-400'
-							}`}
+							className={`hidden md:flex fixed right-4 md:right-8 top-1/2 -translate-y-1/2 z-[95] p-4 rounded-full bg-white/90 backdrop-blur shadow-2xl transition-all ${canGoNext
+								? 'hover:bg-white hover:scale-110 text-gray-700'
+								: 'opacity-30 cursor-not-allowed text-gray-400'
+								}`}
 							title='Next (→)'
 						>
 							<ChevronRight className='h-6 w-6' />
@@ -451,7 +449,7 @@ export function ContentPreviewModal({
 						<X className='h-5 w-5' />
 					</button>
 
-	
+
 					{/* Left Side: Media Deep Dive */}
 					<div className='h-[280px] flex-shrink-0 md:h-auto md:flex-1 bg-gray-950 relative flex items-center justify-center overflow-hidden'>
 						{showStoryFrame ? (
@@ -472,14 +470,12 @@ export function ContentPreviewModal({
 								)}
 								{/* Main Media */}
 								{item.mediaType === 'VIDEO' ? (
-									<VideoPreview
-										videoUrl={item.mediaUrl}
+									<UniversalVideoPlayer
+										url={item.mediaUrl}
 										thumbnailUrl={item.thumbnailUrl}
-										duration={item.videoDuration}
-										resolution={item.dimensions ? { width: item.dimensions.width, height: item.dimensions.height } : undefined}
-										codec={item.videoCodec}
-										framerate={item.videoFramerate}
-										className='relative z-10 max-h-full max-w-full object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.5)]'
+										className='relative z-10 max-h-full max-w-full'
+										contain
+										playing={true}
 									/>
 								) : (
 									<img
@@ -534,16 +530,14 @@ export function ContentPreviewModal({
 								)}
 							</div>
 						) : (
-							<div className='relative w-full h-full flex items-center justify-center p-8'>
+							<div className='relative w-full h-full flex items-center justify-center bg-gray-950'>
 								{item.mediaType === 'VIDEO' ? (
-									<VideoPreview
-										videoUrl={item.mediaUrl}
+									<UniversalVideoPlayer
+										url={item.mediaUrl}
 										thumbnailUrl={item.thumbnailUrl}
-										duration={item.videoDuration}
-										resolution={item.dimensions ? { width: item.dimensions.width, height: item.dimensions.height } : undefined}
-										codec={item.videoCodec}
-										framerate={item.videoFramerate}
-										className='max-h-full max-w-full object-contain rounded-2xl shadow-2xl'
+										className='w-full h-full'
+										contain
+										playing={true}
 									/>
 								) : (
 									<img
@@ -583,13 +577,12 @@ export function ContentPreviewModal({
 									{item.title || item.caption || 'Post Details'}
 								</h2>
 								<div className='flex items-center gap-2 mt-1'>
-									<span className={`inline-block w-2 h-2 rounded-full ${
-										item.publishingStatus === 'failed' ? 'bg-red-500' :
+									<span className={`inline-block w-2 h-2 rounded-full ${item.publishingStatus === 'failed' ? 'bg-red-500' :
 										item.publishingStatus === 'published' ? 'bg-emerald-500 animate-pulse' :
-										item.publishingStatus === 'processing' ? 'bg-amber-500 animate-pulse' :
-										item.publishingStatus === 'scheduled' ? 'bg-blue-500' :
-										'bg-gray-400'
-									}`} />
+											item.publishingStatus === 'processing' ? 'bg-amber-500 animate-pulse' :
+												item.publishingStatus === 'scheduled' ? 'bg-blue-500' :
+													'bg-gray-400'
+										}`} />
 									<p className='text-[11px] text-gray-400 font-bold uppercase tracking-widest'>
 										{item.source} • {item.mediaType}
 									</p>
@@ -796,89 +789,89 @@ export function ContentPreviewModal({
 
 							{/* Footer Actions */}
 							<div className='flex flex-col gap-3 pt-4 pb-40 md:pb-0'>
-							{/* Approval buttons for pending submissions */}
-							{isAdmin && isPendingSubmission && (
-								<div className='flex gap-2'>
-									<button
-										onClick={handleApprove}
-										disabled={isReviewing}
-										className='flex-1 h-14 bg-emerald-500 text-white rounded-2xl hover:bg-emerald-600 active:scale-[0.98] transition-all font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl shadow-emerald-200 disabled:opacity-50'
-									>
-										{isReviewing ? (
-											<Loader2 className='h-4 w-4 animate-spin' />
-										) : (
-											<ThumbsUp className='h-4 w-4' />
-										)}
-										Approve
-									</button>
-									<button
-										onClick={() => setShowRejectDialog(true)}
-										disabled={isReviewing}
-										className='flex-1 h-14 bg-rose-500 text-white rounded-2xl hover:bg-rose-600 active:scale-[0.98] transition-all font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl shadow-rose-200 disabled:opacity-50'
-									>
-										<ThumbsDown className='h-4 w-4' />
-										Reject
-									</button>
-								</div>
-							)}
-
-							{/* Retry button for failed posts */}
-							{item.publishingStatus === 'failed' && isAdmin && (
-								<div className='flex gap-2'>
-									<button
-										onClick={handleRetry}
-										disabled={isRetrying}
-										className='flex-1 h-14 bg-orange-500 text-white rounded-2xl hover:bg-orange-600 active:scale-[0.98] transition-all font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl shadow-orange-200 disabled:opacity-50'
-									>
-										{isRetrying ? (
-											<Loader2 className='h-4 w-4 animate-spin' />
-										) : (
-											<RefreshCw className='h-4 w-4' />
-										)}
-										Retry
-									</button>
-								</div>
-							)}
-
-							{/* Publish/Schedule buttons for non-pending, non-failed items */}
-							{item.publishingStatus !== 'published' && item.publishingStatus !== 'failed' && !isPendingSubmission && (
-								<div className='flex gap-2'>
-									{/* MVP: Instant publish hidden — scheduling only */}
-									<button
-										onClick={() => {
-											onClose();
-											onEdit(item);
-										}}
-										className='flex-1 h-14 bg-indigo-600 text-white rounded-2xl hover:bg-indigo-700 active:scale-[0.98] transition-all font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl shadow-indigo-200'
-									>
-										<CalendarClock className='h-4 w-4' />
-										{item.publishingStatus === 'scheduled'
-											? 'Update'
-											: 'Schedule'}
-									</button>
-								</div>
-							)}
-							<div className='flex gap-2'>
-								<button
-									onClick={onClose}
-									className='flex-1 h-14 bg-gray-50 text-gray-400 rounded-2xl hover:bg-gray-100 hover:text-gray-900 transition-all font-bold text-xs uppercase tracking-widest'
-								>
-									Dismiss
-								</button>
-								{isAdmin && (
-									<button
-										onClick={() => setShowConfirmDelete(true)}
-										className='h-14 px-6 bg-rose-50 text-rose-500 rounded-2xl hover:bg-rose-100 hover:text-rose-600 transition-all font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2'
-										title='Delete this content'
-									>
-										<Trash2 className='h-4 w-4' />
-									</button>
+								{/* Approval buttons for pending submissions */}
+								{isAdmin && isPendingSubmission && (
+									<div className='flex gap-2'>
+										<button
+											onClick={handleApprove}
+											disabled={isReviewing}
+											className='flex-1 h-14 bg-emerald-500 text-white rounded-2xl hover:bg-emerald-600 active:scale-[0.98] transition-all font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl shadow-emerald-200 disabled:opacity-50'
+										>
+											{isReviewing ? (
+												<Loader2 className='h-4 w-4 animate-spin' />
+											) : (
+												<ThumbsUp className='h-4 w-4' />
+											)}
+											Approve
+										</button>
+										<button
+											onClick={() => setShowRejectDialog(true)}
+											disabled={isReviewing}
+											className='flex-1 h-14 bg-rose-500 text-white rounded-2xl hover:bg-rose-600 active:scale-[0.98] transition-all font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl shadow-rose-200 disabled:opacity-50'
+										>
+											<ThumbsDown className='h-4 w-4' />
+											Reject
+										</button>
+									</div>
 								)}
+
+								{/* Retry button for failed posts */}
+								{item.publishingStatus === 'failed' && isAdmin && (
+									<div className='flex gap-2'>
+										<button
+											onClick={handleRetry}
+											disabled={isRetrying}
+											className='flex-1 h-14 bg-orange-500 text-white rounded-2xl hover:bg-orange-600 active:scale-[0.98] transition-all font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl shadow-orange-200 disabled:opacity-50'
+										>
+											{isRetrying ? (
+												<Loader2 className='h-4 w-4 animate-spin' />
+											) : (
+												<RefreshCw className='h-4 w-4' />
+											)}
+											Retry
+										</button>
+									</div>
+								)}
+
+								{/* Publish/Schedule buttons for non-pending, non-failed items */}
+								{item.publishingStatus !== 'published' && item.publishingStatus !== 'failed' && !isPendingSubmission && (
+									<div className='flex gap-2'>
+										{/* MVP: Instant publish hidden — scheduling only */}
+										<button
+											onClick={() => {
+												onClose();
+												onEdit(item);
+											}}
+											className='flex-1 h-14 bg-indigo-600 text-white rounded-2xl hover:bg-indigo-700 active:scale-[0.98] transition-all font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl shadow-indigo-200'
+										>
+											<CalendarClock className='h-4 w-4' />
+											{item.publishingStatus === 'scheduled'
+												? 'Update'
+												: 'Schedule'}
+										</button>
+									</div>
+								)}
+								<div className='flex gap-2'>
+									<button
+										onClick={onClose}
+										className='flex-1 h-14 bg-gray-50 text-gray-400 rounded-2xl hover:bg-gray-100 hover:text-gray-900 transition-all font-bold text-xs uppercase tracking-widest'
+									>
+										Dismiss
+									</button>
+									{isAdmin && (
+										<button
+											onClick={() => setShowConfirmDelete(true)}
+											className='h-14 px-6 bg-rose-50 text-rose-500 rounded-2xl hover:bg-rose-100 hover:text-rose-600 transition-all font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2'
+											title='Delete this content'
+										>
+											<Trash2 className='h-4 w-4' />
+										</button>
+									)}
+								</div>
 							</div>
 						</div>
 					</div>
 				</div>
-			</div>
 			</div>
 
 			<ConfirmationDialog

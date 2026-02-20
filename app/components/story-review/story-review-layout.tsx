@@ -7,7 +7,6 @@ import { Loader2, AlertTriangle, Inbox } from 'lucide-react';
 import { StoryPreviewStage } from './story-preview-stage';
 import { StoryMetadataPanel } from './story-metadata-panel';
 import { StoryFeedbackForm } from './story-feedback-form';
-import { useKeyboardNav } from './use-keyboard-nav';
 import { Button } from '@/app/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ContentItem } from '@/lib/types';
@@ -120,14 +119,6 @@ export function StoryReviewLayout({ className }: StoryReviewLayoutProps) {
 		}
 	};
 
-	// Keyboard navigation
-	useKeyboardNav({
-		onNext: goToNext,
-		onPrevious: goToPrevious,
-		onApprove: handleApprove,
-		onReject: () => handleReject('Content does not meet guidelines'),
-		enabled: items.length > 0,
-	});
 
 	// Loading state
 	if (isLoading) {
@@ -177,17 +168,17 @@ export function StoryReviewLayout({ className }: StoryReviewLayoutProps) {
 	// We derive the name from email and use hashtags from the item if available
 	const metadata = currentItem
 		? {
-				creator: {
-					name: currentItem.userEmail?.split('@')[0] || 'Unknown Creator',
-					handle: currentItem.userEmail?.split('@')[0] || 'unknown',
-					avatarUrl: undefined,
-				},
-				mentions: extractMentions(currentItem.caption),
-				hashtags: currentItem.hashtags || extractHashtags(currentItem.caption),
-				location: undefined,
-				creatorNotes: currentItem.title || undefined, // Use title as notes
-				submittedAt: currentItem.createdAt,
-			}
+			creator: {
+				name: currentItem.userEmail?.split('@')[0] || 'Unknown Creator',
+				handle: currentItem.userEmail?.split('@')[0] || 'unknown',
+				avatarUrl: undefined,
+			},
+			mentions: extractMentions(currentItem.caption),
+			hashtags: currentItem.hashtags || extractHashtags(currentItem.caption),
+			location: undefined,
+			creatorNotes: currentItem.title || undefined, // Use title as notes
+			submittedAt: currentItem.createdAt,
+		}
 		: null;
 
 	return (

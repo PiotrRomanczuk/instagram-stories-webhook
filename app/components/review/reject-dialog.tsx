@@ -32,10 +32,7 @@ export function RejectDialog({
 	const [error, setError] = useState<string | null>(null);
 
 	const handleConfirm = async () => {
-		if (!reason.trim()) {
-			setError('Please provide a reason for rejection');
-			return;
-		}
+
 
 		setError(null);
 		setIsSubmitting(true);
@@ -90,7 +87,7 @@ export function RejectDialog({
 					<Button
 						variant="destructive"
 						onClick={handleConfirm}
-						disabled={isSubmitting || !reason.trim()}
+						disabled={isSubmitting}
 					>
 						{isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
 						Reject Submission

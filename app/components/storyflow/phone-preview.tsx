@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Smartphone, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ContentItem } from '@/lib/types';
-import ReactPlayer from 'react-player';
+import { UniversalVideoPlayer } from '@/app/components/media/universal-video-player';
 
 interface PhonePreviewProps {
 	item: ContentItem | null;
@@ -72,13 +72,12 @@ export function PhonePreview({ item, onImageError, className }: PhonePreviewProp
 								</div>
 							) : isVideo ? (
 								<div className="h-full w-full">
-									<ReactPlayer
-										src={item.mediaUrl}
+									<UniversalVideoPlayer
+										url={item.mediaUrl}
 										controls
 										width="100%"
 										height="100%"
 										light={item.thumbnailUrl || undefined}
-										playsInline
 										onReady={handleImageLoad}
 										onError={handleImageError}
 									/>

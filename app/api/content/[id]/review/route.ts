@@ -88,13 +88,7 @@ export async function POST(
 			);
 		}
 
-		// Validate rejection reason
-		if (action === 'reject' && !rejectionReason) {
-			return NextResponse.json(
-				{ error: 'rejectionReason is required when rejecting' },
-				{ status: 400 },
-			);
-		}
+
 
 		// Update submission status
 		const updatedItem = await updateSubmissionStatus(
