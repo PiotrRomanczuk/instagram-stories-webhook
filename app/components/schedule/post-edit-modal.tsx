@@ -204,9 +204,12 @@ export function PostEditModal({
 							>
 								{post.type === 'VIDEO' ? (
 									<video
-										src={post.url}
+										src={`${post.url}#t=0.1`}
 										className='w-full h-full object-cover'
 										controls={false}
+										preload='metadata'
+										playsInline
+										muted
 									/>
 								) : (
 									<Image
