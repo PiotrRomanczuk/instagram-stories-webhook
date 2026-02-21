@@ -26,6 +26,7 @@
     "release": "bash scripts/release.sh",
     "release:dry": "bash scripts/release.sh --dry-run",
     "prepare": "husky",
+    "check-history": "tsx scripts/check-history-gaps.ts",
     "pre-commit": "npm run lint && npx tsc && npm run test"
   },
   "dependencies": {

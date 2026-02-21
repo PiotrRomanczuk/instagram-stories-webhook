@@ -241,6 +241,16 @@ Ship complete!
   Quality:  tests ✓ | lint ✓ (hook) | tsc ✓ (hook)
 ```
 
+3. **History Doc Reminder**:
+   - Check if `docs/non-technical/FEATURE_IMPLEMENTATION_HISTORY.md` was modified in this branch: `git diff main..HEAD --name-only | grep FEATURE_IMPLEMENTATION_HISTORY`
+   - If **modified**: print `✓ History doc updated`
+   - If **not modified**: print a reminder:
+     ```
+     ⚠ Reminder: FEATURE_IMPLEMENTATION_HISTORY.md was not updated in this branch.
+       → After merge, update the history doc and run `npm run release` to create the git tag.
+       → Run `npm run check-history` to detect any version gaps.
+     ```
+
 ---
 
 ## Dry Run Mode (`--dry-run`)

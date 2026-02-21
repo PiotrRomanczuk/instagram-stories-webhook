@@ -64,3 +64,13 @@ echo ""
 echo "Tag '${TAG}' pushed successfully!"
 echo "GitHub will auto-create a release via the release workflow."
 echo "View releases: ${REPO_URL}/releases"
+
+# Check if the tag has an entry in the history doc
+HISTORY_FILE="docs/non-technical/FEATURE_IMPLEMENTATION_HISTORY.md"
+if [[ -f "$HISTORY_FILE" ]]; then
+  if ! grep -q "### ${TAG}" "$HISTORY_FILE"; then
+    echo ""
+    echo "⚠  Warning: ${TAG} has no entry in ${HISTORY_FILE}"
+    echo "   Run 'npm run check-history' to detect and fix version gaps."
+  fi
+fi
