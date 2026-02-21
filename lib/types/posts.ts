@@ -183,7 +183,7 @@ export interface ContentItemRow {
 	processing_completed_at?: string;
 	processing_error?: string;
 	processing_backend?: string;
-	processing_applied?: string[]; // JSONB array
+	processing_applied?: string[]; // JSONB array stored as string[] in DB
 	title?: string;
 	caption?: string;
 	user_tags?: string; // JSON stringified
