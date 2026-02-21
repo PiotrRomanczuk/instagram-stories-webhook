@@ -1,6 +1,6 @@
 {
   "name": "instagram-stories-webhook",
-  "version": "0.25.0",
+  "version": "0.26.0",
   "private": true,
   "scripts": {
     "dev": "concurrently -n next,cron -c blue,magenta \"next dev\" \"npm run dev:cron\"",
@@ -26,6 +26,7 @@
     "release": "bash scripts/release.sh",
     "release:dry": "bash scripts/release.sh --dry-run",
     "prepare": "husky",
+    "check-history": "tsx scripts/check-history-gaps.ts",
     "pre-commit": "npm run lint && npx tsc && npm run test"
   },
   "dependencies": {

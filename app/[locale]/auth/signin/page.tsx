@@ -97,12 +97,12 @@ export default function SignIn() {
 						</p>
 
 						{/* Dev Mode Test Buttons */}
-						{(isDev || process.env.NODE_ENV === 'development') && (
+						{(isDev || process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_ENABLE_TEST_AUTH === 'true') && (
 							<>
 								<Separator className="my-6" />
 								<div className="space-y-2">
 									<p className="text-center text-xs font-medium text-muted-foreground">
-										Development Only
+										Test Mode
 									</p>
 									<div className="grid grid-cols-2 gap-2">
 										<Button

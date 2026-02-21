@@ -211,7 +211,19 @@ git pull origin main
 
 ## Phase 5: Post-Merge Summary
 
-Print a comprehensive report:
+### 5.1 Fetch Vercel preview URL
+
+After all merges, retrieve the Vercel preview URL from the most recently merged PR's comments:
+
+```bash
+gh pr view {last-merged-number} --comments 2>&1 | grep -i "vercel.app" | head -5
+```
+
+Extract the actual `*.vercel.app` deployment URL from the Vercel bot comment. This is the **preview deployment** — not production.
+
+**IMPORTANT**: Always display this URL prominently in the summary. This is different from production.
+
+### 5.2 Print a comprehensive report:
 
 ```
 Fleet Merge Complete!
@@ -229,7 +241,12 @@ Branches: 3 deleted
 
 Main branch status:
   Version: 0.67.0
-  Commits ahead of production: {count}
+
+⚠️  Note: PRs were merged to main (master), NOT to production.
+    Production deploy happens separately via Vercel auto-deploy on merge.
+
+🔗 Preview URL (latest merged PR):
+    https://{project}-git-{branch}-{team}.vercel.app
 ```
 
 Restore stashed work:

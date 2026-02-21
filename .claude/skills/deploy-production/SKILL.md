@@ -33,6 +33,11 @@ Handles the full production deployment workflow after a PR has been merged to `m
    - Verify production URL is accessible
    - Run smoke tests against production
 
+6. **Update history documentation**
+   - Add the new version entry to `docs/non-technical/FEATURE_IMPLEMENTATION_HISTORY.md`
+   - Run `npm run check-history` to verify no version gaps
+   - Commit the history update to master
+
 ---
 
 ## Usage
@@ -132,6 +137,31 @@ curl -I https://instagram-stories-webhook.vercel.app/api/health
 VERCEL_ENV=production npx playwright test production-smoke.spec.ts
 ```
 
+### Step 6: Update Feature Implementation History
+```bash
+# Check for version gaps
+npm run check-history
+
+# If the new version has no entry, add one to the history doc:
+# docs/non-technical/FEATURE_IMPLEMENTATION_HISTORY.md
+#
+# Required updates:
+# 1. Add a new "### vX.Y.Z — Title (Date)" entry under "## Released Versions"
+# 2. Include: commit count, session count, verified hours
+# 3. Update the "Version Effort Breakdown" table
+# 4. Update the "Development Timeline" chart
+# 5. Update the "Daily Hours Report" table (if new days were added)
+# 6. Update Project Summary totals (versions, commits, sessions, hours)
+#
+# Run work-hours to get accurate data:
+npx tsx scripts/work-hours.ts --verbose
+
+# Commit the history update
+git add docs/non-technical/FEATURE_IMPLEMENTATION_HISTORY.md
+git commit -m "docs: update feature history for vX.Y.Z"
+git push origin master
+```
+
 ---
 
 ## Success Criteria
@@ -147,6 +177,8 @@ All of these must pass for successful production deployment:
 - [ ] Production E2E tests pass (if triggered)
 - [ ] Production URL returns 200 OK
 - [ ] Production smoke tests pass
+- [ ] Feature Implementation History updated with new version entry
+- [ ] `npm run check-history` reports no gaps
 
 ---
 
@@ -344,6 +376,7 @@ After successful deployment:
 - [ ] Verify scheduled cron jobs execute properly
 - [ ] Monitor Instagram API usage quotas
 - [ ] Update Linear issues with "Released in v0.X.X" comments
+- [ ] **Update `docs/non-technical/FEATURE_IMPLEMENTATION_HISTORY.md`** with the new version entry (title, features, hours). Run `npm run check-history` to verify no gaps exist.
 
 ---
 
