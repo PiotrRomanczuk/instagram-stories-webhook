@@ -171,9 +171,12 @@ export function PostCard({
 					{post.type === 'VIDEO' ? (
 						<div className='relative w-full h-full'>
 							<video
-								src={post.url}
+								src={`${post.url}#t=0.1`}
 								className='w-full h-full object-cover'
 								controls={false}
+								preload='metadata'
+								playsInline
+								muted
 							/>
 							<div className='absolute inset-0 flex items-center justify-center bg-black/10'>
 								<div className='w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center'>
