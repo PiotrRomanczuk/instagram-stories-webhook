@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { getServerSession } from 'next-auth/next';
 import { redirect } from 'next/navigation';
 import { authOptions } from '@/lib/auth';
@@ -20,7 +21,9 @@ export default async function SchedulePage() {
 
 	return (
 		<main className="min-h-screen bg-gray-50">
-			<ScheduleCalendarLayout />
+			<Suspense>
+				<ScheduleCalendarLayout />
+			</Suspense>
 		</main>
 	);
 }
