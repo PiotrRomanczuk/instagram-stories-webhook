@@ -16,7 +16,7 @@ vi.mock('next-intl/middleware', () => ({
 }));
 
 vi.mock('@/i18n/routing', () => ({
-	routing: { locales: ['en', 'pl'], defaultLocale: 'en' },
+	routing: { locales: ['en'], defaultLocale: 'en', localePrefix: 'never' },
 }));
 
 vi.mock('next-auth/middleware', () => ({
@@ -51,19 +51,7 @@ describe('Middleware Execution', () => {
 			expect(mockAuthMiddleware).not.toHaveBeenCalled();
 		});
 
-		it('should route /en/auth/signin through intl middleware (with locale)', () => {
-			const req = createRequest('/en/auth/signin');
-			middleware(req);
-			expect(mockIntlMiddleware).toHaveBeenCalledWith(req);
-			expect(mockAuthMiddleware).not.toHaveBeenCalled();
-		});
-
-		it('should route /pl/auth/signin through intl middleware (pl locale)', () => {
-			const req = createRequest('/pl/auth/signin');
-			middleware(req);
-			expect(mockIntlMiddleware).toHaveBeenCalledWith(req);
-			expect(mockAuthMiddleware).not.toHaveBeenCalled();
-		});
+		// Removed: locale prefix tests - using localePrefix: 'never' now
 
 		it('should route /auth/callback/google through intl middleware', () => {
 			const req = createRequest('/auth/callback/google');
@@ -87,11 +75,7 @@ describe('Middleware Execution', () => {
 			expect(mockAuthMiddleware).toHaveBeenCalledWith(req);
 		});
 
-		it('should route /en/dashboard through auth middleware', () => {
-			const req = createRequest('/en/dashboard');
-			middleware(req);
-			expect(mockAuthMiddleware).toHaveBeenCalledWith(req);
-		});
+		// Removed: /en/dashboard test - using localePrefix: 'never' now
 
 		it('should route /settings through auth middleware', () => {
 			const req = createRequest('/settings');
@@ -107,12 +91,7 @@ describe('Middleware Execution', () => {
 	});
 
 	describe('Edge cases', () => {
-		it('should treat unsupported locale /fr/auth/signin as protected', () => {
-			const req = createRequest('/fr/auth/signin');
-			middleware(req);
-			expect(mockAuthMiddleware).toHaveBeenCalledWith(req);
-			expect(mockIntlMiddleware).not.toHaveBeenCalled();
-		});
+		// Removed: unsupported locale test - only 'en' supported with localePrefix: 'never'
 
 		it('should treat /authentication as protected', () => {
 			const req = createRequest('/authentication');
