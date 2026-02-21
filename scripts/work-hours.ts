@@ -4,8 +4,10 @@
  *
  * Estimates work hours from git commit timestamps.
  * - Groups commits into sessions (gap > 2h = new session)
- * - Adds 30 minutes to the first commit of each session
+ * - Adds 15 minutes to the first commit of each session
  *   (accounts for thinking/setup time before the first commit)
+ * - Adds 15 hours to the first session (MVP pre-development:
+ *   planning, learning Meta API docs, Supabase setup, etc.)
  *
  * Usage:
  *   npx tsx scripts/work-hours.ts
@@ -17,7 +19,8 @@
 import { execSync } from "child_process";
 
 const SESSION_GAP_HOURS = 2;
-const SESSION_PADDING_MINUTES = 30;
+const SESSION_PADDING_MINUTES = 15;
+const MVP_PRE_COMMIT_MINUTES = 900; // 15 hours for pre-development (planning, learning, setup)
 
 interface Commit {
   hash: string;
@@ -150,6 +153,11 @@ function fmtDuration(minutes: number): string {
 }
 
 function printReport(sessions: Session[], commits: Commit[], verbose: boolean) {
+  // Add MVP pre-development time to the first session
+  if (sessions.length > 0) {
+    sessions[0].totalMinutes += MVP_PRE_COMMIT_MINUTES;
+  }
+
   const totalMinutes = sessions.reduce((sum, s) => sum + s.totalMinutes, 0);
   const totalHours = totalMinutes / 60;
 
@@ -168,6 +176,7 @@ function printReport(sessions: Session[], commits: Commit[], verbose: boolean) {
   console.log(`  Active days:      ${activeDays.size}`);
   console.log(`  Longest session:  ${fmtDuration(longestSession)}`);
   console.log(`  Session padding:  +${SESSION_PADDING_MINUTES}m per session`);
+  console.log(`  MVP pre-dev:      +${fmtDuration(MVP_PRE_COMMIT_MINUTES)} (added to first session)`);
   console.log("-".repeat(60));
   console.log(`  TOTAL:            ${totalHours.toFixed(1)}h (${fmtDuration(totalMinutes)})`);
   console.log("=".repeat(60));
@@ -192,10 +201,11 @@ function printReport(sessions: Session[], commits: Commit[], verbose: boolean) {
     console.log("-".repeat(60));
     for (let i = 0; i < sessions.length; i++) {
       const s = sessions[i];
+      const mvpNote = i === 0 ? ` (incl. ${fmtDuration(MVP_PRE_COMMIT_MINUTES)} MVP pre-dev)` : "";
       console.log(
         `  #${String(i + 1).padStart(3)}  ${fmt(s.start)} - ${fmtTime(s.end)}  ` +
           `${String(s.commits.length).padStart(3)} commits  ` +
-          `${fmtDuration(s.rawMinutes).padStart(8)} + ${SESSION_PADDING_MINUTES}m = ${fmtDuration(s.totalMinutes).padStart(8)}`
+          `${fmtDuration(s.rawMinutes).padStart(8)} + ${SESSION_PADDING_MINUTES}m = ${fmtDuration(s.totalMinutes).padStart(8)}${mvpNote}`
       );
     }
   } else {
