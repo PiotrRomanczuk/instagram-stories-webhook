@@ -11,6 +11,7 @@ import { Button } from '@/app/components/ui/button';
 import { DebugPublisherNew } from '@/app/components/developer/debug-publisher-new';
 import { StoryPreview } from '@/app/components/developer/story-preview';
 import { ApiKeysManager } from '@/app/components/developer/api-keys-manager';
+import { ReleaseNotesConfig } from '@/app/components/developer/ReleaseNotesConfig';
 
 export default async function DeveloperPage() {
 	const session = await getServerSession(authOptions);
@@ -53,6 +54,9 @@ export default async function DeveloperPage() {
 
 			{/* API Keys Management */}
 			<ApiKeysManager />
+
+			{/* What's New Targeting */}
+			<ReleaseNotesConfig />
 
 			<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">				</div>
 

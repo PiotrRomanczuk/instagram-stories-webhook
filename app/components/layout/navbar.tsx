@@ -97,9 +97,18 @@ export function Navbar() {
 								ARTS
 							</span>
 						</Link>
-						<span className="text-[10px] font-medium text-muted-foreground">
-							v{process.env.NEXT_PUBLIC_APP_VERSION}
-						</span>
+						{isAdminOrDev ? (
+							<Link
+								href="/release-notes"
+								className="text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+							>
+								v{process.env.NEXT_PUBLIC_APP_VERSION}
+							</Link>
+						) : (
+							<span className="text-[10px] font-medium text-muted-foreground">
+								v{process.env.NEXT_PUBLIC_APP_VERSION}
+							</span>
+						)}
 					</div>
 
 					{/* Desktop Navigation */}

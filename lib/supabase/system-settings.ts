@@ -63,4 +63,5 @@ export async function setSystemSetting(
 export const SETTING_KEYS = {
 	PUBLISHING_ENABLED: 'publishing_enabled',
 	AUTO_PROCESS_VIDEOS: 'auto_process_videos',
+	WHATS_NEW_CONFIG: 'whats_new_config',
 } as const;
