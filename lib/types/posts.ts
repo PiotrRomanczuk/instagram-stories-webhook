@@ -7,10 +7,23 @@ import {
 	ContentSource,
 	SubmissionStatus,
 	PublishingStatus,
+	ProcessingStatus,
+	ProcessingBackend,
 } from './common';
 
 // Re-export common types for convenience
-export type { MediaType, PostType, PostStatus, MemeStatus, UserRole, ContentSource, SubmissionStatus, PublishingStatus };
+export type {
+	MediaType,
+	PostType,
+	PostStatus,
+	MemeStatus,
+	UserRole,
+	ContentSource,
+	SubmissionStatus,
+	PublishingStatus,
+	ProcessingStatus,
+	ProcessingBackend,
+};
 
 // ============== USER & AUTH TYPES ==============
 
@@ -59,6 +72,14 @@ export interface ContentItem {
 	videoCodec?: string; // e.g., 'h264', 'vp9'
 	videoFramerate?: number; // e.g., 30.0
 	needsProcessing?: boolean; // Whether video needs conversion
+
+	// Video Processing Optimization (INS-58)
+	storyReady?: boolean; // Whether video is ready for Instagram Stories (eliminates redundant processing)
+	processingStatus?: ProcessingStatus; // Railway processing lifecycle
+	processingCompletedAt?: string; // When processing completed
+	processingError?: string; // Error message if failed
+	processingBackend?: ProcessingBackend; // Backend used for processing
+	processingApplied?: string[]; // Transformations applied (e.g., ['h264-encoding', 'resize'])
 
 	// Content
 	title?: string; // Optional, for submissions
@@ -121,6 +142,11 @@ export interface CreateContentInput {
 	videoCodec?: string;
 	videoFramerate?: number;
 	needsProcessing?: boolean;
+	// Video Processing Optimization (INS-58)
+	storyReady?: boolean;
+	processingStatus?: ProcessingStatus;
+	processingBackend?: ProcessingBackend;
+	processingApplied?: string[];
 }
 
 /**
@@ -152,6 +178,12 @@ export interface ContentItemRow {
 	video_codec?: string;
 	video_framerate?: number;
 	needs_processing?: boolean;
+	story_ready?: boolean;
+	processing_status?: string;
+	processing_completed_at?: string;
+	processing_error?: string;
+	processing_backend?: string;
+	processing_applied?: string[]; // JSONB array
 	title?: string;
 	caption?: string;
 	user_tags?: string; // JSON stringified
@@ -353,6 +385,12 @@ export function mapContentItemRow(row: ContentItemRow): ContentItem {
 		videoCodec: row.video_codec,
 		videoFramerate: row.video_framerate,
 		needsProcessing: row.needs_processing,
+		storyReady: row.story_ready,
+		processingStatus: row.processing_status as ProcessingStatus | undefined,
+		processingCompletedAt: row.processing_completed_at,
+		processingError: row.processing_error,
+		processingBackend: row.processing_backend as ProcessingBackend | undefined,
+		processingApplied: row.processing_applied,
 		title: row.title,
 		caption: row.caption,
 		userTags: row.user_tags ? JSON.parse(row.user_tags) : undefined,
