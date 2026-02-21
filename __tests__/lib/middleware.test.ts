@@ -3,20 +3,15 @@ import { describe, it, expect } from 'vitest';
 describe('Middleware - Route Protection Logic', () => {
 	describe('Public Route Pattern Matching', () => {
 		it('should correctly identify /auth/* as public paths', () => {
-			const publicPathnameRegex = RegExp(
-				`^(/(en|pl))?(/auth/.*)$`,
-				'i',
-			);
+			// Updated for localePrefix: 'never' - no locale prefix in URLs
+			const publicPathnameRegex = RegExp(`^(/auth/.*)$`, 'i');
 
 			const publicPaths = [
 				'/auth/signin',
 				'/auth/signout',
 				'/auth/error',
 				'/auth/verify-request',
-				'/en/auth/signin',
-				'/pl/auth/signin',
-				'/en/auth/callback',
-				'/pl/auth/verify-request',
+				'/auth/callback',
 			];
 
 			publicPaths.forEach((path) => {
@@ -25,20 +20,15 @@ describe('Middleware - Route Protection Logic', () => {
 		});
 
 		it('should correctly identify protected paths', () => {
-			const publicPathnameRegex = RegExp(
-				`^(/(en|pl))?(/auth/.*)$`,
-				'i',
-			);
+			// Updated for localePrefix: 'never' - no locale prefix in URLs
+			const publicPathnameRegex = RegExp(`^(/auth/.*)$`, 'i');
 
 			const protectedPaths = [
 				'/',
 				'/dashboard',
-				'/en/dashboard',
-				'/pl/dashboard',
 				'/calendar',
 				'/memes',
 				'/settings',
-				'/en/settings',
 			];
 
 			protectedPaths.forEach((path) => {
@@ -47,16 +37,13 @@ describe('Middleware - Route Protection Logic', () => {
 		});
 
 		it('should handle case-insensitive matching for auth paths', () => {
-			const publicPathnameRegex = RegExp(
-				`^(/(en|pl))?(/auth/.*)$`,
-				'i',
-			);
+			// Updated for localePrefix: 'never' - no locale prefix in URLs
+			const publicPathnameRegex = RegExp(`^(/auth/.*)$`, 'i');
 
 			const paths = [
 				'/AUTH/signin',
 				'/auth/SIGNIN',
 				'/Auth/SignIn',
-				'/en/AUTH/signin',
 			];
 
 			paths.forEach((path) => {
@@ -64,25 +51,13 @@ describe('Middleware - Route Protection Logic', () => {
 			});
 		});
 
-		it('should match both en and pl locales', () => {
-			const publicPathnameRegex = RegExp(
-				`^(/(en|pl))?(/auth/.*)$`,
-				'i',
-			);
+		it('should match auth paths without locale prefix', () => {
+			// Updated for localePrefix: 'never' - no locale prefix in URLs
+			const publicPathnameRegex = RegExp(`^(/auth/.*)$`, 'i');
 
-			expect(publicPathnameRegex.test('/en/auth/signin')).toBe(true);
-			expect(publicPathnameRegex.test('/pl/auth/signin')).toBe(true);
-			expect(publicPathnameRegex.test('/fr/auth/signin')).toBe(false); // Other locale
-		});
-
-		it('should match auth paths with and without locale prefix', () => {
-			const publicPathnameRegex = RegExp(
-				`^(/(en|pl))?(/auth/.*)$`,
-				'i',
-			);
-
-			expect(publicPathnameRegex.test('/auth/signin')).toBe(true); // No locale
-			expect(publicPathnameRegex.test('/en/auth/signin')).toBe(true); // With locale
+			expect(publicPathnameRegex.test('/auth/signin')).toBe(true);
+			expect(publicPathnameRegex.test('/auth/callback')).toBe(true);
+			expect(publicPathnameRegex.test('/auth/verify-request')).toBe(true);
 		});
 	});
 
@@ -184,39 +159,30 @@ describe('Middleware - Route Protection Logic', () => {
 		});
 
 		it('should handle root path', () => {
-			const publicPathnameRegex = RegExp(
-				`^(/(en|pl))?(/auth/.*)$`,
-				'i',
-			);
+			// Updated for localePrefix: 'never' - no locale prefix in URLs
+			const publicPathnameRegex = RegExp(`^(/auth/.*)$`, 'i');
 
 			expect(publicPathnameRegex.test('/')).toBe(false); // Root should be protected
 		});
 
 		it('should handle paths with trailing slashes', () => {
-			const publicPathnameRegex = RegExp(
-				`^(/(en|pl))?(/auth/.*)$`,
-				'i',
-			);
+			// Updated for localePrefix: 'never' - no locale prefix in URLs
+			const publicPathnameRegex = RegExp(`^(/auth/.*)$`, 'i');
 
 			expect(publicPathnameRegex.test('/auth/signin/')).toBe(true);
-			expect(publicPathnameRegex.test('/en/auth/signin/')).toBe(true);
 		});
 
 		it('should handle nested auth paths', () => {
-			const publicPathnameRegex = RegExp(
-				`^(/(en|pl))?(/auth/.*)$`,
-				'i',
-			);
+			// Updated for localePrefix: 'never' - no locale prefix in URLs
+			const publicPathnameRegex = RegExp(`^(/auth/.*)$`, 'i');
 
 			expect(publicPathnameRegex.test('/auth/callback/google')).toBe(true);
-			expect(publicPathnameRegex.test('/en/auth/error/configuration')).toBe(true);
+			expect(publicPathnameRegex.test('/auth/error/configuration')).toBe(true);
 		});
 
 		it('should not match auth-like paths outside /auth/', () => {
-			const publicPathnameRegex = RegExp(
-				`^(/(en|pl))?(/auth/.*)$`,
-				'i',
-			);
+			// Updated for localePrefix: 'never' - no locale prefix in URLs
+			const publicPathnameRegex = RegExp(`^(/auth/.*)$`, 'i');
 
 			expect(publicPathnameRegex.test('/authentication')).toBe(false);
 			expect(publicPathnameRegex.test('/authorize')).toBe(false);

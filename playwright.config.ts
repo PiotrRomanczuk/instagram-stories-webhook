@@ -12,6 +12,10 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: '__tests__/e2e',
 
+  // Global setup/teardown for test data cleanup
+  globalSetup: require.resolve('./__tests__/e2e/helpers/global-setup'),
+  globalTeardown: require.resolve('./__tests__/e2e/helpers/global-teardown'),
+
   // Fail the build on CI if you accidentally left test.only in the source code
   forbidOnly: !!process.env.CI,
 

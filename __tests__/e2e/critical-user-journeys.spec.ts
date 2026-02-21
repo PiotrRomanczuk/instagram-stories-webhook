@@ -424,6 +424,12 @@ test.describe('CP-3: Admin Review and Approval', () => {
 // ===========================================================================
 
 test.describe('CP-4: Scheduled Publishing Flow', () => {
+	// Skip in preview mode (production-only tests)
+	test.skip(
+		() => process.env.PREVIEW_MODE === 'true',
+		'Production-only tests - skipped in preview mode'
+	);
+
 	// Skip unless real IG tests are enabled
 	test.skip(
 		() => !process.env.ENABLE_REAL_IG_TESTS,
@@ -506,6 +512,12 @@ test.describe('CP-4: Scheduled Publishing Flow', () => {
 // ===========================================================================
 
 test.describe('CP-5: Posted Stories Verification', () => {
+	// Skip in preview mode (production-only tests)
+	test.skip(
+		() => process.env.PREVIEW_MODE === 'true',
+		'Production-only tests - skipped in preview mode'
+	);
+
 	test.describe('Admin Posted Stories Page', () => {
 		test.beforeEach(async ({ page }) => {
 			await signInAsAdmin(page);
@@ -586,6 +598,12 @@ test.describe('CP-5: Posted Stories Verification', () => {
 // ===========================================================================
 
 test.describe('CP-6: Scheduling Workflow', () => {
+	// Skip in preview mode (production-only tests)
+	test.skip(
+		() => process.env.PREVIEW_MODE === 'true',
+		'Production-only tests - skipped in preview mode'
+	);
+
 	test.skip(
 		() => process.env.CI === 'true',
 		'NEVER run live publishing tests in CI'
@@ -706,6 +724,12 @@ test.describe('CP-6: Scheduling Workflow', () => {
 // ===========================================================================
 
 test.describe('CP-7: End-to-End Content Lifecycle', () => {
+	// Skip in preview mode (production-only tests)
+	test.skip(
+		() => process.env.PREVIEW_MODE === 'true',
+		'Production-only tests - skipped in preview mode'
+	);
+
 	test.skip(
 		() => process.env.CI === 'true',
 		'NEVER run live publishing tests in CI'

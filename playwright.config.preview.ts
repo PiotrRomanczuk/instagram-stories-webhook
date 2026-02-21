@@ -10,21 +10,30 @@ import { defineConfig, devices } from '@playwright/test';
  *
  * Preview Suite Includes:
  * - auth-and-rbac-core.spec.ts (22 tests) - All auth/RBAC tests
- * - critical-user-journeys.spec.ts (12 tests) - Core submission/review flows
- * - developer-tools.spec.ts (6 tests) - Core access control tests
+ * - critical-user-journeys.spec.ts (12 tests) - Core flows only (CP-2, CP-3)
+ *   • Skips CP-4, CP-5, CP-6, CP-7 in preview mode (production-only)
+ * - developer-tools.spec.ts (6 tests) - Core access control
+ *   • Skips CRON-03-06, DEV-04, DEBUG-01/03/04 in preview mode (production-only)
+ *
+ * Total: ~40 tests (with PREVIEW_MODE=true environment guard)
  *
  * Excluded (Production Only):
  * - instagram-publishing-live.spec.ts (4 tests) - Real Instagram API
  * - mobile-responsive-core.spec.ts (33 tests) - Mobile viewport testing
  * - production-smoke.spec.ts (6 tests) - Production verification
  * - video-preview-functionality.spec.ts (7 tests) - Video features
+ * - Extended tests within included files (guarded by PREVIEW_MODE check)
  *
- * Expected Duration: 4-5 minutes (vs 10 minutes for full suite)
+ * Expected Duration: 4-5 minutes (vs 10+ minutes for full suite)
  *
  * See: https://playwright.dev/docs/test-configuration
  */
 export default defineConfig({
   testDir: '__tests__/e2e',
+
+  // Global setup/teardown for test data cleanup
+  globalSetup: require.resolve('./__tests__/e2e/helpers/global-setup'),
+  globalTeardown: require.resolve('./__tests__/e2e/helpers/global-teardown'),
 
   // Fail the build on CI if you accidentally left test.only in the source code
   forbidOnly: !!process.env.CI,

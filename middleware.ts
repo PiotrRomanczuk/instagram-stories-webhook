@@ -21,8 +21,9 @@ const authMiddleware = withAuth(
 
 export default function middleware(req: NextRequest) {
 	// Define content that does not require authentication
-	// Matches /auth/* (locale prefix is hidden with localePrefix: 'never')
-	const publicPathnameRegex = RegExp(`^(/auth/.*)$`, 'i');
+	// Matches /auth/* and /{locale}/auth/* for supported locales only
+	const locales = routing.locales.join('|');
+	const publicPathnameRegex = RegExp(`^(/(${locales}))?(/auth/.*)$`, 'i');
 
 	const isPublicPage = publicPathnameRegex.test(req.nextUrl.pathname);
 

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google';
 import '../globals.css';
 import { Providers } from '../components/providers/providers';
 import { Navbar } from '../components/layout/navbar';
@@ -9,12 +9,12 @@ import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
 
-const geistSans = Geist({
+const plusJakartaSans = Plus_Jakarta_Sans({
 	variable: '--font-geist-sans',
 	subsets: ['latin'],
 });
 
-const geistMono = Geist_Mono({
+const jetBrainsMono = JetBrains_Mono({
 	variable: '--font-geist-mono',
 	subsets: ['latin'],
 });
@@ -44,7 +44,7 @@ export default async function RootLayout({
 	return (
 		<html lang={locale} suppressHydrationWarning>
 			<body
-				className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+				className={`${plusJakartaSans.variable} ${jetBrainsMono.variable} antialiased`}
 			>
 				<NextIntlClientProvider messages={messages}>
 					<Providers>
