@@ -22,6 +22,10 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: '__tests__/e2e',
 
+  // Global setup/teardown for test data cleanup
+  globalSetup: require.resolve('./__tests__/e2e/helpers/global-setup'),
+  globalTeardown: require.resolve('./__tests__/e2e/helpers/global-teardown'),
+
   // Only run production smoke tests
   // grep: /@smoke/, // Option 1: Use test tags
   testMatch: /production-smoke\.spec\.ts$/, // Option 2: Use filename pattern

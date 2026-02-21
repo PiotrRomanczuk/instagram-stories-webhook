@@ -1,5 +1,19 @@
 import { Page } from '@playwright/test';
 
+// ============================================================================
+// Test Data Identification Markers
+// ============================================================================
+
+/**
+ * Consistent prefix for all E2E test titles - enables pattern-based cleanup
+ */
+export const TEST_TITLE_PREFIX = '[E2E-TEST]';
+
+/**
+ * Consistent marker in all E2E test captions - enables pattern-based cleanup
+ */
+export const TEST_CAPTION_MARKER = '#e2e-test';
+
 /**
  * Returns a publicly accessible test image URL for seeding content via API.
  * Uses picsum.photos deterministic images so they're always available.
@@ -305,6 +319,7 @@ export async function createContent(
 
 /**
  * Create pending content for review testing
+ * Automatically adds test markers for cleanup
  */
 export async function createPendingContent(
   page: Page,
@@ -317,8 +332,8 @@ export async function createPendingContent(
   const { title, caption, mediaIndex = Math.floor(Math.random() * 100) } = options;
 
   return createContent(page, {
-    title: title || `Test Content ${Date.now()}`,
-    caption: caption || 'Test caption for E2E testing',
+    title: `${TEST_TITLE_PREFIX} ${title || `Test Content ${Date.now()}`}`,
+    caption: `${caption || 'Test caption for E2E testing'} ${TEST_CAPTION_MARKER}`,
     mediaUrl: getTestMediaUrl(mediaIndex),
     mediaType: 'IMAGE',
     source: 'submission',
@@ -329,6 +344,7 @@ export async function createPendingContent(
 
 /**
  * Create approved content ready for scheduling
+ * Automatically adds test markers for cleanup
  */
 export async function createApprovedContent(
   page: Page,
@@ -341,8 +357,8 @@ export async function createApprovedContent(
   const { title, caption, mediaIndex = Math.floor(Math.random() * 100) } = options;
 
   return createContent(page, {
-    title: title || `Approved Content ${Date.now()}`,
-    caption: caption || 'Approved caption for E2E testing',
+    title: `${TEST_TITLE_PREFIX} ${title || `Approved Content ${Date.now()}`}`,
+    caption: `${caption || 'Approved caption for E2E testing'} ${TEST_CAPTION_MARKER}`,
     mediaUrl: getTestMediaUrl(mediaIndex),
     mediaType: 'IMAGE',
     source: 'submission',
@@ -353,6 +369,7 @@ export async function createApprovedContent(
 
 /**
  * Create scheduled content
+ * Automatically adds test markers for cleanup
  */
 export async function createScheduledContent(
   page: Page,
@@ -367,8 +384,8 @@ export async function createScheduledContent(
   const timeMs = typeof scheduledTime === 'number' ? scheduledTime : scheduledTime.getTime();
 
   return createContent(page, {
-    title: title || `Scheduled Content ${Date.now()}`,
-    caption: caption || 'Scheduled caption for E2E testing',
+    title: `${TEST_TITLE_PREFIX} ${title || `Scheduled Content ${Date.now()}`}`,
+    caption: `${caption || 'Scheduled caption for E2E testing'} ${TEST_CAPTION_MARKER}`,
     mediaUrl: getTestMediaUrl(mediaIndex),
     mediaType: 'IMAGE',
     source: 'submission',
@@ -380,6 +397,7 @@ export async function createScheduledContent(
 
 /**
  * Create published content for verification testing
+ * Automatically adds test markers for cleanup
  */
 export async function createPublishedContent(
   page: Page,
@@ -392,8 +410,8 @@ export async function createPublishedContent(
   const { title, caption, mediaIndex = Math.floor(Math.random() * 100) } = options;
 
   return createContent(page, {
-    title: title || `Published Content ${Date.now()}`,
-    caption: caption || 'Published caption for E2E testing',
+    title: `${TEST_TITLE_PREFIX} ${title || `Published Content ${Date.now()}`}`,
+    caption: `${caption || 'Published caption for E2E testing'} ${TEST_CAPTION_MARKER}`,
     mediaUrl: getTestMediaUrl(mediaIndex),
     mediaType: 'IMAGE',
     source: 'submission',
@@ -404,6 +422,7 @@ export async function createPublishedContent(
 
 /**
  * Create failed content for retry/delete testing
+ * Automatically adds test markers for cleanup
  */
 export async function createFailedContent(
   page: Page,
@@ -416,8 +435,8 @@ export async function createFailedContent(
   const { title, caption, mediaIndex = Math.floor(Math.random() * 100) } = options;
 
   return createContent(page, {
-    title: title || `Failed Content ${Date.now()}`,
-    caption: caption || 'Failed caption for E2E testing',
+    title: `${TEST_TITLE_PREFIX} ${title || `Failed Content ${Date.now()}`}`,
+    caption: `${caption || 'Failed caption for E2E testing'} ${TEST_CAPTION_MARKER}`,
     mediaUrl: getTestMediaUrl(mediaIndex),
     mediaType: 'IMAGE',
     source: 'submission',
@@ -650,4 +669,30 @@ export async function verifyContentScheduled(
 
   const diff = Math.abs(content.scheduledTime - expectedTime.getTime());
   return diff <= toleranceMs;
+}
+
+// ============================================================================
+// Bulk Cleanup Helpers
+// ============================================================================
+
+/**
+ * Clean up all test content via the bulk cleanup API endpoint
+ * This calls DELETE /api/test/cleanup which removes all content matching test patterns
+ * @returns Number of items deleted
+ */
+export async function cleanupAllTestContent(page: Page): Promise<number> {
+  try {
+    const response = await page.request.delete('/api/test/cleanup');
+
+    if (!response.ok()) {
+      console.warn('Cleanup endpoint failed:', response.statusText());
+      return 0;
+    }
+
+    const data = await response.json();
+    return data.deleted || 0;
+  } catch (error) {
+    console.warn('Failed to call cleanup endpoint:', error);
+    return 0;
+  }
 }

@@ -212,27 +212,8 @@ Agent files: `.claude/agents/*.md`
 
 ## Commands & Skills
 
-### Essential Commands
-
-**Workflow:**
-- **`/ship`** - Full release workflow: validate → test → push → PR → Linear update
-- **`/merge-fleet`** - Bulk PR fixer/merger with auto-fixing lint/type errors
-
-**Database:**
-- **`/supabase-migration-assistant`** - Generate/manage migrations
-- **`/supabase-type-generator`** - Generate TypeScript types from schema
-- **`/supabase-security-audit`** - Audit RLS policies
-
-**Design:**
-- **`/interface-design-init`** - Initialize design system
-- **`/interface-design-audit`** - Audit component consistency
-
-### Available Skills
-
-**UI/UX**: `frontend-design`, `interface-design` | **Dev Tools**: `git-cleanup`, `webapp-testing`
-**Automation**: `file-size-enforcer`, `i18n-manager`, `changelog-generator`
-
-→ **For detailed command docs**: See `.claude/commands/*.md` and `.claude/skills/*/SKILL.md`
+→ **For available commands and skills**: See global CLAUDE.md (Workflow, Database, Design commands + UI/UX, Dev Tools, Automation skills)
+→ **For detailed docs**: See `.claude/commands/*.md` and `.claude/skills/*/SKILL.md`
 
 ---
 
