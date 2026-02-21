@@ -1,6 +1,7 @@
 import { getServerSession } from 'next-auth/next';
 import { redirect } from 'next/navigation';
 import { authOptions } from '@/lib/auth';
+import { getUserRole } from '@/lib/auth-helpers';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { Alert, AlertDescription, AlertTitle } from '@/app/components/ui/alert';
 import { AlertTriangle } from 'lucide-react';
@@ -12,6 +13,12 @@ export default async function DebugPage() {
 
 	if (!session?.user?.id) {
 		redirect('/auth/signin');
+	}
+
+	// Debug page is only for admins and developers
+	const role = getUserRole(session);
+	if (role !== 'admin' && role !== 'developer') {
+		redirect('/');
 	}
 
 	return (

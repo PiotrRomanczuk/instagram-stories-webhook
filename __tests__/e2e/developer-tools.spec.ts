@@ -274,11 +274,11 @@ test.describe('Debug Page', () => {
 	});
 
 	/**
-	 * DEBUG-03: Regular User Can Access Debug Page
+	 * DEBUG-03: Regular User Blocked from Debug Page
 	 * Priority: P1 (High)
-	 * Production-only: Extended access verification
+	 * Production-only: Extended RBAC verification
 	 */
-	test('DEBUG-03: user should access debug page', async ({ page }) => {
+	test('DEBUG-03: user should be blocked from debug page', async ({ page }) => {
 		// Skip in preview mode (production-only)
 		if (process.env.PREVIEW_MODE === 'true') {
 			test.skip();
@@ -287,7 +287,16 @@ test.describe('Debug Page', () => {
 		await signInAsUser(page);
 		await page.goto('/debug');
 
-		await expect(page).toHaveURL(/\/(en\/)?debug/);
+		// User should be redirected away from /debug (to home or forbidden)
+		const url = page.url();
+		const isProtected =
+			!url.includes('/debug') ||
+			url.includes('/forbidden') ||
+			url.includes('/403') ||
+			url === 'http://localhost:3000/' ||
+			url === 'http://localhost:3000/en';
+
+		expect(isProtected).toBeTruthy();
 	});
 
 	/**
