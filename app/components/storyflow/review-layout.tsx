@@ -244,6 +244,46 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 		steps: adminReviewTourSteps,
 	});
 
+	// Keyboard shortcuts (Tinder-style)
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (isActionLoading || !currentItem) return;
+
+			// Don't trigger if user is typing in an input/textarea
+			const target = e.target as HTMLElement;
+			if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+
+			switch (e.key) {
+				case 'ArrowRight':
+				case 'd':
+				case 'D':
+					e.preventDefault();
+					handleApprove();
+					break;
+				case 'ArrowLeft':
+				case 'a':
+				case 'A':
+					e.preventDefault();
+					handleReject();
+					break;
+				case 'ArrowUp':
+				case 'w':
+				case 'W':
+					e.preventDefault();
+					skipStory();
+					break;
+				case 'ArrowDown':
+				case 's':
+				case 'S':
+					e.preventDefault();
+					setShowMobileDetails((prev) => !prev);
+					break;
+			}
+		};
+
+		window.addEventListener('keydown', handleKeyDown);
+		return () => window.removeEventListener('keydown', handleKeyDown);
+	}, [handleApprove, handleReject, skipStory, isActionLoading, currentItem]);
 
 	// Loading state
 	if (isLoading) {
@@ -338,16 +378,19 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 								</span>
 							)}
 						</p>
+						<p className="text-slate-400 text-xs mt-1 hidden sm:block">
+							Swipe right to approve • Swipe left to reject • Use arrow keys or WASD
+						</p>
 					</div>
 
-					{/* Phone Preview with Swipe Gestures */}
+					{/* Phone Preview with Swipe Gestures (Tinder-style) */}
 					<div data-tour="review-phone-preview" className="relative touch-none">
 						<ReviewCardSwipeable
 							key={currentItem?.id} // Force new instance on item change
-							onSwipeRight={currentIndex > 0 ? goToPrevious : undefined}
-							onSwipeLeft={currentIndex < items.length - 1 ? goToNext : undefined}
-							onSwipeUp={handleApprove}
-							onSwipeDown={() => setShowMobileDetails(true)}
+							onSwipeRight={handleApprove}  // Swipe right = Approve ✅
+							onSwipeLeft={handleReject}    // Swipe left = Reject ❌
+							onSwipeUp={skipStory}          // Swipe up = Skip
+							onSwipeDown={() => setShowMobileDetails(true)} // Swipe down = Details
 							disabled={isActionLoading || !currentItem}
 						>
 							<PhonePreview

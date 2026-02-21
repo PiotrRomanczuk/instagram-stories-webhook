@@ -8,10 +8,10 @@ import { cn } from '@/lib/utils';
 
 interface ReviewCardSwipeableProps {
     children: React.ReactNode;
-    onSwipeLeft?: () => void;
-    onSwipeRight?: () => void;
-    onSwipeUp?: () => void;
-    onSwipeDown?: () => void;
+    onSwipeLeft?: () => void;   // Reject
+    onSwipeRight?: () => void;  // Approve
+    onSwipeUp?: () => void;     // Skip
+    onSwipeDown?: () => void;   // Expand details
     disabled?: boolean;
 }
 
@@ -29,11 +29,11 @@ export function ReviewCardSwipeable({
     const [activeDirection, setActiveDirection] = useState<'left' | 'right' | 'up' | 'down' | null>(null);
 
     // Visual transformations
-    const rotate = useTransform(x, [-200, 200], [-10, 10]);
-    const opacityRight = useTransform(x, [50, 150], [0, 1]); // Previous
-    const opacityLeft = useTransform(x, [-50, -150], [0, 1]); // Skip
-    const opacityUp = useTransform(y, [-50, -150], [0, 1]); // Approve
-    const opacityDown = useTransform(y, [50, 150], [0, 1]); // Reject/Detail
+    const rotate = useTransform(x, [-200, 200], [-15, 15]);
+    const opacityRight = useTransform(x, [50, 150], [0, 1]); // Approve (green)
+    const opacityLeft = useTransform(x, [-150, -50], [1, 0]); // Reject (red)
+    const opacityUp = useTransform(y, [-150, -50], [1, 0]); // Skip (amber)
+    const opacityDown = useTransform(y, [50, 150], [0, 1]); // Expand details (blue)
 
     const bind = useGesture(
         {
@@ -122,25 +122,29 @@ export function ReviewCardSwipeable({
         >
             {children}
 
-            {/* Overlay Hints */}
+            {/* Overlay Hints - Tinder Style */}
+            {/* Swipe Up = Skip */}
             <motion.div style={{ opacity: opacityUp }} className="absolute inset-x-0 top-10 flex justify-center pointer-events-none z-50">
-                <div className="bg-green-500 text-white px-6 py-2 rounded-full font-bold text-lg shadow-lg flex items-center gap-2 transform -rotate-6 border-4 border-white">
-                    <ThumbsUp className="w-6 h-6" /> APPROVE
+                <div className="bg-amber-500 text-white px-6 py-2 rounded-full font-bold text-lg shadow-lg flex items-center gap-2 transform -rotate-6 border-4 border-white">
+                    <SkipForward className="w-6 h-6" /> SKIP
                 </div>
             </motion.div>
 
-            <motion.div style={{ opacity: opacityRight }} className="absolute inset-y-0 left-10 flex items-center pointer-events-none z-50">
-                <div className="bg-slate-500 text-white px-6 py-2 rounded-full font-bold text-lg shadow-lg flex items-center gap-2 transform -rotate-12 border-4 border-white">
-                    <ChevronLeft className="w-6 h-6" /> PREVIOUS
+            {/* Swipe Right = Approve */}
+            <motion.div style={{ opacity: opacityRight }} className="absolute inset-y-0 right-10 flex items-center pointer-events-none z-50">
+                <div className="bg-green-500 text-white px-6 py-2 rounded-full font-bold text-lg shadow-lg flex items-center gap-2 transform rotate-12 border-4 border-white">
+                    <Check className="w-6 h-6" /> APPROVE
                 </div>
             </motion.div>
 
-            <motion.div style={{ opacity: opacityLeft }} className="absolute inset-y-0 right-10 flex items-center pointer-events-none z-50">
-                <div className="bg-amber-500 text-white px-6 py-2 rounded-full font-bold text-lg shadow-lg flex items-center gap-2 transform rotate-12 border-4 border-white">
-                    SKIP <SkipForward className="w-6 h-6" />
+            {/* Swipe Left = Reject */}
+            <motion.div style={{ opacity: opacityLeft }} className="absolute inset-y-0 left-10 flex items-center pointer-events-none z-50">
+                <div className="bg-red-500 text-white px-6 py-2 rounded-full font-bold text-lg shadow-lg flex items-center gap-2 transform -rotate-12 border-4 border-white">
+                    <X className="w-6 h-6" /> REJECT
                 </div>
             </motion.div>
 
+            {/* Swipe Down = Expand Details */}
             <motion.div style={{ opacity: opacityDown }} className="absolute inset-x-0 bottom-20 flex justify-center pointer-events-none z-50">
                 <div className="bg-blue-500 text-white px-6 py-2 rounded-full font-bold text-lg shadow-lg flex items-center gap-2 transform rotate-6 border-4 border-white">
                     EXPAND DETAILS
