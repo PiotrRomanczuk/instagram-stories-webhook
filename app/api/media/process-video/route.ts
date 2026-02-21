@@ -63,17 +63,31 @@ export async function POST(request: Request) {
 
         // Railway path: send URL to Railway microservice for FFmpeg processing
         if (backend === 'railway') {
-            const result = await processWithRailway(videoUrl);
-            return NextResponse.json({
-                processedUrl: result.processedUrl,
-                thumbnailUrl: result.thumbnailUrl,
-                newDimensions: { width: result.metadata.width, height: result.metadata.height },
-                duration: result.metadata.duration,
-                wasProcessed: true,
-                processingApplied: result.metadata.processingApplied,
-                backend: 'railway',
-                message: `Video processed via Railway: ${result.metadata.processingApplied.join(', ')}`
-            });
+            await Logger.info(MODULE, 'Railway processing started', { videoUrl });
+
+            try {
+                const result = await processWithRailway(videoUrl);
+
+                await Logger.info(MODULE, 'Railway processing completed successfully', {
+                    processedUrl: result.processedUrl,
+                    processingApplied: result.metadata.processingApplied
+                });
+
+                return NextResponse.json({
+                    processedUrl: result.processedUrl,
+                    thumbnailUrl: result.thumbnailUrl,
+                    newDimensions: { width: result.metadata.width, height: result.metadata.height },
+                    duration: result.metadata.duration,
+                    wasProcessed: true,
+                    processingApplied: result.metadata.processingApplied,
+                    backend: 'railway',
+                    storyReady: true, // Video is now ready for Instagram Stories
+                    message: `Video processed via Railway: ${result.metadata.processingApplied.join(', ')}`
+                });
+            } catch (railwayError) {
+                await Logger.error(MODULE, 'Railway processing failed', railwayError);
+                throw railwayError;
+            }
         }
 
         // FFmpeg path: download, validate, process, upload
@@ -105,6 +119,7 @@ export async function POST(request: Request) {
                 processingApplied: [],
                 warnings: validation.warnings,
                 backend: 'ffmpeg',
+                storyReady: true, // Video already meets Instagram Stories standards
                 message: 'Video already meets Instagram Stories standards'
             });
         }
@@ -143,6 +158,7 @@ export async function POST(request: Request) {
             processingApplied: result.processingApplied,
             warnings: validation.warnings,
             backend: 'ffmpeg',
+            storyReady: true, // Video is now ready for Instagram Stories
             message: `Video processed: ${result.processingApplied.join(', ')}`
         });
 

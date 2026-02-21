@@ -276,7 +276,7 @@ test.describe('Debug Page', () => {
 	/**
 	 * DEBUG-03: Regular User Blocked from Debug Page
 	 * Priority: P1 (High)
-	 * Production-only: Extended RBAC verification
+	 * Production-only: Extended access verification
 	 */
 	test('DEBUG-03: user should be blocked from debug page', async ({ page }) => {
 		// Skip in preview mode (production-only)

@@ -391,13 +391,47 @@ export async function processScheduledPosts(
 						// Fall back to original URL if processing fails
 					}
 				} else if (item.mediaType === 'VIDEO') {
-					try {
-						await Logger.info(MODULE, `Processing video for story format...`, { postId: item.id });
-						publishUrl = await processAndUploadStoryVideo(item.mediaUrl, item.id);
-						await Logger.info(MODULE, `Video processed successfully`, { postId: item.id });
-					} catch (processError) {
-						await Logger.warn(MODULE, `Video processing failed, using original: ${processError}`, { postId: item.id });
-						// Fall back to original URL if processing fails
+					// INS-58: Check if video is already processed for Instagram Stories
+					if (item.storyReady) {
+						await Logger.info(MODULE, `✅ Video ${item.id} already processed and ready for Stories (story_ready=true), skipping redundant processing`, {
+							postId: item.id,
+							mediaUrl: item.mediaUrl,
+							processingBackend: item.processingBackend || 'unknown',
+							processingApplied: item.processingApplied || []
+						});
+						// Video is already processed, use existing URL directly
+						publishUrl = item.mediaUrl;
+					} else {
+						try {
+							await Logger.info(MODULE, `Processing video for story format (story_ready=false)...`, { postId: item.id });
+							publishUrl = await processAndUploadStoryVideo(item.mediaUrl, item.id);
+							await Logger.info(MODULE, `Video processed successfully`, { postId: item.id });
+
+							// Mark video as story-ready after successful processing
+							await supabaseAdmin
+								.from('content_items')
+								.update({
+									story_ready: true,
+									processing_status: 'completed',
+									processing_completed_at: new Date().toISOString(),
+									updated_at: new Date().toISOString()
+								})
+								.eq('id', item.id);
+						} catch (processError) {
+							await Logger.warn(MODULE, `Video processing failed, using original: ${processError}`, { postId: item.id });
+
+							// Mark processing as failed
+							await supabaseAdmin
+								.from('content_items')
+								.update({
+									processing_status: 'failed',
+									processing_error: processError instanceof Error ? processError.message : 'Unknown error',
+									processing_completed_at: new Date().toISOString(),
+									updated_at: new Date().toISOString()
+								})
+								.eq('id', item.id);
+							// Fall back to original URL if processing fails
+						}
 					}
 				}
 

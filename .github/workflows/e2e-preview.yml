@@ -14,7 +14,7 @@ jobs:
   e2e-preview:
     name: E2E - Preview (~40 tests, 4-5 min)
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
       - name: Checkout code

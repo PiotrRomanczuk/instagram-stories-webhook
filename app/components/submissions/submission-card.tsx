@@ -8,6 +8,7 @@ import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { cn } from '@/lib/utils';
 import { UniversalVideoPlayer } from '@/app/components/media/universal-video-player';
 import { extractThumbnailFromVideo } from '@/lib/media/client-utils';
+import { RailwayProcessingIndicator } from '@/app/components/media/RailwayProcessingIndicator';
 
 interface SubmissionCardProps {
 	submission: ContentItem;
@@ -184,6 +185,16 @@ export function SubmissionCard({
 					</>
 				)}
 			</div>
+
+			{/* Video Processing Status (INS-58) */}
+			{isVideo && (submission.processingStatus || submission.processingBackend || !submission.storyReady) && (
+				<div className="absolute bottom-20 left-0 right-0 px-4 z-[2]">
+					<RailwayProcessingIndicator
+						contentId={submission.id}
+						initialStatus={submission.processingStatus || 'pending'}
+					/>
+				</div>
+			)}
 
 			{/* Footer Info */}
 			<div className="absolute bottom-0 left-0 right-0 p-4">

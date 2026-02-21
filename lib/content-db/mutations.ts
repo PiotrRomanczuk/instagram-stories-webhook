@@ -33,6 +33,11 @@ export async function createContentItem(
 					video_codec: input.videoCodec,
 					video_framerate: input.videoFramerate,
 					needs_processing: input.needsProcessing || false,
+					// Video Processing Optimization (INS-58)
+					story_ready: input.storyReady || false,
+					processing_status: input.processingStatus || 'pending',
+					processing_backend: input.processingBackend,
+					processing_applied: input.processingApplied,
 					title: input.title,
 					caption: input.caption,
 					user_tags: input.userTags ? JSON.stringify(input.userTags) : null,
