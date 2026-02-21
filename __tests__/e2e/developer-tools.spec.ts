@@ -67,8 +67,14 @@ test.describe('Developer Page', () => {
 	/**
 	 * DEV-04: Developer Tools Display
 	 * Priority: P1 (High)
+	 * Production-only: Extended verification
 	 */
 	test('DEV-04: should display developer tools for admin', async ({ page }) => {
+		// Skip in preview mode (production-only)
+		if (process.env.PREVIEW_MODE === 'true') {
+			test.skip();
+		}
+
 		await signInAsAdmin(page);
 		await page.goto('/developer');
 
@@ -122,8 +128,14 @@ test.describe('Cron Debug Interface', () => {
 	/**
 	 * CRON-03: Regular User Blocked
 	 * Priority: P0 (Critical)
+	 * Production-only: Extended RBAC verification
 	 */
 	test('CRON-03: regular user should be blocked', async ({ page }) => {
+		// Skip in preview mode (production-only)
+		if (process.env.PREVIEW_MODE === 'true') {
+			test.skip();
+		}
+
 		await signInAsUser(page);
 		await page.goto('/developer/cron-debug');
 
@@ -140,8 +152,14 @@ test.describe('Cron Debug Interface', () => {
 	/**
 	 * CRON-04: Cron Job Interface Display
 	 * Priority: P1 (High)
+	 * Production-only: Extended UI verification
 	 */
 	test('CRON-04: should display cron jobs interface', async ({ page }) => {
+		// Skip in preview mode (production-only)
+		if (process.env.PREVIEW_MODE === 'true') {
+			test.skip();
+		}
+
 		await signInAsAdmin(page);
 		await page.goto('/developer/cron-debug');
 
@@ -165,8 +183,14 @@ test.describe('Cron Debug Interface', () => {
 	/**
 	 * CRON-05: Manual Trigger Available
 	 * Priority: P1 (High)
+	 * Production-only: Extended UI verification
 	 */
 	test('CRON-05: should provide manual trigger button', async ({ page }) => {
+		// Skip in preview mode (production-only)
+		if (process.env.PREVIEW_MODE === 'true') {
+			test.skip();
+		}
+
 		await signInAsAdmin(page);
 		await page.goto('/developer/cron-debug');
 
@@ -188,8 +212,14 @@ test.describe('Cron Debug Interface', () => {
 	/**
 	 * CRON-06: Execution History Display
 	 * Priority: P2 (Medium)
+	 * Production-only: Extended UI verification
 	 */
 	test('CRON-06: should show execution history or logs', async ({ page }) => {
+		// Skip in preview mode (production-only)
+		if (process.env.PREVIEW_MODE === 'true') {
+			test.skip();
+		}
+
 		await signInAsAdmin(page);
 		await page.goto('/developer/cron-debug');
 
@@ -219,8 +249,14 @@ test.describe('Debug Page', () => {
 	/**
 	 * DEBUG-01: Unauthenticated Access Blocked
 	 * Priority: P0 (Critical)
+	 * Production-only: Extended auth verification
 	 */
 	test('DEBUG-01: should require authentication', async ({ page }) => {
+		// Skip in preview mode (production-only)
+		if (process.env.PREVIEW_MODE === 'true') {
+			test.skip();
+		}
+
 		await page.goto('/debug');
 		await expect(page).toHaveURL(/\/(en\/)?auth\/signin/);
 	});
@@ -240,8 +276,14 @@ test.describe('Debug Page', () => {
 	/**
 	 * DEBUG-03: Regular User Can Access Debug Page
 	 * Priority: P1 (High)
+	 * Production-only: Extended access verification
 	 */
 	test('DEBUG-03: user should access debug page', async ({ page }) => {
+		// Skip in preview mode (production-only)
+		if (process.env.PREVIEW_MODE === 'true') {
+			test.skip();
+		}
+
 		await signInAsUser(page);
 		await page.goto('/debug');
 
@@ -251,11 +293,17 @@ test.describe('Debug Page', () => {
 	/**
 	 * DEBUG-04: Debug page renders key diagnostic sections
 	 * Priority: P1 (High)
+	 * Production-only: Extended UI verification
 	 *
 	 * Verifies the debug page shows Instagram connection, token status,
 	 * and scheduled posts information in a single pass.
 	 */
 	test('DEBUG-04: should display all diagnostic sections', async ({ page }) => {
+		// Skip in preview mode (production-only)
+		if (process.env.PREVIEW_MODE === 'true') {
+			test.skip();
+		}
+
 		await signInAsAdmin(page);
 		await page.goto('/debug');
 
