@@ -30,7 +30,8 @@ describe('Cron Execution Context Helpers', () => {
 
 	describe('calculateDaysRemaining', () => {
 		it('should calculate positive days remaining', () => {
-			const tomorrow = Date.now() + 24 * 60 * 60 * 1000;
+			// Use 25h to avoid timing race: Math.floor((24h - ε) / 24h) = 0
+			const tomorrow = Date.now() + 25 * 60 * 60 * 1000;
 			const days = calculateDaysRemaining(tomorrow);
 			expect(days).toBe(1);
 		});

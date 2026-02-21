@@ -1,6 +1,6 @@
 {
   "name": "instagram-stories-webhook",
-  "version": "0.24.0",
+  "version": "0.23.1",
   "private": true,
   "scripts": {
     "dev": "concurrently -n next,cron -c blue,magenta \"next dev\" \"npm run dev:cron\"",
@@ -16,9 +16,9 @@
     "test:unit": "vitest run",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:e2e:preview": "playwright test --config=playwright.config.preview.ts",
-    "test:e2e:production": "ENABLE_REAL_IG_TESTS=true ENABLE_LIVE_IG_PUBLISH=true playwright test",
     "test:e2e:live": "ENABLE_REAL_IG_TESTS=true ENABLE_LIVE_IG_PUBLISH=true playwright test --project=live-publishing-prerequisite",
+    "test:e2e:production": "playwright test --config=playwright.config.production.ts",
+    "test:e2e:production:smoke": "ENABLE_REAL_IG_TESTS=true ENABLE_LIVE_IG_PUBLISH=true playwright test --config=playwright.config.production.ts",
     "test:coverage": "vitest run --coverage",
     "setup:storage": "tsx scripts/init-storage.ts",
     "setup:ai-analysis": "tsx scripts/setup-ai-analysis.ts",
