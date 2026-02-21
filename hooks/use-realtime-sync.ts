@@ -53,6 +53,14 @@ export function useRealtimeSync(options: RealtimeSyncOptions = {}) {
 	const environment = getCurrentEnvironment();
 
 	useEffect(() => {
+		// Skip realtime if Supabase is not configured
+		if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+			if (debug) {
+				console.log('[Realtime Sync] Skipped: no Supabase URL configured');
+			}
+			return;
+		}
+
 		if (debug) {
 			console.log('[Realtime Sync] Initializing subscription', {
 				table,
@@ -86,37 +94,43 @@ export function useRealtimeSync(options: RealtimeSyncOptions = {}) {
 			}, debounceMs);
 		};
 
-		// Subscribe to realtime changes
-		const channel = supabase
-			.channel(`${table}_changes`)
-			.on(
-				'postgres_changes',
-				{
-					event: '*', // Listen to INSERT, UPDATE, DELETE
-					schema: 'public',
-					table,
-					// Filter by environment if available
-					...(environment && {
-						filter: `environment=eq.${environment}`,
-					}),
-				},
-				(payload: { eventType: string; table: string; new?: { id?: string }; old?: { id?: string } }) => {
-					if (debug) {
-						console.log('[Realtime Sync] Change detected', {
-							event: payload.eventType,
-							table: payload.table,
-							id: payload.new?.id || payload.old?.id,
-						});
-					}
+		// Subscribe to realtime changes — wrapped in try-catch because
+		// WebSocket creation can throw on some browsers (iOS Chrome: "The operation is insecure")
+		let channel: ReturnType<typeof supabase.channel> | null = null;
+		try {
+			channel = supabase
+				.channel(`${table}_changes`)
+				.on(
+					'postgres_changes',
+					{
+						event: '*',
+						schema: 'public',
+						table,
+						...(environment && {
+							filter: `environment=eq.${environment}`,
+						}),
+					},
+					(payload: { eventType: string; table: string; new?: { id?: string }; old?: { id?: string } }) => {
+						if (debug) {
+							console.log('[Realtime Sync] Change detected', {
+								event: payload.eventType,
+								table: payload.table,
+								id: payload.new?.id || payload.old?.id,
+							});
+						}
 
-					invalidateContentCache();
-				}
-			)
-			.subscribe((status) => {
-				if (debug) {
-					console.log('[Realtime Sync] Subscription status:', status);
-				}
-			});
+						invalidateContentCache();
+					}
+				)
+				.subscribe((status) => {
+					if (debug) {
+						console.log('[Realtime Sync] Subscription status:', status);
+					}
+				});
+		} catch (err) {
+			console.warn('[Realtime Sync] WebSocket subscription failed, falling back to polling:', err);
+			channel = null;
+		}
 
 		// Cleanup
 		return () => {
@@ -128,7 +142,9 @@ export function useRealtimeSync(options: RealtimeSyncOptions = {}) {
 				clearTimeout(debounceTimerRef.current);
 			}
 
-			supabase.removeChannel(channel);
+			if (channel) {
+				supabase.removeChannel(channel);
+			}
 		};
 	}, [mutate, debounceMs, debug, table, environment]);
 }
