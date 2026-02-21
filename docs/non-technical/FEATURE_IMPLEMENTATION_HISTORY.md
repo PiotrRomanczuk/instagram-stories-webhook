@@ -10,7 +10,7 @@ A complete record of every version released for the Instagram Stories Webhook ap
 | :--- | :--- |
 | **Project Start** | January 12, 2026 |
 | **Latest Release** | February 21, 2026 |
-| **Total Versions Released** | 27 |
+| **Total Versions Released** | 28 |
 | **Total Commits** | 427 |
 | **Total Work Sessions** | 52 |
 | **Active Development Days** | 29 |
@@ -53,6 +53,7 @@ A complete record of every version released for the Instagram Stories Webhook ap
 | v0.25.0 | Swipe Review & Video Processing | 1.5h | 1 | Feb 21 |
 | v0.26.0 | Version History & Automation | 2.0h | 1 | Feb 21 |
 | v0.26.1 | Error Boundary & Suspense Fix | 0.5h | 1 | Feb 21 |
+| v0.26.2 | WebSocket Crash Fix (iOS Chrome) | 0.5h | 1 | Feb 21 |
 
 > **†** v0.21.0 was released at the same tag point as v0.19.0 — its effort is included in v0.19.0's 18.2 hours.
 
@@ -61,6 +62,15 @@ A complete record of every version released for the Instagram Stories Webhook ap
 ---
 
 ## Released Versions
+
+### v0.26.2 — WebSocket Crash Fix for iOS Chrome (February 21, 2026)
+*1 commit | 1 session | 0.5 verified hours*
+
+- **Root Cause Fix**: Supabase Realtime `.subscribe()` throws `"WebSocket not available: The operation is insecure"` on iOS Chrome, crashing the entire Schedule page. Wrapped the subscription in try-catch for graceful degradation.
+- **Guard Clause**: Realtime sync now skips entirely when Supabase URL is not configured.
+- **E2E Regression Tests**: Added CP-8.1 (desktop) and CP-8.2 (mobile viewport at iPhone 14 resolution) to verify the Schedule page loads without triggering the error boundary.
+
+---
 
 ### v0.26.1 — Error Boundary & Suspense Fix (February 21, 2026)
 *1 commit | 1 session | 0.5 verified hours*
