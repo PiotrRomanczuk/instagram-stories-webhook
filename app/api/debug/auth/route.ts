@@ -42,8 +42,7 @@ export async function GET() {
                 provider_account_id: linkedAccount.provider_account_id,
                 ig_user_id: linkedAccount.ig_user_id,
                 expires_at: linkedAccount.expires_at,
-                // Mask token for safety
-                access_token: linkedAccount.access_token ? `${linkedAccount.access_token.substring(0, 10)}...` : null,
+                access_token_present: !!linkedAccount.access_token,
             };
 
             // Try to fetch real-time info from Facebook
@@ -73,7 +72,8 @@ export async function GET() {
                             access_token: `${appId}|${appSecret}`
                         }
                     });
-                    debugData.token_debug = debugRes.data.data;
+                    const { app_id, type, application, expires_at, is_valid, scopes, user_id } = debugRes.data.data;
+                    debugData.token_debug = { app_id, type, application, expires_at, is_valid, scopes, user_id };
                 }
             } catch (fbErr: unknown) {
                 const fbErrorData = axios.isAxiosError(fbErr) ? (fbErr.response?.data || fbErr.message) : (fbErr instanceof Error ? fbErr.message : String(fbErr));

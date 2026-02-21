@@ -31,7 +31,7 @@ export async function GET() {
 
     try {
         interface PageDebugResult {
-            token: string;
+            access_token_present: boolean;
             user?: unknown;
             permissions?: unknown[];
             pages_minimal?: unknown;
@@ -43,7 +43,7 @@ export async function GET() {
             token_debug?: unknown;
         }
         const results: PageDebugResult = {
-            token: linkedAccount.access_token.substring(0, 20) + '...',
+            access_token_present: !!linkedAccount.access_token,
         };
 
         // 1. Get user info
@@ -72,7 +72,8 @@ export async function GET() {
                 ...pagesMinimalRes.data,
                 data: (pagesMinimalRes.data.data || []).map((p: { access_token?: string }) => ({
                     ...p,
-                    access_token: p.access_token ? `${p.access_token.substring(0, 10)}...` : null
+                    access_token: undefined,
+                    access_token_present: !!p.access_token,
                 }))
             };
         } catch (err: unknown) {
@@ -89,7 +90,8 @@ export async function GET() {
             });
             const maskedPages = (pagesFullRes.data.data || []).map((p: { access_token?: string }) => ({
                 ...p,
-                access_token: p.access_token ? `${p.access_token.substring(0, 10)}...` : null
+                access_token: undefined,
+                access_token_present: !!p.access_token,
             }));
             results.pages_full = { ...pagesFullRes.data, data: maskedPages };
         } catch (err: unknown) {
@@ -107,7 +109,8 @@ export async function GET() {
                     access_token: appAccessToken
                 }
             });
-            results.token_debug = debugTokenRes.data.data;
+            const { app_id, type, application, expires_at, is_valid, scopes, user_id } = debugTokenRes.data.data;
+            results.token_debug = { app_id, type, application, expires_at, is_valid, scopes, user_id };
         }
 
         return NextResponse.json(results);
