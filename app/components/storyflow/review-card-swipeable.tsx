@@ -6,6 +6,10 @@ import { useState, useEffect } from 'react';
 import { Check, X, SkipForward, ChevronLeft, ThumbsUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+// Module-level flag so the peek hint only plays on the very first card
+// (component re-mounts with a new key per card, so a ref would reset)
+let hasShownPeekHint = false;
+
 interface ReviewCardSwipeableProps {
     children: React.ReactNode;
     onSwipeLeft?: () => void;   // Reject
@@ -27,6 +31,28 @@ export function ReviewCardSwipeable({
     const y = useMotionValue(0);
     const controls = useAnimation();
     const [activeDirection, setActiveDirection] = useState<'left' | 'right' | 'up' | 'down' | null>(null);
+
+    // Swipe peek hint — brief left-right wiggle on the very first card
+    useEffect(() => {
+        if (hasShownPeekHint || disabled) return;
+        hasShownPeekHint = true;
+
+        const t1 = setTimeout(() => {
+            x.set(30);
+        }, 600);
+        const t2 = setTimeout(() => {
+            x.set(-30);
+        }, 850);
+        const t3 = setTimeout(() => {
+            x.set(0);
+        }, 1100);
+
+        return () => {
+            clearTimeout(t1);
+            clearTimeout(t2);
+            clearTimeout(t3);
+        };
+    }, [disabled, x]);
 
     // Visual transformations
     const rotate = useTransform(x, [-200, 200], [-15, 15]);
