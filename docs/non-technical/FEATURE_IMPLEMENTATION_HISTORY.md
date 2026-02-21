@@ -10,7 +10,7 @@ A complete record of every version released for the Instagram Stories Webhook ap
 | :--- | :--- |
 | **Project Start** | January 12, 2026 |
 | **Latest Release** | February 21, 2026 |
-| **Total Versions Released** | 26 |
+| **Total Versions Released** | 27 |
 | **Total Commits** | 427 |
 | **Total Work Sessions** | 52 |
 | **Active Development Days** | 29 |
@@ -52,6 +52,7 @@ A complete record of every version released for the Instagram Stories Webhook ap
 | v0.24.0 | Dual E2E Testing & i18n | 2.7h | 3 | Feb 20-21 |
 | v0.25.0 | Swipe Review & Video Processing | 1.5h | 1 | Feb 21 |
 | v0.26.0 | Version History & Automation | 2.0h | 1 | Feb 21 |
+| v0.26.1 | Error Boundary & Suspense Fix | 0.5h | 1 | Feb 21 |
 
 > **†** v0.21.0 was released at the same tag point as v0.19.0 — its effort is included in v0.19.0's 18.2 hours.
 
@@ -60,6 +61,16 @@ A complete record of every version released for the Instagram Stories Webhook ap
 ---
 
 ## Released Versions
+
+### v0.26.1 — Error Boundary & Suspense Fix (February 21, 2026)
+*1 commit | 1 session | 0.5 verified hours*
+
+- **Production Error Visibility**: Error boundary now always shows the error message, digest, and expandable stack trace with device info — no more blank "Something went wrong" screens without console access.
+- **Copy Error Details**: One-tap button to copy full error context (message, URL, user agent, stack) for easy debugging on mobile.
+- **Sentry Integration**: Error boundary now explicitly calls `Sentry.captureException` to ensure client crashes are captured.
+- **Suspense Fix**: Added `<Suspense>` boundary around `ScheduleCalendarLayout` which uses `useSearchParams()` — a missing Suspense boundary in Next.js App Router can cause client-side crashes, especially on iOS Safari.
+
+---
 
 ### v0.26.0 — Version History & Automation (February 21, 2026)
 *3 commits | 1 session | 2.0 verified hours*
