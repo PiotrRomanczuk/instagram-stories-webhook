@@ -1,0 +1,123 @@
+name: E2E Tests - Preview
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+  workflow_dispatch: # Allow manual trigger
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  e2e-preview:
+    name: E2E - Preview (~40 tests, 4-5 min)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright system deps
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - name: Generate test images
+        run: npx tsx __tests__/e2e/fixtures/generate-test-images.ts
+
+      - name: Setup preview environment
+        run: |
+          cat > .env.local << 'ENVEOF'
+          NODE_ENV=test
+          VERCEL_ENV=preview
+          PREVIEW_MODE=true
+          NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_JWT_SECRET=${{ secrets.SUPABASE_JWT_SECRET }}
+          NEXTAUTH_URL=http://localhost:3000
+          NEXTAUTH_SECRET=${{ secrets.SUPABASE_JWT_SECRET }}
+          ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL || 'admin@test.com' }}
+          AUTH_GOOGLE_ID=dummy-preview
+          AUTH_GOOGLE_SECRET=dummy-preview
+          AUTH_FACEBOOK_ID=dummy-preview
+          AUTH_FACEBOOK_SECRET=dummy-preview
+          FB_APP_SECRET=dummy-preview
+          NEXT_PUBLIC_FB_APP_ID=dummy-preview
+          FB_REDIRECT_URI=http://localhost:3000/api/auth/link-facebook/callback
+          NEXT_PUBLIC_APP_URL=http://localhost:3000
+          WEBHOOK_SECRET=test-webhook-secret
+          CRON_SECRET=test-cron-secret
+          ENVEOF
+          sed -i 's/^[[:space:]]*//' .env.local
+
+      - name: Run preview E2E tests
+        run: npx playwright test --config=playwright.config.preview.ts
+        env:
+          CI: true
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-preview
+          path: test-results/preview/
+          retention-days: 7
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-preview
+          path: playwright-report/
+          retention-days: 7
+
+      - name: Comment PR on failure
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            let comment = '## ⚠️ Preview E2E Tests Failed\n\n';
+            comment += 'Preview E2E tests failed. Check the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details.\n\n';
+            comment += '**Test Suite:** Preview (minimal suite, ~40 tests)\n';
+            comment += '**Files tested:**\n';
+            comment += '- `auth-and-rbac-core.spec.ts` (22 tests)\n';
+            comment += '- `critical-user-journeys.spec.ts` (core flows only)\n';
+            comment += '- `developer-tools.spec.ts` (access control)\n\n';
+            comment += '**Common issues:**\n';
+            comment += '- Authentication failures (check `SUPABASE_JWT_SECRET`)\n';
+            comment += '- Element selectors changed\n';
+            comment += '- Timing issues (increase `waitForTimeout`)\n';
+            comment += '- Missing test data\n\n';
+            comment += '**Note:** Full production E2E suite (113 tests) runs on production deployments only.\n';
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });

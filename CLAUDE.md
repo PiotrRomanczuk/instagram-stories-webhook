@@ -119,13 +119,43 @@ npm run lint && npx tsc && npm run test
 |-------|------|-----------|-----------|------------------------|
 | Unit | Vitest + MSW | ~50 files | ~500 tests | **Mock with MSW** |
 | Integration | Vitest + Supabase | ~20 files | ~200 tests | **Mock with MSW** |
-| E2E | Playwright | **6 files** | **~172 tests** | **NEVER MOCK - Use real account** |
+| E2E - Preview | Playwright | **3 files** | **~40 tests** | **Environment guards skip production tests** |
+| E2E - Production | Playwright | **7 files** | **~113 tests** | **NEVER MOCK - Use real account** |
+
+**E2E Deployment Matrix** (Dual-Deployment Workflow):
+
+| Deployment | Tests | Duration | Trigger | Instagram API | Mobile Tests |
+|------------|-------|----------|---------|---------------|--------------|
+| **Preview** (PRs, merges) | ~40 tests | 4-5 min | Automatic | ❌ Skipped | ❌ Skipped |
+| **Production** (scheduled) | ~113 tests | ~10 min | Manual + Daily 2AM UTC | ✅ Real API | ✅ 5 viewports |
+
+**Preview Suite** (~40 tests, 4-5 min):
+- ✅ `auth-and-rbac-core.spec.ts` (22 tests) - All auth/RBAC tests
+- ✅ `critical-user-journeys.spec.ts` (12 tests) - Core submission/review flows (CP-2, CP-3)
+- ✅ `developer-tools.spec.ts` (6 tests) - Core access control (DEV-01, DEV-02, DEV-03, CRON-01, CRON-02, DEBUG-02)
+
+**Production Suite** (~113 tests, ~10 min):
+- ✅ All preview tests PLUS:
+- ✅ `instagram-publishing-live.spec.ts` (4 tests) - Real Instagram API
+- ✅ `mobile-responsive-core.spec.ts` (33 tests) - Mobile viewport testing
+- ✅ `production-smoke.spec.ts` (6 tests) - Production verification
+- ✅ `video-preview-functionality.spec.ts` (7 tests) - Video features
+- ✅ Extended tests from `critical-user-journeys.spec.ts` (CP-4, CP-5, CP-6, CP-7)
+- ✅ Extended tests from `developer-tools.spec.ts` (DEV-04, CRON-03 through CRON-06, DEBUG-01/03/04)
+
+**NPM Scripts**:
+```bash
+npm run test:e2e:preview      # Run preview suite (~40 tests, 4-5 min)
+npm run test:e2e:production   # Run production suite (113 tests, ~10 min)
+npm run test:e2e              # Run all tests (default config)
+```
 
 **E2E Test Philosophy**:
 - Test **USER JOURNEYS**, not UI components or implementation details
-- Use REAL Instagram account (`@www_hehe_pl`) - NEVER mock in E2E
-- Keep test count low (<200) for fast CI feedback (<10 min)
-- Mobile-first: 70%+ tests cover mobile viewports (375px, 390px, 414px, 768px)
+- Use REAL Instagram account (`@www_hehe_pl`) in production suite - NEVER mock in E2E
+- Preview suite optimized for fast PR feedback (<5 min)
+- Production suite runs daily (scheduled) + manual triggers for comprehensive validation
+- Mobile-first: 70%+ tests cover mobile viewports (375px, 390px, 414px, 768px) in production suite
 - Quality over quantity: Detailed edge cases belong in unit tests
 
 **🚨 CRITICAL E2E TEST LIMIT (MANDATORY)**:
@@ -139,13 +169,14 @@ npm run lint && npx tsc && npm run test
   - ❌ NEVER add 20+ E2E tests for UI states, edge cases, or variations
 - **Reject any PR that adds >10 E2E tests** - move them to unit/integration layer
 
-**The 6 Core E2E Files**:
-1. `critical-user-journeys.spec.ts` (54 tests) - User and admin workflows
-2. `instagram-publishing-live.spec.ts` (27 tests) - REAL Instagram API publishing
-3. `mobile-responsive-core.spec.ts` (37 tests) - Mobile UX validation
-4. `auth-and-rbac-core.spec.ts` (22 tests) - Authentication & RBAC
-5. `production-smoke.spec.ts` (10 tests) - Production verification
-6. `developer-tools.spec.ts` (22 tests) - Internal tooling
+**The 7 E2E Test Files**:
+1. `auth-and-rbac-core.spec.ts` (22 tests) - Authentication & RBAC [Preview + Production]
+2. `critical-user-journeys.spec.ts` (54 tests) - User and admin workflows [Partial Preview, Full Production]
+3. `developer-tools.spec.ts` (22 tests) - Internal tooling [Partial Preview, Full Production]
+4. `instagram-publishing-live.spec.ts` (4 tests) - REAL Instagram API [Production Only]
+5. `mobile-responsive-core.spec.ts` (33 tests) - Mobile UX validation [Production Only]
+6. `production-smoke.spec.ts` (6 tests) - Production verification [Production Only]
+7. `video-preview-functionality.spec.ts` (7 tests) - Video features [Production Only]
 
 → **For detailed testing patterns and guidelines**: See `TESTING.md` or delegate to `test-engineer` agent
 
