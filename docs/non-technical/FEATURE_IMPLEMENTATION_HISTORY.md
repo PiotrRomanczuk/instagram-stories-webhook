@@ -10,13 +10,13 @@ A complete record of every version released for the Instagram Stories Webhook ap
 | :--- | :--- |
 | **Project Start** | January 12, 2026 |
 | **Latest Release** | February 21, 2026 |
-| **Total Versions Released** | 25 |
-| **Total Commits** | 424 |
+| **Total Versions Released** | 26 |
+| **Total Commits** | 427 |
 | **Total Work Sessions** | 52 |
 | **Active Development Days** | 29 |
 | **Longest Session** | 8h 53m (January 29) |
 | **Average Session** | 2h 7m |
-| **Total Verified Hours** | **110.6 hours** |
+| **Total Verified Hours** | **112.6 hours** |
 
 > Hours are calculated from git commit timestamps using `scripts/work-hours.ts`. Each work session adds 30 minutes to account for setup and planning time before the first commit. A gap of more than 2 hours between commits starts a new session. Per-version hours are computed by mapping session time to version release periods — when a single session spans multiple releases, its time is split proportionally.
 
@@ -51,6 +51,7 @@ A complete record of every version released for the Instagram Stories Webhook ap
 | v0.23.0 | Real-Time Dashboard | 0.5h | 1 | Feb 20 |
 | v0.24.0 | Dual E2E Testing & i18n | 2.7h | 3 | Feb 20-21 |
 | v0.25.0 | Swipe Review & Video Processing | 1.5h | 1 | Feb 21 |
+| v0.26.0 | Version History & Automation | 2.0h | 1 | Feb 21 |
 
 > **†** v0.21.0 was released at the same tag point as v0.19.0 — its effort is included in v0.19.0's 18.2 hours.
 
@@ -59,6 +60,17 @@ A complete record of every version released for the Instagram Stories Webhook ap
 ---
 
 ## Released Versions
+
+### v0.26.0 — Version History & Automation (February 21, 2026)
+*3 commits | 1 session | 2.0 verified hours*
+
+- **Version Gap Fix**: Added 4 missing version entries (v0.21.2, v0.23.0, v0.24.0, v0.25.0) that had package.json bumps and PR merges but were never documented or git-tagged.
+- **History Doc Enhancement**: Enhanced the feature implementation history with per-version verified hours, a daily hours report with cumulative totals, and a full 52-session work log.
+- **Gap Detection Script**: New `npm run check-history` command that compares git tags against history doc entries and reports mismatches. Supports `--fix` to generate skeleton entries.
+- **Workflow Automation**: Added history update reminders to `/ship` (Phase 9) and `/deploy-production` (Step 6) workflows to prevent future gaps.
+- **Preview Test Credentials**: Enabled test credentials on Vercel preview deployments for E2E testing.
+
+---
 
 ### v0.25.0 — Swipe Review & Video Processing (February 21, 2026)
 *8 commits | 2 sessions | 1.5 verified hours*
@@ -326,6 +338,7 @@ Feb 20     [####]                            v0.21.2  3.7h   Time Picker & Users
 Feb 20     [##]                              v0.23.0  0.5h   Real-Time Dashboard
 Feb 21     [######]                          v0.24.0  2.7h   Dual E2E & i18n
 Feb 21     [####]                            v0.25.0  1.5h   Swipe Review & Video
+Feb 21     [####]                            v0.26.0  2.0h   Version History & Automation
 ```
 
 ---
@@ -364,7 +377,7 @@ Total development effort distributed across 29 active days. "Cumulative" shows t
 | Feb 18 | Tue | 3 | 5.6h | 101.7h | v0.19.0, v0.21.0, v0.21.1 |
 | Feb 19 | Wed | 1 | 0.7h | 102.4h | v0.21.2 |
 | Feb 20 | Thu | 1 | 4.6h | 106.9h | v0.21.2, v0.23.0, v0.24.0 |
-| Feb 21 | Fri | 2 | 3.7h | 110.6h | v0.24.0, v0.25.0 |
+| Feb 21 | Fri | 3 | 5.7h | 112.6h | v0.24.0, v0.25.0, v0.26.0 |
 
 **Peak week**: January 26–31 (29.7 hours across 6 days)
 **Heaviest days**: Jan 29 (8.9h), Feb 15 (8.5h), Feb 17 (8.5h)
@@ -399,7 +412,7 @@ Feb 17  #################                          8.5h
 Feb 18  ###########                                5.6h
 Feb 19  #                                          0.7h
 Feb 20  #########                                  4.6h
-Feb 21  #######                                    3.7h
+Feb 21  ###########                                  5.7h
 ```
 
 ---
