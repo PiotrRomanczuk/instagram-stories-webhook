@@ -22,6 +22,7 @@ const eslintConfig = [
       'scripts/**',
       '__tests__/fixtures/**',
       'railway-video-processor/**',
+      '.claude/**',
     ],
   },
   ...nextConfig,
