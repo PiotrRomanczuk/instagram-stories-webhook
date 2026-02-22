@@ -3,6 +3,7 @@
 import { SessionProvider } from 'next-auth/react';
 import { Toaster } from 'sonner';
 import { SWRConfig } from 'swr';
+import { WhatsNewDialog } from '@/app/components/whats-new/WhatsNewDialog';
 
 interface ProvidersProps {
 	children: React.ReactNode;
@@ -43,6 +44,7 @@ export function Providers({ children }: ProvidersProps) {
 				{children}
 			</SWRConfig>
 			<Toaster position="top-right" expand={true} richColors />
+			<WhatsNewDialog />
 		</SessionProvider>
 	);
 }
