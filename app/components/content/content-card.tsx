@@ -13,6 +13,7 @@ import {
 	Play,
 	Video,
 	UserCheck,
+	Pencil,
 } from 'lucide-react';
 import { ConfirmationDialog } from '../ui/confirmation-dialog';
 
@@ -142,6 +143,15 @@ export function ContentCard({
 					>
 						<Eye className='h-5 w-5' />
 					</button>
+					{isAdmin && item.publishingStatus !== 'published' && (
+						<button
+							onClick={onEdit}
+							className='p-4 bg-white text-gray-900 rounded-2xl shadow-xl hover:scale-110 active:scale-95 transition-all'
+							title='Edit post'
+						>
+							<Pencil className='h-5 w-5' />
+						</button>
+					)}
 					{isAdmin &&
 						item.publishingStatus !== 'published' &&
 						(item.source !== 'submission' ||
