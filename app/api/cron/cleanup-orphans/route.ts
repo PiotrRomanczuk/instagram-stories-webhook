@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { cleanupOrphanedUploads } from "@/lib/storage/cleanup";
 import { Logger } from "@/lib/utils/logger";
 
+export const maxDuration = 60;
+
 const MODULE = "api:cron:cleanup";
 
 export async function GET(req: NextRequest) {
