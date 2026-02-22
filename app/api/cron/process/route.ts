@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { processScheduledPosts } from "@/lib/scheduler/process-service";
 import { acquireCronLock, releaseCronLock } from "@/lib/scheduler/cron-lock";
 import { Logger } from "@/lib/utils/logger";
@@ -39,6 +40,13 @@ export async function GET(req: NextRequest) {
         return NextResponse.json(result);
     } catch (error) {
         await Logger.error("cron", "Cron job failed", error);
+        Sentry.captureException(error, {
+            tags: {
+                module: "scheduler",
+                route: "/api/cron/process",
+                method: "GET",
+            },
+        });
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     } finally {
         await releaseCronLock();

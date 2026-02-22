@@ -16,4 +16,19 @@ Sentry.init({
   // Enable sending user PII (Personally Identifiable Information)
   // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
   sendDefaultPii: true,
+
+  // Suppress known non-actionable errors to reduce noise
+  ignoreErrors: [
+    // Cron already-running is expected behaviour, not an error
+    "Another cron execution is in progress",
+    // Auth rejections are handled at the route level and are not bugs
+    "Unauthorized",
+  ],
+
+  // Default tags applied to every server-side Sentry event
+  initialScope: {
+    tags: {
+      runtime: "server",
+    },
+  },
 });

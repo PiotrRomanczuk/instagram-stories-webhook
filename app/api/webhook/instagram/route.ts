@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
 import { Logger } from '@/lib/utils/logger';
 import { verifyMetaWebhookSignature } from '@/lib/utils/crypto-signing';
+import * as Sentry from '@sentry/nextjs';
 import type {
     InstagramWebhookEvent,
     InstagramMessagingEvent,
@@ -115,6 +116,13 @@ export async function POST(request: NextRequest) {
     } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         await Logger.error(MODULE, `❌ Webhook processing error: ${errorMessage}`, error);
+        Sentry.captureException(error, {
+            tags: {
+                module: "api:webhook",
+                route: "/api/webhook/instagram",
+                method: "POST",
+            },
+        });
 
         // Still return 200 to prevent Meta from retrying
         return NextResponse.json({ success: false, error: errorMessage }, { status: 200 });
