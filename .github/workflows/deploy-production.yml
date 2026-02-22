@@ -1,0 +1,277 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: '20'
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+jobs:
+  # ===========================================================================
+  # Job 1: Quality Gates (~3-4 min)
+  # ===========================================================================
+  quality-gates:
+    name: Quality Gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: TypeScript check
+        run: npx tsc
+
+      - name: Unit tests
+        run: npm run test
+
+  # ===========================================================================
+  # Job 2: Deploy Preview (~3 min)
+  # ===========================================================================
+  deploy-preview:
+    name: Deploy Preview
+    needs: quality-gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      preview_url: ${{ steps.deploy.outputs.preview_url }}
+      deployment_id: ${{ steps.deploy.outputs.deployment_id }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel
+
+      - name: Pull Vercel environment
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build project
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy to preview (NOT production)
+        id: deploy
+        run: |
+          # Deploy without --prod flag to get a preview URL
+          DEPLOY_OUTPUT=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} 2>&1)
+          PREVIEW_URL=$(echo "$DEPLOY_OUTPUT" | grep -oP 'https://[^\s]+\.vercel\.app' | head -1)
+
+          if [ -z "$PREVIEW_URL" ]; then
+            echo "Failed to extract preview URL from deployment output"
+            echo "$DEPLOY_OUTPUT"
+            exit 1
+          fi
+
+          echo "preview_url=$PREVIEW_URL" >> "$GITHUB_OUTPUT"
+          echo "Preview URL: $PREVIEW_URL"
+
+          # Wait for deployment to be ready
+          echo "Waiting for deployment to be ready..."
+          for i in {1..30}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$PREVIEW_URL/api/health" || echo "000")
+            if [ "$STATUS" = "200" ] || [ "$STATUS" = "404" ]; then
+              echo "Deployment ready (status: $STATUS)"
+              break
+            fi
+            echo "Attempt $i: status=$STATUS, waiting..."
+            sleep 10
+          done
+
+  # ===========================================================================
+  # Job 3: E2E Tests against Preview (5 shards, ~10-14 min)
+  # ===========================================================================
+  e2e-tests:
+    name: E2E Tests (shard ${{ matrix.shard }}/${{ strategy.job-total || 5 }})
+    needs: deploy-preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    strategy:
+      fail-fast: true
+      matrix:
+        shard: [1, 2, 3, 4, 5]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright system deps
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - name: Generate test images
+        run: npx tsx __tests__/e2e/fixtures/generate-test-images.ts
+
+      - name: Setup environment
+        run: |
+          cat > .env.local << 'ENVEOF'
+          NODE_ENV=test
+          VERCEL_ENV=production
+          PREVIEW_MODE=false
+          NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_JWT_SECRET=${{ secrets.SUPABASE_JWT_SECRET }}
+          NEXTAUTH_URL=${{ needs.deploy-preview.outputs.preview_url }}
+          NEXTAUTH_SECRET=${{ secrets.SUPABASE_JWT_SECRET }}
+          ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}
+          AUTH_GOOGLE_ID=${{ secrets.AUTH_GOOGLE_ID || 'dummy' }}
+          AUTH_GOOGLE_SECRET=${{ secrets.AUTH_GOOGLE_SECRET || 'dummy' }}
+          AUTH_FACEBOOK_ID=${{ secrets.AUTH_FACEBOOK_ID || 'dummy' }}
+          AUTH_FACEBOOK_SECRET=${{ secrets.AUTH_FACEBOOK_SECRET || 'dummy' }}
+          FB_APP_SECRET=${{ secrets.FB_APP_SECRET || 'dummy' }}
+          NEXT_PUBLIC_FB_APP_ID=${{ secrets.NEXT_PUBLIC_FB_APP_ID || 'dummy' }}
+          FB_REDIRECT_URI=${{ secrets.FB_REDIRECT_URI || 'http://localhost:3000/api/auth/link-facebook/callback' }}
+          NEXT_PUBLIC_APP_URL=${{ needs.deploy-preview.outputs.preview_url }}
+          WEBHOOK_SECRET=${{ secrets.WEBHOOK_SECRET || 'test-webhook-secret' }}
+          CRON_SECRET=${{ secrets.CRON_SECRET || 'test-cron-secret' }}
+          TEST_AUTH_EMAILS=${{ secrets.TEST_AUTH_EMAILS || 'admin@test.com,user@test.com,user2@test.com' }}
+          ENVEOF
+          sed -i 's/^[[:space:]]*//' .env.local
+
+      - name: Run E2E tests (shard ${{ matrix.shard }}/5)
+        run: npx playwright test --config=playwright.config.ci.ts --shard=${{ matrix.shard }}/5
+        env:
+          CI: true
+          PREVIEW_MODE: false
+          BASE_URL: ${{ needs.deploy-preview.outputs.preview_url }}
+          TEST_AUTH_EMAILS: admin@test.com,user@test.com,user2@test.com
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-shard-${{ matrix.shard }}
+          path: test-results/ci/
+          retention-days: 7
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-shard-${{ matrix.shard }}
+          path: playwright-report/
+          retention-days: 7
+
+  # ===========================================================================
+  # Job 4: Promote to Production (~1 min)
+  # ===========================================================================
+  promote-production:
+    name: Promote to Production
+    needs: [deploy-preview, e2e-tests]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel
+
+      - name: Promote preview to production
+        run: |
+          PREVIEW_URL="${{ needs.deploy-preview.outputs.preview_url }}"
+          echo "Promoting $PREVIEW_URL to production..."
+
+          vercel promote "$PREVIEW_URL" --token=${{ secrets.VERCEL_TOKEN }} --yes
+
+          echo "Production promotion complete"
+
+      - name: Verify production deployment
+        run: |
+          echo "Waiting for production to update..."
+          sleep 15
+
+          # Verify production URL returns 200
+          PROD_URL="https://instagram-stories-webhook.vercel.app"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$PROD_URL/api/health" || echo "000")
+
+          if [ "$STATUS" = "200" ] || [ "$STATUS" = "404" ]; then
+            echo "Production deployment verified (status: $STATUS)"
+          else
+            echo "WARNING: Production health check returned status: $STATUS"
+            echo "The promotion may still be propagating. Check manually."
+          fi
+
+      - name: Notify success
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const sha = context.sha.substring(0, 7);
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              state: 'success',
+              description: 'Production deployment successful',
+              context: 'deploy/production',
+              target_url: runUrl
+            });
+
+      - name: Notify failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Production promotion failed - ${new Date().toISOString().split('T')[0]}`,
+              body: `## Production Promotion Failed\n\n**Commit:** ${context.sha}\n**Run:** [View Details](${runUrl})\n\nThe preview deployment passed E2E tests but promotion to production failed.\n\n**Action Required:**\n1. Check Vercel dashboard\n2. Verify promotion command\n3. Re-run workflow if transient error`,
+              labels: ['production', 'automated']
+            });

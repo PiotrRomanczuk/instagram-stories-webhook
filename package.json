@@ -1,6 +1,6 @@
 {
   "name": "instagram-stories-webhook",
-  "version": "0.32.3",
+  "version": "0.33.0",
   "private": true,
   "scripts": {
     "dev": "concurrently -n next,cron -c blue,magenta \"next dev\" \"npm run dev:cron\"",
@@ -17,6 +17,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:live": "ENABLE_REAL_IG_TESTS=true ENABLE_LIVE_IG_PUBLISH=true playwright test --project=live-publishing-prerequisite",
+    "test:e2e:ci": "playwright test --config=playwright.config.ci.ts",
     "test:e2e:production": "playwright test --config=playwright.config.production.ts",
     "test:e2e:production:smoke": "ENABLE_REAL_IG_TESTS=true ENABLE_LIVE_IG_PUBLISH=true playwright test --config=playwright.config.production.ts",
     "test:coverage": "vitest run --coverage",

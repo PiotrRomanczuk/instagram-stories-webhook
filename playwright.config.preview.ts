@@ -93,10 +93,16 @@ export default defineConfig({
 
       // Exclude production-only test files
       testIgnore: [
-        /instagram-publishing-live\.spec\.ts/,
+        /instagram-publish-live\.spec\.ts/,
+        /instagram-tagging-live\.spec\.ts/,
         /production-smoke\.spec\.ts/,
-        /mobile-responsive-core\.spec\.ts/,
-        /video-preview-functionality\.spec\.ts/,
+        /mobile-.*\.spec\.ts/,
+        /tablet-.*\.spec\.ts/,
+        /video-preview-.*\.spec\.ts/,
+        /scheduled-publishing\.spec\.ts/,
+        /posted-stories\.spec\.ts/,
+        /scheduling-workflow\.spec\.ts/,
+        /content-lifecycle\.spec\.ts/,
       ],
 
       use: {

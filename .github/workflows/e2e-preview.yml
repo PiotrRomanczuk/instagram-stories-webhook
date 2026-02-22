@@ -106,10 +106,8 @@ jobs:
             let comment = '## ⚠️ Preview E2E Tests Failed\n\n';
             comment += 'Preview E2E tests failed. Check the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details.\n\n';
             comment += '**Test Suite:** Preview (minimal suite, ~40 tests)\n';
-            comment += '**Files tested:**\n';
-            comment += '- `auth-and-rbac-core.spec.ts` (22 tests)\n';
-            comment += '- `critical-user-journeys.spec.ts` (core flows only)\n';
-            comment += '- `developer-tools.spec.ts` (access control)\n\n';
+            comment += '**Files tested:** All non-excluded E2E spec files in preview mode\n';
+            comment += '(auth, RBAC, content submission, admin review, navigation, developer tools, and more)\n\n';
             comment += '**Common issues:**\n';
             comment += '- Authentication failures (check `SUPABASE_JWT_SECRET`)\n';
             comment += '- Element selectors changed\n';
