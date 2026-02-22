@@ -13,5 +13,7 @@ export { ScheduleSidebar } from './schedule-sidebar';
 export { ScheduleHeader } from './schedule-header';
 export type { ViewMode } from './schedule-header';
 export { ScheduleCalendarGrid } from './schedule-calendar-grid';
+export { ScheduleWeekGrid } from './schedule-week-grid';
+export { ScheduleMonthGrid } from './schedule-month-grid';
 export { ScheduleCalendarItem } from './schedule-calendar-item';
 export { ReadyToScheduleSidebar } from './ready-to-schedule-sidebar';

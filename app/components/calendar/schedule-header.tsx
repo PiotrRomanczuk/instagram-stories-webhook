@@ -4,7 +4,7 @@
  * Schedule Header - Top navigation bar with date controls and actions
  */
 
-import { ChevronLeft, ChevronRight, Search, Zap, Plus, Minus, LayoutList, CalendarDays, Clock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, Zap, Plus, Minus, LayoutList, CalendarDays, Clock, Shuffle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
@@ -28,6 +28,8 @@ interface ScheduleHeaderProps {
 	onDecreaseGranularity?: () => void;
 	scheduleViewType?: ScheduleViewType;
 	onScheduleViewTypeChange?: (type: ScheduleViewType) => void;
+	humanizeSchedule?: boolean;
+	onHumanizeScheduleChange?: (enabled: boolean) => void;
 }
 
 export function ScheduleHeader({
@@ -44,6 +46,8 @@ export function ScheduleHeader({
 	onDecreaseGranularity,
 	scheduleViewType = 'calendar',
 	onScheduleViewTypeChange,
+	humanizeSchedule = false,
+	onHumanizeScheduleChange,
 }: ScheduleHeaderProps) {
 	const getDateRangeText = () => {
 		switch (viewMode) {
@@ -121,15 +125,29 @@ export function ScheduleHeader({
 					</Button>
 				</div>
 
-				{/* View mode indicator - day only (hidden on mobile) */}
-				<div className="hidden rounded-lg bg-gray-100 p-1 sm:flex">
-					<span className="rounded-md bg-white px-3 py-1 text-xs font-medium text-gray-900 shadow-sm">
-						Day
-					</span>
-				</div>
+				{/* View mode toggle (day/week/month) — shown only in calendar mode */}
+				{scheduleViewType === 'calendar' && (
+					<div className="hidden rounded-lg bg-gray-100 p-0.5 sm:flex">
+						{(['day', 'week', 'month'] as const).map((mode) => (
+							<button
+								key={mode}
+								type="button"
+								onClick={() => onViewModeChange(mode)}
+								className={cn(
+									'rounded-md px-3 py-1 text-xs font-medium transition-all capitalize',
+									viewMode === mode
+										? 'bg-white text-gray-900 shadow-sm'
+										: 'text-gray-500 hover:text-gray-700'
+								)}
+							>
+								{mode}
+							</button>
+						))}
+					</div>
+				)}
 
-				{/* Granularity controls (hidden on mobile - Ctrl+scroll not available on touch) */}
-				{onDecreaseGranularity && onIncreaseGranularity && (
+				{/* Granularity controls — hidden on mobile and when in month view */}
+				{onDecreaseGranularity && onIncreaseGranularity && viewMode !== 'month' && (
 					<div className="hidden items-center rounded-lg border border-gray-200 sm:flex">
 						<Button
 							variant="ghost"
@@ -155,6 +173,24 @@ export function ScheduleHeader({
 							<Plus className="h-4 w-4" />
 						</Button>
 					</div>
+				)}
+
+				{/* Humanize toggle */}
+				{onHumanizeScheduleChange && viewMode !== 'month' && (
+					<button
+						type="button"
+						onClick={() => onHumanizeScheduleChange(!humanizeSchedule)}
+						title={humanizeSchedule ? 'Humanize: ON – adds random 1-4 min offset to drops' : 'Humanize: OFF – drops land on exact grid times'}
+						className={cn(
+							'hidden items-center gap-1 rounded-lg border px-2 py-1.5 text-xs font-medium transition-all sm:flex',
+							humanizeSchedule
+								? 'border-purple-300 bg-purple-50 text-purple-700'
+								: 'border-gray-200 text-gray-400 hover:text-gray-600'
+						)}
+					>
+						<Shuffle className="h-3.5 w-3.5" />
+						<span className="hidden lg:inline">Humanize</span>
+					</button>
 				)}
 
 				<Button
