@@ -7,6 +7,7 @@ import { publishMedia } from '@/lib/instagram/publish';
 import { processAndUploadStoryImage } from '@/lib/media/story-processor';
 import { rateLimiter } from '@/lib/middleware/rate-limit';
 import { Logger } from '@/lib/utils/logger';
+import * as Sentry from '@sentry/nextjs';
 
 const MODULE = 'api:content:publish';
 const API_RATE_LIMIT = { limit: 50, windowMs: 60 * 1000 };
@@ -129,6 +130,16 @@ export async function POST(
 				`❌ Publish failed for ${id}: ${errorMessage}`,
 				publishError,
 			);
+			Sentry.captureException(publishError, {
+				tags: {
+					module: "ig:publish",
+					route: "/api/content/[id]/publish",
+					method: "POST",
+				},
+				extra: {
+					contentId: id,
+				},
+			});
 
 			// Mark as failed
 			await updatePublishingStatus(id, 'failed', {
@@ -146,7 +157,14 @@ export async function POST(
 			return NextResponse.json({ error: errorMessage }, { status: 500 });
 		}
 	} catch (error) {
-		console.error('Error in POST /api/content/[id]/publish:', error);
+		await Logger.error(MODULE, 'Error in POST /api/content/[id]/publish', error);
+		Sentry.captureException(error, {
+			tags: {
+				module: "ig:publish",
+				route: "/api/content/[id]/publish",
+				method: "POST",
+			},
+		});
 		return NextResponse.json(
 			{
 				error: error instanceof Error ? error.message : 'Internal Server Error',
