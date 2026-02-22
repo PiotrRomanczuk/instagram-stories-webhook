@@ -185,7 +185,7 @@ describe('Cron Debug Page', () => {
 			expect(redirect).toHaveBeenCalledWith('/');
 		});
 
-		it('redirects to home if user is admin but not developer', async () => {
+		it('allows admin role to access', async () => {
 			const { getServerSession } = await import('next-auth/next');
 			const { getUserRole } = await import('@/lib/auth-helpers');
 			const { redirect } = await import('next/navigation');
@@ -196,9 +196,11 @@ describe('Cron Debug Page', () => {
 			vi.mocked(getUserRole).mockReturnValue('admin');
 
 			const CronDebugPage = (await import('@/app/[locale]/developer/cron-debug/page')).default;
-			await CronDebugPage();
+			const page = await CronDebugPage();
 
-			expect(redirect).toHaveBeenCalledWith('/');
+			// Admin should not be redirected
+			expect(redirect).not.toHaveBeenCalled();
+			expect(page).toBeDefined();
 		});
 
 		it('allows developer role to access', async () => {
