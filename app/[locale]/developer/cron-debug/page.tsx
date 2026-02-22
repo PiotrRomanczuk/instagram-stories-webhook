@@ -20,7 +20,7 @@ export default async function CronDebugPage() {
 
 	const role = getUserRole(session);
 
-	// Developers and admins can access this page
+	// Only admins and developers can access this page
 	if (role !== 'developer' && role !== 'admin') {
 		redirect('/');
 	}
