@@ -34,8 +34,8 @@ describe('ScheduleHeader', () => {
 	it('should show Day label in view mode indicator', () => {
 		render(<ScheduleHeader {...defaultProps} />);
 
-		// Only day view is available now
-		expect(screen.getByText('Day')).toBeInTheDocument();
+		// View mode toggle renders day/week/month buttons (hidden on mobile via sm:flex)
+		expect(screen.getByRole('button', { name: 'day', hidden: true })).toBeInTheDocument();
 	});
 
 	it('should have Today button', () => {

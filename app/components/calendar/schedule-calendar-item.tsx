@@ -13,6 +13,11 @@ import { ContentItem } from '@/lib/types/posts';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { MoreVertical, Clock, AlertTriangle, CheckCircle, Loader2, Play } from 'lucide-react';
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from '@/app/components/ui/tooltip';
 
 /** Extract a thumbnail frame from a video URL at the given time (default 0.5s) */
 async function extractThumbnailFromVideo(videoUrl: string, timeSeconds = 0.5): Promise<string | null> {
@@ -73,6 +78,7 @@ interface ScheduleCalendarItemProps {
 	isDraggable?: boolean;
 	variant?: 'card' | 'compact';
 	showMinute?: boolean;
+	showHoverPreview?: boolean;
 }
 
 function getStatusBadge(item: ContentItem) {
@@ -109,6 +115,7 @@ export function ScheduleCalendarItem({
 	onClick,
 	isDraggable = true,
 	variant = 'card',
+	showHoverPreview = false,
 }: ScheduleCalendarItemProps) {
 	const [imageError, setImageError] = useState(false);
 	const [generatedThumbnail, setGeneratedThumbnail] = useState<string | null>(null);
@@ -151,7 +158,7 @@ export function ScheduleCalendarItem({
 
 	// Compact variant for calendar grid - horizontal card with small thumbnail
 	if (variant === 'compact') {
-		return (
+		const compactCard = (
 			<div
 				ref={setNodeRef}
 				style={style}
@@ -228,6 +235,66 @@ export function ScheduleCalendarItem({
 					)}
 				</div>
 			</div>
+		);
+
+		if (!showHoverPreview) return compactCard;
+
+		return (
+			<Tooltip delayDuration={300}>
+				<TooltipTrigger asChild>
+					{compactCard}
+				</TooltipTrigger>
+				<TooltipContent
+					side="right"
+					sideOffset={8}
+					hideArrow
+					className="w-48 overflow-hidden rounded-lg border border-gray-200 bg-white p-0 shadow-xl"
+				>
+					{/* Preview image */}
+					<div className="relative aspect-[9/16] w-full overflow-hidden bg-gray-100">
+						{!imageError && thumbnailSrc ? (
+							<>
+								<div
+									className="absolute inset-0 bg-cover bg-center"
+									style={{ backgroundImage: `url(${thumbnailSrc})` }}
+								/>
+								{isVideo && (
+									<div className="absolute inset-0 flex items-center justify-center">
+										<div className="rounded-full bg-black/50 p-2 backdrop-blur-sm">
+											<Play className="h-5 w-5 text-white" fill="white" />
+										</div>
+									</div>
+								)}
+							</>
+						) : (
+							<div className="flex h-full w-full items-center justify-center">
+								<span className="text-xs text-gray-400">No preview</span>
+							</div>
+						)}
+						{/* Status badge */}
+						<div className="absolute left-2 top-2">
+							<span
+								className={cn(
+									'flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase text-white',
+									status.className
+								)}
+							>
+								{status.icon}
+								{status.label}
+							</span>
+						</div>
+					</div>
+					{/* Info */}
+					<div className="px-2.5 py-2">
+						<p className="text-xs font-semibold text-gray-900 line-clamp-2">{title}</p>
+						{scheduledTime && (
+							<p className="mt-0.5 text-[11px] text-gray-500">
+								{format(scheduledTime, 'EEE, MMM d · HH:mm')}
+							</p>
+						)}
+					</div>
+				</TooltipContent>
+			</Tooltip>
 		);
 	}
 

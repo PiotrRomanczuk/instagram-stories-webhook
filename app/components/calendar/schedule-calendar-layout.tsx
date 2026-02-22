@@ -19,6 +19,8 @@ import { ScheduleHeader, ViewMode, ScheduleViewType } from './schedule-header';
 const GRANULARITY_LEVELS = [60, 30, 15, 5, 1] as const;
 export type Granularity = (typeof GRANULARITY_LEVELS)[number];
 import { ScheduleCalendarGrid } from './schedule-calendar-grid';
+import { ScheduleWeekGrid } from './schedule-week-grid';
+import { ScheduleMonthGrid } from './schedule-month-grid';
 import { ScheduleListView } from './schedule-list-view';
 import { WeekStrip } from './week-strip';
 import { ReadyToScheduleSidebar } from './ready-to-schedule-sidebar';
@@ -50,10 +52,11 @@ export function ScheduleCalendarLayout() {
 	const searchParams = useSearchParams();
 	const statusFilter = searchParams.get('filter');
 
-	// Calendar state - day view only
+	// Calendar state
 	const [currentDate, setCurrentDate] = useState(new Date());
+	const [viewMode, setViewMode] = useState<ViewMode>('week');
 	const [searchQuery, setSearchQuery] = useState('');
-	const [granularity, setGranularity] = useState<Granularity>(15);
+	const [granularity, setGranularity] = useState<Granularity>(60);
 	const [scheduleViewType, setScheduleViewType] = useState<ScheduleViewType>(
 		statusFilter === 'failed' ? 'list' : 'calendar'
 	);
@@ -71,6 +74,9 @@ export function ScheduleCalendarLayout() {
 			setGranularity(GRANULARITY_LEVELS[idx - 1]);
 		}
 	}, [granularity]);
+
+	// Humanize schedule: add random 1-4 min offset to DnD drops
+	const [humanizeSchedule, setHumanizeSchedule] = useState(false);
 
 	// Mobile sidebar state
 	const [showMobileSidebar, setShowMobileSidebar] = useState(false);
@@ -211,7 +217,9 @@ export function ScheduleCalendarLayout() {
 			if (!item) return;
 
 			// Create scheduled time from drop target (hour + minute)
-			const minute = dropData.minute ?? 0;
+			const baseMinute = dropData.minute ?? 0;
+			const offset = humanizeSchedule ? Math.floor(Math.random() * 4) + 1 : 0;
+			const minute = Math.min(baseMinute + offset, 59);
 			const scheduledTime = setMinutes(setHours(dropData.day, dropData.hour), minute);
 
 			// If it's already published, don't allow rescheduling
@@ -239,7 +247,7 @@ export function ScheduleCalendarLayout() {
 				toast.error('Failed to schedule item');
 			}
 		},
-		[allItems, updateContent]
+		[allItems, updateContent, humanizeSchedule]
 	);
 
 	const handleOpenPreview = useCallback((item: ContentItem) => {
@@ -342,9 +350,9 @@ export function ScheduleCalendarLayout() {
 					{/* Top Header */}
 					<ScheduleHeader
 						currentDate={currentDate}
-						viewMode="day"
+						viewMode={viewMode}
 						onDateChange={setCurrentDate}
-						onViewModeChange={() => {}}
+						onViewModeChange={setViewMode}
 						onPublishNow={handlePublishNow}
 						onNewSchedule={handleNewSchedule}
 						searchQuery={searchQuery}
@@ -354,6 +362,8 @@ export function ScheduleCalendarLayout() {
 						onDecreaseGranularity={decreaseGranularity}
 						scheduleViewType={scheduleViewType}
 						onScheduleViewTypeChange={setScheduleViewType}
+						humanizeSchedule={humanizeSchedule}
+						onHumanizeScheduleChange={setHumanizeSchedule}
 					/>
 
 					{/* Week strip for list view */}
@@ -368,7 +378,7 @@ export function ScheduleCalendarLayout() {
 					{/* View content + Sidebar */}
 					<div className="flex flex-1 overflow-hidden">
 						{/* View content based on type */}
-						{scheduleViewType === 'calendar' && (
+						{scheduleViewType === 'calendar' && viewMode === 'day' && (
 							<ScheduleCalendarGrid
 								currentDate={currentDate}
 								scheduledItems={scheduledItems}
@@ -376,6 +386,29 @@ export function ScheduleCalendarLayout() {
 								granularity={granularity}
 								onIncreaseGranularity={increaseGranularity}
 								onDecreaseGranularity={decreaseGranularity}
+							/>
+						)}
+
+						{scheduleViewType === 'calendar' && viewMode === 'week' && (
+							<ScheduleWeekGrid
+								currentDate={currentDate}
+								scheduledItems={scheduledItems}
+								onItemClick={handleOpenPreview}
+								granularity={granularity}
+								onIncreaseGranularity={increaseGranularity}
+								onDecreaseGranularity={decreaseGranularity}
+							/>
+						)}
+
+						{scheduleViewType === 'calendar' && viewMode === 'month' && (
+							<ScheduleMonthGrid
+								currentDate={currentDate}
+								scheduledItems={scheduledItems}
+								onItemClick={handleOpenPreview}
+								onDayClick={(date) => {
+									setCurrentDate(date);
+									setViewMode('week');
+								}}
 							/>
 						)}
 
