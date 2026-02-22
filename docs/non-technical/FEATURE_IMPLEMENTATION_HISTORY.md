@@ -9,14 +9,14 @@ A complete record of every version released for the Instagram Stories Webhook ap
 | Metric | Value |
 | :--- | :--- |
 | **Project Start** | January 12, 2026 |
-| **Latest Release** | February 21, 2026 |
-| **Total Versions Released** | 28 |
-| **Total Commits** | 427 |
-| **Total Work Sessions** | 52 |
-| **Active Development Days** | 29 |
-| **Longest Session** | 8h 53m (January 29) |
-| **Average Session** | 2h 7m |
-| **Total Verified Hours** | **112.6 hours** |
+| **Latest Release** | February 22, 2026 |
+| **Total Versions Released** | 34 |
+| **Total Commits** | 496 |
+| **Total Work Sessions** | 56 |
+| **Active Development Days** | 30 |
+| **Longest Session** | 15h 15m (January 12) |
+| **Average Session** | 2h 9m |
+| **Total Verified Hours** | **121.1 hours** |
 
 > Hours are calculated from git commit timestamps using `scripts/work-hours.ts`. Each work session adds 30 minutes to account for setup and planning time before the first commit. A gap of more than 2 hours between commits starts a new session. Per-version hours are computed by mapping session time to version release periods — when a single session spans multiple releases, its time is split proportionally.
 
@@ -54,6 +54,8 @@ A complete record of every version released for the Instagram Stories Webhook ap
 | v0.26.0 | Version History & Automation | 2.0h | 1 | Feb 21 |
 | v0.26.1 | Error Boundary & Suspense Fix | 0.5h | 1 | Feb 21 |
 | v0.26.2 | WebSocket Crash Fix (iOS Chrome) | 0.5h | 1 | Feb 21 |
+| v0.27.0 | Admin Monitoring & Audit Logging | 2.6h | 2 | Feb 22 |
+| v0.32.3 | Security Hardening & Feature Fleet | 5.3h | 4 | Feb 22 |
 
 > **†** v0.21.0 was released at the same tag point as v0.19.0 — its effort is included in v0.19.0's 18.2 hours.
 
@@ -62,6 +64,37 @@ A complete record of every version released for the Instagram Stories Webhook ap
 ---
 
 ## Released Versions
+
+### v0.32.3 — Security Hardening & Feature Fleet (February 22, 2026)
+*20 commits | 4 sessions | ~5.3 verified hours*
+
+This release merged 15 PRs in a single fleet operation covering security, observability, UX, and test coverage improvements.
+
+- **Security Hardening**: Hardened webhook signature verification; added auth kill switch driven by `TEST_AUTH_EMAILS` env var instead of hardcoded values (INS-61, INS-62). Added middleware role checks to enforce admin-only access to protected pages at the edge (INS-64). Removed token partial exposure from all debug API endpoints (INS-60).
+- **Sentry API Route Tracking**: All API routes now report errors to Sentry with context (route, method, user) for production visibility (INS-74).
+- **Desktop Calendar Views**: New week and month calendar views on the `/schedule` page for desktop users, complementing the existing mobile card view.
+- **Edit Scheduled Posts**: Users can now edit the caption and scheduled time of a pending post directly from the content card grid (INS-76).
+- **What's New Dialog**: New release notes dialog targeting users by version, with cost approval workflow and a dedicated `/release-notes` page.
+- **Admin Monitoring Dashboard**: Comprehensive admin page with audit log, auth events, health metrics, and cleanup cron management.
+- **Cleanup Orphans Cron**: Registered `/api/cron/cleanup-orphans` in `vercel.json` — the route existed but was never scheduled, allowing orphaned storage files to accumulate (INS-29).
+- **Video Duration Fix**: Updated video duration limit to 57s (from 60s) to stay within Instagram's buffer, and removed outdated 15s segment references.
+- **Database Efficiency**: Replaced all `select('*')` queries with specific column selects to reduce data transfer (INS-70).
+- **Security Test Coverage**: Added RBAC bypass tests (INS-66), API key lifecycle tests (INS-65), and webhook signature edge case tests (INS-68).
+- **Versioning Architecture**: Rewrote `/ship` and `/merge-fleet` skills — version bumps are now deferred to merge time, eliminating `package.json` conflicts across concurrent PRs.
+- **CI/E2E Fixes**: Fixed test buttons not showing in CI environments, allowed admin role on cron-debug page, fixed global E2E teardown.
+
+---
+
+### v0.27.0 — Admin Monitoring & Audit Logging (February 22, 2026)
+*3 commits | 1 session | ~2.6 verified hours*
+
+- **Admin Monitoring Page**: New `/admin` page with real-time health metrics, audit log viewer, auth event history, and cleanup log management.
+- **Audit Log Infrastructure**: New `audit_log` and `auth_events` Supabase tables with RLS policies; `recordAuditEvent` and `recordAuthEvent` server utilities.
+- **Admin Alerts**: Utility for sending admin-targeted notifications on critical events (failed auth, anomalous activity).
+- **Cleanup Logs Cron**: New `/api/cron/cleanup-logs` route (scheduled daily at 3 AM UTC) to prune stale audit and event records.
+- **Component Splitting (Tier 1)**: Split 800+ line UI components into focused sub-components following the <150 line file rule (INS-13).
+
+---
 
 ### v0.26.2 — WebSocket Crash Fix for iOS Chrome (February 21, 2026)
 *1 commit | 1 session | 0.5 verified hours*
