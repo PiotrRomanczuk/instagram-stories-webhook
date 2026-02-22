@@ -23,6 +23,10 @@
 		{
 			"path": "/api/cron/cleanup-logs",
 			"schedule": "0 3 * * *"
+		},
+		{
+			"path": "/api/cron/cleanup-orphans",
+			"schedule": "0 3 * * *"
 		}
 	]
 }
