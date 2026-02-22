@@ -18,6 +18,7 @@ import {
 } from '@/lib/auth-helpers';
 import { getLinkedFacebookAccount } from '@/lib/database/linked-accounts';
 import { Logger } from '@/lib/utils/logger';
+import { recordAuditEvent, getRequestContext } from '@/lib/utils/audit-log';
 import {
 	updateUserRoleSchema,
 	validateUserInput,
@@ -103,6 +104,9 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
 		const { email } = await params;
 		const decodedEmail = decodeURIComponent(email).toLowerCase();
+		const actorId = getUserId(session);
+		const actorEmail = getUserEmail(session);
+		const { ipAddress, userAgent } = getRequestContext(request);
 
 		const body = await request.json();
 
@@ -114,6 +118,10 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
 		const { role } = validation.data;
 
+		// Fetch old role for audit log before updating
+		const existingUser = await getAllowedUserByEmail(decodedEmail);
+		const oldRole = existingUser?.role;
+
 		const success = await updateUserRole(decodedEmail, role as UserRole);
 
 		if (!success) {
@@ -121,6 +129,17 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 		}
 
 		await Logger.info(MODULE, `Updated ${decodedEmail} role to ${role}`);
+		await recordAuditEvent({
+			actorUserId: actorId,
+			actorEmail,
+			action: 'user.role_change',
+			targetType: 'user',
+			targetEmail: decodedEmail,
+			oldValue: { role: oldRole },
+			newValue: { role },
+			ipAddress,
+			userAgent,
+		});
 
 		return NextResponse.json({ success: true, email: decodedEmail, role });
 	} catch (error) {
@@ -161,6 +180,9 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 			);
 		}
 
+		const actorId = getUserId(session);
+		const { ipAddress, userAgent } = getRequestContext(request);
+
 		const success = await removeAllowedUser(decodedEmail);
 
 		if (!success) {
@@ -168,7 +190,16 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 		}
 
 		await Logger.info(MODULE, `Removed ${decodedEmail} from whitelist`, {
-			removedBy: getUserId(session),
+			removedBy: actorId,
+		});
+		await recordAuditEvent({
+			actorUserId: actorId,
+			actorEmail: adminEmail,
+			action: 'user.remove',
+			targetType: 'user',
+			targetEmail: decodedEmail,
+			ipAddress,
+			userAgent,
 		});
 
 		return NextResponse.json({ success: true });

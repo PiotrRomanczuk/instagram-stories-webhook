@@ -9,6 +9,10 @@ import { authOptions } from '@/lib/auth';
 import { getUserRole, getUserId } from '@/lib/auth-helpers';
 import { getContentItemById, updateSubmissionStatus } from '@/lib/content-db';
 import { rateLimiter } from '@/lib/middleware/rate-limit';
+import { Logger } from '@/lib/utils/logger';
+import { recordAuditEvent, getRequestContext } from '@/lib/utils/audit-log';
+
+const MODULE = 'api:content:review';
 
 const API_RATE_LIMIT = { limit: 100, windowMs: 60 * 1000 };
 
@@ -105,8 +109,26 @@ export async function POST(
 			);
 		}
 
-		// Log action
-		console.log(`[Review] ${action} submission ${id} by ${userEmail}`);
+		// Log action (persisted to Supabase via Logger)
+		await Logger.info(MODULE, `Submission ${id} ${action}ed`, {
+			contentId: id,
+			action,
+			reviewerEmail: userEmail,
+			reviewerUserId: userId,
+		});
+
+		const { ipAddress, userAgent } = getRequestContext(req);
+		await recordAuditEvent({
+			actorUserId: userId,
+			actorEmail: userEmail,
+			action: action === 'approve' ? 'content.approve' : 'content.reject',
+			targetType: 'content_item',
+			targetId: id,
+			oldValue: { submissionStatus: item.submissionStatus },
+			newValue: { submissionStatus: action === 'approve' ? 'approved' : 'rejected', rejectionReason: rejectionReason ?? null },
+			ipAddress,
+			userAgent,
+		});
 
 		return NextResponse.json({
 			data: updatedItem,

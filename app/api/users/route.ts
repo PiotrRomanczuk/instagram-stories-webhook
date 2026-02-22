@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { getAllowedUsers, addAllowedUser, UserRole } from '@/lib/memes-db';
-import { requireAdmin, requireDeveloper, getUserId, isDeveloper } from '@/lib/auth-helpers';
+import { requireAdmin, requireDeveloper, getUserId, isDeveloper, getUserEmail } from '@/lib/auth-helpers';
 import { Logger } from '@/lib/utils/logger';
+import { recordAuditEvent, getRequestContext } from '@/lib/utils/audit-log';
 import { addUserSchema, validateUserInput } from '@/lib/validations/user.schema';
 
 const MODULE = 'api:users';
@@ -41,6 +42,8 @@ export async function POST(request: NextRequest) {
         requireAdmin(session);
 
         const adminId = getUserId(session);
+        const adminEmail = getUserEmail(session);
+        const { ipAddress, userAgent } = getRequestContext(request);
         const body = await request.json();
 
         // Validate input with Zod schema
@@ -71,6 +74,16 @@ export async function POST(request: NextRequest) {
         }
 
         await Logger.info(MODULE, `Added ${email} to whitelist as ${role}`, { addedBy: adminId });
+        await recordAuditEvent({
+            actorUserId: adminId,
+            actorEmail: adminEmail,
+            action: 'user.add',
+            targetType: 'user',
+            targetEmail: email,
+            newValue: { role },
+            ipAddress,
+            userAgent,
+        });
 
         return NextResponse.json({ user }, { status: 201 });
     } catch (error) {

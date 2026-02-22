@@ -5,6 +5,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import { SupabaseAdapter } from '@auth/supabase-adapter';
 import * as jwt from 'jsonwebtoken';
 import { Logger } from './utils/logger';
+import { recordAuthEvent } from './utils/auth-events';
 import { isEmailAllowed, getUserRole } from './memes-db';
 import { UserRole } from '@/lib/types';
 
@@ -78,47 +79,35 @@ export const authOptions: AuthOptions = {
 			});
 
 			const userEmail = user.email?.toLowerCase() || '';
+			const provider = account?.provider || 'unknown';
 
 			// Allow test credentials in development/test mode
-			if (account?.provider === 'test-credentials') {
-				// Allow known test emails without whitelist check in dev/test
+			if (provider === 'test-credentials') {
 				const testEmails = ['user@test.com', 'admin@test.com', 'user2@test.com', 'p.romanczuk@gmail.com'];
 				if (testEmails.includes(userEmail)) {
-					await Logger.info(
-						MODULE,
-						`✅ TEST ACCESS GRANTED (dev mode): ${userEmail}`,
-					);
+					await Logger.info(MODULE, `✅ TEST ACCESS GRANTED (dev mode): ${userEmail}`);
+					await recordAuthEvent({ email: userEmail, provider, outcome: 'granted' });
 					return true;
 				}
-				// For other emails, check whitelist
 				const isWhitelisted = await isEmailAllowed(userEmail);
 				if (isWhitelisted) {
-					await Logger.info(
-						MODULE,
-						`✅ TEST ACCESS GRANTED: ${userEmail}`,
-					);
+					await Logger.info(MODULE, `✅ TEST ACCESS GRANTED: ${userEmail}`);
+					await recordAuthEvent({ email: userEmail, provider, outcome: 'granted' });
 					return true;
 				}
-				await Logger.warn(
-					MODULE,
-					`❌ TEST ACCESS DENIED: ${userEmail} not in whitelist`,
-				);
+				await Logger.warn(MODULE, `❌ TEST ACCESS DENIED: ${userEmail} not in whitelist`);
+				await recordAuthEvent({ email: userEmail, provider, outcome: 'denied', denyReason: 'not_in_whitelist' });
 				return false;
 			}
 
-			if (account?.provider === 'google') {
-				// Check database whitelist first
+			if (provider === 'google') {
 				const isWhitelisted = await isEmailAllowed(userEmail);
-
 				if (isWhitelisted) {
-					await Logger.info(
-						MODULE,
-						`✅ GOOGLE ACCESS GRANTED (whitelist): ${userEmail}`,
-					);
+					await Logger.info(MODULE, `✅ GOOGLE ACCESS GRANTED (whitelist): ${userEmail}`);
+					await recordAuthEvent({ email: userEmail, provider, outcome: 'granted' });
 					return true;
 				}
 
-				// Fallback: Also check ADMIN_EMAIL env variable for backwards compatibility
 				const adminEmail = process.env.ADMIN_EMAIL || '';
 				const envAllowedEmails = adminEmail
 					.split(',')
@@ -126,29 +115,24 @@ export const authOptions: AuthOptions = {
 					.filter((e) => e);
 
 				if (envAllowedEmails.includes(userEmail)) {
-					await Logger.info(
-						MODULE,
-						`✅ GOOGLE ACCESS GRANTED (env fallback): ${userEmail}`,
-					);
+					await Logger.info(MODULE, `✅ GOOGLE ACCESS GRANTED (env fallback): ${userEmail}`);
+					await recordAuthEvent({ email: userEmail, provider, outcome: 'granted' });
 					return true;
 				}
 
-				await Logger.warn(
-					MODULE,
-					`❌ GOOGLE ACCESS DENIED: ${userEmail} not in whitelist`,
-				);
+				await Logger.warn(MODULE, `❌ GOOGLE ACCESS DENIED: ${userEmail} not in whitelist`);
+				await recordAuthEvent({ email: userEmail, provider, outcome: 'denied', denyReason: 'not_in_whitelist' });
 				return false;
 			}
 
 			// We no longer allow Facebook sign-ins for login
-			if (account?.provider === 'facebook') {
-				await Logger.warn(
-					MODULE,
-					`❌ Facebook Login Blocked (Use Link Feature instead): ${userEmail}`,
-				);
+			if (provider === 'facebook') {
+				await Logger.warn(MODULE, `❌ Facebook Login Blocked (Use Link Feature instead): ${userEmail}`);
+				await recordAuthEvent({ email: userEmail, provider, outcome: 'denied', denyReason: 'facebook_blocked' });
 				return false;
 			}
 
+			await recordAuthEvent({ email: userEmail, provider, outcome: 'denied', denyReason: 'unknown_provider' });
 			return false;
 		},
 		async jwt({
