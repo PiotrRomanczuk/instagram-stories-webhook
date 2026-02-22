@@ -19,11 +19,11 @@ async function globalSetup(config: FullConfig) {
 		});
 		const page = await context.newPage();
 
-		// Sign in as admin (using test credentials)
-		await page.goto('/auth/signin');
-		await page.fill('input[name="email"]', 'admin@test.com');
-		await page.click('button[type="submit"]');
-		await page.waitForURL('/');
+		// Sign in as admin using test button (no email input exists)
+		await page.goto('/auth/signin', { waitUntil: 'load', timeout: 30000 });
+		await page.locator('text=Test Mode').waitFor({ state: 'visible', timeout: 20000 });
+		await page.getByRole('button', { name: 'Test Admin' }).click();
+		await page.waitForURL((url) => !url.pathname.includes('/auth/signin'), { timeout: 30000 });
 
 		// Call cleanup endpoint
 		const response = await page.request.delete('/api/test/cleanup');

@@ -45,8 +45,8 @@ export async function signInAsAdmin(page: Page, maxRetries = 5) {
 
 			await page.goto('/auth/signin', { waitUntil: 'load', timeout: 30000 });
 
-			// Wait for React hydration - the "Development Only" text only appears after useEffect runs
-			const devOnlyText = page.locator('text=Development Only');
+			// Wait for React hydration - the "Test Mode" text only appears after useEffect runs
+			const devOnlyText = page.locator('text=Test Mode');
 
 			// Wait for hydration with longer timeout
 			await devOnlyText.waitFor({ state: 'visible', timeout: 20000 });
@@ -99,8 +99,8 @@ export async function signInAsUser(page: Page, maxRetries = 5) {
 
 			await page.goto('/auth/signin', { waitUntil: 'load', timeout: 30000 });
 
-			// Wait for React hydration - the "Development Only" text only appears after useEffect runs
-			const devOnlyText = page.locator('text=Development Only');
+			// Wait for React hydration - the "Test Mode" text only appears after useEffect runs
+			const devOnlyText = page.locator('text=Test Mode');
 
 			// Wait for hydration with longer timeout
 			await devOnlyText.waitFor({ state: 'visible', timeout: 20000 });
@@ -155,8 +155,8 @@ export async function signInAsRealIG(page: Page, maxRetries = 5) {
 			// Navigate to signin page
 			await page.goto('/auth/signin', { waitUntil: 'load', timeout: 30000 });
 
-			// Wait for React hydration - the "Development Only" text only appears after useEffect runs
-			const devOnlyText = page.locator('text=Development Only');
+			// Wait for React hydration - the "Test Mode" text only appears after useEffect runs
+			const devOnlyText = page.locator('text=Test Mode');
 			await devOnlyText.waitFor({ state: 'visible', timeout: 20000 });
 
 			// Find the Real IG button
