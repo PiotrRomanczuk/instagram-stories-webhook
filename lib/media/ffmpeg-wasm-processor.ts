@@ -6,7 +6,7 @@
  * - Codec: H.264 video, AAC audio
  * - Format: MP4
  * - Frame Rate: 30 fps
- * - Duration: Max 60 seconds
+ * - Duration: Max 57 seconds (safety margin below Instagram's 60s limit)
  *
  * Uses @ffmpeg/ffmpeg to run FFmpeg entirely in the browser via WebAssembly.
  */
@@ -17,7 +17,7 @@ import { fetchFile, toBlobURL } from '@ffmpeg/util';
 // Instagram Stories constants (matching server-side video-processor.ts)
 const VIDEO_STORY_WIDTH = 1080;
 const VIDEO_STORY_HEIGHT = 1920;
-const VIDEO_MAX_DURATION_SEC = 60;
+const VIDEO_MAX_DURATION_SEC = 57;
 const VIDEO_FRAME_RATE = 30;
 const VIDEO_BITRATE = '3500k';
 const AUDIO_BITRATE = '128k';
@@ -161,7 +161,7 @@ function buildThumbnailArgs(
  * Applies all necessary transformations:
  * - Scales to 1080x1920 with black padding
  * - Converts to H.264/AAC
- * - Limits to 60 seconds
+ * - Limits to 57 seconds
  * - Extracts a thumbnail at 2s
  *
  * @param file - The video File from file input or drag-and-drop

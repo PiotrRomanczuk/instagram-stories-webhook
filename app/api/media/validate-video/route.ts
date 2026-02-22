@@ -104,8 +104,8 @@ export async function GET() {
                 bitrate: '3,500 kbps (recommended)'
             },
             notes: [
-                'Videos longer than 60 seconds will be trimmed',
-                'Instagram will split videos into 15-second segments',
+                'Videos longer than 57 seconds will be trimmed to 57s before publishing',
+                'Instagram Stories play videos up to 60s as a single continuous card (no splitting)',
                 'Non-9:16 videos will have letterboxing/pillarboxing applied',
                 'Audio will be converted to AAC if not already'
             ]

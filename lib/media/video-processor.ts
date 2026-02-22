@@ -7,7 +7,7 @@
  * - Format: MP4
  * - Frame Rate: 30 fps
  * - Bitrate: ~3,500 kbps video, 128 kbps audio
- * - Duration: Max 60 seconds (Instagram splits into 15-sec segments)
+ * - Duration: Max 57 seconds (trimmed for safety — Instagram limit is 60s)
  *
  * LIMITATION: FFmpeg is NOT available in Vercel serverless functions.
  * Vercel's runtime does not include system binaries like ffmpeg/ffprobe.
@@ -33,8 +33,8 @@ export const THUMBNAIL_OFFSET_SEC = 2;
 export const VIDEO_STORY_WIDTH = 1080;
 export const VIDEO_STORY_HEIGHT = 1920;
 export const VIDEO_STORY_RATIO = 9 / 16; // 0.5625
-export const VIDEO_MAX_DURATION_SEC = 60; // Instagram splits longer videos
-export const VIDEO_RECOMMENDED_DURATION_SEC = 15; // Single story segment
+export const VIDEO_MAX_DURATION_SEC = 57; // Safety margin below Instagram's 60s limit
+export const VIDEO_RECOMMENDED_DURATION_SEC = 57; // Instagram Stories play up to 60s as a single card
 export const VIDEO_FRAME_RATE = 30;
 export const VIDEO_BITRATE = '3500k';
 export const AUDIO_BITRATE = '128k';
@@ -183,8 +183,8 @@ export async function validateVideoForStories(inputBuffer: Buffer): Promise<Vide
 
         // Check duration
         if (metadata.duration > VIDEO_MAX_DURATION_SEC) {
-            warnings.push(`Video is ${Math.round(metadata.duration)}s. Instagram will split it into 15-second segments.`);
-            processingReasons.push(`Duration ${Math.round(metadata.duration)}s exceeds 60s limit`);
+            warnings.push(`Video is ${Math.round(metadata.duration)}s and will be trimmed to ${VIDEO_MAX_DURATION_SEC}s before publishing.`);
+            processingReasons.push(`Duration ${Math.round(metadata.duration)}s exceeds ${VIDEO_MAX_DURATION_SEC}s limit`);
         }
 
         // Check codec
