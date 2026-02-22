@@ -44,9 +44,10 @@ export const authOptions: AuthOptions = {
 			clientId: process.env.AUTH_GOOGLE_ID || '',
 			clientSecret: process.env.AUTH_GOOGLE_SECRET || '',
 		}),
-		...(process.env.NODE_ENV === 'development' ||
-		process.env.NODE_ENV === 'test' ||
-		process.env.ENABLE_TEST_AUTH === 'true'
+		...(process.env.NODE_ENV !== 'production' &&
+		(process.env.NODE_ENV === 'development' ||
+			process.env.NODE_ENV === 'test' ||
+			process.env.ENABLE_TEST_AUTH === 'true')
 			? [
 					CredentialsProvider({
 						id: 'test-credentials',
@@ -83,7 +84,12 @@ export const authOptions: AuthOptions = {
 
 			// Allow test credentials in development/test mode
 			if (provider === 'test-credentials') {
-				const testEmails = ['user@test.com', 'admin@test.com', 'user2@test.com', 'p.romanczuk@gmail.com'];
+				// Emails from env var (comma-separated); empty list means whitelist-only
+				const testEmailsEnv = process.env.TEST_AUTH_EMAILS;
+				const testEmails = testEmailsEnv
+					? testEmailsEnv.split(',').map(e => e.trim().toLowerCase())
+					: [];
+				await Logger.warn(MODULE, '⚠️ Test auth provider active', { emailCount: testEmails.length });
 				if (testEmails.includes(userEmail)) {
 					await Logger.info(MODULE, `✅ TEST ACCESS GRANTED (dev mode): ${userEmail}`);
 					await recordAuthEvent({ email: userEmail, provider, outcome: 'granted' });
@@ -160,7 +166,7 @@ export const authOptions: AuthOptions = {
 					'user2@test.com': 'user',
 					'p.romanczuk@gmail.com': 'admin',
 				};
-				if ((process.env.NODE_ENV !== 'production' || process.env.ENABLE_TEST_AUTH === 'true') && testUserRoles[email]) {
+				if (process.env.NODE_ENV !== 'production' && testUserRoles[email]) {
 					token.role = testUserRoles[email];
 				} else {
 					const role = await getUserRole(email);

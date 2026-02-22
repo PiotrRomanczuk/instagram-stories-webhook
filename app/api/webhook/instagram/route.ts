@@ -78,12 +78,8 @@ export async function POST(request: NextRequest) {
                 return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
             }
         } else {
-            const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production';
-            if (isProduction) {
-                await Logger.error(MODULE, 'No app secret configured - rejecting webhook in production');
-                return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
-            }
-            await Logger.warn(MODULE, 'No app secret configured - skipping signature verification (non-production)');
+            await Logger.error(MODULE, 'AUTH_FACEBOOK_SECRET not configured — rejecting webhook');
+            return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
         }
 
         await Logger.info(MODULE, 'Instagram webhook event received');

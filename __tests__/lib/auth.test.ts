@@ -201,6 +201,8 @@ describe('Authentication Flow', () => {
 		});
 
 		it('should allow known test emails in test mode', async () => {
+			vi.stubEnv('TEST_AUTH_EMAILS', 'user@test.com,admin@test.com,user2@test.com');
+
 			const user: User = {
 				id: 'test-user-id',
 				email: 'user@test.com',

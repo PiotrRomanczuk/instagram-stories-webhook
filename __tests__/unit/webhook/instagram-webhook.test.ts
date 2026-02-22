@@ -268,7 +268,7 @@ describe('/api/webhook/instagram', () => {
 			expect(data.success).toBe(true);
 		});
 
-		it('should skip signature verification in non-production when no app secret is configured', async () => {
+		it('should reject when no app secret is configured regardless of environment', async () => {
 			vi.stubEnv('AUTH_FACEBOOK_SECRET', '');
 			vi.stubEnv('FB_APP_SECRET', '');
 			vi.stubEnv('NODE_ENV', 'development');
@@ -279,7 +279,7 @@ describe('/api/webhook/instagram', () => {
 
 			const res = await POST(req);
 
-			expect(res.status).toBe(200);
+			expect(res.status).toBe(500);
 		});
 
 		it('should reject in production when no app secret is configured', async () => {

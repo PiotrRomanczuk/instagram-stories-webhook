@@ -19,6 +19,49 @@ Run `git branch --show-current && git status --short` before any task.
 
 ---
 
+### Parallel Agent Safety Protocol (MANDATORY when spawning 2+ agents)
+
+**The Branch Safety Protocol above assumes sequential execution. For parallel agents, you MUST use one of the following patterns:**
+
+#### Option A: Worktree Isolation (Recommended for all cases)
+
+Use the `isolation: "worktree"` parameter when calling the Task tool:
+
+```
+Task(subagent_type="...", isolation="worktree", prompt="...")
+```
+
+Each agent gets its own isolated repo copy. No stash sharing, no file collisions, no checkout races. Inside a worktree agent, the Branch Safety Protocol still applies but runs safely in isolation.
+
+```
+# ✅ CORRECT: spawn parallel agents with isolation
+Task(subagent_type="feature-developer", isolation="worktree", prompt="...")
+Task(subagent_type="test-engineer", isolation="worktree", prompt="...")
+
+# ❌ WRONG: agents share the working directory (causes race conditions)
+Task(subagent_type="feature-developer", prompt="...")
+Task(subagent_type="test-engineer", prompt="...")
+```
+
+#### Option B: Pre-Assignment Protocol (When worktrees aren't available)
+
+Before spawning parallel agents:
+1. **Ensure clean state**: `git status --short` must be empty. If not: commit first, don't stash.
+2. **Create ALL branches upfront** (sequential, in orchestrator):
+   ```bash
+   git checkout -b feature/ISW-101-thing-a && git checkout master
+   git checkout -b feature/ISW-102-thing-b && git checkout master
+   ```
+3. **Spawn agents with explicit branch names** in the prompt:
+   > "Your pre-created branch is `feature/ISW-101-thing-a`. Run `git checkout feature/ISW-101-thing-a` as your FIRST action. Do NOT create branches or run git stash."
+
+**Parallel agents MUST NOT**:
+- Run `git stash` or `git stash pop` (shared stash = race condition)
+- Run `git checkout -b` (branch creation = possible conflict)
+- Assume the working directory state (another agent may have modified it)
+
+---
+
 ## Quick Start
 
 ```bash
