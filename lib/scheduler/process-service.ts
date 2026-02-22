@@ -40,6 +40,7 @@ import {
 	isTokenExpired,
 	isTokenExpiringSoon,
 } from '@/lib/database/linked-accounts';
+import { alertPublishFailure, alertTokenExpiry, alertHighQuota } from '@/lib/utils/admin-alerts';
 
 const MODULE = 'scheduler';
 
@@ -91,7 +92,15 @@ async function logExecutionContext(cronRunId: string | undefined): Promise<void>
 				: 'N/A',
 		};
 
-		// 4. Log everything with structured details
+		// 4. Alert admins for expiring/expired tokens
+		for (const acc of accounts) {
+			const days = calculateDaysRemaining(acc.expires_at);
+			if (isTokenExpired(acc.expires_at) || isTokenExpiringSoon(acc.expires_at)) {
+				await alertTokenExpiry(acc.ig_username || acc.ig_user_id || 'unknown', acc.expires_at ?? 0, days ?? 0);
+			}
+		}
+
+		// 5. Log everything with structured details
 		await Logger.info(MODULE, '📊 Cron Execution Context', {
 			cronRunId: cronRunId || 'N/A',
 			tokenStatus,
@@ -224,6 +233,14 @@ export async function processScheduledPosts(
 				quotaUsage: quotaResult.quotaUsage,
 				quotaRemaining: quotaResult.quotaRemaining,
 			};
+
+			// Alert admins if quota usage is at or above 80%
+			if (quotaResult.quotaTotal > 0) {
+				const usagePct = Math.round((quotaResult.quotaUsage / quotaResult.quotaTotal) * 100);
+				if (usagePct >= 80) {
+					await alertHighQuota(quotaResult.quotaUsage, quotaResult.quotaTotal, usagePct);
+				}
+			}
 
 			// Record start snapshot
 			if (cronRunId) {
@@ -525,6 +542,7 @@ export async function processScheduledPosts(
 						MODULE,
 						`Post ${item.id} permanently failed after ${retryCount} attempts`,
 					);
+					await alertPublishFailure(item.id, errorMessage, retryCount);
 				} else {
 					const backoffIndex = Math.min(retryCount - 1, RETRY_BACKOFF_MS.length - 1);
 					const backoffMs = RETRY_BACKOFF_MS[Math.max(0, backoffIndex)];
