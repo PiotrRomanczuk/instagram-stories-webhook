@@ -5,12 +5,26 @@
 import { supabaseAdmin } from '../config/supabase-admin';
 import {
 	ContentItem,
+	ContentItemRow,
 	ContentSource,
 	SubmissionStatus,
 	PublishingStatus,
 	mapContentItemRow,
 } from '../types/posts';
 import { getCurrentEnvironment } from './environment';
+
+/** Explicit column list used by all content_items queries — avoids select('*') */
+const CONTENT_ITEM_COLUMNS = [
+	'id', 'user_id', 'user_email', 'media_url', 'media_type', 'storage_path',
+	'dimensions', 'thumbnail_url', 'video_duration', 'video_codec', 'video_framerate',
+	'needs_processing', 'story_ready', 'processing_status', 'processing_completed_at',
+	'processing_error', 'processing_backend', 'processing_applied',
+	'title', 'caption', 'user_tags', 'hashtags', 'source', 'submission_status',
+	'publishing_status', 'rejection_reason', 'reviewed_at', 'reviewed_by',
+	'scheduled_time', 'processing_started_at', 'published_at', 'ig_media_id',
+	'error', 'content_hash', 'idempotency_key', 'retry_count', 'archived_at',
+	'environment', 'version', 'created_at', 'updated_at',
+].join(', ');
 
 interface GetContentOptions {
 	userId?: string;
@@ -51,7 +65,7 @@ export async function getContentItems(
 	try {
 		let query = supabaseAdmin
 			.from('content_items')
-			.select('*', { count: 'exact' })
+			.select(CONTENT_ITEM_COLUMNS, { count: 'exact' })
 			.eq('environment', getCurrentEnvironment());
 
 		if (!includeArchived) query = query.is('archived_at', null);
@@ -96,7 +110,7 @@ export async function getContentItems(
 		}
 
 		return {
-			items: (data || []).map(mapContentItemRow),
+			items: ((data || []) as unknown as ContentItemRow[]).map(mapContentItemRow),
 			total: count || 0,
 		};
 	} catch (error) {
@@ -111,7 +125,7 @@ export async function getContentItemById(
 	try {
 		const { data, error } = await supabaseAdmin
 			.from('content_items')
-			.select('*')
+			.select(CONTENT_ITEM_COLUMNS)
 			.eq('id', id)
 			.eq('environment', getCurrentEnvironment())
 			.single();
@@ -122,7 +136,7 @@ export async function getContentItemById(
 			return null;
 		}
 
-		return data ? mapContentItemRow(data) : null;
+		return data ? mapContentItemRow(data as unknown as ContentItemRow) : null;
 	} catch (error) {
 		console.error('Error in getContentItemById:', error);
 		return null;
@@ -139,7 +153,7 @@ export async function getReviewQueue(
 	try {
 		const { data, error, count } = await supabaseAdmin
 			.from('content_items')
-			.select('*', { count: 'exact' })
+			.select(CONTENT_ITEM_COLUMNS, { count: 'exact' })
 			.eq('environment', getCurrentEnvironment())
 			.eq('source', 'submission')
 			.eq('submission_status', 'pending')
@@ -153,7 +167,7 @@ export async function getReviewQueue(
 		}
 
 		return {
-			items: (data || []).map(mapContentItemRow),
+			items: ((data || []) as unknown as ContentItemRow[]).map(mapContentItemRow),
 			total: count || 0,
 		};
 	} catch (error) {
@@ -168,7 +182,7 @@ export async function getScheduledItems(
 	try {
 		let query = supabaseAdmin
 			.from('content_items')
-			.select('*')
+			.select(CONTENT_ITEM_COLUMNS)
 			.eq('environment', getCurrentEnvironment())
 			.in('publishing_status', ['scheduled', 'processing'])
 			.order('scheduled_time', { ascending: true })
@@ -185,7 +199,7 @@ export async function getScheduledItems(
 			return [];
 		}
 
-		return (data || []).map(mapContentItemRow);
+		return ((data || []) as unknown as ContentItemRow[]).map(mapContentItemRow);
 	} catch (error) {
 		console.error('Error in getScheduledItems:', error);
 		return [];
@@ -198,7 +212,7 @@ export async function getContentItemForProcessing(
 	try {
 		const { data, error } = await supabaseAdmin
 			.from('content_items')
-			.select('*')
+			.select(CONTENT_ITEM_COLUMNS)
 			.eq('environment', getCurrentEnvironment())
 			.eq('id', id)
 			.or('publishing_status.eq.scheduled,publishing_status.eq.processing')
@@ -210,7 +224,7 @@ export async function getContentItemForProcessing(
 			return null;
 		}
 
-		return data ? mapContentItemRow(data) : null;
+		return data ? mapContentItemRow(data as unknown as ContentItemRow) : null;
 	} catch (error) {
 		console.error('Error in getContentItemForProcessing:', error);
 		return null;
@@ -230,7 +244,7 @@ export async function fetchUpcomingPosts(
 		const now = Date.now();
 		const { data, error } = await supabaseAdmin
 			.from('content_items')
-			.select('*')
+			.select(CONTENT_ITEM_COLUMNS)
 			.eq('environment', getCurrentEnvironment())
 			.eq('publishing_status', 'scheduled')
 			.gt('scheduled_time', now)
@@ -243,7 +257,7 @@ export async function fetchUpcomingPosts(
 			return [];
 		}
 
-		return (data || []).map(mapContentItemRow);
+		return ((data || []) as unknown as ContentItemRow[]).map(mapContentItemRow);
 	} catch (error) {
 		console.error('Error in fetchUpcomingPosts:', error);
 		return [];

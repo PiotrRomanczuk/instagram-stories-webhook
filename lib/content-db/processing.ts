@@ -3,8 +3,21 @@
  */
 
 import { supabaseAdmin } from '../config/supabase-admin';
-import { ContentItem, mapContentItemRow } from '../types/posts';
+import { ContentItem, ContentItemRow, mapContentItemRow } from '../types/posts';
 import { getCurrentEnvironment } from './environment';
+
+/** Explicit column list used by all content_items queries — avoids select('*') */
+const CONTENT_ITEM_COLUMNS = [
+	'id', 'user_id', 'user_email', 'media_url', 'media_type', 'storage_path',
+	'dimensions', 'thumbnail_url', 'video_duration', 'video_codec', 'video_framerate',
+	'needs_processing', 'story_ready', 'processing_status', 'processing_completed_at',
+	'processing_error', 'processing_backend', 'processing_applied',
+	'title', 'caption', 'user_tags', 'hashtags', 'source', 'submission_status',
+	'publishing_status', 'rejection_reason', 'reviewed_at', 'reviewed_by',
+	'scheduled_time', 'processing_started_at', 'published_at', 'ig_media_id',
+	'error', 'content_hash', 'idempotency_key', 'retry_count', 'archived_at',
+	'environment', 'version', 'created_at', 'updated_at',
+].join(', ');
 
  
 
@@ -13,7 +26,7 @@ export async function getPendingContentItems(maxItems: number = 25): Promise<Con
 		const now = Date.now();
 		const { data, error } = await supabaseAdmin
 			.from('content_items')
-			.select('*')
+			.select(CONTENT_ITEM_COLUMNS)
 			.eq('environment', getCurrentEnvironment())
 			.eq('publishing_status', 'scheduled')
 			.lte('scheduled_time', now)
@@ -25,7 +38,7 @@ export async function getPendingContentItems(maxItems: number = 25): Promise<Con
 			return [];
 		}
 
-		return (data || []).map(mapContentItemRow);
+		return ((data || []) as unknown as ContentItemRow[]).map(mapContentItemRow);
 	} catch (error) {
 		console.error('Error in getPendingContentItems:', error);
 		return [];

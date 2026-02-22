@@ -15,6 +15,9 @@ import {
 
 const MODULE = 'db:memes';
 
+/** Explicit column list for meme_submissions queries — avoids select('*') */
+const MEME_SUBMISSION_COLUMNS = 'id, user_id, user_email, media_url, storage_path, title, caption, status, rejection_reason, created_at, reviewed_at, reviewed_by, scheduled_time, scheduled_post_id, published_at, ig_media_id';
+
 export async function createMemeSubmission(
 	input: CreateMemeInput,
 ): Promise<MemeSubmission | null> {
@@ -83,7 +86,7 @@ export async function getMemeSubmissions(options?: {
 	userEmail?: string;
 }): Promise<MemeSubmission[]> {
 	try {
-		let query = supabaseAdmin.from('meme_submissions').select('*');
+		let query = supabaseAdmin.from('meme_submissions').select(MEME_SUBMISSION_COLUMNS);
 
 		if (options?.userId) {
 			query = query.eq('user_id', options.userId);
@@ -163,7 +166,7 @@ export async function getMemeSubmission(
 	try {
 		const { data, error } = await supabaseAdmin
 			.from('meme_submissions')
-			.select('*')
+			.select(MEME_SUBMISSION_COLUMNS)
 			.eq('id', id)
 			.single();
 
