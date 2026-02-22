@@ -79,6 +79,7 @@ jobs:
         run: npx playwright test --config=playwright.config.preview.ts
         env:
           CI: true
+          PREVIEW_MODE: true
 
       - name: Upload test results
         if: always()
