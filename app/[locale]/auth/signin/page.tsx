@@ -2,18 +2,22 @@
 
 import { signIn } from 'next-auth/react';
 import { Instagram, Loader2 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/app/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Separator } from '@/app/components/ui/separator';
 
 export default function SignIn() {
 	const [isLoading, setIsLoading] = useState(false);
-	const [isDev] = useState(() =>
-		typeof window !== 'undefined' &&
-		(window.location.hostname === 'localhost' ||
-			window.location.hostname === '127.0.0.1')
-	);
+	// isDev starts false to avoid SSR/hydration mismatch, then updates after mount
+	const [isDev, setIsDev] = useState(false);
+
+	useEffect(() => {
+		setIsDev(
+			window.location.hostname === 'localhost' ||
+			window.location.hostname === '127.0.0.1',
+		);
+	}, []);
 
 	const handleSignIn = async () => {
 		try {
@@ -35,6 +39,11 @@ export default function SignIn() {
 			redirect: true,
 		});
 	};
+
+	const isTestEnv =
+		isDev ||
+		process.env.NODE_ENV !== 'production' ||
+		process.env.NEXT_PUBLIC_ENABLE_TEST_AUTH === 'true';
 
 	return (
 		<div className="flex min-h-screen items-center justify-center bg-gray-50 p-4 sm:p-6">
@@ -97,7 +106,7 @@ export default function SignIn() {
 						</p>
 
 						{/* Dev Mode Test Buttons */}
-						{(isDev || process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_ENABLE_TEST_AUTH === 'true') && (
+						{isTestEnv && (
 							<>
 								<Separator className="my-6" />
 								<div className="space-y-2">
