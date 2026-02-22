@@ -86,7 +86,8 @@ export async function GET() {
                     success: true,
                     data: {
                         ...pageRes.data,
-                        access_token: pageRes.data.access_token ? `${pageRes.data.access_token.substring(0, 10)}...` : null
+                        access_token: undefined,
+                        access_token_present: !!pageRes.data.access_token,
                     }
                 });
             } catch (err: unknown) {
@@ -115,7 +116,8 @@ export async function GET() {
                 ...accountsRes.data,
                 data: (accountsRes.data.data || []).map((p: { id: string; name: string; category: string; access_token?: string }) => ({
                     ...p,
-                    access_token: p.access_token ? `${p.access_token.substring(0, 10)}...` : null
+                    access_token: undefined,
+                    access_token_present: !!p.access_token,
                 }))
             };
         } catch (err: unknown) {

@@ -185,7 +185,7 @@ describe('Cron Debug Page', () => {
 			expect(redirect).toHaveBeenCalledWith('/');
 		});
 
-		it('allows admin role to access (admins can monitor cron health)', async () => {
+		it('allows admin role to access', async () => {
 			const { getServerSession } = await import('next-auth/next');
 			const { getUserRole } = await import('@/lib/auth-helpers');
 			const { redirect } = await import('next/navigation');
@@ -198,7 +198,7 @@ describe('Cron Debug Page', () => {
 			const CronDebugPage = (await import('@/app/[locale]/developer/cron-debug/page')).default;
 			const page = await CronDebugPage();
 
-			// Admin role should now be allowed — no redirect
+			// Admin should not be redirected
 			expect(redirect).not.toHaveBeenCalled();
 			expect(page).toBeDefined();
 		});
