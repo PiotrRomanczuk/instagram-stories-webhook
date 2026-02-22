@@ -6,9 +6,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest, NextResponse } from 'next/server';
 
-const { mockIntlMiddleware, mockAuthMiddleware } = vi.hoisted(() => ({
+const { mockIntlMiddleware, mockAuthMiddleware, mockGetToken } = vi.hoisted(() => ({
 	mockIntlMiddleware: vi.fn(),
 	mockAuthMiddleware: vi.fn(),
+	mockGetToken: vi.fn(),
 }));
 
 vi.mock('next-intl/middleware', () => ({
@@ -23,6 +24,10 @@ vi.mock('next-auth/middleware', () => ({
 	withAuth: vi.fn((_onSuccess: unknown, _options: unknown) => mockAuthMiddleware),
 }));
 
+vi.mock('next-auth/jwt', () => ({
+	getToken: mockGetToken,
+}));
+
 import middleware, { config } from '@/middleware';
 
 function createRequest(url: string): NextRequest {
@@ -34,74 +39,163 @@ describe('Middleware Execution', () => {
 		vi.clearAllMocks();
 		mockIntlMiddleware.mockReturnValue(NextResponse.next());
 		mockAuthMiddleware.mockReturnValue(NextResponse.next());
+		// Default: authenticated with 'user' role
+		mockGetToken.mockResolvedValue({ role: 'user' });
 	});
 
 	describe('Public pages (auth routes)', () => {
-		it('should route /auth/signin through intl middleware (no auth required)', () => {
+		it('should route /auth/signin through intl middleware (no auth required)', async () => {
 			const req = createRequest('/auth/signin');
-			middleware(req);
+			await middleware(req);
 			expect(mockIntlMiddleware).toHaveBeenCalledWith(req);
 			expect(mockAuthMiddleware).not.toHaveBeenCalled();
 		});
 
-		it('should route /auth/signout through intl middleware', () => {
+		it('should route /auth/signout through intl middleware', async () => {
 			const req = createRequest('/auth/signout');
-			middleware(req);
+			await middleware(req);
 			expect(mockIntlMiddleware).toHaveBeenCalledWith(req);
 			expect(mockAuthMiddleware).not.toHaveBeenCalled();
 		});
 
 		// Removed: locale prefix tests - using localePrefix: 'never' now
 
-		it('should route /auth/callback/google through intl middleware', () => {
+		it('should route /auth/callback/google through intl middleware', async () => {
 			const req = createRequest('/auth/callback/google');
-			middleware(req);
+			await middleware(req);
 			expect(mockIntlMiddleware).toHaveBeenCalledWith(req);
 			expect(mockAuthMiddleware).not.toHaveBeenCalled();
 		});
 	});
 
 	describe('Protected pages (require auth)', () => {
-		it('should route / through auth middleware', () => {
+		it('should route / through auth middleware', async () => {
 			const req = createRequest('/');
-			middleware(req);
+			await middleware(req);
 			expect(mockAuthMiddleware).toHaveBeenCalledWith(req);
 			expect(mockIntlMiddleware).not.toHaveBeenCalled();
 		});
 
-		it('should route /dashboard through auth middleware', () => {
+		it('should route /dashboard through auth middleware', async () => {
 			const req = createRequest('/dashboard');
-			middleware(req);
+			await middleware(req);
 			expect(mockAuthMiddleware).toHaveBeenCalledWith(req);
 		});
 
 		// Removed: /en/dashboard test - using localePrefix: 'never' now
 
-		it('should route /settings through auth middleware', () => {
-			const req = createRequest('/settings');
-			middleware(req);
+		it('should route /debug through auth middleware', async () => {
+			const req = createRequest('/debug');
+			await middleware(req);
+			expect(mockAuthMiddleware).toHaveBeenCalledWith(req);
+		});
+	});
+
+	describe('Role-protected routes - /users', () => {
+		it('should allow admin to access /users', async () => {
+			mockGetToken.mockResolvedValue({ role: 'admin' });
+			const req = createRequest('/users');
+			await middleware(req);
 			expect(mockAuthMiddleware).toHaveBeenCalledWith(req);
 		});
 
-		it('should route /debug through auth middleware', () => {
-			const req = createRequest('/debug');
-			middleware(req);
+		it('should allow developer to access /users', async () => {
+			mockGetToken.mockResolvedValue({ role: 'developer' });
+			const req = createRequest('/users');
+			await middleware(req);
 			expect(mockAuthMiddleware).toHaveBeenCalledWith(req);
+		});
+
+		it('should redirect user role away from /users to /', async () => {
+			mockGetToken.mockResolvedValue({ role: 'user' });
+			const req = createRequest('/users');
+			const result = await middleware(req);
+			expect(result?.status).toBe(307);
+			expect(result?.headers.get('location')).toBe('http://localhost:3000/');
+		});
+
+		it('should redirect user role away from /users/sub-path to /', async () => {
+			mockGetToken.mockResolvedValue({ role: 'user' });
+			const req = createRequest('/users/some-path');
+			const result = await middleware(req);
+			expect(result?.status).toBe(307);
+		});
+
+		it('should delegate to authMiddleware when no token on /users', async () => {
+			mockGetToken.mockResolvedValue(null);
+			const req = createRequest('/users');
+			await middleware(req);
+			expect(mockAuthMiddleware).toHaveBeenCalledWith(req);
+		});
+	});
+
+	describe('Role-protected routes - /developer', () => {
+		it('should allow admin to access /developer', async () => {
+			mockGetToken.mockResolvedValue({ role: 'admin' });
+			const req = createRequest('/developer');
+			await middleware(req);
+			expect(mockAuthMiddleware).toHaveBeenCalledWith(req);
+		});
+
+		it('should allow developer to access /developer', async () => {
+			mockGetToken.mockResolvedValue({ role: 'developer' });
+			const req = createRequest('/developer');
+			await middleware(req);
+			expect(mockAuthMiddleware).toHaveBeenCalledWith(req);
+		});
+
+		it('should redirect user role away from /developer to /', async () => {
+			mockGetToken.mockResolvedValue({ role: 'user' });
+			const req = createRequest('/developer');
+			const result = await middleware(req);
+			expect(result?.status).toBe(307);
+			expect(result?.headers.get('location')).toBe('http://localhost:3000/');
+		});
+
+		it('should redirect user role away from /developer/cron-debug to /', async () => {
+			mockGetToken.mockResolvedValue({ role: 'user' });
+			const req = createRequest('/developer/cron-debug');
+			const result = await middleware(req);
+			expect(result?.status).toBe(307);
+		});
+	});
+
+	describe('Role-protected routes - /settings', () => {
+		it('should allow developer to access /settings', async () => {
+			mockGetToken.mockResolvedValue({ role: 'developer' });
+			const req = createRequest('/settings');
+			await middleware(req);
+			expect(mockAuthMiddleware).toHaveBeenCalledWith(req);
+		});
+
+		it('should redirect admin role away from /settings to /', async () => {
+			mockGetToken.mockResolvedValue({ role: 'admin' });
+			const req = createRequest('/settings');
+			const result = await middleware(req);
+			expect(result?.status).toBe(307);
+			expect(result?.headers.get('location')).toBe('http://localhost:3000/');
+		});
+
+		it('should redirect user role away from /settings to /', async () => {
+			mockGetToken.mockResolvedValue({ role: 'user' });
+			const req = createRequest('/settings');
+			const result = await middleware(req);
+			expect(result?.status).toBe(307);
 		});
 	});
 
 	describe('Edge cases', () => {
 		// Removed: unsupported locale test - only 'en' supported with localePrefix: 'never'
 
-		it('should treat /authentication as protected', () => {
+		it('should treat /authentication as protected', async () => {
 			const req = createRequest('/authentication');
-			middleware(req);
+			await middleware(req);
 			expect(mockAuthMiddleware).toHaveBeenCalledWith(req);
 		});
 
-		it('should handle case-insensitive auth paths', () => {
+		it('should handle case-insensitive auth paths', async () => {
 			const req = createRequest('/AUTH/signin');
-			middleware(req);
+			await middleware(req);
 			expect(mockIntlMiddleware).toHaveBeenCalledWith(req);
 			expect(mockAuthMiddleware).not.toHaveBeenCalled();
 		});
@@ -123,19 +217,19 @@ describe('Middleware Execution', () => {
 	});
 
 	describe('Response propagation', () => {
-		it('should return intl middleware response for public pages', () => {
+		it('should return intl middleware response for public pages', async () => {
 			const intlResponse = NextResponse.redirect(new URL('/en/auth/signin', 'http://localhost:3000'));
 			mockIntlMiddleware.mockReturnValue(intlResponse);
 			const req = createRequest('/auth/signin');
-			const result = middleware(req);
+			const result = await middleware(req);
 			expect(result).toBe(intlResponse);
 		});
 
-		it('should return auth middleware response for protected pages', () => {
+		it('should return auth middleware response for protected pages', async () => {
 			const authResponse = NextResponse.redirect(new URL('/auth/signin', 'http://localhost:3000'));
 			mockAuthMiddleware.mockReturnValue(authResponse);
 			const req = createRequest('/dashboard');
-			const result = middleware(req);
+			const result = await middleware(req);
 			expect(result).toBe(authResponse);
 		});
 	});
