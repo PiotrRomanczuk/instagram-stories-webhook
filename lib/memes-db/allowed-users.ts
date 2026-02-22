@@ -8,6 +8,9 @@ import { UserRole, AllowedUser } from '../types';
 
 const MODULE = 'db:memes';
 
+/** Explicit column list for email_whitelist queries — avoids select('*') */
+const ALLOWED_USER_COLUMNS = 'id, email, role, display_name, added_by, created_at';
+
 export async function isEmailAllowed(email: string): Promise<boolean> {
 	try {
 		const { data, error } = await supabaseAdmin
@@ -60,7 +63,7 @@ export async function getAllowedUserByEmail(
 	try {
 		const { data, error } = await supabaseAdmin
 			.from('email_whitelist')
-			.select('*')
+			.select(ALLOWED_USER_COLUMNS)
 			.eq('email', email.toLowerCase())
 			.single();
 
@@ -113,7 +116,7 @@ export async function getAllowedUsers(): Promise<AllowedUser[]> {
 	try {
 		const { data, error } = await supabaseAdmin
 			.from('email_whitelist')
-			.select('*')
+			.select(ALLOWED_USER_COLUMNS)
 			.order('created_at', { ascending: false });
 
 		if (error) {

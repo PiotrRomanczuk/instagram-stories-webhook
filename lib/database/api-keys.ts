@@ -11,6 +11,9 @@ import type { ApiKey } from '@/lib/auth/api-keys';
 
 const MODULE = 'db:api-keys';
 
+/** Explicit column list for api_keys queries — avoids select('*') */
+const API_KEY_COLUMNS = 'id, user_id, key_hash, key_prefix, name, scopes, last_used_at, expires_at, created_at, revoked_at';
+
 /**
  * Database representation of API key (snake_case from Postgres)
  */
@@ -117,7 +120,7 @@ export async function getApiKeysByPrefix(keyPrefix: string): Promise<ApiKey[]> {
   try {
     const { data, error } = await supabaseAdmin
       .from('api_keys')
-      .select('*')
+      .select(API_KEY_COLUMNS)
       .eq('key_prefix', keyPrefix)
       .is('revoked_at', null);
 
@@ -199,7 +202,7 @@ export async function listUserApiKeys(userId: string): Promise<ApiKey[]> {
 
     const { data, error } = await supabaseAdmin
       .from('api_keys')
-      .select('*')
+      .select(API_KEY_COLUMNS)
       .eq('user_id', userId)
       .is('revoked_at', null)
       .order('created_at', { ascending: false });
@@ -226,7 +229,7 @@ export async function getApiKeyById(keyId: string): Promise<ApiKey | null> {
   try {
     const { data, error } = await supabaseAdmin
       .from('api_keys')
-      .select('*')
+      .select(API_KEY_COLUMNS)
       .eq('id', keyId)
       .single();
 
