@@ -28,7 +28,7 @@ const REQUIREMENTS: RequirementItem[] = [
 	{
 		icon: <Clock className="h-4 w-4" />,
 		label: 'Duration',
-		value: '60 seconds max',
+		value: '57 seconds max',
 	},
 	{
 		icon: <Gauge className="h-4 w-4" />,
@@ -56,7 +56,7 @@ export function VideoRequirements({
 		return (
 			<div className={cn('text-xs text-muted-foreground', className)}>
 				<p>
-					MP4/MOV/WebM, up to 100MB, max 60s, 1080x1920
+					MP4/MOV/WebM, up to 100MB, max 57s, 1080x1920
 					recommended
 				</p>
 			</div>

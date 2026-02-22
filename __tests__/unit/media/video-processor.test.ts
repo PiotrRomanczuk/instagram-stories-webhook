@@ -877,7 +877,7 @@ describe('video-processor', () => {
 					{ codec_type: 'audio', codec_name: 'aac' },
 				],
 				format: {
-					duration: '120.0', // 2 minutes, over 60s limit
+					duration: '120.0', // 2 minutes, over 57s limit
 					bit_rate: '3500000',
 					format_name: 'mp4',
 					size: '52500000',
@@ -896,7 +896,7 @@ describe('video-processor', () => {
 					{ codec_type: 'audio', codec_name: 'aac' },
 				],
 				format: {
-					duration: '60.0',
+					duration: '57.0',
 					bit_rate: '3500000',
 					format_name: 'mp4',
 					size: '26250000',
@@ -907,7 +907,7 @@ describe('video-processor', () => {
 
 			const result = await processVideoForStory(Buffer.from('long-video'));
 
-			expect(result.processingApplied).toContain('duration-trim-60s');
+			expect(result.processingApplied).toContain('duration-trim-57s');
 		});
 
 		it('should adjust frame rate when outside acceptable range', async () => {

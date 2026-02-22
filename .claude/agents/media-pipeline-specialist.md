@@ -54,7 +54,7 @@ The media pipeline handles validation, processing, and storage for Instagram Sto
 | Frame rate | 30 fps (23-60 acceptable) |
 | Video bitrate | ~3,500 kbps |
 | Audio bitrate | 128 kbps |
-| Max duration | 60 seconds (Instagram splits into 15s segments) |
+| Max duration | 57 seconds (safety margin; Instagram limit is 60s, no splitting since 2022) |
 | Max file size | 100 MB recommended |
 | Minimum dimension | 320px |
 | Minimum duration | 1 second |
@@ -117,7 +117,7 @@ For production video processing, an external service or custom Docker deployment
 
 ```typescript
 interface VideoProcessingOptions {
-  maxDuration?: number;       // Default: 60s
+  maxDuration?: number;       // Default: 57s
   videoBitrate?: string;      // Default: '3500k'
   audioBitrate?: string;      // Default: '128k'
   frameRate?: number;         // Default: 30
@@ -230,7 +230,7 @@ Add new types to `lib/types/` for the new format's metadata and validation resul
 1. Is FFmpeg available? Check `checkFfmpegAvailable()`
 2. Check video metadata: Run `ffprobe -v quiet -print_format json -show_format -show_streams <file>`
 3. Check file size: Over 100MB?
-4. Check duration: Over 60 seconds?
+4. Check duration: Over 57 seconds?
 5. Check codec: Is input codec supported by FFmpeg?
 
 ### Media Health Check Failures
