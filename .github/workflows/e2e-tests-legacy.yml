@@ -70,6 +70,7 @@ jobs:
           NEXT_PUBLIC_APP_URL=http://localhost:3000
           WEBHOOK_SECRET=${{ secrets.WEBHOOK_SECRET || 'test-webhook-secret' }}
           CRON_SECRET=test-cron-secret
+          TEST_AUTH_EMAILS=admin@test.com,user@test.com,user2@test.com
           ENVEOF
           sed -i 's/^[[:space:]]*//' .env.local
 
