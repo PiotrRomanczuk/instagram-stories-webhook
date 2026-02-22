@@ -36,7 +36,7 @@ Visit: `http://localhost:3000/debug`
 ### 3. "Redirect URI Mismatch"
 **Cause**: The URL in your Meta App settings doesn't match your local environment.
 **Fix**:
-1. Go to [Meta Developers Console](https://developers.facebook.com/apps/798644479898983).
+1. Go to [Meta Developers Console](https://developers.facebook.com/apps/YOUR_APP_ID).
 2. Facebook Login → Settings → **Valid OAuth Redirect URIs**.
 3. Add: `http://localhost:3000/api/auth/callback`.
 
@@ -49,6 +49,8 @@ Visit: `http://localhost:3000/debug`
 ## 🛠️ Debugging Tools
 
 ### Interactive Debug Script (`scripts/debug-auth.bat`)
+> **Platform Note**: This script is Windows-only (`.bat`). On macOS/Linux, use the `/debug` page in the browser instead.
+
 Run this on Windows for a menu-driven diagnostic tool:
 ```powershell
 .\scripts\debug-auth.bat
@@ -61,9 +63,11 @@ It allows you to:
 
 ### Manual Token Reset
 If you get stuck in an auth loop:
-1. Stop the dev server.
-2. Run: `echo {} > data/tokens.json`
-3. Restart the dev server and use an **Incognito Browser**.
+1. Use the `/debug` page and click **"Disconnect"** to unlink the account.
+2. Alternatively, clear the corresponding row in the `linked_accounts` table in Supabase.
+3. Restart the dev server and use an **Incognito Browser** to re-authenticate.
+
+> **Note**: The legacy `data/tokens.json` approach no longer applies. Tokens are encrypted and stored in Supabase's `linked_accounts` table.
 
 ---
 
@@ -85,4 +89,4 @@ For the system to work, your Meta ecosystem must look like this:
 
 ## 🆘 Manual Authentication Link
 If the button on the UI fails, you can try this direct OAuth link (replace placeholders):
-`https://www.facebook.com/v18.0/dialog/oauth?client_id=798644479898983&redirect_uri=http://localhost:3000/api/auth/callback&scope=instagram_basic,instagram_content_publish,pages_read_engagement,pages_show_list&response_type=code`
+`https://www.facebook.com/v24.0/dialog/oauth?client_id=YOUR_APP_ID&redirect_uri=http://localhost:3000/api/auth/callback&scope=instagram_basic,instagram_content_publish,pages_read_engagement,pages_show_list&response_type=code`

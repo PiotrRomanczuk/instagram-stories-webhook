@@ -173,8 +173,7 @@ All 4 phases of the user whitelist management feature have been successfully imp
 9. `__tests__/e2e/users-whitelist-search.spec.ts`
 
 **Documentation**:
-10. `USER_WHITELIST_IMPLEMENTATION_SUMMARY.md`
-11. `USER_WHITELIST_COMPLETE.md` (this file)
+10. `USER_WHITELIST_COMPLETE.md` (this file)
 
 ### Modified Files (1)
 1. `app/[locale]/users/page.tsx` - Updated to use new layout
@@ -398,7 +397,6 @@ npm run test:e2e:ui
 ## 📚 Documentation
 
 ### Related Files
-- **Implementation Summary**: [USER_WHITELIST_IMPLEMENTATION_SUMMARY.md](./USER_WHITELIST_IMPLEMENTATION_SUMMARY.md)
 - **Project Guide**: [CLAUDE.md](./CLAUDE.md)
 - **Backend API**: `/api/users` (GET, POST, PATCH, DELETE)
 - **Validation**: `lib/validations/user.schema.ts`

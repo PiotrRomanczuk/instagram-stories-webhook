@@ -88,13 +88,14 @@ Use `/ship` for the full PR workflow (branch → changes → version bump → qu
 
 | Component | Tech | Key Files |
 |-----------|------|-----------|
-| **Auth** | NextAuth + Google OAuth | `lib/auth.ts`, `app/middleware.ts` |
+| **Auth** | NextAuth + Google OAuth | `lib/auth.ts`, `lib/auth-helpers.ts`, `app/api/auth/[...nextauth]/route.ts` |
 | **Instagram API** | Meta Graph API v24.0 | `lib/instagram/publish.ts` |
 | **Database** | Supabase (Postgres + RLS) | `lib/supabase.ts` |
 | **Scheduler** | Vercel Cron + node-cron | `app/api/cron/process/route.ts` |
 | **Media** | Validation + AI analysis | `lib/media/validator.ts` |
 
-**Tables**: `oauth_tokens`, `scheduled_posts`, `email_whitelist`, `meme_submissions`
+**Core Tables**: `users`, `email_whitelist`, `linked_accounts`, `content_items`, `scheduled_posts`, `meme_submissions`
+**System Tables**: `admin_audit_log`, `auth_events`, `cron_locks`, `api_quota_history`, `api_keys`, `notifications`, `user_preferences`
 
 ---
 
@@ -119,8 +120,8 @@ Use `/ship` for the full PR workflow (branch → changes → version bump → qu
 |-------|------|-----------|-----------|------------------------|
 | Unit | Vitest + MSW | ~50 files | ~500 tests | **Mock with MSW** |
 | Integration | Vitest + Supabase | ~20 files | ~200 tests | **Mock with MSW** |
-| E2E - Preview | Playwright | **3 files** | **~40 tests** | **Environment guards skip production tests** |
-| E2E - Production | Playwright | **7 files** | **~113 tests** | **NEVER MOCK - Use real account** |
+| E2E - Preview | Playwright | 43 spec files (filtered) | **~40 tests** | **Environment guards skip production tests** |
+| E2E - Production | Playwright | 43 spec files (full) | **~113 tests** | **NEVER MOCK - Use real account** |
 
 **E2E Deployment Matrix**:
 
@@ -190,6 +191,15 @@ npm version major --no-git-tag-version   # breaking changes
 - [ ] Version bumped in `package.json` on the feature branch
 - [ ] Quality gates pass (`npm run lint && npx tsc && npm run test`)
 - [ ] Linear ticket updated
+
+---
+
+## Deployment
+
+- PRs → Vercel preview deployment with unique URL
+- Merge to `master` does NOT auto-deploy to production (disabled in `vercel.json`)
+- Production deployment uses `deploy-production.yml` GitHub Actions workflow: quality gates → preview deploy → E2E tests (5 shards) → production promotion
+- After merge → Run `npm run release` to tag the version
 
 ---
 

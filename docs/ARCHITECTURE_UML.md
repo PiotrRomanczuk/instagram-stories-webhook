@@ -148,14 +148,99 @@ entity "messages" as messages {
   Note: Internal messaging (future)
 }
 
+entity "content_items" as content {
+  * id: VARCHAR <<PRIMARY_KEY>>
+  --
+  user_id: UUID <<FK>>
+  media_url: VARCHAR
+  storage_path: VARCHAR
+  media_type: ENUM (IMAGE|VIDEO)
+  caption: TEXT
+  status: ENUM (pending|approved|rejected|published|scheduled)
+  content_hash: VARCHAR (SHA-256)
+  created_at: TIMESTAMP
+  updated_at: TIMESTAMP
+
+  RLS: Users see own; admins see all
+}
+
+entity "admin_audit_log" as audit_log {
+  * id: UUID <<PRIMARY_KEY>>
+  --
+  user_id: UUID <<FK>>
+  action: VARCHAR
+  target_type: VARCHAR
+  target_id: VARCHAR
+  details: JSONB
+  ip_address: VARCHAR
+  created_at: TIMESTAMP
+
+  RLS: Admin only
+}
+
+entity "auth_events" as auth_evt {
+  * id: UUID <<PRIMARY_KEY>>
+  --
+  user_id: UUID
+  event_type: VARCHAR
+  email: VARCHAR
+  details: JSONB
+  ip_address: VARCHAR
+  created_at: TIMESTAMP
+
+  Note: Login attempts, failures, anomalies
+}
+
+entity "cron_locks" as cron_lk {
+  * id: VARCHAR <<PRIMARY_KEY>>
+  --
+  job_name: VARCHAR
+  locked_at: TIMESTAMP
+  locked_by: VARCHAR
+  expires_at: TIMESTAMP
+
+  Note: Distributed lock for cron jobs
+}
+
+entity "api_keys" as api_k {
+  * id: UUID <<PRIMARY_KEY>>
+  --
+  user_id: UUID <<FK>>
+  key_hash: VARCHAR
+  name: VARCHAR
+  scopes: JSONB
+  last_used_at: TIMESTAMP
+  expires_at: TIMESTAMP
+  created_at: TIMESTAMP
+
+  RLS: Users see own
+}
+
+entity "api_quota_history" as quota {
+  * id: UUID <<PRIMARY_KEY>>
+  --
+  user_id: UUID <<FK>>
+  endpoint: VARCHAR
+  request_count: INT
+  period_start: TIMESTAMP
+  period_end: TIMESTAMP
+  created_at: TIMESTAMP
+
+  Note: Tracks API usage for rate limiting
+}
+
 ' Relationships
 users ||--o{ whitelist : "email lookup"
 users ||--o{ fb_accounts : "1:1 Facebook account"
 users ||--o{ posts : "creates"
 users ||--o{ memes : "submits"
+users ||--o{ content : "owns content"
 users ||--o{ ai_analysis : "owns"
 users ||--o{ logs : "actor"
 users ||--o{ messages : "receives"
+users ||--o{ audit_log : "audited"
+users ||--o{ api_k : "owns keys"
+users ||--o{ quota : "tracked usage"
 
 memes ||--o| posts : "scheduled as"
 posts ||--o| fb_accounts : "publishes via"

@@ -569,7 +569,7 @@ const result = await sendImageMessage(recipientIgId, imageUrl, userId);
 
 - [Meta Permissions Reference](./META_PERMISSIONS.md)
 - [Client Setup Guide](./CLIENT_SETUP_GUIDE.md)
-- [Testing Guide](./TESTING.md)
+- [Testing Strategy](./TESTING_STRATEGY.md)
 - [Troubleshooting](./TROUBLESHOOTING.md)
 
 ---

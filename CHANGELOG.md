@@ -1,5 +1,7 @@
 # Changelog
 
+> **Note**: This changelog covers versions up to v0.19.1. For all releases from v0.19.1 onward (including v0.21.x through v0.33.0), see the authoritative change tracking document: **[Feature Implementation History](docs/non-technical/FEATURE_IMPLEMENTATION_HISTORY.md)**.
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),

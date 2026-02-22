@@ -65,6 +65,8 @@ graph TD
 | **Auth** | NextAuth.js | Authentication w/ Google Provider |
 | **Storage** | Supabase Storage | S3-compatible object storage |
 | **Testing** | Vitest, Playwright | Unit and E2E testing |
+| **Monitoring** | Sentry | Error tracking and performance monitoring |
+| **Validation** | Zod | Runtime type validation for API boundaries |
 | **Scheduling** | Vercel Cron | Scheduled task execution |
 
 ---
@@ -81,7 +83,9 @@ erDiagram
     users ||--o{ meme_submissions : "submits_content"
     
     meme_submissions ||--o| scheduled_posts : "promoted_to"
-    
+    users ||--o{ content_items : "owns_content"
+    users ||--o{ admin_audit_log : "audited"
+
     users {
         UUID id PK
         VARCHAR email
@@ -105,6 +109,17 @@ erDiagram
         VARCHAR ig_user_id
     }
 
+    content_items {
+        VARCHAR id PK
+        UUID user_id FK
+        VARCHAR media_url
+        VARCHAR storage_path
+        ENUM media_type "IMAGE, VIDEO"
+        TEXT caption
+        ENUM status "pending, approved, rejected, published"
+        VARCHAR content_hash
+    }
+
     scheduled_posts {
         VARCHAR id PK
         UUID user_id FK
@@ -124,6 +139,40 @@ erDiagram
         ENUM status "pending, approved, rejected, scheduled"
         VARCHAR content_hash
         TEXT rejection_reason
+    }
+
+    admin_audit_log {
+        UUID id PK
+        UUID user_id FK
+        VARCHAR action
+        VARCHAR target_type
+        JSONB details
+        TIMESTAMP created_at
+    }
+
+    auth_events {
+        UUID id PK
+        UUID user_id FK
+        VARCHAR event_type
+        VARCHAR email
+        JSONB details
+        TIMESTAMP created_at
+    }
+
+    cron_locks {
+        VARCHAR id PK
+        VARCHAR job_name
+        TIMESTAMP locked_at
+        TIMESTAMP expires_at
+    }
+
+    api_keys {
+        UUID id PK
+        UUID user_id FK
+        VARCHAR key_hash
+        VARCHAR name
+        JSONB scopes
+        TIMESTAMP expires_at
     }
 ```
 
@@ -276,4 +325,27 @@ graph LR
     WebhookAPI -->|200 OK| External
     
     PublishService -->|Log Entry| DB
+```
+
+### 5.3. Video Processing Flow
+Videos uploaded by users go through FFmpeg optimization before being published to Instagram.
+
+```mermaid
+flowchart TD
+    Upload([User Uploads Video]) --> Validate{Validate Media}
+
+    Validate -- Invalid --> Reject[Return Error\n- Too large\n- Wrong format\n- Too long]
+    Validate -- Valid --> Store[Upload to Supabase Storage]
+
+    Store --> FFmpeg[FFmpeg Processing]
+    FFmpeg --> Resize[Resize to 1080x1920\n9:16 Story Format]
+    Resize --> Encode[H.264 Encoding\nAAC Audio]
+    Encode --> Duration{Duration <= 57s?}
+
+    Duration -- No --> Trim[Trim to 57s]
+    Duration -- Yes --> Output[Processed Video]
+    Trim --> Output
+
+    Output --> Replace[Replace Original in Storage]
+    Replace --> Ready([Ready for Instagram Publish])
 ```
