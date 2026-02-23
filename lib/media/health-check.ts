@@ -3,6 +3,8 @@
  * Checks if media URLs are accessible and returns health status
  */
 
+import { validateFetchUrl } from '@/lib/utils/url-validation';
+
 export interface MediaHealthResult {
 	healthy: boolean;
 	statusCode?: number;
@@ -20,6 +22,9 @@ export async function checkMediaHealth(
 	const checkedAt = Date.now();
 
 	try {
+		// Validate URL to prevent SSRF attacks
+		validateFetchUrl(url);
+
 		// Use HEAD request for efficiency
 		const response = await fetch(url, {
 			method: 'HEAD',

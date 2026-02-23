@@ -51,9 +51,30 @@ vi.mock('@/lib/utils/logger', () => ({
 	},
 }));
 
-vi.mock('@/lib/config/supabase-admin', () => ({
-	supabaseAdmin: {},
-}));
+vi.mock('@/lib/config/supabase-admin', () => {
+	// Build a chainable mock that satisfies the cron lock DB calls.
+	// insert/update/delete chains must resolve without error so that
+	// acquireVideoLock() returns true (lock acquired) in the happy path.
+	const chainable: Record<string, unknown> = {};
+	const terminal = { error: null, data: { lock_name: 'process-videos' } };
+	const terminalPromise = Promise.resolve(terminal);
+	const makeChain = (): Record<string, unknown> => {
+		const c: Record<string, unknown> = {};
+		['eq', 'lt', 'neq', 'select', 'maybeSingle', 'single', 'order', 'limit', 'upsert', 'update', 'delete', 'insert', 'from'].forEach(m => {
+			Object.defineProperty(c, m, { get: () => (..._args: unknown[]) => makeChain() });
+		});
+		// Make it thenable so awaiting resolves to terminal
+		c['then'] = (resolve: (v: typeof terminal) => unknown) => terminalPromise.then(resolve);
+		c['catch'] = (reject: (e: unknown) => unknown) => terminalPromise.catch(reject);
+		return c;
+	};
+	void chainable;
+	return {
+		supabaseAdmin: {
+			from: () => makeChain(),
+		},
+	};
+});
 
 // ---------------------------------------------------------------------------
 // Imports — after mocks

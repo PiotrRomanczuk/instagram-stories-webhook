@@ -49,7 +49,7 @@ async function acquireVideoLock(): Promise<boolean> {
 
 		return false;
 	} catch {
-		return true; // Allow execution if lock check fails
+		return false; // Fail-closed: do not proceed if lock check fails
 	}
 }
 

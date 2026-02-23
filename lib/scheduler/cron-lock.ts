@@ -53,9 +53,9 @@ export async function acquireCronLock(): Promise<boolean> {
 		await Logger.info(MODULE, 'Cron lock held by another execution, skipping');
 		return false;
 	} catch (error) {
-		// If locking fails entirely, allow execution to avoid blocking all cron runs
-		await Logger.warn(MODULE, 'Cron lock check failed, allowing execution', error);
-		return true;
+		// Fail-closed: do not proceed if lock check fails to prevent duplicate runs
+		await Logger.warn(MODULE, 'Cron lock check failed, refusing execution (fail-closed)', error);
+		return false;
 	}
 }
 

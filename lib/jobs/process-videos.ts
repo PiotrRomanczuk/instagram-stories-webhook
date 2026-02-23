@@ -10,6 +10,7 @@ import { getCurrentEnvironment } from '@/lib/content-db/environment';
 import { processVideoForStory } from '@/lib/media/video-processor';
 import { Logger } from '@/lib/utils/logger';
 import { ContentItemRow, mapContentItemRow } from '@/lib/types/posts';
+import { validateFetchUrl } from '@/lib/utils/url-validation';
 
 const MODULE = 'video-processing-job';
 const MAX_PROCESSING_RETRIES = 3;
@@ -62,6 +63,9 @@ async function processVideo(videoRow: ContentItemRow): Promise<boolean> {
 	});
 
 	try {
+		// Validate URL to prevent SSRF attacks
+		validateFetchUrl(videoItem.mediaUrl);
+
 		// Download video
 		const response = await fetch(videoItem.mediaUrl);
 		if (!response.ok) {
