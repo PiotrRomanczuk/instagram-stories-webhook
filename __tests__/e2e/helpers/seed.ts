@@ -485,10 +485,9 @@ export async function scheduleContent(
 ): Promise<void> {
   const timeMs = typeof scheduledTime === 'number' ? scheduledTime : scheduledTime.getTime();
 
-  const response = await page.request.patch(`/api/content/${contentId}`, {
+  const response = await page.request.post(`/api/content/${contentId}/schedule`, {
     data: {
       scheduledTime: timeMs,
-      publishingStatus: 'scheduled',
     },
   });
 
