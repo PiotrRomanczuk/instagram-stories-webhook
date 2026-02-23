@@ -1,4 +1,7 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { isAdmin } from "@/lib/auth-helpers";
 import { supabaseAdmin } from "@/lib/config/supabase-admin";
 import packageJson from "@/package.json";
 import { getCurrentEnvironment } from "@/lib/content-db/environment";
@@ -262,6 +265,13 @@ function resolveOverallStatus(checks: HealthResponse["checks"]): HealthResponse[
 }
 
 export async function GET() {
+    const timestamp = new Date().toISOString();
+
+    const session = await getServerSession(authOptions);
+    if (!isAdmin(session)) {
+        return NextResponse.json({ status: "ok", timestamp });
+    }
+
     const [
         database,
         env,
@@ -290,7 +300,7 @@ export async function GET() {
     const response: HealthResponse = {
         status: resolveOverallStatus(checks),
         checks,
-        timestamp: new Date().toISOString(),
+        timestamp,
         version: packageJson.version,
     };
 
