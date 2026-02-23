@@ -134,9 +134,9 @@ export async function POST(request: NextRequest) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         const errorStack = error instanceof Error ? error.stack : undefined;
         
-        log(`❌ FAILED after ${duration}ms: ${errorMessage}`);
+        console.error(`[DEBUG-PUBLISH] FAILED after ${duration}ms: ${errorMessage}`);
         if (errorStack) {
-            log(`Stack: ${errorStack.split('\n').slice(0, 3).join(' | ')}`);
+            console.error(`[DEBUG-PUBLISH] Stack: ${errorStack.split('\n').slice(0, 3).join(' | ')}`);
         }
 
         return NextResponse.json({
