@@ -28,6 +28,7 @@ import {
 } from '@/lib/media/video-processor';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
 import { Logger } from '@/lib/utils/logger';
+import { validateFetchUrl } from '@/lib/utils/url-validation';
 
 const MODULE = 'api/process-video';
 
@@ -58,6 +59,9 @@ export async function POST(request: Request) {
         if (!videoUrl) {
             return NextResponse.json({ error: 'videoUrl is required' }, { status: 400 });
         }
+
+        // Validate URL to prevent SSRF attacks
+        validateFetchUrl(videoUrl);
 
         await Logger.info(MODULE, `Processing video from: ${videoUrl} (backend: ${backend})`);
 
