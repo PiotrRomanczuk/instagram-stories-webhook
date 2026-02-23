@@ -1,6 +1,10 @@
 import { describe, it, expect, vi, beforeEach, Mock } from "vitest";
 import { GET } from "@/app/api/health/route";
 import { supabaseAdmin } from "@/lib/config/supabase-admin";
+import { getServerSession } from "next-auth";
+
+vi.mock("next-auth");
+vi.mock("@/lib/auth", () => ({ authOptions: {} }));
 
 vi.mock("@/lib/config/supabase-admin", () => ({
 	supabaseAdmin: {
@@ -16,6 +20,11 @@ const mockSupabaseAdmin = supabaseAdmin as unknown as {
 	from: Mock;
 };
 
+const SESSION_ADMIN = {
+	user: { id: "admin-1", email: "admin@example.com", role: "admin" },
+	expires: "2027-01-01",
+};
+
 const ORIGINAL_ENV = { ...process.env };
 
 describe("GET /api/health", () => {
@@ -27,6 +36,8 @@ describe("GET /api/health", () => {
 		process.env.NEXTAUTH_SECRET = "test-secret";
 		process.env.GOOGLE_CLIENT_ID = "test-client-id";
 		process.env.GOOGLE_CLIENT_SECRET = "test-client-secret";
+		// Default to admin session so existing tests continue to work
+		vi.mocked(getServerSession).mockResolvedValue(SESSION_ADMIN);
 	});
 
 	function mockDbSuccess() {
@@ -146,5 +157,34 @@ describe("GET /api/health", () => {
 		expect(responseText).not.toContain("test-key");
 		expect(responseText).not.toContain("test-client-id");
 		expect(responseText).not.toContain("test-client-secret");
+	});
+
+	it("should return only status and timestamp for unauthenticated requests", async () => {
+		vi.mocked(getServerSession).mockResolvedValue(null);
+
+		const response = await GET();
+		const body = await response.json();
+
+		expect(response.status).toBe(200);
+		expect(body.status).toBe("ok");
+		expect(body.timestamp).toBeDefined();
+		expect(() => new Date(body.timestamp)).not.toThrow();
+		// Must NOT expose internal service details
+		expect(body.checks).toBeUndefined();
+		expect(body.version).toBeUndefined();
+	});
+
+	it("should return full health details for admin requests", async () => {
+		vi.mocked(getServerSession).mockResolvedValue(SESSION_ADMIN);
+		mockDbSuccess();
+
+		const response = await GET();
+		const body = await response.json();
+
+		expect(body.checks).toBeDefined();
+		expect(body.version).toBe("1.0.0-test");
+		expect(body.timestamp).toBeDefined();
+		expect(body.checks.database).toBeDefined();
+		expect(body.checks.env).toBeDefined();
 	});
 });
