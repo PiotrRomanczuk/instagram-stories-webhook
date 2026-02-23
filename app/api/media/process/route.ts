@@ -19,6 +19,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { processImageForStory } from '@/lib/media/processor';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
+import { validateFetchUrl } from '@/lib/utils/url-validation';
 
 export async function POST(request: Request) {
     try {
@@ -33,6 +34,9 @@ export async function POST(request: Request) {
         if (!imageUrl) {
             return NextResponse.json({ error: 'imageUrl is required' }, { status: 400 });
         }
+
+        // Validate URL to prevent SSRF attacks
+        validateFetchUrl(imageUrl);
 
         // Fetch the image
         const imageResponse = await fetch(imageUrl);

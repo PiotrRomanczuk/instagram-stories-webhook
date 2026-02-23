@@ -28,6 +28,7 @@ import {
     MAX_FILE_SIZE_MB
 } from '@/lib/media/video-processor';
 import { Logger } from '@/lib/utils/logger';
+import { validateFetchUrl } from '@/lib/utils/url-validation';
 
 const MODULE = 'api/validate-video';
 
@@ -46,6 +47,9 @@ export async function POST(request: Request) {
         }
 
         await Logger.info(MODULE, `🔍 Validating video: ${videoUrl}`);
+
+        // Validate URL to prevent SSRF attacks
+        validateFetchUrl(videoUrl);
 
         // Fetch the video
         const videoResponse = await fetch(videoUrl);

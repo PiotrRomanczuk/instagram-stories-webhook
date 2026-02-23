@@ -13,6 +13,18 @@ import {
 } from '../types/posts';
 import { getCurrentEnvironment } from './environment';
 
+/**
+ * Escapes special characters that have meaning in PostgREST filter syntax
+ * before interpolating user input into `.or()` calls.
+ *
+ * PostgREST uses commas to separate filters, periods for column access,
+ * and percent signs for LIKE wildcards. Escaping prevents injection of
+ * additional filter conditions through user-supplied search terms.
+ */
+function sanitizePostgrestSearch(input: string): string {
+	return input.replace(/[%,.()\[\]]/g, (char) => `\\${char}`);
+}
+
 /** Explicit column list used by all content_items queries — avoids select('*') */
 const CONTENT_ITEM_COLUMNS = [
 	'id', 'user_id', 'user_email', 'media_url', 'media_type', 'storage_path',
@@ -80,8 +92,9 @@ export async function getContentItems(
 		if (scheduledTimeBefore) query = query.lt('scheduled_time', scheduledTimeBefore);
 
 		if (search) {
+			const safeSearch = sanitizePostgrestSearch(search);
 			query = query.or(
-				`caption.ilike.%${search}%,title.ilike.%${search}%`,
+				`caption.ilike.%${safeSearch}%,title.ilike.%${safeSearch}%`,
 			);
 		}
 
