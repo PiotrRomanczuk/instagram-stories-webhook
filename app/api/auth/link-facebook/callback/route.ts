@@ -96,9 +96,22 @@ export async function GET(req: NextRequest) {
 		const redirectUri = `${process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL}/api/auth/link-facebook/callback`;
 
 		// 4. Exchange code for access token
+		// Use POST with form body so client_secret and code are not in the URL
+		// (which would expose them in server access logs and browser history).
 		await Logger.info(MODULE, `🔑 Exchanging code for token...`, { userId });
+		const tokenBody = new URLSearchParams({
+			client_id: appId ?? '',
+			redirect_uri: redirectUri,
+			client_secret: appSecret ?? '',
+			code,
+		});
 		const tokenResponse = await fetch(
-			`https://graph.facebook.com/v24.0/oauth/access_token?client_id=${appId}&redirect_uri=${redirectUri}&client_secret=${appSecret}&code=${code}`,
+			`https://graph.facebook.com/v24.0/oauth/access_token`,
+			{
+				method: 'POST',
+				headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+				body: tokenBody.toString(),
+			},
 		);
 		const tokenData = await tokenResponse.json();
 
@@ -115,8 +128,20 @@ export async function GET(req: NextRequest) {
 		await Logger.info(MODULE, '✅ Short-lived token obtained', { userId });
 
 		// 5. Exchange for long-lived token (60 days)
+		// Use POST with form body to keep client_secret and fb_exchange_token out of URLs.
+		const longLivedBody = new URLSearchParams({
+			grant_type: 'fb_exchange_token',
+			client_id: appId ?? '',
+			client_secret: appSecret ?? '',
+			fb_exchange_token: shortLivedToken,
+		});
 		const longLivedResponse = await fetch(
-			`https://graph.facebook.com/v24.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${appSecret}&fb_exchange_token=${shortLivedToken}`,
+			`https://graph.facebook.com/v24.0/oauth/access_token`,
+			{
+				method: 'POST',
+				headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+				body: longLivedBody.toString(),
+			},
 		);
 		const longLivedData = await longLivedResponse.json();
 
@@ -177,9 +202,11 @@ export async function GET(req: NextRequest) {
 		}
 
 		// 7. Get Facebook User ID (provider_account_id)
-		const meResponse = await fetch(
-			`https://graph.facebook.com/me?access_token=${accessToken}`,
-		);
+		// Pass access token via Authorization header instead of URL query param
+		// to avoid token exposure in server access logs.
+		const meResponse = await fetch(`https://graph.facebook.com/me`, {
+			headers: { Authorization: `Bearer ${accessToken}` },
+		});
 		const meData = await meResponse.json();
 		const facebookUserId = meData.id;
 
