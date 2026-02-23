@@ -10,7 +10,11 @@ const MODULE = 'token-encryption';
 const ENCRYPTED_PREFIX = 'enc:';
 
 function getEncryptionKey(): string | null {
-	return process.env.TOKEN_ENCRYPTION_KEY || null;
+	const key = process.env.TOKEN_ENCRYPTION_KEY || null;
+	if (!key && process.env.NODE_ENV === 'production') {
+		throw new Error('TOKEN_ENCRYPTION_KEY must be set in production');
+	}
+	return key;
 }
 
 /**

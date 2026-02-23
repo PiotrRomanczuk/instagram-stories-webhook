@@ -62,8 +62,7 @@ export async function GET() {
         const errorMessage = error instanceof Error ? error.message : 'Unknown exception';
         return NextResponse.json({
             success: false,
-            error: errorMessage,
-            stack: error instanceof Error ? error.stack : undefined
+            error: errorMessage
         }, { status: 500 });
     }
 }

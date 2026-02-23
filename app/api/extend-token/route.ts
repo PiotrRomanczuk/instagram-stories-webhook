@@ -59,8 +59,7 @@ export async function POST() {
         const errorData = axios.isAxiosError(error) ? (error.response?.data || error.message) : (error instanceof Error ? error.message : String(error));
         console.error('❌ Token extension failed:', errorData);
         return NextResponse.json({
-            error: 'Failed to extend token',
-            details: errorData
+            error: 'Failed to extend token'
         }, { status: 500 });
     }
 }
