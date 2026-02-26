@@ -67,3 +67,8 @@ test-results
 
 # Claude Code worktrees (temporary isolated checkouts)
 .claude/worktrees/
+
+# GIF/video recordings (regenerated via npm run capture-docs)
+docs/gifs/*.gif
+docs/gifs/*.webm
+!docs/gifs/.gitkeep
