@@ -60,6 +60,13 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 	const [showMobileDetails, setShowMobileDetails] = useState(false);
 	const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
+	// Track pending deferred reject for undo support
+	const pendingRejectRef = useRef<{
+		timeoutId: NodeJS.Timeout;
+		item: ContentItem;
+		payload: Record<string, unknown>;
+	} | null>(null);
+
 	// Persist review history to localStorage
 	useEffect(() => {
 		try {
@@ -181,6 +188,19 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 		}
 	}, [refreshList]);
 
+	// Flush any pending deferred reject on unmount so it's not lost
+	useEffect(() => {
+		return () => {
+			if (pendingRejectRef.current) {
+				clearTimeout(pendingRejectRef.current.timeoutId);
+				const { item, payload } = pendingRejectRef.current;
+				pendingRejectRef.current = null;
+				executeReviewAction(item.id, 'reject', payload);
+			}
+		};
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
+
 	// Action handlers
 	const optimisticRemoveItem = useCallback((itemId: string) => {
 		mutate(
@@ -220,6 +240,14 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 	const handleReject = useCallback(() => {
 		if (!currentItem || isActionLoading) return;
 
+		// If there's already a pending reject from a previous item, flush it immediately
+		if (pendingRejectRef.current) {
+			clearTimeout(pendingRejectRef.current.timeoutId);
+			const prev = pendingRejectRef.current;
+			pendingRejectRef.current = null;
+			executeReviewAction(prev.item.id, 'reject', prev.payload);
+		}
+
 		const item = currentItem;
 		const payload = { action: 'reject' as const, feedback: reviewComment || undefined };
 
@@ -233,9 +261,42 @@ export function StoryflowReviewLayout({ className }: StoryflowReviewLayoutProps)
 			setCurrentIndex(Math.max(0, currentIndex - 1));
 		}
 
-		// Execute immediately
-		executeReviewAction(item.id, 'reject', payload);
-		toast.success('Story rejected');
+		// Defer the API call by 5s to allow undo
+		const timeoutId = setTimeout(() => {
+			pendingRejectRef.current = null;
+			executeReviewAction(item.id, 'reject', payload);
+		}, 5000);
+
+		pendingRejectRef.current = { timeoutId, item, payload };
+
+		toast.success('Story rejected', {
+			duration: 5000,
+			action: {
+				label: 'Undo',
+				onClick: () => {
+					// Cancel the deferred API call
+					clearTimeout(timeoutId);
+					pendingRejectRef.current = null;
+
+					// Remove from history
+					setReviewHistory(prev => prev.filter(h => h.id !== item.id));
+
+					// Re-inject item into queue at front
+					mutate(
+						'/api/content?source=submission&submissionStatus=pending',
+						(currentData: { items: ContentItem[] } | undefined) => {
+							const existing = currentData?.items || [];
+							const filtered = existing.filter(i => i.id !== item.id);
+							return { ...currentData, items: [item, ...filtered] };
+						},
+						false
+					);
+
+					setCurrentIndex(0);
+					toast.success('Rejection undone');
+				},
+			},
+		});
 	}, [currentItem, isActionLoading, reviewComment, addToHistory, optimisticRemoveItem, currentIndex, items.length, executeReviewAction]);
 
 	// Page tour
