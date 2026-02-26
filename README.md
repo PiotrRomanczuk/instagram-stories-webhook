@@ -46,33 +46,13 @@ The review queue uses Tinder-style swipe gestures (swipe right = approve, left =
 
 ---
 
-## What I Built (34 Screenshots)
+## What I Built
 
 ### Authentication
 
-Google OAuth with role-based access. Test mode buttons in development for rapid iteration.
+Google OAuth with role-based access control (user/admin/developer). Test mode buttons in development for rapid iteration.
 
 ![Sign In](docs/screenshots/public/01-signin.png)
-
----
-
-### User Experience
-
-Regular users can submit content, track their submissions, and browse a community meme gallery.
-
-| Dashboard | Submit Content |
-|:-:|:-:|
-| ![User Dashboard](docs/screenshots/user/01-dashboard.png) | ![Submit](docs/screenshots/user/02-submit-empty.png) |
-
-| Upload Preview | Submissions History |
-|:-:|:-:|
-| ![Submit With Image](docs/screenshots/user/03-submit-with-image.png) | ![Submissions](docs/screenshots/user/04-submissions.png) |
-
-| Meme Gallery | Meme Submit |
-|:-:|:-:|
-| ![Memes](docs/screenshots/user/05-memes.png) | ![Meme Submit](docs/screenshots/user/06-meme-submit.png) |
-
----
 
 ### Admin Dashboard
 
@@ -80,15 +60,11 @@ Real-time overview: publishing stats, queue health, system status, and quick act
 
 ![Admin Dashboard](docs/screenshots/admin/01-dashboard.png)
 
----
-
 ### Review Queue (Swipe-to-Decide)
 
-Tinder-style content review. Swipe right to approve, left to reject. Keyboard shortcuts for power users.
+Tinder-style content review. Swipe right to approve, left to reject. Keyboard shortcuts for power users. Dedicated mobile layout with touch gestures.
 
 ![Review Queue](docs/screenshots/admin/02-review.png)
-
----
 
 ### Schedule (4 Views)
 
@@ -102,108 +78,7 @@ Drag-and-drop scheduling with day, week, month, and list views. "Humanize" mode 
 |:-:|:-:|
 | ![Month](docs/screenshots/admin/05-schedule-month.png) | ![List](docs/screenshots/admin/06-schedule-list.png) |
 
----
-
-### Content Hub (Kanban + List)
-
-Full content lifecycle management. Kanban board tracks items from draft through approval, scheduling, and publishing.
-
-| Kanban Board | List View |
-|:-:|:-:|
-| ![Kanban](docs/screenshots/admin/07-content-kanban.png) | ![List](docs/screenshots/admin/08-content-list.png) |
-
----
-
-### Analytics & Insights
-
-Publishing activity charts, Instagram Insights integration (reach, impressions, engagement), and a posted stories archive.
-
-| Posted Stories | Analytics |
-|:-:|:-:|
-| ![Posted](docs/screenshots/admin/09-posted-stories.png) | ![Analytics](docs/screenshots/admin/10-analytics.png) |
-
-| Instagram Insights | Notification Inbox |
-|:-:|:-:|
-| ![Insights](docs/screenshots/admin/11-insights.png) | ![Inbox](docs/screenshots/admin/12-inbox.png) |
-
----
-
-### System Administration
-
-Monitoring dashboard, user management with role control, developer tools with API key management, and cron job debugging.
-
-| Admin Monitoring | User Management |
-|:-:|:-:|
-| ![Monitoring](docs/screenshots/admin/13-admin-monitoring.png) | ![Users](docs/screenshots/admin/14-users.png) |
-
-| Developer Tools | Cron Debug |
-|:-:|:-:|
-| ![Dev Tools](docs/screenshots/admin/15-developer-tools.png) | ![Cron](docs/screenshots/admin/16-cron-debug.png) |
-
-| Release Notes | Debug Diagnostics |
-|:-:|:-:|
-| ![Release Notes](docs/screenshots/admin/17-release-notes.png) | ![Debug](docs/screenshots/admin/18-debug.png) |
-
----
-
-### Settings (Developer Role)
-
-Application configuration panel accessible to the developer role.
-
-![Settings](docs/screenshots/developer/01-settings.png)
-
----
-
-### Mobile Views (390x844)
-
-Every page is mobile-first. The review queue and schedule have dedicated mobile layouts, not just responsive breakpoints.
-
-<table>
-<tr>
-<td width="25%">
-
-**Sign In**
-![Mobile Sign In](docs/screenshots/mobile/01-signin.png)
-</td>
-<td width="25%">
-
-**Dashboard**
-![Mobile Dashboard](docs/screenshots/mobile/02-user-dashboard.png)
-</td>
-<td width="25%">
-
-**Submit**
-![Mobile Submit](docs/screenshots/mobile/03-submit.png)
-</td>
-<td width="25%">
-
-**Submissions**
-![Mobile Submissions](docs/screenshots/mobile/04-submissions.png)
-</td>
-</tr>
-<tr>
-<td>
-
-**Admin Home**
-![Mobile Admin](docs/screenshots/mobile/05-admin-dashboard.png)
-</td>
-<td>
-
-**Review**
-![Mobile Review](docs/screenshots/mobile/06-review.png)
-</td>
-<td>
-
-**Schedule**
-![Mobile Schedule](docs/screenshots/mobile/07-schedule-timeline.png)
-</td>
-<td>
-
-**Content**
-![Mobile Content](docs/screenshots/mobile/08-content.png)
-</td>
-</tr>
-</table>
+> The app has 22+ pages total including content submission, Kanban board, analytics, Instagram Insights, user management, and more. Full visual guide: [docs/VISUAL-GUIDE.md](docs/VISUAL-GUIDE.md)
 
 ---
 
