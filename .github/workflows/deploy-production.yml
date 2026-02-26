@@ -79,13 +79,16 @@ jobs:
       - name: Deploy to preview (NOT production)
         id: deploy
         run: |
-          # Deploy without --prod flag to get a preview URL
-          DEPLOY_OUTPUT=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} 2>&1)
-          PREVIEW_URL=$(echo "$DEPLOY_OUTPUT" | grep -oP 'https://[^\s]+\.vercel\.app' | head -1)
+          # Deploy without --prod flag to get a preview URL.
+          # Capture stdout only (the URL); let stderr flow to the log for visibility.
+          # The Vercel CLI prints the deployment URL as the last line of stdout.
+          PREVIEW_URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+
+          # Trim any trailing whitespace/newlines and take the last line
+          PREVIEW_URL=$(echo "$PREVIEW_URL" | tail -1 | tr -d '[:space:]')
 
           if [ -z "$PREVIEW_URL" ]; then
             echo "Failed to extract preview URL from deployment output"
-            echo "$DEPLOY_OUTPUT"
             exit 1
           fi
 
