@@ -66,7 +66,7 @@ test.describe('Developer Page', () => {
 			test.skip();
 		}
 
-		await page.waitForLoadState('networkidle', { timeout: 10000 });
+		await page.waitForLoadState('domcontentloaded');
 
 		const bodyText = await page.innerText('body');
 		const hasDeveloperContent =

@@ -31,17 +31,22 @@ test.describe('VP-3: Mobile Video Preview Responsiveness', () => {
 		const fileInput = page.locator('input[type="file"]');
 		await fileInput.setInputFiles(testVideoPath);
 
-		// VideoPreview should render and be visible on mobile
-		await expect(page.locator('text=/9:16 Video Preview/i')).toBeVisible({
-			timeout: 30000,
-		});
+		// Wait for the VideoPreview component to appear in DOM (may be below the fold)
+		const videoPreviewLabel = page.locator('text=/9:16 Video Preview/i');
+		await expect(videoPreviewLabel).toBeAttached({ timeout: 30000 });
+
+		// On small mobile viewports (375x667), the video preview may render
+		// below the fold. Scroll it into view before checking visibility.
+		await videoPreviewLabel.scrollIntoViewIfNeeded();
+		await expect(videoPreviewLabel).toBeVisible({ timeout: 10000 });
 
 		// Play button should be visible and clickable
 		const playButton = page.locator('button[aria-label*="Play video"]');
+		await playButton.scrollIntoViewIfNeeded();
 		await expect(playButton).toBeVisible();
 
 		// Video frame should fit within viewport
-		const videoContainer = page.locator('text=/9:16 Video Preview/i').locator('..');
+		const videoContainer = videoPreviewLabel.locator('..');
 		const boundingBox = await videoContainer.boundingBox();
 
 		if (boundingBox) {

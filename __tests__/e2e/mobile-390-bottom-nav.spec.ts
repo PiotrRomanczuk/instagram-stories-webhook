@@ -13,7 +13,7 @@ test.describe('Mobile 390px - Bottom Navigation', () => {
 	});
 
 	test('Bottom nav is visible on mobile', async ({ page }) => {
-		await page.goto('/', { waitUntil: 'load', timeout: 15000 });
+		await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 15000 });
 
 		const bottomNav = page.locator('nav.fixed.bottom-0');
 		await expect(bottomNav).toBeVisible({ timeout: 10000 });
@@ -24,24 +24,24 @@ test.describe('Mobile 390px - Bottom Navigation', () => {
 		expect(box!.y).toBeGreaterThan(700);
 	});
 
-	test('Five tab items present with correct labels', async ({ page }) => {
-		await page.goto('/', { waitUntil: 'load', timeout: 15000 });
+	test('Tab items present with correct labels for user role', async ({ page }) => {
+		await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 15000 });
 
 		const bottomNav = page.locator('nav.fixed.bottom-0');
 		await expect(bottomNav).toBeVisible({ timeout: 10000 });
 
-		// Verify all 5 tab labels are present
-		const expectedTabs = ['Home', 'Schedule', 'New', 'Review', 'Profile'];
+		// Regular user only sees Home, New, Profile (Schedule and Review are admin/developer only)
+		const expectedTabs = ['Home', 'New', 'Profile'];
 		for (const label of expectedTabs) {
 			await expect(bottomNav.getByText(label, { exact: true })).toBeVisible();
 		}
 
 		const links = bottomNav.locator('a');
-		await expect(links).toHaveCount(5);
+		await expect(links).toHaveCount(3);
 	});
 
 	test('FAB button has elevated styling', async ({ page }) => {
-		await page.goto('/', { waitUntil: 'load', timeout: 15000 });
+		await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 15000 });
 
 		const bottomNav = page.locator('nav.fixed.bottom-0');
 		await expect(bottomNav).toBeVisible({ timeout: 10000 });
@@ -62,25 +62,26 @@ test.describe('Mobile 390px - Bottom Navigation', () => {
 	});
 
 	test('Active tab has blue highlight', async ({ page }) => {
-		await page.goto('/', { waitUntil: 'load', timeout: 15000 });
+		await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 15000 });
 
 		const bottomNav = page.locator('nav.fixed.bottom-0');
 		await expect(bottomNav).toBeVisible({ timeout: 10000 });
 
-		// Home tab should be active (has text-blue-600)
+		// Home tab should be active (has text-[#2b6cee] custom blue)
 		const homeTab = bottomNav.getByRole('link', { name: /Home/i });
 		await expect(homeTab).toBeVisible();
 
-		// Check active state (has blue color)
+		// Check active state (custom blue color #2b6cee = rgb(43, 108, 238))
 		const hasActiveClass = await homeTab.evaluate((el) => {
-			return el.classList.contains('text-blue-600') ||
-				   getComputedStyle(el).color.includes('rgb(37, 99, 235)');
+			return el.classList.contains('text-\\[\\#2b6cee\\]') ||
+				   el.className.includes('text-[#2b6cee]') ||
+				   getComputedStyle(el).color.includes('rgb(43, 108, 238)');
 		});
 		expect(hasActiveClass).toBe(true);
 	});
 
 	test('Bottom nav hidden on sign-in page', async ({ page }) => {
-		await page.goto('/auth/signin', { waitUntil: 'load', timeout: 15000 });
+		await page.goto('/auth/signin', { waitUntil: 'domcontentloaded', timeout: 15000 });
 
 		const bottomNav = page.locator('nav.fixed.bottom-0');
 		const isVisible = await bottomNav.isVisible().catch(() => false);

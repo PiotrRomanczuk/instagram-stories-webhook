@@ -476,7 +476,7 @@ export async function rejectContent(
 }
 
 /**
- * Schedule content via PATCH
+ * Schedule content via dedicated schedule endpoint
  */
 export async function scheduleContent(
   page: Page,
@@ -492,7 +492,8 @@ export async function scheduleContent(
   });
 
   if (!response.ok()) {
-    throw new Error(`Failed to schedule content: ${response.statusText()}`);
+    const body = await response.json().catch(() => ({}));
+    throw new Error(`Failed to schedule content: ${response.statusText()} - ${JSON.stringify(body)}`);
   }
 }
 

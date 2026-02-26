@@ -13,7 +13,7 @@ test.describe('Mobile 390px - Schedule Timeline', () => {
 	});
 
 	test('Schedule timeline loads correctly', async ({ page }) => {
-		await page.goto('/schedule', { waitUntil: 'networkidle' });
+		await page.goto('/schedule', { waitUntil: 'domcontentloaded' });
 		await page.waitForSelector('[data-tour="schedule-timeline"]', { timeout: 15000 }).catch(() => {});
 
 		// Check for schedule elements
@@ -26,7 +26,7 @@ test.describe('Mobile 390px - Schedule Timeline', () => {
 	});
 
 	test('Timeline cards are tappable (44px minimum)', async ({ page }) => {
-		await page.goto('/schedule', { waitUntil: 'networkidle' });
+		await page.goto('/schedule', { waitUntil: 'domcontentloaded' });
 		await page.waitForSelector('[data-tour="schedule-timeline"]', { timeout: 15000 }).catch(() => {});
 
 		const timeline = page.locator('[data-tour="schedule-timeline"]');
@@ -47,7 +47,7 @@ test.describe('Mobile 390px - Schedule Timeline', () => {
 	});
 
 	test('Status filter chips are visible', async ({ page }) => {
-		await page.goto('/schedule', { waitUntil: 'networkidle' });
+		await page.goto('/schedule', { waitUntil: 'domcontentloaded' });
 		await page.waitForSelector('[data-tour="schedule-status-filters"]', { timeout: 15000 }).catch(() => {});
 
 		const filtersContainer = page.locator('[data-tour="schedule-status-filters"]');
@@ -57,7 +57,7 @@ test.describe('Mobile 390px - Schedule Timeline', () => {
 	});
 
 	test('Week strip navigation is present', async ({ page }) => {
-		await page.goto('/schedule', { waitUntil: 'networkidle' });
+		await page.goto('/schedule', { waitUntil: 'domcontentloaded' });
 		await page.waitForSelector('[data-tour="schedule-week-strip"]', { timeout: 15000 }).catch(() => {});
 
 		const weekStrip = page.locator('[data-tour="schedule-week-strip"]');
