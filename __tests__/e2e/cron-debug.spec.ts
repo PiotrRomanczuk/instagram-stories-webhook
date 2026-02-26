@@ -72,7 +72,7 @@ test.describe('Cron Debug Interface', () => {
 			test.skip();
 		}
 
-		await page.waitForLoadState('networkidle', { timeout: 10000 });
+		await page.waitForLoadState('domcontentloaded');
 
 		const bodyText = await page.innerText('body');
 		const hasCronContent =
@@ -103,7 +103,7 @@ test.describe('Cron Debug Interface', () => {
 			test.skip();
 		}
 
-		await page.waitForLoadState('networkidle', { timeout: 10000 });
+		await page.waitForLoadState('domcontentloaded');
 
 		const triggerButton = page.getByRole('button', {
 			name: /trigger|run|execute|process|manual/i,
@@ -132,7 +132,7 @@ test.describe('Cron Debug Interface', () => {
 			test.skip();
 		}
 
-		await page.waitForLoadState('networkidle', { timeout: 10000 });
+		await page.waitForLoadState('domcontentloaded');
 
 		const bodyText = await page.innerText('body');
 		const hasHistory =

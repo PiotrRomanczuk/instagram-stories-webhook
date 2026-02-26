@@ -35,8 +35,7 @@ test.describe('Schedule Calendar Advanced', () => {
 	});
 
 	test('view switching works if buttons exist', async ({ page }) => {
-		await page.goto('/schedule');
-		await page.waitForLoadState('domcontentloaded');
+		await page.goto('/schedule', { waitUntil: 'domcontentloaded' });
 		await page.waitForTimeout(1000);
 		// Look for view toggle buttons (month/week/day/list)
 		const viewButtons = page

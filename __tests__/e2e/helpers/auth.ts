@@ -43,7 +43,7 @@ export async function signInAsAdmin(page: Page, maxRetries = 5) {
 			// Clear cookies before each attempt to ensure clean state
 			await page.context().clearCookies();
 
-			await page.goto('/auth/signin', { waitUntil: 'load', timeout: 30000 });
+			await page.goto('/auth/signin', { waitUntil: 'domcontentloaded', timeout: 30000 });
 
 			// Wait for React hydration - the "Test Mode" text only appears after useEffect runs
 			const devOnlyText = page.locator('text=Test Mode');
@@ -64,7 +64,7 @@ export async function signInAsAdmin(page: Page, maxRetries = 5) {
 			// Wait for navigation away from signin page
 			await page.waitForURL(
 				(url) => !url.pathname.includes('/auth/signin'),
-				{ timeout: 30000 },
+				{ timeout: 30000, waitUntil: 'domcontentloaded' },
 			);
 
 			// Verify we're actually signed in
@@ -97,7 +97,7 @@ export async function signInAsUser(page: Page, maxRetries = 5) {
 			// Clear cookies before each attempt to ensure clean state
 			await page.context().clearCookies();
 
-			await page.goto('/auth/signin', { waitUntil: 'load', timeout: 30000 });
+			await page.goto('/auth/signin', { waitUntil: 'domcontentloaded', timeout: 30000 });
 
 			// Wait for React hydration - the "Test Mode" text only appears after useEffect runs
 			const devOnlyText = page.locator('text=Test Mode');
@@ -118,7 +118,7 @@ export async function signInAsUser(page: Page, maxRetries = 5) {
 			// Wait for navigation away from signin page
 			await page.waitForURL(
 				(url) => !url.pathname.includes('/auth/signin'),
-				{ timeout: 30000 },
+				{ timeout: 30000, waitUntil: 'domcontentloaded' },
 			);
 
 			// Verify we're actually signed in
@@ -153,7 +153,7 @@ export async function signInAsRealIG(page: Page, maxRetries = 5) {
 			await page.context().clearCookies();
 
 			// Navigate to signin page
-			await page.goto('/auth/signin', { waitUntil: 'load', timeout: 30000 });
+			await page.goto('/auth/signin', { waitUntil: 'domcontentloaded', timeout: 30000 });
 
 			// Wait for React hydration - the "Test Mode" text only appears after useEffect runs
 			const devOnlyText = page.locator('text=Test Mode');
@@ -172,7 +172,7 @@ export async function signInAsRealIG(page: Page, maxRetries = 5) {
 			// Wait for navigation away from signin page (NextAuth does redirects)
 			await page.waitForURL(
 				(url) => !url.pathname.includes('/auth/signin'),
-				{ timeout: 30000 },
+				{ timeout: 30000, waitUntil: 'domcontentloaded' },
 			);
 
 			// Final check - ensure we're not on signin anymore

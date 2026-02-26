@@ -1,7 +1,7 @@
 ---
-allowed-tools: Read, Edit, Write, Bash, Glob, Grep
-argument-hint: [--patch|--minor|--major] [--skip-linear] [--dry-run]
-description: Full ship workflow — validate branch & changes, bump version, run tests, update Linear, push, and create PR
+allowed-tools: Read, Edit, Write, Bash, Glob, Grep, Task
+argument-hint: [--patch|--minor|--major] [--skip-linear] [--skip-security] [--dry-run]
+description: Full ship workflow — validate branch & changes, run tests, security review, bump version, update Linear, push, and create PR
 ---
 
 # Ship Workflow
@@ -119,7 +119,52 @@ Quality gates (local):
 
 ---
 
-## Phase 5: Version Bump (Manual)
+## Phase 5: Security Review (unless `--skip-security`)
+
+Run a targeted security scan on the changed files before shipping. This catches secrets, missing auth, and common vulnerabilities before they reach the remote.
+
+**Spawn the `security-reviewer` agent** with the Task tool to scan the diff:
+
+```
+Task(subagent_type="security-reviewer", prompt="Run a targeted security review on the changes being shipped. Focus ONLY on files changed in this branch (get them with `git diff origin/master..HEAD --name-only`). Check for:
+
+1. **Secret leaks**: Scan changed files for hardcoded secrets, tokens, passwords, API keys (Instagram tokens, Supabase keys, FB App Secret, etc.)
+2. **NEXT_PUBLIC_ exposure**: Check if any server-side secrets are exposed with NEXT_PUBLIC_ prefix (especially FB_APP_SECRET, SUPABASE_SERVICE_ROLE_KEY, WEBHOOK_SECRET)
+3. **Token logging**: Check for console.log/console.error that might log Instagram tokens, Supabase service role keys, or other secrets without masking
+4. **New API routes**: If any new API routes were added in app/api/, verify they have auth checks (getServerSession or CRON_SECRET/WEBHOOK_SECRET validation)
+5. **Input validation**: New POST/PUT endpoints must validate input with Zod schemas
+6. **Webhook security**: If webhook routes were modified, verify WEBHOOK_SECRET is validated strictly (not bypassed if undefined)
+7. **RLS bypass risk**: If any Supabase queries were added/modified, check they use supabaseAdmin only in server-side code and not in client components
+8. **npm audit**: Run `npm audit --production` and report any critical/high vulnerabilities
+
+Report format:
+- PASS: item checked, no issues
+- FAIL: item checked, issue found (with file:line reference)
+- SKIP: not applicable (e.g., no new API routes)
+
+If ANY item is FAIL, list all failures clearly so the developer can fix them before shipping.")
+```
+
+**On FAIL**: Report findings and STOP. The developer must fix security issues before shipping.
+**On PASS**: Report summary and continue.
+
+```
+Security review:
+  Secret leaks:       PASS
+  NEXT_PUBLIC_ check: PASS
+  Token logging:      PASS
+  New API routes:     SKIP (no new routes)
+  Input validation:   SKIP (no new endpoints)
+  Webhook security:   SKIP (no webhook changes)
+  RLS bypass risk:    PASS
+  npm audit:          PASS (0 critical, 0 high)
+```
+
+If `--skip-security` was passed, skip this phase and note it in the summary.
+
+---
+
+## Phase 6: Version Bump (Manual)
 
 Version bumping is **manual** and must be done before the final commit on the branch. After the PR is merged, `npm run release` creates the git tag and triggers a GitHub Release.
 
@@ -161,7 +206,7 @@ npm run release        # Creates v0.16.0 tag + triggers GitHub Release
 
 ---
 
-## Phase 6: Push to Remote
+## Phase 7: Push to Remote
 
 1. Check if the branch has an upstream: `git rev-parse --abbrev-ref @{upstream} 2>/dev/null`
 2. If no upstream: `git push -u origin {branch-name}`
@@ -171,7 +216,7 @@ npm run release        # Creates v0.16.0 tag + triggers GitHub Release
 
 ---
 
-## Phase 7: Update Linear (unless `--skip-linear`)
+## Phase 8: Update Linear (unless `--skip-linear`)
 
 If a `ISW-XXX` ticket ID was extracted from the branch name:
 
@@ -184,7 +229,7 @@ If no ticket ID was found in the branch name, skip and note it in the summary.
 
 ---
 
-## Phase 8: Create Pull Request
+## Phase 9: Create Pull Request
 
 ### Determine PR metadata:
 
@@ -211,6 +256,7 @@ Closes ISW-XXX
 
 ## Quality Gates
 - [x] Unit tests passing
+- [x] Security review passing
 - [x] Version bump: {old} -> {new} ({type} from branch prefix)
 - [x] Lint + TSC checked on push (hooks)
 
@@ -223,7 +269,7 @@ EOF
 
 ---
 
-## Phase 9: Post-ship (Linear + Summary)
+## Phase 10: Post-ship (Linear + Summary)
 
 1. If Linear is enabled and a ticket was found:
    - Add a comment on the Linear issue with the PR URL and change summary
@@ -238,7 +284,7 @@ Ship complete!
   Linear:   ISW-123 → In Review
   Release:  run `npm run release` after merge to create v0.16.0 tag
 
-  Quality:  tests ✓ | lint ✓ (hook) | tsc ✓ (hook)
+  Quality:  tests ✓ | security ✓ | lint ✓ (hook) | tsc ✓ (hook)
 ```
 
 3. **History Doc Reminder**:
@@ -256,8 +302,8 @@ Ship complete!
 ## Dry Run Mode (`--dry-run`)
 
 If `--dry-run` is passed:
-- Run Phase 1 (pre-flight), Phase 2 (branch validation), and Phase 4 (unit tests) normally
-- For Phase 5-9, only **print what would happen** without executing
+- Run Phase 1-5 normally (pre-flight, validation, uncommitted changes, tests, security review)
+- For Phase 6-10, only **print what would happen** without executing
 - Useful for checking readiness before shipping
 
 ---
