@@ -83,8 +83,8 @@ describe('Navbar', () => {
 
 	it('should render logo', () => {
 		render(<Navbar />);
-		expect(screen.getByText('MARSZAL')).toBeInTheDocument();
-		expect(screen.getByText('ARTS')).toBeInTheDocument();
+		expect(screen.getByText('ISM')).toBeInTheDocument();
+		expect(screen.getByText('Stories Manager')).toBeInTheDocument();
 	});
 
 	it('should show user navigation items for regular user', () => {

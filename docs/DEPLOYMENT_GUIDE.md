@@ -206,7 +206,7 @@ gh pr create --base master --head staging \
 **Expected Behavior**:
 1. **Gate 1**: Verify merged from staging ✓
 2. **Gate 2**: Quality gates (lint, tsc, tests) ✓
-3. **Deploy**: Production deployment to marszal-arts.vercel.app
+3. **Deploy**: Production deployment to stories-webhook.vercel.app
 4. **Gate 3**: Smoke tests (5-minute critical path tests)
 5. **Rollback**: If smoke tests fail, auto-rollback to previous version
 

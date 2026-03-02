@@ -31,7 +31,7 @@ curl -X GET http://localhost:3000/api/cron/process \
   -H "Authorization: Bearer ${CRON_SECRET}"
 
 # Production testing
-curl -X GET https://marszal-arts.vercel.app/api/cron/process \
+curl -X GET https://stories-webhook.vercel.app/api/cron/process \
   -H "Authorization: Bearer ${CRON_SECRET}"
 ```
 
@@ -55,7 +55,7 @@ JOB=$1
 ENV=${2:-local}
 
 if [ "$ENV" = "production" ]; then
-  BASE_URL="https://marszal-arts.vercel.app"
+  BASE_URL="https://stories-webhook.vercel.app"
 else
   BASE_URL="http://localhost:3000"
 fi
@@ -215,7 +215,7 @@ vercel env pull .env.production
 
 # 2. Call production endpoint
 source .env.production
-curl -X GET https://marszal-arts.vercel.app/api/cron/process \
+curl -X GET https://stories-webhook.vercel.app/api/cron/process \
   -H "Authorization: Bearer ${CRON_SECRET}"
 ```
 
@@ -305,7 +305,7 @@ vercel env pull .env.production
 source .env.production
 
 # Call production cron
-curl -X GET https://marszal-arts.vercel.app/api/cron/process \
+curl -X GET https://stories-webhook.vercel.app/api/cron/process \
   -H "Authorization: Bearer ${CRON_SECRET}"
 ```
 
@@ -313,10 +313,10 @@ curl -X GET https://marszal-arts.vercel.app/api/cron/process \
 
 ```bash
 # Watch production logs in real-time
-vercel logs marszal-arts --follow
+vercel logs stories-webhook --follow
 
 # Or via Vercel Dashboard:
-# https://vercel.com/[your-account]/marszal-arts/logs
+# https://vercel.com/[your-account]/stories-webhook/logs
 ```
 
 ---
@@ -325,7 +325,7 @@ vercel logs marszal-arts --follow
 
 ### Vercel Dashboard
 
-1. Go to: https://vercel.com/piotrromanczuks-projects/marszal-arts
+1. Go to: https://vercel.com/piotrromanczuks-projects/stories-webhook
 2. Click **"Logs"**
 3. Filter by: `/api/cron/*`
 4. See execution history, errors, duration
@@ -406,7 +406,7 @@ curl http://localhost:3000/api/cron/process \
 
 ### Test Production
 ```bash
-curl https://marszal-arts.vercel.app/api/cron/process \
+curl https://stories-webhook.vercel.app/api/cron/process \
   -H "Authorization: Bearer ${CRON_SECRET}"
 ```
 

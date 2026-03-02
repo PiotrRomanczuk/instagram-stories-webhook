@@ -8,7 +8,7 @@
 
 ### Production Deployment
 - **Last Deployed**: ~15 hours ago (Feb 5, 00:51 UTC)
-- **URL**: https://marszal-arts.vercel.app
+- **URL**: https://stories-webhook.vercel.app
 - **Status**: ⚠️ Out of date
 
 ### Local Code
@@ -75,7 +75,7 @@ npx vercel ls --prod
 
 **Step 4: Run production smoke tests**
 ```bash
-BASE_URL=https://marszal-arts.vercel.app \
+BASE_URL=https://stories-webhook.vercel.app \
 ENABLE_REAL_IG_TESTS=true \
 ENABLE_LIVE_IG_PUBLISH=true \
   npm run test:e2e:production:smoke
@@ -92,10 +92,10 @@ npx vercel
 
 # Get preview URL
 npx vercel ls
-# Example: https://marszal-arts-git-main-user.vercel.app
+# Example: https://stories-webhook-git-main-user.vercel.app
 
 # Test against preview
-BASE_URL=https://marszal-arts-git-main-user.vercel.app \
+BASE_URL=https://stories-webhook-git-main-user.vercel.app \
 ENABLE_REAL_IG_TESTS=true \
 ENABLE_LIVE_IG_PUBLISH=true \
   npm run test:e2e:production:smoke
@@ -209,7 +209,7 @@ jobs:
       # Step 3: Run production smoke tests
       - name: Test Production
         env:
-          BASE_URL: https://marszal-arts.vercel.app
+          BASE_URL: https://stories-webhook.vercel.app
           ENABLE_REAL_IG_TESTS: true
           ENABLE_LIVE_IG_PUBLISH: true
         run: npm run test:e2e:production:smoke
@@ -286,7 +286,7 @@ git log -1 --oneline
 npx vercel --prod
 
 # Test production (after deploy)
-BASE_URL=https://marszal-arts.vercel.app \
+BASE_URL=https://stories-webhook.vercel.app \
 ENABLE_REAL_IG_TESTS=true \
 ENABLE_LIVE_IG_PUBLISH=true \
   npm run test:e2e:production:smoke

@@ -91,10 +91,10 @@ export function Navbar() {
 					<div className="flex items-center gap-2">
 						<Link href="/" className="flex items-center gap-2">
 							<span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-xl font-black tracking-tighter text-transparent">
-								MARSZAL
+								ISM
 							</span>
 							<span className="text-xl font-black tracking-tighter text-foreground">
-								ARTS
+								Stories Manager
 							</span>
 						</Link>
 						{isAdminOrDev ? (

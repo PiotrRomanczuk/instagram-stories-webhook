@@ -7,7 +7,7 @@ Your `vercel-awesome-ai` MCP server in `~/.claude.json` currently has:
 ```json
 "vercel-awesome-ai": {
   "type": "http",
-  "url": "https://mcp.vercel.com/piotrromanczuks-projects/marszal-arts"
+  "url": "https://mcp.vercel.com/piotrromanczuks-projects/stories-webhook"
 }
 ```
 
@@ -47,7 +47,7 @@ Find the section:
   "mcpServers": {
     "vercel-awesome-ai": {
       "type": "http",
-      "url": "https://mcp.vercel.com/piotrromanczuks-projects/marszal-arts"
+      "url": "https://mcp.vercel.com/piotrromanczuks-projects/stories-webhook"
     }
   }
 }
@@ -60,7 +60,7 @@ Find the section:
   "mcpServers": {
     "vercel-awesome-ai": {
       "type": "http",
-      "url": "https://mcp.vercel.com/piotrromanczuks-projects/marszal-arts",
+      "url": "https://mcp.vercel.com/piotrromanczuks-projects/stories-webhook",
       "headers": {
         "X-API-Key": "your_vercel_api_key_here"
       }
@@ -109,7 +109,7 @@ You should see:
 
 Try using a Vercel MCP tool:
 ```
-"List my Vercel deployments for marszal-arts project"
+"List my Vercel deployments for stories-webhook project"
 ```
 
 Should return deployment list without authentication errors.

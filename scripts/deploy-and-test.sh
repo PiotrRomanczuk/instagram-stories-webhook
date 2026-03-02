@@ -68,7 +68,7 @@ read -p "Run production smoke tests now? (y/N) " -n 1 -r
 echo ""
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     echo "ℹ️ Smoke tests skipped. Run manually with:"
-    echo "   BASE_URL=https://marszal-arts.vercel.app npm run test:e2e:production:smoke"
+    echo "   BASE_URL=https://stories-webhook.vercel.app npm run test:e2e:production:smoke"
     exit 0
 fi
 
@@ -77,7 +77,7 @@ echo ""
 echo "🧪 Step 6: Running production smoke tests..."
 echo ""
 
-BASE_URL=https://marszal-arts.vercel.app \
+BASE_URL=https://stories-webhook.vercel.app \
 ENABLE_REAL_IG_TESTS=true \
 ENABLE_LIVE_IG_PUBLISH=true \
   npm run test:e2e:production:smoke
@@ -88,4 +88,4 @@ echo ""
 echo "📊 Summary:"
 echo "  - Deployed: ✅"
 echo "  - Tests: ✅"
-echo "  - Production URL: https://marszal-arts.vercel.app"
+echo "  - Production URL: https://stories-webhook.vercel.app"

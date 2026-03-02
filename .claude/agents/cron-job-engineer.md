@@ -195,7 +195,7 @@ All endpoints require `Authorization: Bearer $CRON_SECRET`.
 
 ```bash
 curl -H "Authorization: Bearer $CRON_SECRET" \
-  https://marszal-arts.vercel.app/api/developer/cron-debug/stuck-locks
+  https://stories-webhook.vercel.app/api/developer/cron-debug/stuck-locks
 ```
 
 If items are stuck in `processing` for >5 minutes, they should auto-recover. If not:
@@ -204,14 +204,14 @@ If items are stuck in `processing` for >5 minutes, they should auto-recover. If 
 
 ```bash
 curl -H "Authorization: Bearer $CRON_SECRET" \
-  https://marszal-arts.vercel.app/api/developer/cron-debug/pending-posts
+  https://stories-webhook.vercel.app/api/developer/cron-debug/pending-posts
 ```
 
 ### Step 3: Check Failed Posts
 
 ```bash
 curl -H "Authorization: Bearer $CRON_SECRET" \
-  https://marszal-arts.vercel.app/api/developer/cron-debug/failed-posts
+  https://stories-webhook.vercel.app/api/developer/cron-debug/failed-posts
 ```
 
 Look at `error` column for specific failure reasons.
@@ -228,7 +228,7 @@ If a post is stuck, force-process it:
 curl -X POST -H "Authorization: Bearer $CRON_SECRET" \
   -H "Content-Type: application/json" \
   -d '{"postId": "uuid-here"}' \
-  https://marszal-arts.vercel.app/api/developer/cron-debug/force-process
+  https://stories-webhook.vercel.app/api/developer/cron-debug/force-process
 ```
 
 ---

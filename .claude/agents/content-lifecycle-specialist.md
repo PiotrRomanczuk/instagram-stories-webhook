@@ -241,13 +241,13 @@ Use the cron debug endpoint to manually recover or force-process:
 ```bash
 # Check stuck locks
 curl -H "Authorization: Bearer $CRON_SECRET" \
-  https://marszal-arts.vercel.app/api/developer/cron-debug/stuck-locks
+  https://stories-webhook.vercel.app/api/developer/cron-debug/stuck-locks
 
 # Force process a specific item
 curl -X POST -H "Authorization: Bearer $CRON_SECRET" \
   -H "Content-Type: application/json" \
   -d '{"postId": "uuid"}' \
-  https://marszal-arts.vercel.app/api/developer/cron-debug/force-process
+  https://stories-webhook.vercel.app/api/developer/cron-debug/force-process
 ```
 
 ---
