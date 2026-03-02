@@ -6,32 +6,8 @@
 	},
 	"crons": [
 		{
-			"path": "/api/cron/process",
-			"schedule": "* * * * *"
-		},
-		{
-			"path": "/api/cron/identity-audit",
-			"schedule": "*/5 * * * *"
-		},
-		{
-			"path": "/api/cron/check-media-health",
-			"schedule": "0 */6 * * *"
-		},
-		{
-			"path": "/api/schedule/refresh-token",
-			"schedule": "0 0 * * 0"
-		},
-		{
-			"path": "/api/cron/process-videos",
-			"schedule": "*/5 * * * *"
-		},
-		{
-			"path": "/api/cron/cleanup-logs",
-			"schedule": "0 3 * * *"
-		},
-		{
-			"path": "/api/cron/cleanup-orphans",
-			"schedule": "0 3 * * *"
+			"path": "/api/cron/dispatch",
+			"schedule": "0 0 * * *"
 		}
 	]
 }
