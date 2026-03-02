@@ -1,4 +1,4 @@
-# MARSZAL ARTS — Visual Guide
+# Instagram Stories Manager — Visual Guide
 
 Comprehensive visual documentation of every page and key interaction in the application, organized by user role.
 

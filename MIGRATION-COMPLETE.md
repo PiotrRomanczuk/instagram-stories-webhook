@@ -19,7 +19,7 @@ Successfully migrated 46 files from project `.claude/` to global `~/.claude/` di
 All files underwent:
 - `ISW-XXX` → `TICKET-XXX` (all ticket references)
 - `instagram-stories-webhook` → `{project}` or removed
-- `marszal-arts.vercel.app` → `your-app.vercel.app`
+- `stories-webhook.vercel.app` → `your-app.vercel.app`
 - `@www_hehe_pl`, `p.romanczuk@gmail.com` → removed
 - `BMS` team → `{team}`
 - Specific table names (oauth_tokens, scheduled_posts, etc.) → `{generic_table}` or removed

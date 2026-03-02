@@ -22,7 +22,7 @@ echo ""
 
 # Set base URL
 if [ "$ENV" = "production" ]; then
-  BASE_URL="https://marszal-arts.vercel.app"
+  BASE_URL="https://stories-webhook.vercel.app"
   echo "Environment: ${YELLOW}PRODUCTION${NC}"
 else
   BASE_URL="http://localhost:3000"

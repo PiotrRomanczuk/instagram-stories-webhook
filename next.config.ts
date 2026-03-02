@@ -88,7 +88,7 @@ export default withSentryConfig(withNextIntl(nextConfig), {
 	// Suppresses source map uploading logs during bundling
 	silent: !process.env.CI,
 	org: 'bmr-p0',
-	project: 'marszal-arts',
+	project: 'stories-webhook',
 
 	// For all available options, see:
 	// https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/

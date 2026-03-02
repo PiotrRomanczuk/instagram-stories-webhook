@@ -55,7 +55,7 @@ vercel --prod
 gh pr checks --watch
 
 # Verify deployment is live
-curl -s -o /dev/null -w "%{http_code}" https://marszal-arts.vercel.app
+curl -s -o /dev/null -w "%{http_code}" https://stories-webhook.vercel.app
 
 # Check Vercel build logs for errors
 # Use Vercel MCP: list_deployments, get_deployment_build_logs
@@ -75,7 +75,7 @@ Verify all 5 cron jobs are running:
 
 ```bash
 # Check cron status via developer debug endpoint
-curl -H "Authorization: Bearer $CRON_SECRET" https://marszal-arts.vercel.app/api/developer/cron-debug/status
+curl -H "Authorization: Bearer $CRON_SECRET" https://stories-webhook.vercel.app/api/developer/cron-debug/status
 ```
 
 ---
@@ -102,7 +102,7 @@ curl -H "Authorization: Bearer $CRON_SECRET" https://marszal-arts.vercel.app/api
 
 ```bash
 # Check which variables are set (without revealing values)
-curl -s https://marszal-arts.vercel.app/api/debug/env | jq 'keys'
+curl -s https://stories-webhook.vercel.app/api/debug/env | jq 'keys'
 ```
 
 Never log or expose full secret values. Use masking: `value.slice(0, 6) + '...'`
@@ -189,11 +189,11 @@ gh run rerun <run-id> --failed
 
 ```bash
 # API health check
-curl https://marszal-arts.vercel.app/api/config
+curl https://stories-webhook.vercel.app/api/config
 
 # Cron health
 curl -H "Authorization: Bearer $CRON_SECRET" \
-  https://marszal-arts.vercel.app/api/developer/cron-debug/metrics
+  https://stories-webhook.vercel.app/api/developer/cron-debug/metrics
 ```
 
 ---
@@ -210,7 +210,7 @@ After every production deploy, verify:
 
 ```bash
 # Automated smoke test
-BASE_URL=https://marszal-arts.vercel.app npx playwright test --config=playwright.config.production.ts --grep "smoke"
+BASE_URL=https://stories-webhook.vercel.app npx playwright test --config=playwright.config.production.ts --grep "smoke"
 ```
 
 ---
@@ -309,11 +309,11 @@ export async function GET(req: Request) {
 ```bash
 # Check cron job status
 curl -H "Authorization: Bearer $CRON_SECRET" \
-  https://marszal-arts.vercel.app/api/developer/cron-debug/status
+  https://stories-webhook.vercel.app/api/developer/cron-debug/status
 
 # Check for stuck processing locks
 curl -H "Authorization: Bearer $CRON_SECRET" \
-  https://marszal-arts.vercel.app/api/developer/cron-debug/stuck-locks
+  https://stories-webhook.vercel.app/api/developer/cron-debug/stuck-locks
 ```
 
 ---

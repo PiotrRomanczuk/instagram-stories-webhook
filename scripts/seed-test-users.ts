@@ -1,7 +1,11 @@
 /**
- * Seed test users for E2E testing
+ * Seed test users for E2E testing and production test access
  *
  * Usage: npx tsx scripts/seed-test-users.ts
+ *
+ * After seeding, set these env vars on Vercel to enable test login:
+ *   ENABLE_TEST_AUTH=true
+ *   TEST_AUTH_EMAILS=admin@test.com,user@test.com,user2@test.com
  */
 
 async function seedTestUsers() {

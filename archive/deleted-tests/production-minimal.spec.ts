@@ -7,7 +7,7 @@ import { test, expect } from '@playwright/test';
  * No test fixtures, no login required - just basic health checks.
  *
  * RUN:
- *   BASE_URL=https://marszal-arts.vercel.app \
+ *   BASE_URL=https://stories-webhook.vercel.app \
  *     npx playwright test production-minimal.spec.ts
  */
 

@@ -56,7 +56,7 @@ Need to read source files first, then apply transformations.
 | 7 | `linear-coordinator.md` | `~/.claude/agents/linear-coordinator.md` | Remove project URL `https://linear.app/bms95/...`. Remove team `BMS` → `{team}`. Remove issue range `ISW-137..186`. Remove Phase 1-4 milestone dates. |
 | 8 | `pr-manager.md` | `~/.claude/agents/pr-manager.md` | Remove `ISW-XXX` → `TICKET-XXX`. Remove Linear URL/team `BMS` → `{team}`. Remove project name + milestone dates. |
 | 9 | `pr-reviewer.md` | `~/.claude/agents/pr-reviewer.md` | Remove `@www_hehe_pl`. Generalize Instagram API "Pass 6" → "External API Integration". Remove `BMS` → `{team}`. |
-| 10 | `observability-engineer.md` | `~/.claude/agents/observability-engineer.md` | Remove `ig:publish`, `ig:container` → generic modules. Remove `marszal-arts.vercel.app` → `your-app.vercel.app`. Remove specific health endpoints. |
+| 10 | `observability-engineer.md` | `~/.claude/agents/observability-engineer.md` | Remove `ig:publish`, `ig:container` → generic modules. Remove `stories-webhook.vercel.app` → `your-app.vercel.app`. Remove specific health endpoints. |
 
 ### Heavy Agents (7) — significant rewrites
 
@@ -66,9 +66,9 @@ These require reading source + rebuilding content generically while preserving w
 |---|-----------|-------------------|----------------|
 | 11 | `instagram-api-specialist.md` | **`api-integration-specialist.md`** (RENAME) | Full rewrite. Remove Meta API specifics (3-step publish, codes 190/100/368). Rebuild as generic external API agent: research-first protocol, error handling patterns, token management, rate limiting, retry strategies, 8-step debug workflow. |
 | 12 | `test-engineer.md` | `test-engineer.md` | Remove `@www_hehe_pl`, `p.romanczuk@gmail.com`, LIVE-PUB IDs, Instagram-specific test patterns. Preserve "never mock in E2E" philosophy, 3-layer strategy, MSW patterns, E2E test limits. |
-| 13 | `deployment-ops.md` | `deployment-ops.md` | Remove `marszal-arts.vercel.app`, 5 specific cron jobs, specific env vars, debug endpoints. Keep deployment workflow, rollback procedures, incident response. |
+| 13 | `deployment-ops.md` | `deployment-ops.md` | Remove `stories-webhook.vercel.app`, 5 specific cron jobs, specific env vars, debug endpoints. Keep deployment workflow, rollback procedures, incident response. |
 | 14 | `cron-job-engineer.md` | `cron-job-engineer.md` | Remove 5 specific job defs, `/api/developer/cron-debug/*`, URLs. Keep job registry pattern, distributed locking, quota gates, fail-open design. |
-| 15 | `content-lifecycle-specialist.md` | `content-lifecycle-specialist.md` | Remove Instagram publishing refs, `marszal-arts.vercel.app`, table names. Keep state machine, processing locks, retry logic, bulk ops. |
+| 15 | `content-lifecycle-specialist.md` | `content-lifecycle-specialist.md` | Remove Instagram publishing refs, `stories-webhook.vercel.app`, table names. Keep state machine, processing locks, retry logic, bulk ops. |
 | 16 | `media-pipeline-specialist.md` | `media-pipeline-specialist.md` | Remove 1080x1920/9:16 Instagram specs, specific storage buckets. Keep FFmpeg patterns, validation pipeline, perceptual hashing. |
 | 17 | `analytics-engineer.md` | `analytics-engineer.md` | Remove Instagram Insights API, `v21.0`, `api_quota_history`, component paths. Keep dashboard patterns, metrics architecture, quota monitoring. |
 
@@ -83,7 +83,7 @@ Run after all files are written:
 find ~/.claude/{agents,commands,skills} -type f | wc -l
 
 # 2. No project-specific leaks
-grep -ri "instagram\|ISW-\|marszal-arts\|@www_hehe_pl\|oauth_tokens\|scheduled_posts\|meme_submissions" \
+grep -ri "instagram\|ISW-\|stories-webhook\|@www_hehe_pl\|oauth_tokens\|scheduled_posts\|meme_submissions" \
   ~/.claude/agents/ ~/.claude/commands/ ~/.claude/skills/
 # Expected: zero matches
 
@@ -107,7 +107,7 @@ Apply to ALL remaining files:
 | `ISW-XXX` or `ISW-\d+` | `TICKET-XXX` |
 | `instagram-stories-webhook` | remove or `{project}` |
 | `Instagram Stories Webhook` | remove or `{Project Name}` |
-| `marszal-arts.vercel.app` | `your-app.vercel.app` |
+| `stories-webhook.vercel.app` | `your-app.vercel.app` |
 | `@www_hehe_pl` | remove |
 | `p.romanczuk@gmail.com` | remove |
 | `BMS` (team name) | `{team}` |

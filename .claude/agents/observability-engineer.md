@@ -131,7 +131,7 @@ Sentry.captureException(error, {
 
 ```bash
 #!/bin/bash
-BASE_URL=${1:-"https://marszal-arts.vercel.app"}
+BASE_URL=${1:-"https://stories-webhook.vercel.app"}
 
 echo "=== Health Check ==="
 # Basic connectivity

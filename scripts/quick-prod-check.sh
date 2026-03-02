@@ -3,7 +3,7 @@
 # Quick Production Check - No Playwright needed
 # Just basic HTTP checks
 
-URL="https://marszal-arts.vercel.app"
+URL="https://stories-webhook.vercel.app"
 
 echo "🔍 Quick Production Check"
 echo "========================="

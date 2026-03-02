@@ -44,10 +44,10 @@ export const authOptions: AuthOptions = {
 			clientId: process.env.AUTH_GOOGLE_ID || '',
 			clientSecret: process.env.AUTH_GOOGLE_SECRET || '',
 		}),
-		...(process.env.NODE_ENV !== 'production' &&
-		(process.env.NODE_ENV === 'development' ||
-			process.env.NODE_ENV === 'test' ||
-			process.env.ENABLE_TEST_AUTH === 'true')
+		...(process.env.ENABLE_TEST_AUTH === 'true' ||
+		(process.env.NODE_ENV !== 'production' &&
+			(process.env.NODE_ENV === 'development' ||
+				process.env.NODE_ENV === 'test'))
 			? [
 					CredentialsProvider({
 						id: 'test-credentials',
@@ -166,7 +166,7 @@ export const authOptions: AuthOptions = {
 					'user2@test.com': 'user',
 					'p.romanczuk@gmail.com': 'admin',
 				};
-				if (process.env.NODE_ENV !== 'production' && testUserRoles[email]) {
+				if ((process.env.NODE_ENV !== 'production' || process.env.ENABLE_TEST_AUTH === 'true') && testUserRoles[email]) {
 					token.role = testUserRoles[email];
 				} else {
 					const role = await getUserRole(email);
