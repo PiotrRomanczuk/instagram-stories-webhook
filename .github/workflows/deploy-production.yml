@@ -71,17 +71,16 @@ jobs:
         run: npm install -g vercel
 
       - name: Pull Vercel environment
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: Build project
-        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+      - name: Build project for preview
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy to preview (NOT production)
         id: deploy
         run: |
-          # Deploy without --prod flag to get a preview URL.
-          # Capture stdout only (the URL); let stderr flow to the log for visibility.
-          # The Vercel CLI prints the deployment URL as the last line of stdout.
+          # Deploy as preview to get a testable URL before promoting to production.
+          # Build target must match deploy target: preview build → preview deploy.
           PREVIEW_URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
 
           # Trim any trailing whitespace/newlines and take the last line
