@@ -111,7 +111,7 @@ jobs:
             ## 🚨 Production E2E Tests Failed
 
             **Workflow:** Production E2E Suite (113 tests)
-            **Trigger:** ${{ github.event_name === 'schedule' ? 'Scheduled (daily at 2 AM UTC)' : 'Manual trigger' }}
+            **Trigger:** ${{ github.event_name == 'schedule' && 'Scheduled (daily at 2 AM UTC)' || 'Manual trigger' }}
             **Run:** [View Details](${runUrl})
 
             **Test Coverage:**
