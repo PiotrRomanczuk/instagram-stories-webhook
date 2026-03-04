@@ -14,6 +14,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
 import { Logger } from '@/lib/utils/logger';
+import { preventWriteForDemo } from '@/lib/preview-guard';
 
 const MODULE = 'api:media:signed-upload-url';
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'video/mp4', 'video/quicktime', 'video/webm'];
@@ -24,6 +25,9 @@ export async function POST(request: Request) {
 		if (!session?.user) {
 			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 		}
+
+		const demoGuard = preventWriteForDemo(session);
+		if (demoGuard) return demoGuard;
 
 		const body = await request.json();
 		const { fileName, contentType, pathPrefix = 'uploads' } = body;

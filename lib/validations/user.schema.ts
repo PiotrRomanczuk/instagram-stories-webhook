@@ -6,7 +6,7 @@ import { z } from 'zod';
  */
 
 // User role enum
-export const userRoleSchema = z.enum(['developer', 'admin', 'user']);
+export const userRoleSchema = z.enum(['developer', 'admin', 'user', 'demo']);
 
 /**
  * Schema for adding a new user to the whitelist

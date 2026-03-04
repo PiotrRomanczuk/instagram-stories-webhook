@@ -13,6 +13,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
 import { Logger } from '@/lib/utils/logger';
+import { preventWriteForDemo } from '@/lib/preview-guard';
 
 const MODULE = 'api:media:upload';
 const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
@@ -24,6 +25,9 @@ export async function POST(request: Request) {
 		if (!session?.user) {
 			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 		}
+
+		const demoGuard = preventWriteForDemo(session);
+		if (demoGuard) return demoGuard;
 
 		const formData = await request.formData();
 		const file = formData.get('file');

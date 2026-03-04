@@ -9,6 +9,7 @@ import {
 } from '@/lib/memes-db';
 import { addScheduledPost } from '@/lib/database/scheduled-posts';
 import { getUserRole, getUserId, requireAdmin } from '@/lib/auth-helpers';
+import { preventWriteForDemo } from '@/lib/preview-guard';
 import { reviewMemeSchema } from '@/lib/validations/meme.schema';
 
 export async function GET(
@@ -53,6 +54,10 @@ export async function PATCH(
 		const { id } = await params;
 		const session = await getServerSession(authOptions);
 		requireAdmin(session);
+
+		const demoGuard = preventWriteForDemo(session);
+		if (demoGuard) return demoGuard;
+
 		const adminId = getUserId(session);
 
 		const body = await req.json();
@@ -139,6 +144,9 @@ export async function DELETE(
 		if (!session) {
 			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 		}
+
+		const demoGuard = preventWriteForDemo(session);
+		if (demoGuard) return demoGuard;
 
 		const userId = getUserId(session);
 		const role = getUserRole(session);

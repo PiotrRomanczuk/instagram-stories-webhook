@@ -5,6 +5,7 @@ import { supabaseAdmin } from '@/lib/config/supabase-admin';
 import { sendMessage, sendImageMessage } from '@/lib/instagram/messages';
 import { Logger } from '@/lib/utils/logger';
 import { z } from 'zod';
+import { preventWriteForDemo } from '@/lib/preview-guard';
 import type { DbInstagramConversation } from '@/lib/types/messaging';
 
 const MODULE = 'api-messages-send';
@@ -42,6 +43,9 @@ export async function POST(request: NextRequest) {
         if (!session?.user?.id) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
+
+        const demoGuard = preventWriteForDemo(session);
+        if (demoGuard) return demoGuard;
 
         const userId = session.user.id;
         const body = await request.json();

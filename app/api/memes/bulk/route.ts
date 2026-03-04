@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
 import { getUserId, requireAdmin } from '@/lib/auth-helpers';
+import { preventWriteForDemo } from '@/lib/preview-guard';
 import { Logger } from '@/lib/utils/logger';
 import { createNotification } from '@/lib/notifications';
 
@@ -16,6 +17,9 @@ export async function POST(req: NextRequest) {
 	try {
 		const session = await getServerSession(authOptions);
 		requireAdmin(session);
+
+		const demoGuard = preventWriteForDemo(session);
+		if (demoGuard) return demoGuard;
 
 		const adminId = getUserId(session);
 		const { ids, action, rejectionReason } = await req.json();

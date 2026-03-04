@@ -11,6 +11,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { isAdmin } from '@/lib/auth-helpers';
 import { rateLimiter } from '@/lib/middleware/rate-limit';
+import { preventWriteForDemo } from '@/lib/preview-guard';
 
 // Rate limit config: 60 requests per 1 minute
 const API_RATE_LIMIT = { limit: 60, windowMs: 60 * 1000 };
@@ -79,6 +80,9 @@ export async function POST(request: NextRequest) {
 		if (!session?.user?.id) {
 			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 		}
+
+		const demoGuard = preventWriteForDemo(session);
+		if (demoGuard) return demoGuard;
 
 		const body = await request.json();
 
@@ -190,6 +194,9 @@ export async function DELETE(request: NextRequest) {
 			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 		}
 
+		const demoGuard = preventWriteForDemo(session);
+		if (demoGuard) return demoGuard;
+
 		const searchParams = request.nextUrl.searchParams;
 		const id = searchParams.get('id');
 
@@ -241,6 +248,9 @@ export async function PATCH(request: NextRequest) {
 		if (!session?.user?.id) {
 			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 		}
+
+		const demoGuard = preventWriteForDemo(session);
+		if (demoGuard) return demoGuard;
 
 		const body = await request.json();
 

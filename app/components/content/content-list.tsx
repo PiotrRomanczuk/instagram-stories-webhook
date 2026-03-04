@@ -24,11 +24,12 @@ interface ContentListProps {
 	onEdit: (item: ContentItem) => void;
 	onRefresh: () => void;
 	isAdmin: boolean;
+	isDemo?: boolean;
 	tab: 'all' | 'review' | 'queue' | 'published' | 'rejected';
 }
 
 export function ContentList({
-	items, viewMode, onPreview, onEdit, onRefresh, isAdmin, tab,
+	items, viewMode, onPreview, onEdit, onRefresh, isAdmin, isDemo = false, tab,
 }: ContentListProps) {
 	const {
 		selectedItemForPublish, setSelectedItemForPublish, isPublishing,
@@ -56,7 +57,7 @@ export function ContentList({
 		);
 	}
 
-	const showBulkSelection = isAdmin && selectableItems.length > 0;
+	const showBulkSelection = isAdmin && !isDemo && selectableItems.length > 0;
 
 	return (
 		<div className='bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden relative'>
@@ -101,6 +102,7 @@ export function ContentList({
 								item={item}
 								tab={tab}
 								isAdmin={isAdmin}
+								isDemo={isDemo}
 								isQueueTab={isQueueTab}
 								showBulkSelection={showBulkSelection}
 								isPendingSubmission={isPendingSubmission(item)}

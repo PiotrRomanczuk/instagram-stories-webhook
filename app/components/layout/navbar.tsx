@@ -40,34 +40,35 @@ export function Navbar() {
 	const userRole = (user as { role?: UserRole })?.role;
 	const isDev = userRole === 'developer';
 	const isAdmin = userRole === 'admin';
+	const isDemo = userRole === 'demo';
 	const isAdminOrDev = isAdmin || isDev;
 
 	// Navigation items with role-based visibility
 	const navItems: NavItem[] = [
 		{ href: '/', label: t('dashboard'), icon: Home },
-		{ href: '/submit', label: t('submit') || 'Submit', icon: Send },
-		{
+		...(!isDemo ? [{ href: '/submit', label: t('submit') || 'Submit', icon: Send }] : []),
+		...(!isDemo ? [{
 			href: '/submissions',
 			label: t('submissions') || 'My Submissions',
 			icon: ImageIcon,
-		},
+		}] : []),
 		{
 			href: '/review',
 			label: t('review') || 'Review',
 			icon: ClipboardCheck,
-			roles: ['admin', 'developer'],
+			roles: ['admin', 'developer', 'demo'] as UserRole[],
 		},
 		{
 			href: '/schedule',
 			label: t('schedule') || 'Schedule',
 			icon: Calendar,
-			roles: ['admin', 'developer'],
+			roles: ['admin', 'developer', 'demo'] as UserRole[],
 		},
 		{
 			href: '/posted-stories',
 			label: 'Posted',
 			icon: CheckCircle2,
-			roles: ['admin', 'developer'],
+			roles: ['admin', 'developer', 'demo'] as UserRole[],
 		},
 	];
 

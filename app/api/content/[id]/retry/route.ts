@@ -12,6 +12,7 @@ import { getContentItemById } from '@/lib/content-db';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
 import { getCurrentEnvironment } from '@/lib/content-db/environment';
 import { rateLimiter } from '@/lib/middleware/rate-limit';
+import { preventWriteForDemo } from '@/lib/preview-guard';
 
 const API_RATE_LIMIT = { limit: 30, windowMs: 60 * 1000 };
 
@@ -28,6 +29,9 @@ export async function POST(
 		if (!session) {
 			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 		}
+
+		const demoGuard = preventWriteForDemo(session);
+		if (demoGuard) return demoGuard;
 
 		const role = getUserRole(session);
 		if (role !== 'admin' && role !== 'developer') {

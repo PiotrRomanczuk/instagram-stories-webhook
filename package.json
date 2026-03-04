@@ -1,6 +1,6 @@
 {
   "name": "instagram-stories-webhook",
-  "version": "0.36.0",
+  "version": "0.37.0",
   "private": true,
   "scripts": {
     "dev": "concurrently -n next,cron -c blue,magenta \"next dev\" \"npm run dev:cron\"",
@@ -29,7 +29,9 @@
     "prepare": "husky",
     "check-history": "tsx scripts/check-history-gaps.ts",
     "capture-docs": "npx tsx scripts/capture-docs.ts",
-    "pre-commit": "npm run lint && npx tsc && npm run test"
+    "pre-commit": "npm run lint && npx tsc && npm run test",
+    "seed:demo": "tsx scripts/seed-demo-data.ts",
+    "cleanup:demo": "tsx scripts/seed-demo-data.ts --cleanup"
   },
   "dependencies": {
     "@auth/supabase-adapter": "^1.11.1",

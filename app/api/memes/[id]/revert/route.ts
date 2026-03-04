@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
 import { getUserId, requireAdmin } from '@/lib/auth-helpers';
+import { preventWriteForDemo } from '@/lib/preview-guard';
 import { Logger } from '@/lib/utils/logger';
 import { createNotification } from '@/lib/notifications';
 import { MemeStatus } from '@/lib/types';
@@ -22,6 +23,9 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 	try {
 		const session = await getServerSession(authOptions);
 		requireAdmin(session);
+
+		const demoGuard = preventWriteForDemo(session);
+		if (demoGuard) return demoGuard;
 
 		const { id } = await params;
 		const adminId = getUserId(session);

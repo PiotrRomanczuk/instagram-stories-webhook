@@ -20,6 +20,7 @@ import { authOptions } from '@/lib/auth';
 import { processImageForStory } from '@/lib/media/processor';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
 import { validateFetchUrl } from '@/lib/utils/url-validation';
+import { preventWriteForDemo } from '@/lib/preview-guard';
 
 export async function POST(request: Request) {
     try {
@@ -27,6 +28,9 @@ export async function POST(request: Request) {
         if (!session?.user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
+
+        const demoGuard = preventWriteForDemo(session);
+        if (demoGuard) return demoGuard;
 
         const body = await request.json();
         const { imageUrl, backgroundColor, blurBackground } = body;

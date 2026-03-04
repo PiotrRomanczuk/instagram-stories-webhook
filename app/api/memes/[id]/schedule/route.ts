@@ -5,6 +5,7 @@ import { getMemeSubmission, scheduleMeme } from '@/lib/memes-db';
 import { addScheduledPost } from '@/lib/database/scheduled-posts';
 import { checkScheduleConflict } from '@/lib/database/schedule-conflict';
 import { requireAdmin, getUserId } from '@/lib/auth-helpers';
+import { preventWriteForDemo } from '@/lib/preview-guard';
 import { Logger } from '@/lib/utils/logger';
 
 const MODULE = 'api:memes:schedule';
@@ -21,6 +22,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     try {
         const session = await getServerSession(authOptions);
         requireAdmin(session);
+
+        const demoGuard = preventWriteForDemo(session);
+        if (demoGuard) return demoGuard;
 
         const { id } = await params;
         const adminId = getUserId(session);

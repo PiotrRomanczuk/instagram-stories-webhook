@@ -6,6 +6,7 @@ import { getContentItemById, updatePublishingStatus } from '@/lib/content-db';
 import { publishMedia } from '@/lib/instagram/publish';
 import { processAndUploadStoryImage } from '@/lib/media/story-processor';
 import { rateLimiter } from '@/lib/middleware/rate-limit';
+import { preventWriteForDemo } from '@/lib/preview-guard';
 import { Logger } from '@/lib/utils/logger';
 import * as Sentry from '@sentry/nextjs';
 
@@ -29,6 +30,9 @@ export async function POST(
 		if (!session) {
 			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 		}
+
+		const demoGuard = preventWriteForDemo(session);
+		if (demoGuard) return demoGuard;
 
 		const userId = getUserId(session);
 		const role = getUserRole(session);

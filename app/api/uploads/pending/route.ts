@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
 import { getUserId } from '@/lib/auth-helpers';
 import { Logger } from '@/lib/utils/logger';
+import { preventWriteForDemo } from '@/lib/preview-guard';
 
 const MODULE = 'api:uploads:pending';
 
@@ -13,6 +14,9 @@ export async function POST(req: NextRequest) {
 		if (!session) {
 			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 		}
+
+		const demoGuard = preventWriteForDemo(session);
+		if (demoGuard) return demoGuard;
 
 		const userId = getUserId(session);
 		const { storagePath } = await req.json();
@@ -57,6 +61,9 @@ export async function DELETE(req: NextRequest) {
 		if (!session) {
 			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 		}
+
+		const demoGuard = preventWriteForDemo(session);
+		if (demoGuard) return demoGuard;
 
 		const userId = getUserId(session);
 		const { searchParams } = new URL(req.url);

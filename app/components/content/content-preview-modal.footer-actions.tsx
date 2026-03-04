@@ -7,6 +7,7 @@ import { ThumbsUp, ThumbsDown, RefreshCw, CalendarClock, Trash2, Loader2 } from 
 interface FooterActionsProps {
 	item: ContentItem;
 	isAdmin: boolean;
+	isDemo?: boolean;
 	isPendingSubmission: boolean;
 	isReviewing: boolean;
 	isRetrying: boolean;
@@ -25,6 +26,7 @@ interface FooterActionsProps {
 export function FooterActions({
 	item,
 	isAdmin,
+	isDemo = false,
 	isPendingSubmission,
 	isReviewing,
 	isRetrying,
@@ -39,7 +41,7 @@ export function FooterActions({
 	return (
 		<div className='flex flex-col gap-3 pt-4 pb-40 md:pb-0'>
 			{/* Approval buttons for pending submissions */}
-			{isAdmin && isPendingSubmission && (
+			{isAdmin && !isDemo && isPendingSubmission && (
 				<div className='flex gap-2'>
 					<button
 						onClick={onApprove}
@@ -61,7 +63,7 @@ export function FooterActions({
 			)}
 
 			{/* Retry button for failed posts */}
-			{item.publishingStatus === 'failed' && isAdmin && (
+			{item.publishingStatus === 'failed' && isAdmin && !isDemo && (
 				<div className='flex gap-2'>
 					<button
 						onClick={onRetry}
@@ -75,7 +77,7 @@ export function FooterActions({
 			)}
 
 			{/* Publish/Schedule buttons for non-pending, non-failed items */}
-			{item.publishingStatus !== 'published' && item.publishingStatus !== 'failed' && !isPendingSubmission && (
+			{!isDemo && item.publishingStatus !== 'published' && item.publishingStatus !== 'failed' && !isPendingSubmission && (
 				<div className='flex gap-2'>
 					<button
 						onClick={() => { onClose(); onEdit(item); }}
@@ -93,7 +95,7 @@ export function FooterActions({
 				>
 					Dismiss
 				</button>
-				{isAdmin && (
+				{isAdmin && !isDemo && (
 					<button
 						onClick={onShowConfirmDelete}
 						className='h-14 px-6 bg-rose-50 text-rose-500 rounded-2xl hover:bg-rose-100 hover:text-rose-600 transition-all font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2'

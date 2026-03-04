@@ -9,6 +9,7 @@ import { authOptions } from '@/lib/auth';
 import { getUserRole, getUserId } from '@/lib/auth-helpers';
 import { getContentItemById, updateSubmissionStatus } from '@/lib/content-db';
 import { rateLimiter } from '@/lib/middleware/rate-limit';
+import { preventWriteForDemo } from '@/lib/preview-guard';
 import { Logger } from '@/lib/utils/logger';
 import { recordAuditEvent, getRequestContext } from '@/lib/utils/audit-log';
 
@@ -39,6 +40,9 @@ export async function POST(
 		if (!session) {
 			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 		}
+
+		const demoGuard = preventWriteForDemo(session);
+		if (demoGuard) return demoGuard;
 
 		const userId = getUserId(session);
 		const role = getUserRole(session);

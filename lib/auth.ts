@@ -44,29 +44,24 @@ export const authOptions: AuthOptions = {
 			clientId: process.env.AUTH_GOOGLE_ID || '',
 			clientSecret: process.env.AUTH_GOOGLE_SECRET || '',
 		}),
-		...(process.env.ENABLE_TEST_AUTH === 'true' ||
-		(process.env.NODE_ENV !== 'production' &&
-			(process.env.NODE_ENV === 'development' ||
-				process.env.NODE_ENV === 'test'))
-			? [
-					CredentialsProvider({
-						id: 'test-credentials',
-						name: 'Test Credentials',
-						credentials: {
-							email: { label: 'Email', type: 'email' },
-						},
-						async authorize(credentials) {
-							if (!credentials?.email) return null;
-							return {
-								id: 'test-' + credentials.email.replace(/[^a-z0-9]/g, '-'),
-								email: credentials.email,
-								name: credentials.email.split('@')[0],
-								image: '',
-							};
-						},
-					}),
-				]
-			: []),
+		// Test/Demo credentials provider - always registered.
+		// The signIn callback controls who actually gets through.
+		CredentialsProvider({
+			id: 'test-credentials',
+			name: 'Test Credentials',
+			credentials: {
+				email: { label: 'Email', type: 'email' },
+			},
+			async authorize(credentials) {
+				if (!credentials?.email) return null;
+				return {
+					id: 'test-' + credentials.email.replace(/[^a-z0-9]/g, '-'),
+					email: credentials.email,
+					name: credentials.email.split('@')[0],
+					image: '',
+				};
+			},
+		}),
 	],
 	...(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
 		? {
@@ -85,6 +80,14 @@ export const authOptions: AuthOptions = {
 
 			const userEmail = user.email?.toLowerCase() || '';
 			const provider = account?.provider || 'unknown';
+
+			// Demo login — always allowed, no whitelist needed
+			const DEMO_EMAIL = 'demo@demo.com';
+			if (provider === 'test-credentials' && userEmail === DEMO_EMAIL) {
+				await Logger.info(MODULE, `✅ DEMO ACCESS GRANTED: ${userEmail}`);
+				await recordAuthEvent({ email: userEmail, provider, outcome: 'granted' });
+				return true;
+			}
 
 			// Allow test credentials in development/test mode
 			if (provider === 'test-credentials') {
@@ -163,29 +166,34 @@ export const authOptions: AuthOptions = {
 				// Get role from database
 				const email = user.email?.toLowerCase() || '';
 
-				// Handle known test emails in dev/test mode
-				const testUserRoles: Record<string, UserRole> = {
-					'user@test.com': 'user',
-					'admin@test.com': 'admin',
-					'user2@test.com': 'user',
-					'p.romanczuk@gmail.com': 'admin',
-				};
-				if ((process.env.NODE_ENV !== 'production' || process.env.ENABLE_TEST_AUTH === 'true') && testUserRoles[email]) {
-					token.role = testUserRoles[email];
+				// Demo user always gets demo role
+				if (email === 'demo@demo.com') {
+					token.role = 'demo';
 				} else {
-					const role = await getUserRole(email);
-
-					// If in DB whitelist, use that role. Otherwise check if in ADMIN_EMAIL (treat as admin)
-					if (role) {
-						token.role = role as UserRole;
+					// Handle known test emails in dev/test mode
+					const testUserRoles: Record<string, UserRole> = {
+						'user@test.com': 'user',
+						'admin@test.com': 'admin',
+						'user2@test.com': 'user',
+						'p.romanczuk@gmail.com': 'admin',
+					};
+					if ((process.env.NODE_ENV !== 'production' || process.env.ENABLE_TEST_AUTH === 'true') && testUserRoles[email]) {
+						token.role = testUserRoles[email];
 					} else {
-						// Fallback for ADMIN_EMAIL users not yet in whitelist
-						const adminEmail = process.env.ADMIN_EMAIL || '';
-						const envAdmins = adminEmail
-							.split(',')
-							.map((e) => e.trim().toLowerCase())
-							.filter((e) => e);
-						token.role = envAdmins.includes(email) ? 'admin' : 'user';
+						const role = await getUserRole(email);
+
+						// If in DB whitelist, use that role. Otherwise check if in ADMIN_EMAIL (treat as admin)
+						if (role) {
+							token.role = role as UserRole;
+						} else {
+							// Fallback for ADMIN_EMAIL users not yet in whitelist
+							const adminEmail = process.env.ADMIN_EMAIL || '';
+							const envAdmins = adminEmail
+								.split(',')
+								.map((e) => e.trim().toLowerCase())
+								.filter((e) => e);
+							token.role = envAdmins.includes(email) ? 'admin' : 'user';
+						}
 					}
 				}
 

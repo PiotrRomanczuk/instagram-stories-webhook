@@ -94,7 +94,8 @@ export function ScheduleCalendarLayout() {
 
 	// Determine user role
 	const userRole = (session?.user as { role?: UserRole })?.role;
-	const isAdmin = userRole === 'admin' || userRole === 'developer';
+	const isAdmin = userRole === 'admin' || userRole === 'developer' || userRole === 'demo';
+	const isDemo = userRole === 'demo';
 
 	// Subscribe to realtime updates (automatic cache invalidation)
 	useRealtimeSync();
@@ -202,6 +203,11 @@ export function ScheduleCalendarLayout() {
 			setActiveId(null);
 			setActiveItem(null);
 
+			if (isDemo) {
+				toast.error('Demo mode — scheduling is read only');
+				return;
+			}
+
 			const { active, over } = event;
 			if (!over) return;
 
@@ -247,7 +253,7 @@ export function ScheduleCalendarLayout() {
 				toast.error('Failed to schedule item');
 			}
 		},
-		[allItems, updateContent, humanizeSchedule]
+		[allItems, updateContent, humanizeSchedule, isDemo]
 	);
 
 	const handleOpenPreview = useCallback((item: ContentItem) => {
@@ -329,6 +335,7 @@ export function ScheduleCalendarLayout() {
 						onClose={() => setPreviewItem(null)}
 						onEdit={(item) => { setPreviewItem(null); setEditItem(item); }}
 						isAdmin={isAdmin}
+						isDemo={isDemo}
 						items={displayItems}
 						currentIndex={displayItems.findIndex((i) => i.id === previewItem.id)}
 						onNavigate={(item) => setPreviewItem(item)}
@@ -533,6 +540,7 @@ export function ScheduleCalendarLayout() {
 						setEditItem(item);
 					}}
 					isAdmin={isAdmin}
+					isDemo={isDemo}
 					items={displayItems}
 					currentIndex={displayItems.findIndex((i) => i.id === previewItem.id)}
 					onNavigate={(item) => setPreviewItem(item)}
