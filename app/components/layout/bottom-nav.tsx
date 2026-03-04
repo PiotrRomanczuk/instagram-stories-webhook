@@ -18,8 +18,8 @@ export function BottomNav() {
 	const { data: session } = useSession();
 	const pathname = usePathname();
 
-	// Don't show on signin page
-	if (pathname === '/auth/signin') return null;
+	// Don't show on signin or landing page
+	if (pathname === '/auth/signin' || pathname === '/landing') return null;
 
 	const user = session?.user;
 	const userRole = (user as { role?: UserRole })?.role;
