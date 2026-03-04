@@ -14,8 +14,9 @@ import { UserRole } from '@/lib/types';
 
 export function ScheduleManager() {
     const { data: session } = useSession();
-    const isAdmin = (session?.user as { role?: UserRole })?.role === 'admin' ||
-                    (session?.user as { role?: UserRole })?.role === 'developer';
+    const userRole = (session?.user as { role?: UserRole })?.role;
+    const isAdmin = userRole === 'admin' || userRole === 'developer' || userRole === 'demo';
+    const isDemo = userRole === 'demo';
 
     const { posts, loading, fetchPosts } = useSchedulePosts({ showAll: isAdmin });
 
@@ -170,7 +171,7 @@ export function ScheduleManager() {
 
     return (
         <div className="space-y-8">
-            <ScheduleForm onScheduled={fetchPosts} />
+            {!isDemo && <ScheduleForm onScheduled={fetchPosts} />}
 
             <Card className="rounded-3xl p-8 shadow-xl shadow-gray-100/50 border-gray-100 relative">
                 <CardHeader className="p-0 gap-0">

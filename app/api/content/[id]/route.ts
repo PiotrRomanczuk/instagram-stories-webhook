@@ -17,6 +17,7 @@ import {
 } from '@/lib/content-db';
 import { checkScheduleConflict } from '@/lib/database/schedule-conflict';
 import { rateLimiter } from '@/lib/middleware/rate-limit';
+import { preventWriteForDemo } from '@/lib/preview-guard';
 
 const API_RATE_LIMIT = { limit: 100, windowMs: 60 * 1000 };
 
@@ -98,6 +99,9 @@ export async function PATCH(
 		if (!session) {
 			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 		}
+
+		const demoGuard = preventWriteForDemo(session);
+		if (demoGuard) return demoGuard;
 
 		const userId = getUserId(session);
 		const role = getUserRole(session);
@@ -246,6 +250,9 @@ export async function DELETE(
 		if (!session) {
 			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 		}
+
+		const demoGuard = preventWriteForDemo(session);
+		if (demoGuard) return demoGuard;
 
 		const userId = getUserId(session);
 		const role = getUserRole(session);

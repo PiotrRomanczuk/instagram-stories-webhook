@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
+import { preventWriteForDemo } from '@/lib/preview-guard';
 
 export async function POST(request: Request) {
 	try {
@@ -10,6 +11,9 @@ export async function POST(request: Request) {
 		if (!session?.user?.id) {
 			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 		}
+
+		const demoGuard = preventWriteForDemo(session);
+		if (demoGuard) return demoGuard;
 
 		const userId = session.user.id;
 		const body = await request.json();

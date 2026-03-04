@@ -105,6 +105,18 @@ export default function SignIn() {
 							after signing in.
 						</p>
 
+						<Separator className="my-6" />
+						<Button
+							variant="outline"
+							className="h-12 w-full gap-3 text-sm font-semibold border-purple-200 text-purple-700 hover:bg-purple-50"
+							onClick={() => signIn('test-credentials', { email: 'demo@demo.com', callbackUrl: '/', redirect: true })}
+						>
+							Try Demo (Read-Only)
+						</Button>
+						<p className="mt-2 text-center text-xs text-muted-foreground">
+							Explore all features with sample data. No account required.
+						</p>
+
 						{/* Dev Mode Test Buttons */}
 						{isTestEnv && (
 							<>

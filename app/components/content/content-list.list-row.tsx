@@ -23,6 +23,7 @@ interface ContentListRowProps {
 	item: ContentItem;
 	tab: 'all' | 'review' | 'queue' | 'published' | 'rejected';
 	isAdmin: boolean;
+	isDemo?: boolean;
 	isQueueTab: boolean;
 	showBulkSelection: boolean;
 	isPendingSubmission: boolean;
@@ -43,6 +44,7 @@ export function ContentListRow({
 	item,
 	tab,
 	isAdmin,
+	isDemo = false,
 	isQueueTab,
 	showBulkSelection,
 	isPendingSubmission,
@@ -133,7 +135,7 @@ export function ContentListRow({
 			)}
 			<td className='px-6 py-5 text-right'>
 				<div className='flex justify-end gap-1 relative'>
-					{isAdmin && isPendingSubmission && (
+					{isAdmin && !isDemo && isPendingSubmission && (
 						<>
 							<button
 								onClick={() => onQuickApprove(item.id)}
@@ -169,7 +171,7 @@ export function ContentListRow({
 					>
 						<Eye className='h-4 w-4' />
 					</button>
-					{isAdmin && item.publishingStatus !== 'published' && (
+					{isAdmin && !isDemo && item.publishingStatus !== 'published' && (
 						<button
 							onClick={() => onEdit(item)}
 							className='p-2 hover:bg-white rounded-lg transition-colors text-gray-400 hover:text-amber-600 shadow-sm border border-transparent hover:border-amber-100'

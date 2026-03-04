@@ -123,6 +123,39 @@ export function preventReadInPreview(
 }
 
 /**
+ * Check if the session belongs to a demo user
+ */
+export function isDemoUser(
+	session: { user?: { role?: string } } | null
+): boolean {
+	return session?.user?.role === 'demo';
+}
+
+/**
+ * Prevent write operations for demo users
+ *
+ * Returns a 403 response if demo user, null otherwise
+ */
+export function preventWriteForDemo(
+	session: { user?: { role?: string } } | null
+): NextResponse | null {
+	if (isDemoUser(session)) {
+		return NextResponse.json(
+			{
+				error: 'Write operations are disabled in demo mode',
+				message:
+					'Demo mode is read-only. Sign in with your own account to make changes.',
+				demo: true,
+				readOnly: true,
+			},
+			{ status: 403 }
+		);
+	}
+
+	return null;
+}
+
+/**
  * Legacy check for backward compatibility
  */
 export function checkWritePermission(isAdmin: boolean = false): void {

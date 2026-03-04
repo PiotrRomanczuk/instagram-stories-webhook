@@ -16,6 +16,7 @@ import {
 	getContentStats,
 } from '@/lib/content-db';
 import { rateLimiter } from '@/lib/middleware/rate-limit';
+import { preventWriteForDemo } from '@/lib/preview-guard';
 import {
 	CreateContentInput,
 	ContentSource,
@@ -220,6 +221,9 @@ export async function POST(req: NextRequest) {
 		if (!session) {
 			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 		}
+
+		const demoGuard = preventWriteForDemo(session);
+		if (demoGuard) return demoGuard;
 
 		const userId = getUserId(session);
 		const userEmail = session.user?.email || '';

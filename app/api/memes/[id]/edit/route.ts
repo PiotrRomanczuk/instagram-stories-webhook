@@ -5,6 +5,7 @@ import { getMemeSubmission } from '@/lib/memes-db';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
 import type { MemeSubmission } from '@/lib/types/posts';
 import { requireAuth, getUserId } from '@/lib/auth-helpers';
+import { preventWriteForDemo } from '@/lib/preview-guard';
 import { Logger } from '@/lib/utils/logger';
 
 const MODULE = 'api:memes:edit';
@@ -21,6 +22,9 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 	try {
 		const session = await getServerSession(authOptions);
 		requireAuth(session);
+
+		const demoGuard = preventWriteForDemo(session);
+		if (demoGuard) return demoGuard;
 
 		const { id } = await params;
 		const userId = getUserId(session);

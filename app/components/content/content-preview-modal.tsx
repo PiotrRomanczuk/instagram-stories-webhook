@@ -19,13 +19,14 @@ interface ContentPreviewModalProps {
 	onEdit: (item: ContentItem) => void;
 	onRefresh?: () => void;
 	isAdmin?: boolean;
+	isDemo?: boolean;
 	items?: ContentItem[];
 	currentIndex?: number;
 	onNavigate?: (item: ContentItem, index: number) => void;
 }
 
 export function ContentPreviewModal({
-	item, onClose, onEdit, onRefresh, isAdmin = false, items, currentIndex, onNavigate,
+	item, onClose, onEdit, onRefresh, isAdmin = false, isDemo = false, items, currentIndex, onNavigate,
 }: ContentPreviewModalProps) {
 	const [showStoryFrame, setShowStoryFrame] = useState(false);
 	const { showConfirmPublish, setShowConfirmPublish, showConfirmDelete, setShowConfirmDelete,
@@ -96,7 +97,7 @@ export function ContentPreviewModal({
 								</section>
 							)}
 							<MetadataGrid item={item} />
-							<FooterActions item={item} isAdmin={isAdmin} isPendingSubmission={isPendingSubmission} isReviewing={isReviewing} isRetrying={isRetrying} isDeleting={isDeleting} onApprove={handleApprove} onShowRejectDialog={() => setShowRejectDialog(true)} onRetry={handleRetry} onEdit={onEdit} onClose={onClose} onShowConfirmDelete={() => setShowConfirmDelete(true)} />
+							<FooterActions item={item} isAdmin={isAdmin} isDemo={isDemo} isPendingSubmission={isPendingSubmission} isReviewing={isReviewing} isRetrying={isRetrying} isDeleting={isDeleting} onApprove={handleApprove} onShowRejectDialog={() => setShowRejectDialog(true)} onRetry={handleRetry} onEdit={onEdit} onClose={onClose} onShowConfirmDelete={() => setShowConfirmDelete(true)} />
 						</div>
 					</div>
 				</div>

@@ -23,6 +23,7 @@ import {
 	updateUserRoleSchema,
 	validateUserInput,
 } from '@/lib/validations/user.schema';
+import { preventWriteForDemo } from '@/lib/preview-guard';
 
 const MODULE = 'api:users:[email]';
 
@@ -102,6 +103,9 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 		const session = await getServerSession(authOptions);
 		requireDeveloper(session);
 
+		const demoGuard = preventWriteForDemo(session);
+		if (demoGuard) return demoGuard;
+
 		const { email } = await params;
 		const decodedEmail = decodeURIComponent(email).toLowerCase();
 		const actorId = getUserId(session);
@@ -167,6 +171,9 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 	try {
 		const session = await getServerSession(authOptions);
 		requireAdmin(session);
+
+		const demoGuard = preventWriteForDemo(session);
+		if (demoGuard) return demoGuard;
 
 		const { email } = await params;
 		const decodedEmail = decodeURIComponent(email).toLowerCase();

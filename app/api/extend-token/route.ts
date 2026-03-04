@@ -3,6 +3,7 @@ import axios from 'axios';
 import { getServerSession } from "next-auth/next";
 import { getLinkedFacebookAccount, saveLinkedFacebookAccount } from '@/lib/database/linked-accounts';
 import { authOptions } from "@/lib/auth";
+import { preventWriteForDemo } from '@/lib/preview-guard';
 
 export async function POST() {
     try {
@@ -11,6 +12,9 @@ export async function POST() {
         if (!session?.user?.id) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
+
+        const demoGuard = preventWriteForDemo(session);
+        if (demoGuard) return demoGuard;
 
         const linkedAccount = await getLinkedFacebookAccount(session.user.id);
 

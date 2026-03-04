@@ -6,6 +6,7 @@ import { requireAdmin, requireDeveloper, getUserId, isDeveloper, getUserEmail } 
 import { Logger } from '@/lib/utils/logger';
 import { recordAuditEvent, getRequestContext } from '@/lib/utils/audit-log';
 import { addUserSchema, validateUserInput } from '@/lib/validations/user.schema';
+import { preventWriteForDemo } from '@/lib/preview-guard';
 
 const MODULE = 'api:users';
 
@@ -40,6 +41,9 @@ export async function POST(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
         requireAdmin(session);
+
+        const demoGuard = preventWriteForDemo(session);
+        if (demoGuard) return demoGuard;
 
         const adminId = getUserId(session);
         const adminEmail = getUserEmail(session);

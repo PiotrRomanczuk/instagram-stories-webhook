@@ -10,11 +10,18 @@ export async function getSession() {
 }
 
 /**
- * Check if the current user is an admin or developer
+ * Check if the current user is a demo user
+ */
+export function isDemo(session: { user?: { role?: UserRole } } | null): boolean {
+    return session?.user?.role === 'demo';
+}
+
+/**
+ * Check if the current user is an admin, developer, or demo (view-level access)
  */
 export function isAdmin(session: { user?: { role?: UserRole } } | null): boolean {
     const role = session?.user?.role;
-    return role === 'admin' || role === 'developer';
+    return role === 'admin' || role === 'developer' || role === 'demo';
 }
 
 /**

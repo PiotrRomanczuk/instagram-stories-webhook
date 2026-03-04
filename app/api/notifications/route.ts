@@ -8,6 +8,7 @@ import {
 	markAllNotificationsAsRead,
 	markNotificationAsRead,
 } from '@/lib/notifications';
+import { preventWriteForDemo } from '@/lib/preview-guard';
 
 const MODULE = 'api:notifications';
 
@@ -70,6 +71,9 @@ export async function PUT(req: NextRequest) {
 		if (!session) {
 			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 		}
+
+		const demoGuard = preventWriteForDemo(session);
+		if (demoGuard) return demoGuard;
 
 		const userId = getUserId(session);
 		const body = await req.json();

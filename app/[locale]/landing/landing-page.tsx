@@ -15,6 +15,7 @@ import {
 	Sparkles,
 } from 'lucide-react';
 import Link from 'next/link';
+import { signIn } from 'next-auth/react';
 import { Button } from '@/app/components/ui/button';
 import { Badge } from '@/app/components/ui/badge';
 import { Separator } from '@/app/components/ui/separator';
@@ -114,6 +115,13 @@ export function LandingPage() {
 						</span>
 					</div>
 					<div className="flex items-center gap-3">
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={() => signIn('test-credentials', { email: 'demo@demo.com', callbackUrl: '/' })}
+						>
+							Try Demo
+						</Button>
 						<Button variant="ghost" size="sm" asChild>
 							<Link href="/auth/signin">Sign in</Link>
 						</Button>
@@ -184,15 +192,10 @@ export function LandingPage() {
 								variant="outline"
 								size="lg"
 								className="h-12 w-full px-8 text-base sm:w-auto"
-								asChild
+								onClick={() => signIn('test-credentials', { email: 'demo@demo.com', callbackUrl: '/' })}
 							>
-								<a
-									href="https://github.com/piotrkulpinski/instagram-stories-webhook"
-									target="_blank"
-									rel="noopener noreferrer"
-								>
-									View on GitHub
-								</a>
+								Try Demo
+								<ArrowRight className="ml-2 h-5 w-5" />
 							</Button>
 						</motion.div>
 					</motion.div>

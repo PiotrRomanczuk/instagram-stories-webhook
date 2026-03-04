@@ -197,7 +197,8 @@ export function ContentHub({ initialTab = 'all' }: ContentHubProps) {
 
 	// Determine user role
 	const userRole = session?.user?.role as UserRole | undefined;
-	const isAdmin = userRole === 'admin' || userRole === 'developer';
+	const isAdmin = userRole === 'admin' || userRole === 'developer' || userRole === 'demo';
+	const isDemo = userRole === 'demo';
 
 	// Get items from response (moved up for use in handlers)
 	const items: ContentItem[] = useMemo(() => data?.items || [], [data?.items]);
@@ -290,7 +291,9 @@ export function ContentHub({ initialTab = 'all' }: ContentHubProps) {
 							</button>
 							<button
 								onClick={() => setShowSubmitForm(true)}
-								className='px-8 py-4 bg-gray-900 text-white rounded-3xl hover:bg-indigo-600 hover:shadow-2xl hover:shadow-indigo-200 transition-all active:scale-[0.98] flex items-center gap-3 font-black text-sm uppercase tracking-widest'
+								disabled={isDemo}
+								className={`px-8 py-4 bg-gray-900 text-white rounded-3xl hover:bg-indigo-600 hover:shadow-2xl hover:shadow-indigo-200 transition-all active:scale-[0.98] flex items-center gap-3 font-black text-sm uppercase tracking-widest ${isDemo ? 'opacity-50 cursor-not-allowed' : ''}`}
+								title={isDemo ? 'Demo mode — read only' : undefined}
 							>
 								<Plus className='h-5 w-5' />
 								Create Post
@@ -472,7 +475,7 @@ export function ContentHub({ initialTab = 'all' }: ContentHubProps) {
 						</div>
 
 						{/* Reschedule All Overdue Button */}
-						{isAdmin && scheduleFilter === 'overdue' && stats?.overdueCount > 0 && (
+						{isAdmin && !isDemo && scheduleFilter === 'overdue' && stats?.overdueCount > 0 && (
 							<button
 								onClick={() => setShowRescheduleModal(true)}
 								className='px-4 py-2 bg-amber-500 text-white text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-amber-600 transition-colors flex items-center gap-2 shadow-lg'
@@ -517,12 +520,14 @@ export function ContentHub({ initialTab = 'all' }: ContentHubProps) {
 								No content matches your current filters. Try adjusting them or
 								create something new.
 							</p>
-							<button
-								onClick={() => setShowSubmitForm(true)}
-								className='px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-200 hover:scale-110 active:scale-95 transition-all'
-							>
-								Create First Post
-							</button>
+							{!isDemo && (
+								<button
+									onClick={() => setShowSubmitForm(true)}
+									className='px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-200 hover:scale-110 active:scale-95 transition-all'
+								>
+									Create First Post
+								</button>
+							)}
 						</div>
 					) : (
 						<div className='animate-in fade-in slide-in-from-bottom-8 duration-700'>
@@ -533,6 +538,7 @@ export function ContentHub({ initialTab = 'all' }: ContentHubProps) {
 								onEdit={handleEdit}
 								onRefresh={mutate}
 								isAdmin={isAdmin}
+								isDemo={isDemo}
 								tab={tab}
 							/>
 						</div>
@@ -582,6 +588,7 @@ export function ContentHub({ initialTab = 'all' }: ContentHubProps) {
 					onEdit={handleEdit}
 					onRefresh={mutate}
 					isAdmin={isAdmin}
+					isDemo={isDemo}
 					items={items}
 					currentIndex={selectedIndex}
 					onNavigate={handleNavigate}

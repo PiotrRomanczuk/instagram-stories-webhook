@@ -23,13 +23,14 @@ export function BottomNav() {
 
 	const user = session?.user;
 	const userRole = (user as { role?: UserRole })?.role;
+	const isDemo = userRole === 'demo';
 
 	const tabs: NavTab[] = [
 		{ href: '/', label: 'Home', icon: Home },
-		{ href: '/schedule', label: 'Schedule', icon: Calendar, roles: ['admin', 'developer'] },
-		{ href: '/submit', label: 'New', icon: Plus, isFab: true },
-		{ href: '/review', label: 'Review', icon: ClipboardCheck, roles: ['admin', 'developer'] },
-		{ href: '/submissions', label: 'Profile', icon: User },
+		{ href: '/schedule', label: 'Schedule', icon: Calendar, roles: ['admin', 'developer', 'demo'] as UserRole[] },
+		...(!isDemo ? [{ href: '/submit', label: 'New', icon: Plus, isFab: true }] : []),
+		{ href: '/review', label: 'Review', icon: ClipboardCheck, roles: ['admin', 'developer', 'demo'] as UserRole[] },
+		...(!isDemo ? [{ href: '/submissions', label: 'Profile', icon: User }] : []),
 	];
 
 	// Filter tabs based on user role

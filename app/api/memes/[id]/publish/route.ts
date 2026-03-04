@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { getMemeSubmission, markMemePublished } from '@/lib/memes-db';
 import { requireAdmin, getUserId } from '@/lib/auth-helpers';
+import { preventWriteForDemo } from '@/lib/preview-guard';
 import { publishMedia } from '@/lib/instagram/publish';
 import { Logger } from '@/lib/utils/logger';
 
@@ -19,6 +20,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     try {
         const session = await getServerSession(authOptions);
         requireAdmin(session);
+
+        const demoGuard = preventWriteForDemo(session);
+        if (demoGuard) return demoGuard;
 
         const { id } = await params;
         const adminId = getUserId(session);

@@ -4,6 +4,7 @@ import '../globals.css';
 import { Providers } from '../components/providers/providers';
 import { Navbar } from '../components/layout/navbar';
 import { BottomNav } from '../components/layout/bottom-nav';
+import { DemoModeBanner } from '../components/demo/DemoModeBanner';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
@@ -48,6 +49,7 @@ export default async function RootLayout({
 			>
 				<NextIntlClientProvider messages={messages}>
 					<Providers>
+						<DemoModeBanner />
 						<Navbar />
 						<div className="pb-16 lg:pb-0">
 							{children}

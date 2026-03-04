@@ -37,7 +37,8 @@ export function KanbanLayout() {
 
 	// Determine user role
 	const userRole = (session?.user as { role?: UserRole })?.role;
-	const isAdmin = userRole === 'admin' || userRole === 'developer';
+	const isAdmin = userRole === 'admin' || userRole === 'developer' || userRole === 'demo';
+	const isDemo = userRole === 'demo';
 
 	// Build API URL - fetch all items for kanban view
 	const apiParams = new URLSearchParams({
@@ -176,6 +177,7 @@ export function KanbanLayout() {
 					onEdit={handleEdit}
 					onRefresh={mutate}
 					isAdmin={isAdmin}
+					isDemo={isDemo}
 					items={filteredItems}
 					currentIndex={previewIndex}
 					onNavigate={handleNavigate}
