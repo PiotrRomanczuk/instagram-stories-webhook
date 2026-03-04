@@ -33,8 +33,8 @@ export function Navbar() {
 	const t = useTranslations('Navbar');
 	const { data: session, status } = useSession();
 	const pathname = usePathname();
-	// Don't show navbar on signin page
-	if (pathname === '/auth/signin') return null;
+	// Don't show navbar on signin or landing page
+	if (pathname === '/auth/signin' || pathname === '/landing') return null;
 
 	const user = session?.user;
 	const userRole = (user as { role?: UserRole })?.role;

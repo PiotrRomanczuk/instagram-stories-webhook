@@ -68,10 +68,14 @@ export const authOptions: AuthOptions = {
 				]
 			: []),
 	],
-	adapter: SupabaseAdapter({
-		url: process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-		secret: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
-	}),
+	...(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
+		? {
+				adapter: SupabaseAdapter({
+					url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+					secret: process.env.SUPABASE_SERVICE_ROLE_KEY,
+				}),
+			}
+		: {}),
 	callbacks: {
 		async signIn({ user, account }: { user: User; account: Account | null }) {
 			await Logger.info(MODULE, '--- Auth Attempt ---', {

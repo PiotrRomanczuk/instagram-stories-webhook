@@ -41,13 +41,19 @@ function getRoleProtectedRoute(pathname: string) {
 export default async function middleware(req: NextRequest) {
 	// Define content that does not require authentication
 	// Matches /auth/* for supported locales only (localePrefix: 'never')
-	const publicPathnameRegex = RegExp(`^(/auth/.*)$`, 'i');
+	const publicPathnameRegex = RegExp(`^(/auth/.*|/landing)$`, 'i');
 
 	const { pathname } = req.nextUrl;
 	const isPublicPage = publicPathnameRegex.test(pathname);
 
 	if (isPublicPage) {
 		return intlMiddleware(req);
+	}
+
+	// If auth isn't configured, redirect everything to landing page
+	if (!process.env.NEXTAUTH_SECRET) {
+		const landingUrl = new URL('/landing', req.url);
+		return NextResponse.redirect(landingUrl);
 	}
 
 	// Check role-based access for protected admin/developer routes.
