@@ -1,12 +1,22 @@
-import { getServerSession } from 'next-auth/next';
 import { redirect } from 'next/navigation';
-import { authOptions } from '@/lib/auth';
 import { UserRole } from '@/lib/types';
 import { UserDashboard } from '../components/dashboard/user-dashboard';
 import { AdminDashboard } from '../components/dashboard/admin-dashboard';
 
 export default async function DashboardPage() {
-	const session = await getServerSession(authOptions);
+	// If auth isn't configured, go straight to landing page
+	if (!process.env.NEXTAUTH_SECRET) {
+		redirect('/landing');
+	}
+
+	let session;
+	try {
+		const { getServerSession } = await import('next-auth/next');
+		const { authOptions } = await import('@/lib/auth');
+		session = await getServerSession(authOptions);
+	} catch {
+		redirect('/landing');
+	}
 
 	if (!session?.user?.id) {
 		redirect('/landing');
