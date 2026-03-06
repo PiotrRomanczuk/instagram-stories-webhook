@@ -37,6 +37,8 @@ function createRequest(url: string): NextRequest {
 describe('Middleware Execution', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		// Set NEXTAUTH_SECRET so middleware doesn't short-circuit to /landing
+		process.env.NEXTAUTH_SECRET = 'test-secret';
 		mockIntlMiddleware.mockReturnValue(NextResponse.next());
 		mockAuthMiddleware.mockReturnValue(NextResponse.next());
 		// Default: authenticated with 'user' role
@@ -64,6 +66,24 @@ describe('Middleware Execution', () => {
 			const req = createRequest('/auth/callback/google');
 			await middleware(req);
 			expect(mockIntlMiddleware).toHaveBeenCalledWith(req);
+			expect(mockAuthMiddleware).not.toHaveBeenCalled();
+		});
+
+		it('should route /landing through intl middleware (no auth required)', async () => {
+			const req = createRequest('/landing');
+			await middleware(req);
+			expect(mockIntlMiddleware).toHaveBeenCalledWith(req);
+			expect(mockAuthMiddleware).not.toHaveBeenCalled();
+		});
+	});
+
+	describe('Missing NEXTAUTH_SECRET', () => {
+		it('should redirect protected pages to /landing when NEXTAUTH_SECRET is not set', async () => {
+			delete process.env.NEXTAUTH_SECRET;
+			const req = createRequest('/dashboard');
+			const result = await middleware(req);
+			expect(result?.status).toBe(307);
+			expect(result?.headers.get('location')).toBe('http://localhost:3000/landing');
 			expect(mockAuthMiddleware).not.toHaveBeenCalled();
 		});
 	});

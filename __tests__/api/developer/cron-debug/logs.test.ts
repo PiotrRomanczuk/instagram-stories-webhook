@@ -6,7 +6,11 @@ import { supabaseAdmin } from '@/lib/config/supabase-admin';
 import { requireDeveloper } from '@/lib/auth-helpers';
 
 vi.mock('next-auth/next');
-vi.mock('@/lib/config/supabase-admin');
+vi.mock('@/lib/config/supabase-admin', () => ({
+	supabaseAdmin: {
+		from: vi.fn(),
+	},
+}));
 vi.mock('@/lib/auth');
 vi.mock('@/lib/auth-helpers', async (importOriginal) => {
 	const actual = await importOriginal<typeof import('@/lib/auth-helpers')>();
