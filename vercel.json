@@ -4,10 +4,5 @@
 			"master": false
 		}
 	},
-	"crons": [
-		{
-			"path": "/api/cron/dispatch",
-			"schedule": "0 0 * * *"
-		}
-	]
+	"crons": []
 }

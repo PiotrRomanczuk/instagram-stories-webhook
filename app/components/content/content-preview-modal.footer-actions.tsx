@@ -41,7 +41,7 @@ export function FooterActions({
 	return (
 		<div className='flex flex-col gap-3 pt-4 pb-40 md:pb-0'>
 			{/* Approval buttons for pending submissions */}
-			{isAdmin && !isDemo && isPendingSubmission && (
+			{isAdmin && isPendingSubmission && (
 				<div className='flex gap-2'>
 					<button
 						onClick={onApprove}
@@ -77,7 +77,7 @@ export function FooterActions({
 			)}
 
 			{/* Publish/Schedule buttons for non-pending, non-failed items */}
-			{!isDemo && item.publishingStatus !== 'published' && item.publishingStatus !== 'failed' && !isPendingSubmission && (
+			{item.publishingStatus !== 'published' && item.publishingStatus !== 'failed' && !isPendingSubmission && (
 				<div className='flex gap-2'>
 					<button
 						onClick={() => { onClose(); onEdit(item); }}

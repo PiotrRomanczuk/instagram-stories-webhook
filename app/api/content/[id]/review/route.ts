@@ -9,7 +9,6 @@ import { authOptions } from '@/lib/auth';
 import { getUserRole, getUserId } from '@/lib/auth-helpers';
 import { getContentItemById, updateSubmissionStatus } from '@/lib/content-db';
 import { rateLimiter } from '@/lib/middleware/rate-limit';
-import { preventWriteForDemo } from '@/lib/preview-guard';
 import { Logger } from '@/lib/utils/logger';
 import { recordAuditEvent, getRequestContext } from '@/lib/utils/audit-log';
 
@@ -41,15 +40,12 @@ export async function POST(
 			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 		}
 
-		const demoGuard = preventWriteForDemo(session);
-		if (demoGuard) return demoGuard;
-
 		const userId = getUserId(session);
 		const role = getUserRole(session);
 		const userEmail = session.user?.email || '';
 
-		// Admin-only endpoint
-		if (role !== 'admin' && role !== 'developer') {
+		// Admin-only endpoint (demo users can review in demo mode)
+		if (role !== 'admin' && role !== 'developer' && role !== 'demo') {
 			return NextResponse.json(
 				{ error: 'Only admins can review submissions' },
 				{ status: 403 },

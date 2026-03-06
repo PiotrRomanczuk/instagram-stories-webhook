@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
 		switch (tab) {
 			case 'review':
 				// Admins only: pending submissions
-				if (role !== 'admin' && role !== 'developer') {
+				if (role !== 'admin' && role !== 'developer' && role !== 'demo') {
 					return NextResponse.json(
 						{ error: 'Only admins can access review queue' },
 						{ status: 403 },
@@ -128,7 +128,7 @@ export async function GET(req: NextRequest) {
 
 			case 'rejected':
 				// Admins only: rejected submissions
-				if (role !== 'admin' && role !== 'developer') {
+				if (role !== 'admin' && role !== 'developer' && role !== 'demo') {
 					return NextResponse.json(
 						{ error: 'Only admins can access rejected items' },
 						{ status: 403 },
@@ -140,7 +140,7 @@ export async function GET(req: NextRequest) {
 
 			case 'failed':
 				// Items that failed publishing (admins/developers only)
-				if (role !== 'admin' && role !== 'developer') {
+				if (role !== 'admin' && role !== 'developer' && role !== 'demo') {
 					return NextResponse.json(
 						{ error: 'Only admins can access failed items' },
 						{ status: 403 },
@@ -166,7 +166,7 @@ export async function GET(req: NextRequest) {
 		// Fetch content and stats
 		const { items, total } = await getContentItems(filterOptions);
 		const stats =
-			role === 'admin' || role === 'developer' ? await getContentStats() : null;
+			role === 'admin' || role === 'developer' || role === 'demo' ? await getContentStats() : null;
 
 		return NextResponse.json({
 			items,

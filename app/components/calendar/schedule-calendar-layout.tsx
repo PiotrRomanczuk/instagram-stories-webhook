@@ -203,11 +203,6 @@ export function ScheduleCalendarLayout() {
 			setActiveId(null);
 			setActiveItem(null);
 
-			if (isDemo) {
-				toast.error('Demo mode — scheduling is read only');
-				return;
-			}
-
 			const { active, over } = event;
 			if (!over) return;
 
@@ -253,7 +248,7 @@ export function ScheduleCalendarLayout() {
 				toast.error('Failed to schedule item');
 			}
 		},
-		[allItems, updateContent, humanizeSchedule, isDemo]
+		[allItems, updateContent, humanizeSchedule]
 	);
 
 	const handleOpenPreview = useCallback((item: ContentItem) => {

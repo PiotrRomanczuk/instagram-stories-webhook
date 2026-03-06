@@ -100,9 +100,6 @@ export async function PATCH(
 			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 		}
 
-		const demoGuard = preventWriteForDemo(session);
-		if (demoGuard) return demoGuard;
-
 		const userId = getUserId(session);
 		const role = getUserRole(session);
 
@@ -116,8 +113,8 @@ export async function PATCH(
 			);
 		}
 
-		// Check permissions
-		if (role !== 'admin' && role !== 'developer' && item.userId !== userId) {
+		// Check permissions (demo users can edit via calendar drag-and-drop)
+		if (role !== 'admin' && role !== 'developer' && role !== 'demo' && item.userId !== userId) {
 			return NextResponse.json(
 				{ error: 'You do not have permission to edit this content' },
 				{ status: 403 },
