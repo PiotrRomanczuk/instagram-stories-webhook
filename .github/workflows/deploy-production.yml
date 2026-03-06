@@ -128,7 +128,7 @@ jobs:
           PREVIEW_URL="${{ needs.deploy-preview.outputs.preview_url }}"
           echo "Promoting $PREVIEW_URL to production..."
 
-          vercel promote "$PREVIEW_URL" --token=${{ secrets.VERCEL_TOKEN }} --yes
+          vercel promote "$PREVIEW_URL" --token=${{ secrets.VERCEL_TOKEN }} --scope=${{ secrets.VERCEL_ORG_ID }} --yes
 
           echo "Production promotion complete"
 
@@ -138,7 +138,7 @@ jobs:
           sleep 15
 
           # Verify production URL returns 200
-          PROD_URL="https://instagram-stories-webhook.vercel.app"
+          PROD_URL="https://stories-webhook.vercel.app"
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$PROD_URL/api/health" || echo "000")
 
           if [ "$STATUS" = "200" ] || [ "$STATUS" = "404" ]; then
@@ -173,10 +173,12 @@ jobs:
           script: |
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
 
-            await github.rest.issues.create({
+            await github.rest.repos.createCommitStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: `Production promotion failed - ${new Date().toISOString().split('T')[0]}`,
-              body: `## Production Promotion Failed\n\n**Commit:** ${context.sha}\n**Run:** [View Details](${runUrl})\n\nThe preview deployment passed E2E tests but promotion to production failed.\n\n**Action Required:**\n1. Check Vercel dashboard\n2. Verify promotion command\n3. Re-run workflow if transient error`,
-              labels: ['production', 'automated']
+              sha: context.sha,
+              state: 'failure',
+              description: 'Production promotion failed',
+              context: 'deploy/production',
+              target_url: runUrl
             });
