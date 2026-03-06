@@ -5,6 +5,10 @@ on:
     branches: [master]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  statuses: write
+
 concurrency:
   group: production-deploy
   cancel-in-progress: false
