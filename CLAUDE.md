@@ -198,7 +198,7 @@ npm version major --no-git-tag-version   # breaking changes
 
 - PRs → Vercel preview deployment with unique URL
 - Merge to `master` does NOT auto-deploy to production (disabled in `vercel.json`)
-- Production deployment uses `deploy-production.yml` GitHub Actions workflow: quality gates → preview deploy → E2E tests (5 shards) → production promotion
+- Production deployment uses `deploy-production.yml` GitHub Actions workflow: quality gates → preview deploy → production promotion (E2E tests run separately via dedicated workflows)
 - After merge → Run `npm run release` to tag the version
 
 ---

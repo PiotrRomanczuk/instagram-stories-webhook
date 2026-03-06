@@ -107,109 +107,12 @@ jobs:
           done
 
   # ===========================================================================
-  # Job 3: E2E Tests against Preview (5 shards, ~10-14 min)
-  # ===========================================================================
-  e2e-tests:
-    name: E2E Tests (shard ${{ matrix.shard }}/${{ strategy.job-total || 5 }})
-    needs: deploy-preview
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-
-    strategy:
-      fail-fast: true
-      matrix:
-        shard: [1, 2, 3, 4, 5]
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Cache Playwright browsers
-        id: playwright-cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            playwright-${{ runner.os }}-
-
-      - name: Install Playwright browsers
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps chromium
-
-      - name: Install Playwright system deps
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: npx playwright install-deps chromium
-
-      - name: Generate test images
-        run: npx tsx __tests__/e2e/fixtures/generate-test-images.ts
-
-      - name: Setup environment
-        run: |
-          cat > .env.local << 'ENVEOF'
-          NODE_ENV=test
-          VERCEL_ENV=production
-          PREVIEW_MODE=false
-          NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          SUPABASE_JWT_SECRET=${{ secrets.SUPABASE_JWT_SECRET }}
-          NEXTAUTH_URL=${{ needs.deploy-preview.outputs.preview_url }}
-          NEXTAUTH_SECRET=${{ secrets.SUPABASE_JWT_SECRET }}
-          ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}
-          AUTH_GOOGLE_ID=${{ secrets.AUTH_GOOGLE_ID || 'dummy' }}
-          AUTH_GOOGLE_SECRET=${{ secrets.AUTH_GOOGLE_SECRET || 'dummy' }}
-          AUTH_FACEBOOK_ID=${{ secrets.AUTH_FACEBOOK_ID || 'dummy' }}
-          AUTH_FACEBOOK_SECRET=${{ secrets.AUTH_FACEBOOK_SECRET || 'dummy' }}
-          FB_APP_SECRET=${{ secrets.FB_APP_SECRET || 'dummy' }}
-          NEXT_PUBLIC_FB_APP_ID=${{ secrets.NEXT_PUBLIC_FB_APP_ID || 'dummy' }}
-          FB_REDIRECT_URI=${{ secrets.FB_REDIRECT_URI || 'http://localhost:3000/api/auth/link-facebook/callback' }}
-          NEXT_PUBLIC_APP_URL=${{ needs.deploy-preview.outputs.preview_url }}
-          WEBHOOK_SECRET=${{ secrets.WEBHOOK_SECRET || 'test-webhook-secret' }}
-          CRON_SECRET=${{ secrets.CRON_SECRET || 'test-cron-secret' }}
-          TEST_AUTH_EMAILS=${{ secrets.TEST_AUTH_EMAILS || 'admin@test.com,user@test.com,user2@test.com' }}
-          ENVEOF
-          sed -i 's/^[[:space:]]*//' .env.local
-
-      - name: Run E2E tests (shard ${{ matrix.shard }}/5)
-        run: npx playwright test --config=playwright.config.ci.ts --shard=${{ matrix.shard }}/5
-        env:
-          CI: true
-          PREVIEW_MODE: false
-          BASE_URL: ${{ needs.deploy-preview.outputs.preview_url }}
-          TEST_AUTH_EMAILS: admin@test.com,user@test.com,user2@test.com
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results-shard-${{ matrix.shard }}
-          path: test-results/ci/
-          retention-days: 7
-
-      - name: Upload Playwright report
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report-shard-${{ matrix.shard }}
-          path: playwright-report/
-          retention-days: 7
-
-  # ===========================================================================
-  # Job 4: Promote to Production (~1 min)
+  # Job 3: Promote to Production (~1 min)
+  # E2E tests run separately via e2e-preview.yml and e2e-production.yml
   # ===========================================================================
   promote-production:
     name: Promote to Production
-    needs: [deploy-preview, e2e-tests]
+    needs: [deploy-preview]
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
