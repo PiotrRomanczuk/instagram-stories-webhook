@@ -1,7 +1,7 @@
 -- Story Archive: stores downloaded Instagram stories for engagement analysis
 -- Stories are ingested content (from Instagram) not published content (to Instagram)
 
-CREATE TABLE public.story_archive (
+CREATE TABLE IF NOT EXISTS public.story_archive (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id text NOT NULL,
     ig_media_id text NOT NULL,
@@ -37,24 +37,26 @@ CREATE TABLE public.story_archive (
 );
 
 -- Prevent duplicate downloads
-CREATE UNIQUE INDEX idx_story_archive_ig_media_id ON public.story_archive (ig_media_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_story_archive_ig_media_id ON public.story_archive (ig_media_id);
 
 -- Ranking queries: top stories by engagement per user
-CREATE INDEX idx_story_archive_engagement ON public.story_archive (user_id, engagement_score DESC NULLS LAST);
+CREATE INDEX IF NOT EXISTS idx_story_archive_engagement ON public.story_archive (user_id, engagement_score DESC NULLS LAST);
 
 -- Cron processing: find pending downloads
-CREATE INDEX idx_story_archive_download_status ON public.story_archive (download_status) WHERE download_status != 'completed';
+CREATE INDEX IF NOT EXISTS idx_story_archive_download_status ON public.story_archive (download_status) WHERE download_status != 'completed';
 
 -- Recent-first ordering
-CREATE INDEX idx_story_archive_timestamp ON public.story_archive (ig_timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_story_archive_timestamp ON public.story_archive (ig_timestamp DESC);
 
 -- RLS
 ALTER TABLE public.story_archive ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view own archived stories" ON public.story_archive;
 CREATE POLICY "Users can view own archived stories"
     ON public.story_archive FOR SELECT
     USING (auth.uid()::text = user_id);
 
+DROP POLICY IF EXISTS "Service role has full access to story_archive" ON public.story_archive;
 CREATE POLICY "Service role has full access to story_archive"
     ON public.story_archive FOR ALL
     USING (auth.role() = 'service_role');

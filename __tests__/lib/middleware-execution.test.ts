@@ -78,22 +78,21 @@ describe('Middleware Execution', () => {
 	});
 
 	describe('Missing NEXTAUTH_SECRET', () => {
-		it('should redirect protected pages to /landing when NEXTAUTH_SECRET is not set', async () => {
+		it('should fall through to intl middleware when NEXTAUTH_SECRET is not set', async () => {
 			delete process.env.NEXTAUTH_SECRET;
 			const req = createRequest('/dashboard');
-			const result = await middleware(req);
-			expect(result?.status).toBe(307);
-			expect(result?.headers.get('location')).toBe('http://localhost:3000/landing');
+			await middleware(req);
+			expect(mockIntlMiddleware).toHaveBeenCalledWith(req);
 			expect(mockAuthMiddleware).not.toHaveBeenCalled();
 		});
 	});
 
 	describe('Protected pages (require auth)', () => {
-		it('should route / through auth middleware', async () => {
+		it('should route / through intl middleware (public landing)', async () => {
 			const req = createRequest('/');
 			await middleware(req);
-			expect(mockAuthMiddleware).toHaveBeenCalledWith(req);
-			expect(mockIntlMiddleware).not.toHaveBeenCalled();
+			expect(mockIntlMiddleware).toHaveBeenCalledWith(req);
+			expect(mockAuthMiddleware).not.toHaveBeenCalled();
 		});
 
 		it('should route /dashboard through auth middleware', async () => {
