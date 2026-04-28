@@ -1,7 +1,7 @@
 -- Audio Tracks: royalty-free music library for video composition
 -- Tracks sourced from Pixabay Audio API and cached locally
 
-CREATE TABLE public.audio_tracks (
+CREATE TABLE IF NOT EXISTS public.audio_tracks (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     title text NOT NULL,
     artist text,
@@ -19,14 +19,15 @@ CREATE TABLE public.audio_tracks (
 );
 
 -- Prevent duplicate downloads from same source
-CREATE UNIQUE INDEX idx_audio_tracks_source_id ON public.audio_tracks (source, source_id) WHERE source_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_audio_tracks_source_id ON public.audio_tracks (source, source_id) WHERE source_id IS NOT NULL;
 
 -- Random selection query: active tracks, weighted by usage_count
-CREATE INDEX idx_audio_tracks_active ON public.audio_tracks (is_active, usage_count ASC) WHERE is_active = true;
+CREATE INDEX IF NOT EXISTS idx_audio_tracks_active ON public.audio_tracks (is_active, usage_count ASC) WHERE is_active = true;
 
 -- RLS
 ALTER TABLE public.audio_tracks ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Service role has full access to audio_tracks" ON public.audio_tracks;
 CREATE POLICY "Service role has full access to audio_tracks"
     ON public.audio_tracks FOR ALL
     USING (auth.role() = 'service_role');

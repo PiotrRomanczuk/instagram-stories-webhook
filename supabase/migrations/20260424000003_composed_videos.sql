@@ -1,7 +1,7 @@
 -- Composed Videos: videos created from archived stories + audio tracks
 -- These are the final output published to TikTok
 
-CREATE TABLE public.composed_videos (
+CREATE TABLE IF NOT EXISTS public.composed_videos (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id text NOT NULL,
     title text,
@@ -34,22 +34,24 @@ CREATE TABLE public.composed_videos (
 );
 
 -- Find videos pending composition or publishing
-CREATE INDEX idx_composed_videos_composition_status ON public.composed_videos (composition_status)
+CREATE INDEX IF NOT EXISTS idx_composed_videos_composition_status ON public.composed_videos (composition_status)
     WHERE composition_status IN ('pending', 'processing');
 
-CREATE INDEX idx_composed_videos_tiktok_status ON public.composed_videos (tiktok_publish_status)
+CREATE INDEX IF NOT EXISTS idx_composed_videos_tiktok_status ON public.composed_videos (tiktok_publish_status)
     WHERE tiktok_publish_status IN ('pending', 'uploading');
 
 -- User's videos
-CREATE INDEX idx_composed_videos_user ON public.composed_videos (user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_composed_videos_user ON public.composed_videos (user_id, created_at DESC);
 
 -- RLS
 ALTER TABLE public.composed_videos ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view own composed videos" ON public.composed_videos;
 CREATE POLICY "Users can view own composed videos"
     ON public.composed_videos FOR SELECT
     USING (auth.uid()::text = user_id);
 
+DROP POLICY IF EXISTS "Service role has full access to composed_videos" ON public.composed_videos;
 CREATE POLICY "Service role has full access to composed_videos"
     ON public.composed_videos FOR ALL
     USING (auth.role() = 'service_role');
