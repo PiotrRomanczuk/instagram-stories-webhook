@@ -47,6 +47,34 @@ export const CRON_JOBS: CronJobDefinition[] = [
         enabledLocally: true,
         description: 'Process video uploads',
     },
+    {
+        id: 'archive-stories',
+        path: '/api/cron/archive-stories',
+        schedule: '0 */4 * * *',
+        enabledLocally: false,
+        description: 'Archive Instagram stories before they expire (24h)',
+    },
+    {
+        id: 'refresh-audio',
+        path: '/api/cron/refresh-audio',
+        schedule: '0 3 * * 0',
+        enabledLocally: false,
+        description: 'Refresh royalty-free audio library from Pixabay',
+    },
+    {
+        id: 'refresh-tiktok-token',
+        path: '/api/cron/refresh-tiktok-token',
+        schedule: '0 */12 * * *',
+        enabledLocally: false,
+        description: 'Refresh TikTok OAuth tokens (24h expiry)',
+    },
+    {
+        id: 'tiktok-pipeline',
+        path: '/api/cron/tiktok-pipeline',
+        schedule: '0 9 * * 1',
+        enabledLocally: false,
+        description: 'Full pipeline: archive stories -> rank -> compose -> publish to TikTok',
+    },
 ];
 
 /**

@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { getUserRole } from '@/lib/auth-helpers';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { Badge } from '@/app/components/ui/badge';
-import { InsightsDashboardNew } from '@/app/components/insights/insights-dashboard-new';
+import { EngagementInsights } from '@/app/components/insights/engagement-insights';
 
 export default async function InsightsPage() {
 	const session = await getServerSession(authOptions);
@@ -14,30 +14,25 @@ export default async function InsightsPage() {
 	}
 
 	const role = getUserRole(session);
-
-	// Only admins and developers can access insights
 	if (role !== 'admin' && role !== 'developer') {
 		redirect('/');
 	}
 
 	return (
-		<main className="min-h-screen bg-gray-50">
-			<div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-				<div className="space-y-6">
-					<PageHeader
-						title="Performance Insights"
-						description="Analyze the performance of your published Instagram content."
-						badge={<Badge variant="secondary">Live Connect</Badge>}
-					/>
+		<main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+			<div className="space-y-5">
+				<PageHeader
+					title="Story Engagement"
+					description="Per-story performance metrics. Pick the top performers to compose into your next TikTok video."
+					badge={<Badge variant="secondary">Insights · 24h window</Badge>}
+				/>
 
-					<InsightsDashboardNew />
+				<EngagementInsights />
 
-					<footer className="pt-8 border-t border-gray-200 text-center">
-						<p className="text-sm text-gray-500">
-							Metrics are provided directly by the Instagram Graph API
-						</p>
-					</footer>
-				</div>
+				<footer className="pt-6 text-center text-xs text-muted-foreground">
+					Metrics are provided directly by the Instagram Graph API. Story
+					insights are only available within the 24-hour story lifetime.
+				</footer>
 			</div>
 		</main>
 	);

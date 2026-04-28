@@ -10,6 +10,7 @@ export interface LinkedAccount {
 	expires_at?: number;
 	ig_user_id?: string;
 	ig_username?: string;
+	platform_user_id?: string;
 	created_at?: string;
 	updated_at?: string;
 }

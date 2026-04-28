@@ -46,6 +46,10 @@ describe('toVercelCronsConfig', () => {
             { path: '/api/cron/check-media-health', schedule: '0 */6 * * *' },
             { path: '/api/schedule/refresh-token', schedule: '0 0 * * 0' },
             { path: '/api/cron/process-videos', schedule: '*/5 * * * *' },
+            { path: '/api/cron/archive-stories', schedule: '0 */4 * * *' },
+            { path: '/api/cron/refresh-audio', schedule: '0 3 * * 0' },
+            { path: '/api/cron/refresh-tiktok-token', schedule: '0 */12 * * *' },
+            { path: '/api/cron/tiktok-pipeline', schedule: '0 9 * * 1' },
         ]);
     });
 });

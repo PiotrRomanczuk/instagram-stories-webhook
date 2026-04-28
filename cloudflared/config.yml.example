@@ -1,0 +1,19 @@
+# Cloudflare Tunnel configuration
+# Copy to config.yml and fill in your tunnel details.
+#
+# One-time setup:
+#   1. cloudflared tunnel login
+#   2. cloudflared tunnel create shortscannon
+#   3. Copy the tunnel ID and credentials file path below
+#   4. cloudflared tunnel route dns shortscannon your-subdomain.yourdomain.com
+#
+# After setup, register your tunnel subdomain as the redirect URI
+# in every platform's developer console (Meta, TikTok, Google, X).
+
+tunnel: YOUR_TUNNEL_ID_HERE
+credentials-file: /etc/cloudflared/YOUR_TUNNEL_ID_HERE.json
+
+ingress:
+  - hostname: your-subdomain.yourdomain.com
+    service: http://host.docker.internal:3000
+  - service: http_status:404
