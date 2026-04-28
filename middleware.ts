@@ -39,9 +39,13 @@ function getRoleProtectedRoute(pathname: string) {
 }
 
 export default async function middleware(req: NextRequest) {
-	// Define content that does not require authentication
-	// Matches /auth/* for supported locales only (localePrefix: 'never')
-	const publicPathnameRegex = RegExp(`^(/auth/.*|/landing)$`, 'i');
+	// Define content that does not require authentication.
+	// `/` renders the landing page directly when there's no session, so it's public.
+	// `/terms` and `/privacy` must be public so TikTok / Meta crawlers can read them.
+	const publicPathnameRegex = RegExp(
+		`^(/|/auth/.*|/landing|/terms|/privacy)$`,
+		'i',
+	);
 
 	const { pathname } = req.nextUrl;
 	const isPublicPage = publicPathnameRegex.test(pathname);
@@ -50,10 +54,9 @@ export default async function middleware(req: NextRequest) {
 		return intlMiddleware(req);
 	}
 
-	// If auth isn't configured, redirect everything to landing page
+	// If auth isn't configured, render landing at root instead of looping redirects.
 	if (!process.env.NEXTAUTH_SECRET) {
-		const landingUrl = new URL('/landing', req.url);
-		return NextResponse.redirect(landingUrl);
+		return intlMiddleware(req);
 	}
 
 	// Check role-based access for protected admin/developer routes.

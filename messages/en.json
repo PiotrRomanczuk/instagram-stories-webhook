@@ -24,6 +24,37 @@
 		"devTools": "Dev Tools",
 		"signIn": "Sign In"
 	},
+	"Sidebar": {
+		"groups": {
+			"pipeline": "Pipeline",
+			"insights": "Insights",
+			"connections": "Connections",
+			"tools": "Tools",
+			"admin": "Admin",
+			"developer": "Developer"
+		},
+		"dashboard": "Dashboard",
+		"storyArchive": "Story Archive",
+		"compositions": "Compositions",
+		"audio": "Audio Library",
+		"postedTiktok": "Posted to TikTok",
+		"engagement": "Engagement",
+		"pipelineHealth": "Pipeline Health",
+		"linkedAccounts": "Linked Accounts",
+		"submit": "Submit",
+		"submissions": "My Submissions",
+		"review": "Review",
+		"schedule": "Schedule",
+		"postedStories": "Posted Stories",
+		"memes": "Memes",
+		"users": "Users",
+		"content": "Content",
+		"inbox": "Inbox",
+		"settings": "Settings",
+		"debug": "Debug",
+		"cronDebug": "Cron Debug",
+		"releaseNotes": "Release Notes"
+	},
 	"AdminUsers": {
 		"title": "User",
 		"whitelist": "Whitelist",

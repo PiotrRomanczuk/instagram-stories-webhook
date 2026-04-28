@@ -162,9 +162,9 @@ export function LandingPage() {
 							transition={{ duration: 0.5 }}
 							className="text-4xl font-black tracking-tight text-foreground sm:text-5xl lg:text-6xl"
 						>
-							Automate Your{' '}
-							<span className="bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 bg-clip-text text-transparent">
-								Instagram Stories
+							Welcome to{' '}
+							<span className="bg-gradient-to-r from-fuchsia-500 via-pink-500 to-orange-400 bg-clip-text text-transparent">
+								Marszal-Arts
 							</span>
 						</motion.h1>
 
@@ -173,8 +173,8 @@ export function LandingPage() {
 							transition={{ duration: 0.5 }}
 							className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground sm:text-xl"
 						>
-							A team workflow for Instagram Stories. Submit content, swipe to review,
-							drag to schedule, and publish automatically — all from one dashboard.
+							A unified content queue for your Instagram Stories and TikTok videos.
+							Submit, review, schedule, and publish — all from one dashboard.
 						</motion.p>
 
 						<motion.div
@@ -460,10 +460,10 @@ export function LandingPage() {
 						<motion.div variants={fadeUp} transition={{ duration: 0.5 }} className="relative">
 							<Instagram className="mx-auto mb-6 h-12 w-12 opacity-90" />
 							<h2 className="text-3xl font-black tracking-tight sm:text-4xl">
-								Ready to automate your Stories?
+								Ready to ship content faster?
 							</h2>
 							<p className="mx-auto mt-4 max-w-lg text-primary-foreground/80">
-								Sign in with Google to start managing your Instagram Stories workflow today.
+								Sign in with Google to start managing your Marszal-Arts content workflow today.
 							</p>
 							<Button
 								size="lg"
@@ -485,14 +485,21 @@ export function LandingPage() {
 			<footer className="border-t py-8">
 				<div className="mx-auto flex max-w-6xl flex-col items-center gap-4 px-4 sm:flex-row sm:justify-between sm:px-6">
 					<div className="flex items-center gap-2">
-						<span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text font-black tracking-tighter text-transparent">
-							ISM
+						<span className="bg-gradient-to-r from-fuchsia-500 via-pink-500 to-orange-400 bg-clip-text font-black tracking-tighter text-transparent">
+							Marszal-Arts
 						</span>
-						<span className="text-sm text-muted-foreground">Stories Manager</span>
 					</div>
-					<p className="text-xs text-muted-foreground">
-						Built with Next.js, Supabase & Meta Graph API
-					</p>
+					<nav className="flex items-center gap-4 text-xs text-muted-foreground">
+						<Link href="/terms" className="hover:text-foreground">
+							Terms
+						</Link>
+						<Link href="/privacy" className="hover:text-foreground">
+							Privacy
+						</Link>
+						<span className="hidden sm:inline">
+							Built with Next.js, Supabase & Meta Graph API
+						</span>
+					</nav>
 				</div>
 			</footer>
 		</div>

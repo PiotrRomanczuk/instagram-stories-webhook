@@ -2,8 +2,7 @@ import type { Metadata } from 'next';
 import { Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google';
 import '../globals.css';
 import { Providers } from '../components/providers/providers';
-import { Navbar } from '../components/layout/navbar';
-import { BottomNav } from '../components/layout/bottom-nav';
+import { ShellLayout } from '../components/layout/shell-layout';
 import { DemoModeBanner } from '../components/demo/DemoModeBanner';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
@@ -21,8 +20,14 @@ const jetBrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-	title: 'Instagram Story Automation',
-	description: 'Publish stories via webhook',
+	title: 'Marszal-Arts',
+	description:
+		'Marszal-Arts — unified content queue for the operator’s own Instagram Stories and TikTok videos.',
+	icons: {
+		icon: '/logo.svg',
+		shortcut: '/logo.svg',
+		apple: '/logo.svg',
+	},
 };
 
 export default async function RootLayout({
@@ -50,11 +55,7 @@ export default async function RootLayout({
 				<NextIntlClientProvider messages={messages}>
 					<Providers>
 						<DemoModeBanner />
-						<Navbar />
-						<div className="pb-16 lg:pb-0">
-							{children}
-						</div>
-						<BottomNav />
+						<ShellLayout>{children}</ShellLayout>
 					</Providers>
 				</NextIntlClientProvider>
 			</body>

@@ -1,9 +1,9 @@
 import { LandingPage } from './landing-page';
 
 export const metadata = {
-	title: 'ISM Stories Manager — Automate Your Instagram Stories',
+	title: 'Marszal-Arts — Unified content queue for Instagram & TikTok',
 	description:
-		'Submit, review, schedule, and publish Instagram Stories with a team. Swipe-to-review queue, drag-and-drop calendar, real-time analytics.',
+		'Marszal-Arts is a single-operator content automation tool. Queue, schedule, and publish your own Instagram Stories and TikTok videos from one place.',
 };
 
 export default function Landing() {

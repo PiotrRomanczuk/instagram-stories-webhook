@@ -5,6 +5,8 @@ import { isAdmin } from "@/lib/auth-helpers";
 import { supabaseAdmin } from "@/lib/config/supabase-admin";
 import packageJson from "@/package.json";
 import { getCurrentEnvironment } from "@/lib/content-db/environment";
+import { pingRedis } from "@/lib/queue/redis";
+import { allQueues } from "@/lib/queue/queues";
 
 type CheckStatus = "pass" | "fail" | "warn";
 
@@ -23,6 +25,8 @@ interface HealthResponse {
         cron_health: HealthCheck;
         queue_health: HealthCheck;
         api_quota: HealthCheck;
+        redis: HealthCheck;
+        bullmq_queues: HealthCheck;
     };
     timestamp: string;
     version: string;
@@ -254,6 +258,48 @@ async function checkApiQuota(): Promise<HealthCheck> {
     }
 }
 
+async function checkRedis(): Promise<HealthCheck> {
+    const result = await pingRedis();
+    if (!result.connected) {
+        return { status: "fail", message: `Redis unreachable: ${result.error}` };
+    }
+    return { status: "pass", details: { latencyMs: result.latencyMs } };
+}
+
+interface QueueCounts {
+    name: string;
+    waiting: number;
+    active: number;
+    failed: number;
+}
+
+async function checkBullmqQueues(): Promise<HealthCheck> {
+    try {
+        const counts: QueueCounts[] = await Promise.all(
+            allQueues.map(async (q) => {
+                const c = await q.getJobCounts("waiting", "active", "failed");
+                return {
+                    name: q.name,
+                    waiting: c["waiting"] ?? 0,
+                    active: c["active"] ?? 0,
+                    failed: c["failed"] ?? 0,
+                };
+            })
+        );
+        const highFailures = counts.filter((c) => c.failed > 10);
+        if (highFailures.length > 0) {
+            return {
+                status: "warn",
+                message: `${highFailures.length} queue(s) have >10 failed jobs`,
+                details: { queues: counts },
+            };
+        }
+        return { status: "pass", details: { queues: counts } };
+    } catch {
+        return { status: "warn", message: "Could not read BullMQ queue depths" };
+    }
+}
+
 function resolveOverallStatus(checks: HealthResponse["checks"]): HealthResponse["status"] {
     const results = Object.values(checks);
     const failCount = results.filter((c) => c.status === "fail").length;
@@ -279,6 +325,8 @@ export async function GET() {
         cron_health,
         queue_health,
         api_quota,
+        redis,
+        bullmq_queues,
     ] = await Promise.all([
         checkDatabase(),
         Promise.resolve(checkEnvVars()),
@@ -286,6 +334,8 @@ export async function GET() {
         checkCronHealth(),
         checkQueueHealth(),
         checkApiQuota(),
+        checkRedis(),
+        checkBullmqQueues(),
     ]);
 
     const checks: HealthResponse["checks"] = {
@@ -295,6 +345,8 @@ export async function GET() {
         cron_health,
         queue_health,
         api_quota,
+        redis,
+        bullmq_queues,
     };
 
     const response: HealthResponse = {
