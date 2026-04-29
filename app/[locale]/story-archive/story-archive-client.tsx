@@ -32,6 +32,7 @@ import {
 	Square,
 	CheckSquare,
 	Sparkles,
+	Send,
 	X,
 } from 'lucide-react';
 import {
@@ -688,6 +689,8 @@ function StoryPreviewDialog({
 	onClose: () => void;
 }) {
 	const isVideo = story.mediaType === 'VIDEO';
+	const canSendToTiktok = isVideo && story.downloadStatus === 'completed';
+	const [sending, setSending] = useState(false);
 	const src =
 		story.downloadStatus === 'completed'
 			? `/api/stories/archive/${story.id}/preview`
@@ -695,6 +698,27 @@ function StoryPreviewDialog({
 	const posterSrc = isVideo
 		? `/api/stories/archive/${story.id}/thumbnail`
 		: undefined;
+
+	async function handleSendToTiktok() {
+		if (!canSendToTiktok || sending) return;
+		setSending(true);
+		try {
+			const res = await fetch(`/api/stories/archive/${story.id}/send-to-tiktok`, {
+				method: 'POST',
+			});
+			const body = await res.json().catch(() => ({}));
+			if (res.ok) {
+				toast.success(body.note ?? 'Uploaded to TikTok drafts');
+				onClose();
+			} else {
+				toast.error(body.error ?? `Upload failed (${res.status})`);
+			}
+		} catch (err) {
+			toast.error(err instanceof Error ? err.message : 'Upload failed');
+		} finally {
+			setSending(false);
+		}
+	}
 
 	return (
 		<div
@@ -769,6 +793,31 @@ function StoryPreviewDialog({
 							</Button>
 						)}
 					</div>
+					{canSendToTiktok && (
+						<Button
+							onClick={handleSendToTiktok}
+							disabled={sending}
+							size="sm"
+							className="w-full"
+						>
+							{sending ? (
+								<Loader2 className="h-3.5 w-3.5 animate-spin" />
+							) : (
+								<Send className="h-3.5 w-3.5" />
+							)}
+							<span>{sending ? 'Uploading…' : 'Send to TikTok drafts'}</span>
+						</Button>
+					)}
+					{!canSendToTiktok && isVideo && (
+						<p className="text-[11px] text-muted-foreground text-center">
+							Video must be downloaded locally before it can be sent to TikTok.
+						</p>
+					)}
+					{!isVideo && (
+						<p className="text-[11px] text-muted-foreground text-center">
+							TikTok drafts only support video stories.
+						</p>
+					)}
 				</div>
 			</div>
 		</div>
