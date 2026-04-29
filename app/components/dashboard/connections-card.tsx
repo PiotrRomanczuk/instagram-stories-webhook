@@ -80,7 +80,7 @@ export function ConnectionsCard({ instagram, tiktok, isLoading }: ConnectionsCar
 						Connections
 					</CardTitle>
 					<Button asChild variant="ghost" size="sm" className="h-7 text-xs">
-						<Link href="/settings">Manage</Link>
+						<Link href="/linked-accounts">Manage</Link>
 					</Button>
 				</div>
 			</CardHeader>
