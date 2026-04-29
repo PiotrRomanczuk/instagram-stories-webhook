@@ -15,6 +15,7 @@ interface SaveTikTokInput {
     accessToken: string;
     refreshToken: string;
     expiresAt: number;
+    refreshExpiresAt?: number;
 }
 
 /**
@@ -35,6 +36,7 @@ export async function saveTikTokAccount(input: SaveTikTokInput): Promise<void> {
                 access_token: encryptedAccess,
                 refresh_token: encryptedRefresh,
                 expires_at: input.expiresAt,
+                refresh_expires_at: input.refreshExpiresAt ?? null,
                 platform_user_id: input.openId,
                 updated_at: new Date().toISOString(),
             })
@@ -55,6 +57,7 @@ export async function saveTikTokAccount(input: SaveTikTokInput): Promise<void> {
                 access_token: encryptedAccess,
                 refresh_token: encryptedRefresh,
                 expires_at: input.expiresAt,
+                refresh_expires_at: input.refreshExpiresAt ?? null,
                 platform_user_id: input.openId,
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
@@ -159,6 +162,7 @@ export async function refreshTikTokToken(
             accessToken: data.access_token,
             refreshToken: data.refresh_token,
             expiresAt: Date.now() + data.expires_in * 1000,
+            refreshExpiresAt: Date.now() + data.refresh_expires_in * 1000,
         });
 
         Logger.info(MODULE, `TikTok token refreshed for user ${userId}`);

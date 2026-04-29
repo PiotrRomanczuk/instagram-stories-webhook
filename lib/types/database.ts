@@ -8,6 +8,7 @@ export interface LinkedAccount {
 	access_token: string;
 	refresh_token?: string;
 	expires_at?: number;
+	refresh_expires_at?: number;
 	ig_user_id?: string;
 	ig_username?: string;
 	platform_user_id?: string;

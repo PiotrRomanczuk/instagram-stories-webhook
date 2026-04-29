@@ -96,6 +96,7 @@ export async function GET(req: NextRequest) {
         }
 
         const expiresAt = Date.now() + tokenData.expires_in * 1000;
+        const refreshExpiresAt = Date.now() + tokenData.refresh_expires_in * 1000;
 
         // Save to linked_accounts
         await saveTikTokAccount({
@@ -104,6 +105,7 @@ export async function GET(req: NextRequest) {
             accessToken: tokenData.access_token,
             refreshToken: tokenData.refresh_token,
             expiresAt,
+            refreshExpiresAt,
         });
 
         Logger.info(MODULE, `TikTok account linked for user ${userId}`, {

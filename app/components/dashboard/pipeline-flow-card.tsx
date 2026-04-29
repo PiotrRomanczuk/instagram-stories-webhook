@@ -1,6 +1,7 @@
 'use client';
 
 import { ArrowRight, Archive, Film, Music, Send, Rocket } from 'lucide-react';
+import { Link } from '@/i18n/routing';
 import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
 import { Badge } from '@/app/components/ui/badge';
 import { Skeleton } from '@/app/components/ui/skeleton';
@@ -26,6 +27,7 @@ interface Stage {
 	count: number;
 	icon: React.ComponentType<{ className?: string }>;
 	tone: 'blue' | 'purple' | 'amber' | 'emerald';
+	href?: string;
 }
 
 const TONE_STYLES: Record<Stage['tone'], { ring: string; icon: string; pulse: string }> = {
@@ -48,6 +50,7 @@ export function PipelineFlowCard({ stats, isLoading }: PipelineFlowProps) {
 			count: stats?.archived24h ?? 0,
 			icon: Archive,
 			tone: 'blue',
+			href: '/story-archive',
 		},
 		{
 			id: 'compose',
@@ -56,6 +59,7 @@ export function PipelineFlowCard({ stats, isLoading }: PipelineFlowProps) {
 			count: stats?.composing ?? 0,
 			icon: Film,
 			tone: 'purple',
+			href: '/compositions',
 		},
 		{
 			id: 'publish',
@@ -64,6 +68,7 @@ export function PipelineFlowCard({ stats, isLoading }: PipelineFlowProps) {
 			count: stats?.awaitingPublish ?? 0,
 			icon: Send,
 			tone: 'amber',
+			href: '/compositions?status=pending-publish',
 		},
 		{
 			id: 'live',
@@ -72,6 +77,7 @@ export function PipelineFlowCard({ stats, isLoading }: PipelineFlowProps) {
 			count: stats?.published24h ?? 0,
 			icon: Rocket,
 			tone: 'emerald',
+			href: '/posted-tiktok',
 		},
 	];
 
@@ -101,15 +107,14 @@ export function PipelineFlowCard({ stats, isLoading }: PipelineFlowProps) {
 							const Icon = stage.icon;
 							const tone = TONE_STYLES[stage.tone];
 							const active = stage.count > 0;
-							return (
-								<div key={stage.id} className="flex flex-1 items-center gap-1 sm:gap-2 min-w-0">
-									<div
-										className={cn(
-											'flex flex-1 flex-col items-center gap-1 rounded-xl border bg-card px-2 py-3 sm:px-3 sm:py-4 transition-all min-w-0',
-											active && `ring-2 ${tone.ring}`,
-										)}
-									>
-										<div className={cn('relative rounded-lg p-1.5 sm:p-2', tone.icon)}>
+							const tileClass = cn(
+								'flex flex-1 flex-col items-center gap-1 rounded-xl border bg-card px-2 py-3 sm:px-3 sm:py-4 transition-all min-w-0',
+								active && `ring-2 ${tone.ring}`,
+								stage.href && 'hover:bg-muted/50 cursor-pointer',
+							);
+							const tileContent = (
+								<>
+									<div className={cn('relative rounded-lg p-1.5 sm:p-2', tone.icon)}>
 											<Icon className="h-4 w-4 sm:h-5 sm:w-5" />
 											{active && (
 												<span className="absolute -right-0.5 -top-0.5 flex h-2.5 w-2.5">
@@ -128,16 +133,26 @@ export function PipelineFlowCard({ stats, isLoading }: PipelineFlowProps) {
 												</span>
 											)}
 										</div>
-										<div className="text-2xl font-bold leading-none tracking-tight">
-											{stage.count}
-										</div>
-										<div className="text-center">
-											<div className="text-xs font-semibold leading-tight">{stage.label}</div>
-											<div className="text-[10px] text-muted-foreground leading-tight">
-												{stage.sub}
-											</div>
+									<div className="text-2xl font-bold leading-none tracking-tight">
+										{stage.count}
+									</div>
+									<div className="text-center">
+										<div className="text-xs font-semibold leading-tight">{stage.label}</div>
+										<div className="text-[10px] text-muted-foreground leading-tight">
+											{stage.sub}
 										</div>
 									</div>
+								</>
+							);
+							return (
+								<div key={stage.id} className="flex flex-1 items-center gap-1 sm:gap-2 min-w-0">
+									{stage.href ? (
+										<Link href={stage.href} className={tileClass}>
+											{tileContent}
+										</Link>
+									) : (
+										<div className={tileClass}>{tileContent}</div>
+									)}
 									{idx < stages.length - 1 && (
 										<ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground/50" />
 									)}
