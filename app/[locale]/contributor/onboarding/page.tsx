@@ -18,6 +18,8 @@ export default function ContributorOnboardingPage() {
 							v0 prototype
 						</Badge>
 					}
+					backLink="/v0"
+					backLinkText="Walkthrough hub"
 				/>
 				<OnboardingWizard />
 			</div>

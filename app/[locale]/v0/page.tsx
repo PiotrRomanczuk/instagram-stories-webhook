@@ -86,6 +86,7 @@ export default function V0HubPage() {
 		<V0PageShell
 			title="v0 walkthrough"
 			description="One link per surface. Follow the order top-to-bottom for the contributor → curator → archive walkthrough."
+			hideBackLink
 		>
 			<ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 				{SURFACES.map((s) => (

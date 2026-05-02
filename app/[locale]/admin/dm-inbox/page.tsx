@@ -26,6 +26,8 @@ export default async function AdminDmInboxPage() {
 							v1.2
 						</Badge>
 					}
+					backLink="/v0"
+					backLinkText="Walkthrough hub"
 				/>
 
 				<Card className="border-dashed">

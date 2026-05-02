@@ -29,6 +29,8 @@ export default async function ComposePage() {
 							v0 prototype
 						</Badge>
 					}
+					backLink="/v0"
+					backLinkText="Walkthrough hub"
 				/>
 				<ComposeClient />
 			</div>
