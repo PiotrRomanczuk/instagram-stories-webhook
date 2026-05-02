@@ -1,14 +1,17 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
 import { Input } from '@/app/components/ui/input';
 import { Label } from '@/app/components/ui/label';
 import { Checkbox } from '@/app/components/ui/checkbox';
 import { Progress } from '@/app/components/ui/progress';
-import { ChevronLeft, ChevronRight, Check } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Check, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+
+const LICENSE_VERSION = 'mlc-v1.0-2026-05';
 
 const STEPS = ['license', 'identity', 'address', 'tax', 'bank', 'display'] as const;
 type Step = (typeof STEPS)[number];
@@ -45,9 +48,15 @@ const LICENSE_TEXT = `Marszal Arts Contributor License (v1.0, draft — pending 
 
 By accepting this license you grant Marszal Arts a perpetual, royalty-free, sublicensable, irrevocable right to use, edit, republish, and compose the works you submit, on Instagram, TikTok, and any future channel operated by Marszal Arts. You warrant that the works are your own and that you hold all required rights. Personal data (legal name, PESEL, address, IBAN) is retained for 5 years per Polish accounting law (Ustawa o rachunkowości art. 74). After that period, on written request, PII is deleted; published works remain in use under this license. You may at any time request anonymization of your authorship credit on the public published wall — content stays, attribution becomes a pseudonym.`;
 
-export function OnboardingWizard() {
+interface OnboardingWizardProps {
+	demoMode?: boolean;
+}
+
+export function OnboardingWizard({ demoMode = false }: OnboardingWizardProps) {
+	const router = useRouter();
 	const [step, setStep] = useState<Step>('license');
 	const [form, setForm] = useState<FormState>(INITIAL);
+	const [submitting, setSubmitting] = useState(false);
 	const idx = STEPS.indexOf(step);
 	const progress = ((idx + 1) / STEPS.length) * 100;
 	const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
@@ -65,13 +74,48 @@ export function OnboardingWizard() {
 		display: form.displayName.trim().length > 1,
 	};
 
+	const submit = async () => {
+		if (demoMode) {
+			toast.success('Onboarding submitted', { description: 'Demo only — no backend write.' });
+			return;
+		}
+		setSubmitting(true);
+		try {
+			const res = await fetch('/api/contributor/onboarding', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({
+					licenseAccepted: form.licenseAccepted,
+					licenseVersion: LICENSE_VERSION,
+					legalName: form.legalName,
+					pesel: form.pesel,
+					street: form.street,
+					city: form.city,
+					postalCode: form.postalCode,
+					hasOtherEmploymentAboveMinWage: form.hasOtherEmploymentAboveMinWage,
+					isStudentUnder26: form.isStudentUnder26,
+					iban: form.iban,
+					phone: form.phone,
+					displayName: form.displayName,
+				}),
+			});
+			if (!res.ok) {
+				const body = await res.json().catch(() => ({}));
+				throw new Error(body.error ?? `HTTP ${res.status}`);
+			}
+			toast.success('Onboarding completed');
+			router.push('/submit');
+		} catch (err) {
+			const message = err instanceof Error ? err.message : 'Submit failed';
+			toast.error('Could not save onboarding', { description: message });
+		} finally {
+			setSubmitting(false);
+		}
+	};
+
 	const next = () => {
 		if (idx < STEPS.length - 1) setStep(STEPS[idx + 1]);
-		else {
-			toast.success('Onboarding submitted', {
-				description: 'Demo only — wired to backend in v1.',
-			});
-		}
+		else void submit();
 	};
 	const back = () => idx > 0 && setStep(STEPS[idx - 1]);
 
@@ -93,14 +137,20 @@ export function OnboardingWizard() {
 				{step === 'display' && <DisplayStep form={form} onChange={set} />}
 
 				<div className="flex justify-between pt-4 border-t">
-					<Button variant="outline" onClick={back} disabled={idx === 0}>
+					<Button variant="outline" onClick={back} disabled={idx === 0 || submitting}>
 						<ChevronLeft className="h-4 w-4" /> Back
 					</Button>
-					<Button onClick={next} disabled={!canAdvance[step]}>
+					<Button onClick={next} disabled={!canAdvance[step] || submitting}>
 						{idx === STEPS.length - 1 ? (
-							<>
-								<Check className="h-4 w-4" /> Submit
-							</>
+							submitting ? (
+								<>
+									<Loader2 className="h-4 w-4 animate-spin" /> Submitting…
+								</>
+							) : (
+								<>
+									<Check className="h-4 w-4" /> Submit
+								</>
+							)
 						) : (
 							<>
 								Next <ChevronRight className="h-4 w-4" />

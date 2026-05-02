@@ -25,6 +25,28 @@ export function isAdmin(session: { user?: { role?: UserRole } } | null): boolean
 }
 
 /**
+ * Check if the current user can review submissions (curator or above).
+ */
+export function isCurator(session: { user?: { role?: UserRole } } | null): boolean {
+    const role = session?.user?.role;
+    return role === 'curator' || role === 'admin' || role === 'developer';
+}
+
+/**
+ * Check if the current user is a contributor (or higher — admins/curators
+ * can also submit on behalf of the brand).
+ */
+export function isContributor(session: { user?: { role?: UserRole } } | null): boolean {
+    const role = session?.user?.role;
+    return (
+        role === 'contributor' ||
+        role === 'curator' ||
+        role === 'admin' ||
+        role === 'developer'
+    );
+}
+
+/**
  * Check if the current user is a developer
  */
 export function isDeveloper(session: { user?: { role?: UserRole } } | null): boolean {
