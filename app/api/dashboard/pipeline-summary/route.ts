@@ -126,7 +126,7 @@ export async function GET() {
 			.maybeSingle(),
 		supabaseAdmin
 			.from('linked_accounts')
-			.select('provider_account_id, expires_at')
+			.select('provider_account_id, expires_at, refresh_expires_at, refresh_token')
 			.eq('user_id', userId)
 			.eq('provider', 'tiktok')
 			.maybeSingle(),
@@ -168,11 +168,23 @@ export async function GET() {
 				username: (igRow.data as { ig_username?: string } | null)?.ig_username ?? null,
 				expiresAt: (igRow.data as { expires_at?: number } | null)?.expires_at ?? null,
 			},
-			tiktok: {
-				connected: Boolean(tiktokRow.data),
-				openId: (tiktokRow.data as { provider_account_id?: string } | null)?.provider_account_id ?? null,
-				expiresAt: (tiktokRow.data as { expires_at?: number } | null)?.expires_at ?? null,
-			},
+			tiktok: (() => {
+				const row = tiktokRow.data as {
+					provider_account_id?: string;
+					expires_at?: number | null;
+					refresh_expires_at?: number | null;
+					refresh_token?: string | null;
+				} | null;
+				// TikTok access tokens last 24h but auto-refresh while the refresh token (~365d) is valid.
+				// Surface the refresh token's expiry so the UI doesn't show "Expired" every day.
+				const effectiveExpiresAt =
+					row?.refresh_expires_at ?? (row?.refresh_token ? null : row?.expires_at ?? null);
+				return {
+					connected: Boolean(row),
+					openId: row?.provider_account_id ?? null,
+					expiresAt: effectiveExpiresAt,
+				};
+			})(),
 		},
 		cron: Array.from(cronByJob.values()),
 		pipelineEnabled: process.env.TIKTOK_PIPELINE_ENABLED === 'true',

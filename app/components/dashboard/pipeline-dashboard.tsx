@@ -82,7 +82,7 @@ export function PipelineDashboard({ userName }: PipelineDashboardProps) {
 							</div>
 						</div>
 						<Button asChild size="sm" variant="outline" className="shrink-0">
-							<Link href="/settings/accounts">Set up connections</Link>
+							<Link href="/linked-accounts">Set up connections</Link>
 						</Button>
 					</CardContent>
 				</Card>

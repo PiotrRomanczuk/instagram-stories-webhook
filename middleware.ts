@@ -29,7 +29,7 @@ const authMiddleware = withAuth(
 const ROLE_PROTECTED_ROUTES: Array<{ prefix: string; allowedRoles: UserRole[] }> = [
 	{ prefix: '/users', allowedRoles: ['admin', 'developer'] },
 	{ prefix: '/developer', allowedRoles: ['admin', 'developer'] },
-	{ prefix: '/settings', allowedRoles: ['developer'] },
+	{ prefix: '/settings', allowedRoles: ['admin', 'developer'] },
 ];
 
 function getRoleProtectedRoute(pathname: string) {
