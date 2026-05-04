@@ -67,7 +67,7 @@ export const NAV_GROUPS: NavGroup[] = [
 		labelKey: 'connections',
 		roles: ADMIN_DEV,
 		items: [
-			{ href: '/settings/accounts', labelKey: 'linkedAccounts', icon: Plug },
+			{ href: '/linked-accounts', labelKey: 'linkedAccounts', icon: Plug },
 		],
 	},
 	{

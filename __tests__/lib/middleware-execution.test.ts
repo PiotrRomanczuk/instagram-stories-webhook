@@ -187,12 +187,11 @@ describe('Middleware Execution', () => {
 			expect(mockAuthMiddleware).toHaveBeenCalledWith(req);
 		});
 
-		it('should redirect admin role away from /settings to /', async () => {
+		it('should allow admin to access /settings', async () => {
 			mockGetToken.mockResolvedValue({ role: 'admin' });
 			const req = createRequest('/settings');
-			const result = await middleware(req);
-			expect(result?.status).toBe(307);
-			expect(result?.headers.get('location')).toBe('http://localhost:3000/');
+			await middleware(req);
+			expect(mockAuthMiddleware).toHaveBeenCalledWith(req);
 		});
 
 		it('should redirect user role away from /settings to /', async () => {

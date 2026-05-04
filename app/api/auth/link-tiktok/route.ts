@@ -36,8 +36,9 @@ export async function GET(req: NextRequest) {
             throw new Error('TIKTOK_CLIENT_KEY not configured');
         }
 
-        // Scopes — read-only for initial review; add video.publish/video.upload after approval
-        const scopes = ['user.info.basic', 'video.list'].join(',');
+        // video.upload allows uploading the file to the user's TikTok drafts (inbox).
+        // video.publish would post directly — keep it off so users finish in TikTok with music.
+        const scopes = ['user.info.basic', 'video.list', 'video.upload'].join(',');
 
         // Generate signed state for CSRF protection
         const stateSecret = process.env.NEXTAUTH_SECRET || process.env.WEBHOOK_SECRET || '';
