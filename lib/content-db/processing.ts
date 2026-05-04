@@ -5,6 +5,8 @@
 import { supabaseAdmin } from '../config/supabase-admin';
 import { ContentItem, ContentItemRow, mapContentItemRow } from '../types/posts';
 import { getCurrentEnvironment } from './environment';
+import { getContentItemForProcessing } from './queries';
+import type { ContentLifecycle } from '../scheduler/content-lifecycle';
 
 /** Explicit column list used by all content_items queries — avoids select('*') */
 const CONTENT_ITEM_COLUMNS = [
@@ -287,6 +289,38 @@ export async function recoverStaleLocks(): Promise<number> {
 	}
 }
 
+export async function markStoryProcessingComplete(id: string): Promise<void> {
+	try {
+		await supabaseAdmin
+			.from('content_items')
+			.update({
+				story_ready: true,
+				processing_status: 'completed',
+				processing_completed_at: new Date().toISOString(),
+				updated_at: new Date().toISOString(),
+			})
+			.eq('id', id);
+	} catch (error) {
+		console.error('Error in markStoryProcessingComplete:', error);
+	}
+}
+
+export async function markStoryProcessingFailed(id: string, errorMessage: string): Promise<void> {
+	try {
+		await supabaseAdmin
+			.from('content_items')
+			.update({
+				processing_status: 'failed',
+				processing_error: errorMessage,
+				processing_completed_at: new Date().toISOString(),
+				updated_at: new Date().toISOString(),
+			})
+			.eq('id', id);
+	} catch (error) {
+		console.error('Error in markStoryProcessingFailed:', error);
+	}
+}
+
 /**
  * Expire scheduled posts that are more than 24 hours past their scheduled time.
  * Marks them as 'failed' with an expiration reason.
@@ -320,3 +354,38 @@ export async function expireOverdueContent(
 		return 0;
 	}
 }
+
+async function countUpcomingItems(maxTime: number): Promise<number> {
+	const now = Date.now();
+	try {
+		const { count } = await supabaseAdmin
+			.from('content_items')
+			.select('id', { count: 'exact', head: true })
+			.eq('environment', getCurrentEnvironment())
+			.eq('publishing_status', 'scheduled')
+			.gt('scheduled_time', now)
+			.lte('scheduled_time', maxTime);
+		return count ?? 0;
+	} catch (error) {
+		console.error('Error in countUpcomingItems:', error);
+		return 0;
+	}
+}
+
+/**
+ * Production adapter satisfying ContentLifecycle (lib/scheduler/content-lifecycle.ts).
+ * Wires the orchestrator's seam to the Supabase-backed transitions in this file.
+ */
+export const supabaseContentLifecycle: ContentLifecycle = {
+	getPendingItems: getPendingContentItems,
+	countUpcomingItems,
+	getItemForProcessing: getContentItemForProcessing,
+	acquireLock: acquireContentProcessingLock,
+	markPublished: markContentPublished,
+	markFailed: markContentFailed,
+	markCancelled: markContentCancelled,
+	markStoryProcessingComplete,
+	markStoryProcessingFailed,
+	recoverStaleLocks,
+	expireOverdueContent,
+};
