@@ -63,6 +63,18 @@ describe('Content Hub API', () => {
 			expect(res.status).toBe(201);
 			expect(data.item).toBeDefined();
 			expect(data.item.source).toBe('submission');
+			// Pin the actual mutation contract so a regression that drops
+			// source/mediaUrl/mediaType from the insert payload would fail.
+			expect(createContentItem).toHaveBeenCalledWith(
+				'user-1',
+				'test@example.com',
+				expect.objectContaining({
+					source: 'submission',
+					mediaUrl: 'https://example.com/image.jpg',
+					mediaType: 'IMAGE',
+					caption: 'Test caption',
+				}),
+			);
 		});
 
 		it('should validate required fields', async () => {
