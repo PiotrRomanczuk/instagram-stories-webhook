@@ -6,7 +6,7 @@ import { supabaseAdmin } from "@/lib/config/supabase-admin";
 import packageJson from "@/package.json";
 import { getCurrentEnvironment } from "@/lib/content-db/environment";
 import { pingRedis } from "@/lib/queue/redis";
-import { allQueues } from "@/lib/queue/queues";
+import { getAllQueues } from "@/lib/queue/queues";
 
 type CheckStatus = "pass" | "fail" | "warn";
 
@@ -276,7 +276,7 @@ interface QueueCounts {
 async function checkBullmqQueues(): Promise<HealthCheck> {
     try {
         const counts: QueueCounts[] = await Promise.all(
-            allQueues.map(async (q) => {
+            getAllQueues().map(async (q) => {
                 const c = await q.getJobCounts("waiting", "active", "failed");
                 return {
                     name: q.name,
