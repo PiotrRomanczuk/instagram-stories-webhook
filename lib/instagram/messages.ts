@@ -2,6 +2,7 @@ import axios from 'axios';
 import { getFacebookAccessToken, getInstagramUserId } from '@/lib/database/linked-accounts';
 import { Logger } from '@/lib/utils/logger';
 import { withRetry } from '@/lib/utils/retry';
+import { classifyInstagramMessageError, isRetryableInstagramError } from './errors';
 import type {
     SendMessageRequest,
     SendMessageResponse,
@@ -11,26 +12,6 @@ import type {
 
 const GRAPH_API_BASE = 'https://graph.facebook.com/v24.0';
 const MODULE = 'instagram-messages';
-
-/**
- * Determines if an Instagram Messaging API error should be retried.
- */
-function isRetryableError(error: unknown): boolean {
-    if (axios.isAxiosError(error)) {
-        const statusCode = error.response?.status;
-        const fbErrorCode = error.response?.data?.error?.code;
-
-        // Retry on Server Errors (5xx)
-        if (statusCode && statusCode >= 500) return true;
-
-        // Retry on Rate Limiting (429 or FB Error Code 17, 32, 613)
-        if (statusCode === 429 || [17, 32, 613].includes(fbErrorCode)) return true;
-
-        // Retry on specific transient errors
-        if ([1, 2].includes(fbErrorCode)) return true;
-    }
-    return false;
-}
 
 /**
  * Get all conversations for an Instagram Business Account
@@ -85,7 +66,7 @@ export async function getConversations(
     return withRetry(fetchConversations, {
         maxAttempts: 3,
         initialDelayMs: 1000,
-        retryableErrors: isRetryableError,
+        retryableErrors: isRetryableInstagramError,
     });
 }
 
@@ -146,7 +127,7 @@ export async function getConversationMessages(
     return withRetry(fetchMessages, {
         maxAttempts: 3,
         initialDelayMs: 1000,
-        retryableErrors: isRetryableError,
+        retryableErrors: isRetryableInstagramError,
     });
 }
 
@@ -207,38 +188,21 @@ export async function sendMessage(
 
             return response.data;
         } catch (error) {
-            if (axios.isAxiosError(error)) {
-                const errorMsg = error.response?.data?.error?.message || error.message;
-                const errorCode = error.response?.data?.error?.code;
-                const errorType = error.response?.data?.error?.type;
-
-                await Logger.error(MODULE, `❌ Failed to send message: ${errorMsg}`, {
-                    userId,
-                    recipientIgId,
-                    errorCode,
-                    errorType,
-                    status: error.response?.status,
-                });
-
-                // Handle specific error cases
-                if (errorCode === 10) {
-                    throw new Error('Permission denied. Ensure instagram_manage_messages permission is granted.');
-                } else if (errorCode === 100) {
-                    throw new Error('Invalid recipient or message format.');
-                } else if (errorCode === 368) {
-                    throw new Error('Messaging rate limit exceeded (200 messages/hour). Please try again later.');
-                } else if (errorCode === 551) {
-                    throw new Error('User is not eligible to receive messages. They may need to initiate the conversation first.');
-                }
-            }
-            throw error;
+            const classified = classifyInstagramMessageError(error);
+            await Logger.error(MODULE, `❌ Failed to send message: ${classified.message}`, {
+                userId,
+                recipientIgId,
+                errorCode: classified.code,
+                status: classified.status,
+            });
+            throw new Error(classified.message);
         }
     };
 
     return withRetry(sendMessageRequest, {
         maxAttempts: 2,
         initialDelayMs: 2000,
-        retryableErrors: isRetryableError,
+        retryableErrors: isRetryableInstagramError,
     });
 }
 
@@ -306,7 +270,7 @@ export async function sendImageMessage(
     return withRetry(sendImageRequest, {
         maxAttempts: 2,
         initialDelayMs: 2000,
-        retryableErrors: isRetryableError,
+        retryableErrors: isRetryableInstagramError,
     });
 }
 

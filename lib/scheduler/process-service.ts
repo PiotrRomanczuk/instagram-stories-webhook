@@ -1,9 +1,8 @@
 import { publishMedia } from '@/lib/instagram';
 import { processAndUploadStoryImage } from '@/lib/media/story-processor';
 import { processAndUploadStoryVideo } from '@/lib/media/video-processor';
-import { supabaseAdmin } from '@/lib/config/supabase-admin';
-import { getCurrentEnvironment } from '@/lib/content-db/environment';
 import { Logger } from '@/lib/utils/logger';
+import { isPublishingEnabled } from '@/lib/scheduler/publishing-toggle';
 import { getFacebookAccessToken } from '@/lib/database/linked-accounts';
 import {
 	generateContentHash,
@@ -16,21 +15,13 @@ import {
 	BatchResult,
 	ContentItem,
 } from '@/lib/types';
-import {
-	getPendingContentItems,
-	acquireContentProcessingLock,
-	markContentPublished,
-	markContentFailed,
-	markContentCancelled,
-	getContentItemForProcessing,
-	recoverStaleLocks,
-	expireOverdueContent,
-} from '@/lib/content-db';
 import { fetchUpcomingPosts } from '@/lib/content-db/queries';
 import {
 	MAX_RETRY_COUNT,
 	RETRY_BACKOFF_MS,
+	supabaseContentLifecycle,
 } from '@/lib/content-db/processing';
+import type { ContentLifecycle } from '@/lib/scheduler/content-lifecycle';
 import { parseCronConfig } from '@/lib/validations/cron.schema';
 import { checkPublishingQuota } from '@/lib/scheduler/quota-gate';
 import { generateCronRunId, recordQuotaSnapshot } from '@/lib/scheduler/quota-history';
@@ -132,6 +123,7 @@ async function logExecutionContext(cronRunId: string | undefined): Promise<void>
 export async function processScheduledPosts(
 	postId?: string,
 	bypassDuplicateCheck: boolean = false,
+	lifecycle: ContentLifecycle = supabaseContentLifecycle,
 ): Promise<BatchResult> {
 	const config = parseCronConfig();
 	const cronRunId = postId ? undefined : generateCronRunId();
@@ -146,13 +138,7 @@ export async function processScheduledPosts(
 	try {
 		// Publishing toggle: check if publishing is enabled (cron path only)
 		if (!postId) {
-			const { data: setting } = await supabaseAdmin
-				.from('system_settings')
-				.select('value')
-				.eq('key', 'publishing_enabled')
-				.single();
-
-			if (setting?.value !== 'true') {
+			if (!(await isPublishingEnabled())) {
 				await Logger.info(MODULE, '⏸️ Publishing is paused (toggle off). Skipping.');
 				return {
 					message: 'Publishing paused',
@@ -166,7 +152,7 @@ export async function processScheduledPosts(
 
 		// Maintenance: recover stale locks and expire overdue posts (cron path only)
 		if (!postId) {
-			const recoveredLocks = await recoverStaleLocks();
+			const recoveredLocks = await lifecycle.recoverStaleLocks();
 			if (recoveredLocks > 0) {
 				await Logger.info(
 					MODULE,
@@ -174,7 +160,7 @@ export async function processScheduledPosts(
 				);
 			}
 
-			const expiredCount = await expireOverdueContent();
+			const expiredCount = await lifecycle.expireOverdueContent();
 			if (expiredCount > 0) {
 				await Logger.info(
 					MODULE,
@@ -190,7 +176,7 @@ export async function processScheduledPosts(
 
 		if (postId) {
 			// Fetch specific post regardless of scheduled time
-			const item = await getContentItemForProcessing(postId);
+			const item = await lifecycle.getItemForProcessing(postId);
 
 			if (!item) {
 				await Logger.warn(
@@ -208,7 +194,7 @@ export async function processScheduledPosts(
 			pendingItems = [item];
 		} else {
 			// Standard cron-style processing of due posts from content_items
-			pendingItems = await getPendingContentItems(config.maxPostsPerCronRun);
+			pendingItems = await lifecycle.getPendingItems(config.maxPostsPerCronRun);
 		}
 
 		if (pendingItems.length === 0) {
@@ -308,17 +294,8 @@ export async function processScheduledPosts(
 
 		// Only log future count if we are doing a broad sweep
 		if (!postId) {
-			// Check for posts pending in the next 24 hours
-			const now = Date.now();
-			const oneDayFromNow = now + 24 * 60 * 60 * 1000;
-			const { count: futureCount } = await supabaseAdmin
-				.from('content_items')
-				.select('id', { count: 'exact', head: true })
-				.eq('environment', getCurrentEnvironment())
-				.eq('publishing_status', 'scheduled')
-				.gt('scheduled_time', now)
-				.lte('scheduled_time', oneDayFromNow);
-
+			const oneDayFromNow = Date.now() + 24 * 60 * 60 * 1000;
+			const futureCount = await lifecycle.countUpcomingItems(oneDayFromNow);
 			await Logger.info(
 				MODULE,
 				`📋 Found ${pendingItems.length} due post(s) to publish (plus ${futureCount} scheduled in next 24h)`,
@@ -333,7 +310,7 @@ export async function processScheduledPosts(
 			const item = pendingItems[i];
 			try {
 				// 1. Acquire processing lock to prevent race conditions
-				const lockAcquired = await acquireContentProcessingLock(item.id);
+				const lockAcquired = await lifecycle.acquireLock(item.id);
 				if (!lockAcquired) {
 					await Logger.info(
 						MODULE,
@@ -376,7 +353,7 @@ export async function processScheduledPosts(
 						);
 
 						// Mark as cancelled instead of publishing
-						await markContentCancelled(
+						await lifecycle.markCancelled(
 							item.id,
 							`Duplicate content detected. Already published as post ${duplicateCheck.existingPostId}`,
 						);
@@ -423,30 +400,13 @@ export async function processScheduledPosts(
 							await Logger.info(MODULE, `Processing video for story format (story_ready=false)...`, { postId: item.id });
 							publishUrl = await processAndUploadStoryVideo(item.mediaUrl, item.id);
 							await Logger.info(MODULE, `Video processed successfully`, { postId: item.id });
-
-							// Mark video as story-ready after successful processing
-							await supabaseAdmin
-								.from('content_items')
-								.update({
-									story_ready: true,
-									processing_status: 'completed',
-									processing_completed_at: new Date().toISOString(),
-									updated_at: new Date().toISOString()
-								})
-								.eq('id', item.id);
+							await lifecycle.markStoryProcessingComplete(item.id);
 						} catch (processError) {
 							await Logger.warn(MODULE, `Video processing failed, using original: ${processError}`, { postId: item.id });
-
-							// Mark processing as failed
-							await supabaseAdmin
-								.from('content_items')
-								.update({
-									processing_status: 'failed',
-									processing_error: processError instanceof Error ? processError.message : 'Unknown error',
-									processing_completed_at: new Date().toISOString(),
-									updated_at: new Date().toISOString()
-								})
-								.eq('id', item.id);
+							await lifecycle.markStoryProcessingFailed(
+								item.id,
+								processError instanceof Error ? processError.message : 'Unknown error',
+							);
 							// Fall back to original URL if processing fails
 						}
 					}
@@ -482,7 +442,7 @@ export async function processScheduledPosts(
 				// BMS-157: Retry DB update to handle publish success + DB failure
 				let dbUpdateSuccess = false;
 				for (let dbAttempt = 0; dbAttempt < 3; dbAttempt++) {
-					dbUpdateSuccess = await markContentPublished(item.id, result.id, contentHash || undefined);
+					dbUpdateSuccess = await lifecycle.markPublished(item.id, result.id, contentHash || undefined);
 					if (dbUpdateSuccess) break;
 					await Logger.warn(
 						MODULE,
@@ -529,7 +489,7 @@ export async function processScheduledPosts(
 				// race window where another cron run picks up the item between the two calls).
 				const retryCount = (item.retryCount || 0) + 1;
 
-				await markContentFailed(
+				await lifecycle.markFailed(
 					item.id,
 					retryCount >= MAX_RETRY_COUNT
 						? `${errorMessage} (after ${retryCount} attempts)`
@@ -615,10 +575,11 @@ export async function processScheduledPosts(
 export async function forceProcessPost(
 	postId: string,
 	bypassDuplicates: boolean,
+	lifecycle: ContentLifecycle = supabaseContentLifecycle,
 ): Promise<{ success: boolean; error?: string }> {
 	try {
 		// Verify post exists and is in valid status (now using content_items)
-		const item = await getContentItemForProcessing(postId);
+		const item = await lifecycle.getItemForProcessing(postId);
 
 		if (!item) {
 			await Logger.warn(
@@ -641,7 +602,7 @@ export async function forceProcessPost(
 		}
 
 		// Process the post with bypass flag
-		const result = await processScheduledPosts(postId, bypassDuplicates);
+		const result = await processScheduledPosts(postId, bypassDuplicates, lifecycle);
 
 		if (result.succeeded > 0) {
 			await Logger.info(

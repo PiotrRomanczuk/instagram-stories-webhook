@@ -37,7 +37,7 @@ vi.mock('@/lib/utils/duplicate-detection', () => ({
 	checkForRecentPublish: vi.fn(),
 }));
 
-vi.mock('@/lib/content-db', () => ({
+const lifecycleMocks = vi.hoisted(() => ({
 	getPendingContentItems: vi.fn(),
 	acquireContentProcessingLock: vi.fn(),
 	releaseContentProcessingLock: vi.fn(),
@@ -47,9 +47,38 @@ vi.mock('@/lib/content-db', () => ({
 	getContentItemForProcessing: vi.fn(),
 	recoverStaleLocks: vi.fn().mockResolvedValue(0),
 	expireOverdueContent: vi.fn().mockResolvedValue(0),
+	countUpcomingItems: vi.fn().mockResolvedValue(0),
+	markStoryProcessingComplete: vi.fn().mockResolvedValue(undefined),
+	markStoryProcessingFailed: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock('@/lib/content-db', () => ({
+	...lifecycleMocks,
 	MAX_RETRY_COUNT: 3,
 	RETRY_BACKOFF_MS: [60000, 300000, 900000],
 	calculateRetryScheduledTime: vi.fn().mockReturnValue(Date.now() + 60000),
+}));
+
+vi.mock('@/lib/content-db/processing', () => ({
+	MAX_RETRY_COUNT: 3,
+	RETRY_BACKOFF_MS: [60000, 300000, 900000],
+	supabaseContentLifecycle: {
+		getPendingItems: lifecycleMocks.getPendingContentItems,
+		countUpcomingItems: lifecycleMocks.countUpcomingItems,
+		getItemForProcessing: lifecycleMocks.getContentItemForProcessing,
+		acquireLock: lifecycleMocks.acquireContentProcessingLock,
+		markPublished: lifecycleMocks.markContentPublished,
+		markFailed: lifecycleMocks.markContentFailed,
+		markCancelled: lifecycleMocks.markContentCancelled,
+		markStoryProcessingComplete: lifecycleMocks.markStoryProcessingComplete,
+		markStoryProcessingFailed: lifecycleMocks.markStoryProcessingFailed,
+		recoverStaleLocks: lifecycleMocks.recoverStaleLocks,
+		expireOverdueContent: lifecycleMocks.expireOverdueContent,
+	},
+}));
+
+vi.mock('@/lib/scheduler/publishing-toggle', () => ({
+	isPublishingEnabled: vi.fn().mockResolvedValue(true),
 }));
 
 vi.mock('@/lib/validations/cron.schema', () => ({

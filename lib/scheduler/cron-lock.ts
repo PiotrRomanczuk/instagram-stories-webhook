@@ -1,74 +1,67 @@
 /**
- * Global cron execution lock to prevent overlapping cron runs.
- * Uses a dedicated cron_locks table for distributed locking.
+ * Distributed cron execution lock to prevent overlapping cron runs.
+ * Uses the cron_locks table; one row per lock name.
  */
 
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
 import { Logger } from '@/lib/utils/logger';
 
 const MODULE = 'cron-lock';
-const LOCK_NAME = 'process-scheduled';
-const LOCK_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+const DEFAULT_LOCK_NAME = 'process-scheduled';
+const DEFAULT_LOCK_TIMEOUT_MS = 5 * 60 * 1000;
 
-/**
- * Attempt to acquire the global cron lock.
- * Returns true if lock was acquired, false if another execution holds it.
- */
-export async function acquireCronLock(): Promise<boolean> {
-	const now = new Date();
-	const expiresAt = new Date(Date.now() + LOCK_TIMEOUT_MS).toISOString();
+export async function acquireCronLock(
+    lockName: string = DEFAULT_LOCK_NAME,
+    timeoutMs: number = DEFAULT_LOCK_TIMEOUT_MS,
+): Promise<boolean> {
+    const now = new Date();
+    const expiresAt = new Date(Date.now() + timeoutMs).toISOString();
 
-	try {
-		// Try to insert a new lock row (succeeds if no lock exists)
-		const { error: insertError } = await supabaseAdmin
-			.from('cron_locks')
-			.insert({
-				lock_name: LOCK_NAME,
-				locked_at: now.toISOString(),
-				expires_at: expiresAt,
-			});
+    try {
+        const { error: insertError } = await supabaseAdmin
+            .from('cron_locks')
+            .insert({
+                lock_name: lockName,
+                locked_at: now.toISOString(),
+                expires_at: expiresAt,
+            });
 
-		if (!insertError) {
-			await Logger.info(MODULE, 'Acquired cron lock (new)');
-			return true;
-		}
+        if (!insertError) {
+            await Logger.info(MODULE, `Acquired cron lock '${lockName}' (new)`);
+            return true;
+        }
 
-		// Lock row exists - try to reclaim if expired (expires_at < now means lock has expired)
-		const { data, error: updateError } = await supabaseAdmin
-			.from('cron_locks')
-			.update({
-				locked_at: now.toISOString(),
-				expires_at: expiresAt,
-			})
-			.eq('lock_name', LOCK_NAME)
-			.lt('expires_at', now.toISOString())
-			.select('lock_name')
-			.maybeSingle();
+        const { data, error: updateError } = await supabaseAdmin
+            .from('cron_locks')
+            .update({
+                locked_at: now.toISOString(),
+                expires_at: expiresAt,
+            })
+            .eq('lock_name', lockName)
+            .lt('expires_at', now.toISOString())
+            .select('lock_name')
+            .maybeSingle();
 
-		if (!updateError && data) {
-			await Logger.info(MODULE, 'Acquired cron lock (reclaimed expired)');
-			return true;
-		}
+        if (!updateError && data) {
+            await Logger.info(MODULE, `Acquired cron lock '${lockName}' (reclaimed expired)`);
+            return true;
+        }
 
-		await Logger.info(MODULE, 'Cron lock held by another execution, skipping');
-		return false;
-	} catch (error) {
-		// Fail-closed: do not proceed if lock check fails to prevent duplicate runs
-		await Logger.warn(MODULE, 'Cron lock check failed, refusing execution (fail-closed)', error);
-		return false;
-	}
+        await Logger.info(MODULE, `Cron lock '${lockName}' held by another execution, skipping`);
+        return false;
+    } catch (error) {
+        await Logger.warn(MODULE, `Cron lock '${lockName}' check failed, refusing execution (fail-closed)`, error);
+        return false;
+    }
 }
 
-/**
- * Release the global cron lock after processing completes.
- */
-export async function releaseCronLock(): Promise<void> {
-	try {
-		await supabaseAdmin
-			.from('cron_locks')
-			.delete()
-			.eq('lock_name', LOCK_NAME);
-	} catch (error) {
-		await Logger.warn(MODULE, 'Failed to release cron lock', error);
-	}
+export async function releaseCronLock(lockName: string = DEFAULT_LOCK_NAME): Promise<void> {
+    try {
+        await supabaseAdmin
+            .from('cron_locks')
+            .delete()
+            .eq('lock_name', lockName);
+    } catch (error) {
+        await Logger.warn(MODULE, `Failed to release cron lock '${lockName}'`, error);
+    }
 }

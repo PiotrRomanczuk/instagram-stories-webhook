@@ -1,23 +1,10 @@
 import axios from 'axios';
 import { withRetry } from '@/lib/utils/retry';
 import { Logger } from '@/lib/utils/logger';
+import { isRetryableInstagramError } from './errors';
 
 const GRAPH_API_BASE = 'https://graph.facebook.com/v24.0';
 const MODULE = 'instagram';
-
-/**
- * Determines if an Instagram API error should be retried.
- */
-function isRetryableError(error: unknown): boolean {
-    if (axios.isAxiosError(error)) {
-        const statusCode = error.response?.status;
-        const fbErrorCode = error.response?.data?.error?.code;
-        if (statusCode && statusCode >= 500) return true;
-        if (statusCode === 429 || [17, 32, 613].includes(fbErrorCode)) return true;
-        if ([1, 2].includes(fbErrorCode)) return true;
-    }
-    return false;
-}
 
 export async function checkContainerStatus(containerId: string, accessToken: string): Promise<{ status: string; status_code?: string }> {
     return withRetry(
@@ -30,7 +17,7 @@ export async function checkContainerStatus(containerId: string, accessToken: str
             });
             return statusRes.data;
         },
-        { retryableErrors: isRetryableError }
+        { retryableErrors: isRetryableInstagramError }
     );
 }
 

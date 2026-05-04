@@ -5,8 +5,15 @@ import { z } from 'zod';
  * Used by /api/users endpoints
  */
 
-// User role enum
-export const userRoleSchema = z.enum(['developer', 'admin', 'user', 'demo']);
+// User role enum — keep in sync with `UserRole` in lib/types/common.ts.
+export const userRoleSchema = z.enum([
+    'developer',
+    'admin',
+    'curator',
+    'contributor',
+    'user',
+    'demo',
+]);
 
 /**
  * Schema for adding a new user to the whitelist
