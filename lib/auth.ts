@@ -30,6 +30,7 @@ declare module 'next-auth/jwt' {
 	interface JWT {
 		id: string;
 		role: UserRole;
+		onboardedAt?: number | null;
 		instagramAccount?: {
 			id: string;
 			username?: string;
@@ -201,6 +202,30 @@ export const authOptions: AuthOptions = {
 					userId: user.id,
 					role: token.role,
 				});
+			}
+
+			// Onboarding flag — set on initial sign-in and refreshed on update trigger.
+			// Admins/developers/demo are never gated, so we skip the lookup for them.
+			if (user || trigger === 'update') {
+				const role = token.role;
+				if (role === 'admin' || role === 'developer' || role === 'demo') {
+					token.onboardedAt = Date.now();
+				} else {
+					try {
+						const { getUserProfileByEmail } = await import(
+							'@/lib/database/user-profile'
+						);
+						const email = (token.email as string | undefined) ?? '';
+						if (email) {
+							const profile = await getUserProfileByEmail(email);
+							token.onboardedAt = profile?.onboarded_at
+								? new Date(profile.onboarded_at).getTime()
+								: null;
+						}
+					} catch (err) {
+						console.error('Error fetching onboarding flag in JWT callback:', err);
+					}
+				}
 			}
 
 			// Check for Instagram connection on Sign In or Update

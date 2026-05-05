@@ -41,8 +41,9 @@ describe('Middleware Execution', () => {
 		process.env.NEXTAUTH_SECRET = 'test-secret';
 		mockIntlMiddleware.mockReturnValue(NextResponse.next());
 		mockAuthMiddleware.mockReturnValue(NextResponse.next());
-		// Default: authenticated with 'user' role
-		mockGetToken.mockResolvedValue({ role: 'user' });
+		// Default: authenticated 'user' role that has finished onboarding,
+		// so it bypasses the /welcome redirect.
+		mockGetToken.mockResolvedValue({ role: 'user', onboardedAt: Date.now() });
 	});
 
 	describe('Public pages (auth routes)', () => {
@@ -126,7 +127,7 @@ describe('Middleware Execution', () => {
 		});
 
 		it('should redirect user role away from /users to /', async () => {
-			mockGetToken.mockResolvedValue({ role: 'user' });
+			mockGetToken.mockResolvedValue({ role: 'user', onboardedAt: Date.now() });
 			const req = createRequest('/users');
 			const result = await middleware(req);
 			expect(result?.status).toBe(307);
@@ -134,7 +135,7 @@ describe('Middleware Execution', () => {
 		});
 
 		it('should redirect user role away from /users/sub-path to /', async () => {
-			mockGetToken.mockResolvedValue({ role: 'user' });
+			mockGetToken.mockResolvedValue({ role: 'user', onboardedAt: Date.now() });
 			const req = createRequest('/users/some-path');
 			const result = await middleware(req);
 			expect(result?.status).toBe(307);
@@ -164,7 +165,7 @@ describe('Middleware Execution', () => {
 		});
 
 		it('should redirect user role away from /developer to /', async () => {
-			mockGetToken.mockResolvedValue({ role: 'user' });
+			mockGetToken.mockResolvedValue({ role: 'user', onboardedAt: Date.now() });
 			const req = createRequest('/developer');
 			const result = await middleware(req);
 			expect(result?.status).toBe(307);
@@ -172,7 +173,7 @@ describe('Middleware Execution', () => {
 		});
 
 		it('should redirect user role away from /developer/cron-debug to /', async () => {
-			mockGetToken.mockResolvedValue({ role: 'user' });
+			mockGetToken.mockResolvedValue({ role: 'user', onboardedAt: Date.now() });
 			const req = createRequest('/developer/cron-debug');
 			const result = await middleware(req);
 			expect(result?.status).toBe(307);
@@ -195,7 +196,7 @@ describe('Middleware Execution', () => {
 		});
 
 		it('should redirect user role away from /settings to /', async () => {
-			mockGetToken.mockResolvedValue({ role: 'user' });
+			mockGetToken.mockResolvedValue({ role: 'user', onboardedAt: Date.now() });
 			const req = createRequest('/settings');
 			const result = await middleware(req);
 			expect(result?.status).toBe(307);
@@ -249,6 +250,37 @@ describe('Middleware Execution', () => {
 			const req = createRequest('/dashboard');
 			const result = await middleware(req);
 			expect(result).toBe(authResponse);
+		});
+	});
+
+	describe('Onboarding gate', () => {
+		it('should redirect creator without onboarded_at to /welcome', async () => {
+			mockGetToken.mockResolvedValue({ role: 'user', onboardedAt: null });
+			const req = createRequest('/submit');
+			const result = await middleware(req);
+			expect(result?.headers.get('location')).toBe('http://localhost:3000/welcome');
+			expect(mockAuthMiddleware).not.toHaveBeenCalled();
+		});
+
+		it('should not redirect when already on /welcome', async () => {
+			mockGetToken.mockResolvedValue({ role: 'user', onboardedAt: null });
+			const req = createRequest('/welcome');
+			await middleware(req);
+			expect(mockAuthMiddleware).toHaveBeenCalled();
+		});
+
+		it('should not redirect admin without onboarded_at', async () => {
+			mockGetToken.mockResolvedValue({ role: 'admin', onboardedAt: null });
+			const req = createRequest('/submit');
+			await middleware(req);
+			expect(mockAuthMiddleware).toHaveBeenCalled();
+		});
+
+		it('should not redirect creator who has completed onboarding', async () => {
+			mockGetToken.mockResolvedValue({ role: 'user', onboardedAt: Date.now() });
+			const req = createRequest('/submit');
+			await middleware(req);
+			expect(mockAuthMiddleware).toHaveBeenCalled();
 		});
 	});
 });

@@ -4,6 +4,7 @@ import createMiddleware from 'next-intl/middleware';
 import { routing } from './i18n/routing';
 import { NextRequest, NextResponse } from 'next/server';
 import type { UserRole } from '@/lib/types';
+import { shouldRedirectToWelcome } from '@/lib/onboarding-gate';
 
 const intlMiddleware = createMiddleware(routing);
 
@@ -57,6 +58,25 @@ export default async function middleware(req: NextRequest) {
 	// If auth isn't configured, render landing at root instead of looping redirects.
 	if (!process.env.NEXTAUTH_SECRET) {
 		return intlMiddleware(req);
+	}
+
+	// Onboarding gate: creators (role 'user') must finish /welcome before
+	// reaching any other authenticated page. Admins/developers/demo bypass.
+	if (pathname !== '/welcome') {
+		const token = await getToken({
+			req,
+			secret: process.env.NEXTAUTH_SECRET,
+		});
+		if (token) {
+			const redirectToWelcome = shouldRedirectToWelcome({
+				pathname,
+				role: token.role as UserRole | undefined,
+				onboardedAt: (token as { onboardedAt?: number | null }).onboardedAt,
+			});
+			if (redirectToWelcome) {
+				return NextResponse.redirect(new URL('/welcome', req.url));
+			}
+		}
 	}
 
 	// Check role-based access for protected admin/developer routes.
