@@ -4,6 +4,7 @@
 
 import { supabaseAdmin } from '../config/supabase-admin';
 import { getCurrentEnvironment } from './environment';
+import { notifySubmissionEvent } from '@/lib/notifications/submission-events';
 
 export async function bulkUpdateSubmissionStatus(
 	ids: string[],
@@ -23,19 +24,42 @@ export async function bulkUpdateSubmissionStatus(
 			updates.rejection_reason = rejectionReason;
 		}
 
-		const { error, count } = await supabaseAdmin
+		const { data, error, count } = await supabaseAdmin
 			.from('content_items')
 			.update(updates)
 			.eq('environment', getCurrentEnvironment())
 			.in('id', ids)
-			.eq('source', 'submission');
+			.eq('source', 'submission')
+			.select('id, user_id, title');
 
 		if (error) {
 			console.error('Error in bulk update:', error);
 			return 0;
 		}
 
-		return count || 0;
+		const rows = (data || []) as Array<{ id: string; user_id: string; title: string | null }>;
+		await Promise.all(
+			rows.map((row) =>
+				notifySubmissionEvent(
+					status === 'approved'
+						? {
+							kind: 'approved',
+							userId: row.user_id,
+							contentId: row.id,
+							title: row.title ?? undefined,
+						}
+						: {
+							kind: 'rejected',
+							userId: row.user_id,
+							contentId: row.id,
+							title: row.title ?? undefined,
+							reason: rejectionReason,
+						},
+				),
+			),
+		);
+
+		return count ?? rows.length;
 	} catch (error) {
 		console.error('Error in bulkUpdateSubmissionStatus:', error);
 		return 0;

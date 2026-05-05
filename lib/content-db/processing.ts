@@ -7,6 +7,7 @@ import { ContentItem, ContentItemRow, mapContentItemRow } from '../types/posts';
 import { getCurrentEnvironment } from './environment';
 import { getContentItemForProcessing } from './queries';
 import type { ContentLifecycle } from '../scheduler/content-lifecycle';
+import { notifySubmissionEvent } from '@/lib/notifications/submission-events';
 
 /** Explicit column list used by all content_items queries — avoids select('*') */
 const CONTENT_ITEM_COLUMNS = [
@@ -141,7 +142,7 @@ export async function markContentPublished(
 			})
 			.eq('id', id)
 			.eq('publishing_status', 'processing')
-			.select('id')
+			.select('id, user_id, title')
 			.maybeSingle();
 
 		if (error) {
@@ -154,6 +155,13 @@ export async function markContentPublished(
 			return false;
 		}
 
+		await notifySubmissionEvent({
+			kind: 'published',
+			userId: (data as { user_id: string }).user_id,
+			contentId: id,
+			title: (data as { title?: string | null }).title ?? undefined,
+			igMediaId,
+		});
 		return true;
 	} catch (error) {
 		console.error('Error in markContentPublished:', error);

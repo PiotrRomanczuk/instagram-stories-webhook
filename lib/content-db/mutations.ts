@@ -11,6 +11,7 @@ import {
 	mapContentItemRow,
 } from '../types/posts';
 import { getCurrentEnvironment } from './environment';
+import { notifySubmissionEvent } from '@/lib/notifications/submission-events';
 
 export async function createContentItem(
 	userId: string,
@@ -145,7 +146,26 @@ export async function updateSubmissionStatus(
 			return null;
 		}
 
-		return data ? mapContentItemRow(data) : null;
+		const item = data ? mapContentItemRow(data) : null;
+		if (item) {
+			await notifySubmissionEvent(
+				status === 'approved'
+					? {
+						kind: 'approved',
+						userId: item.userId,
+						contentId: item.id,
+						title: item.title ?? undefined,
+					}
+					: {
+						kind: 'rejected',
+						userId: item.userId,
+						contentId: item.id,
+						title: item.title ?? undefined,
+						reason: rejectionReason,
+					},
+			);
+		}
+		return item;
 	} catch (error) {
 		console.error('Error in updateSubmissionStatus:', error);
 		return null;
@@ -212,7 +232,17 @@ export async function updateScheduledTime(
 			return null;
 		}
 
-		return data ? mapContentItemRow(data) : null;
+		const item = data ? mapContentItemRow(data) : null;
+		if (item) {
+			await notifySubmissionEvent({
+				kind: 'scheduled',
+				userId: item.userId,
+				contentId: item.id,
+				title: item.title ?? undefined,
+				scheduledTime,
+			});
+		}
+		return item;
 	} catch (error) {
 		console.error('Error in updateScheduledTime:', error);
 		return null;

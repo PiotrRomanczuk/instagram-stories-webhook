@@ -591,12 +591,17 @@ describe('content-db', () => {
 
 
 		it('should bulk approve submissions', async () => {
-			const mockResult = { error: null, count: 3 };
+			const mockData = [
+				{ id: '1', user_id: 'u1', title: 'a' },
+				{ id: '2', user_id: 'u2', title: 'b' },
+				{ id: '3', user_id: 'u3', title: 'c' },
+			];
+			const mockResult = { data: mockData, error: null, count: 3 };
 			const mockQuery = {
 				update: vi.fn().mockReturnThis(),
 				eq: vi.fn().mockReturnThis(),
 				in: vi.fn().mockReturnThis(),
-				then: vi.fn((cb: any) => Promise.resolve(cb(mockResult))),
+				select: vi.fn().mockResolvedValue(mockResult),
 			};
 
 			vi.mocked(supabaseAdmin.from).mockReturnValue(mockQuery as any);
@@ -614,12 +619,16 @@ describe('content-db', () => {
 		});
 
 		it('should bulk reject submissions with reason', async () => {
-			const mockResult = { error: null, count: 2 };
+			const mockData = [
+				{ id: '1', user_id: 'u1', title: null },
+				{ id: '2', user_id: 'u2', title: null },
+			];
+			const mockResult = { data: mockData, error: null, count: 2 };
 			const mockQuery = {
 				update: vi.fn().mockReturnThis(),
 				eq: vi.fn().mockReturnThis(),
 				in: vi.fn().mockReturnThis(),
-				then: vi.fn((cb: any) => Promise.resolve(cb(mockResult))),
+				select: vi.fn().mockResolvedValue(mockResult),
 			};
 
 			vi.mocked(supabaseAdmin.from).mockReturnValue(mockQuery as any);
@@ -637,12 +646,12 @@ describe('content-db', () => {
 		});
 
 		it('should handle errors and return 0', async () => {
-			const mockResult = { error: new Error('DB error'), count: null };
+			const mockResult = { data: null, error: new Error('DB error'), count: null };
 			const mockQuery = {
 				update: vi.fn().mockReturnThis(),
 				eq: vi.fn().mockReturnThis(),
 				in: vi.fn().mockReturnThis(),
-				then: vi.fn((cb: any) => Promise.resolve(cb(mockResult))),
+				select: vi.fn().mockResolvedValue(mockResult),
 			};
 
 			vi.mocked(supabaseAdmin.from).mockReturnValue(mockQuery as any);
