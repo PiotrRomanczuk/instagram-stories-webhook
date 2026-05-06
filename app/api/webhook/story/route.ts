@@ -1,78 +1,92 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import { z } from 'zod';
 import { publishMedia } from '@/lib/instagram';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
 import { Logger } from '@/lib/utils/logger';
+import { validateFetchUrl } from '@/lib/utils/url-validation';
 
 const MODULE = 'webhook';
 
 /**
- * Webhook endpoint for direct publishing (e.g. from Shortcut or automation)
+ * Request body schema. Webhooks must provide a target email so the server can
+ * resolve the publishing user — there is no session context to fall back to.
+ */
+const StoryWebhookSchema = z.object({
+    url: z.string().url('url must be a valid URL'),
+    type: z.enum(['IMAGE', 'VIDEO']).optional().default('IMAGE'),
+    email: z.string().email('email must be a valid email').optional(),
+    caption: z.string().max(2200).optional(),
+});
+
+function timingSafeEqual(a: string, b: string): boolean {
+    if (a.length !== b.length) return false;
+    let mismatch = 0;
+    for (let i = 0; i < a.length; i++) {
+        mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i);
+    }
+    return mismatch === 0;
+}
+
+/**
+ * Webhook endpoint for direct publishing (e.g. from Shortcut or automation).
+ *
+ * Authentication: HMAC-style shared secret via the `x-webhook-secret` header.
+ * Session-based auth is intentionally NOT supported — NextAuth's CSRF
+ * protection only covers `/api/auth/*`, so allowing session auth here would
+ * let any signed-in user be tricked into publishing via a forged request.
  */
 export async function POST(request: NextRequest) {
     try {
         await Logger.info(MODULE, '📥 Webhook request received');
 
-        // Check for session-based auth (for dashboard testing) or header-based auth (for external webhooks)
-        const session = await getServerSession(authOptions);
-        const authHeader = request.headers.get('x-webhook-secret');
+        // 1. Authenticate: require x-webhook-secret header matching server secret.
         const secret = process.env.WEBHOOK_SECRET;
+        const authHeader = request.headers.get('x-webhook-secret');
 
-        const isSessionAuth = !!session?.user?.id;
-        const isHeaderAuth = secret && authHeader === secret;
+        if (!secret) {
+            await Logger.error(MODULE, '❌ WEBHOOK_SECRET is not configured; rejecting request');
+            return NextResponse.json({ error: 'Webhook is not configured' }, { status: 503 });
+        }
 
-        if (!isSessionAuth && !isHeaderAuth) {
+        if (!authHeader || !timingSafeEqual(authHeader, secret)) {
             await Logger.warn(MODULE, '🔒 Unauthorized webhook attempt', {
-                hasSession: isSessionAuth,
                 hasHeader: !!authHeader,
-                headerMatch: isHeaderAuth
             });
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        await Logger.info(MODULE, `🔐 Auth established via: ${isSessionAuth ? 'session' : 'header secret'}`);
-
-        const body = await request.json();
-        const { url, type, email } = body; // Optional email to specify user
-
-        if (!url) {
-            await Logger.error(MODULE, '❌ Missing "url" in webhook body');
-            return NextResponse.json({ error: 'Missing "url"' }, { status: 400 });
+        // 2. Validate body against schema.
+        let rawBody: unknown;
+        try {
+            rawBody = await request.json();
+        } catch {
+            await Logger.warn(MODULE, '❌ Webhook body is not valid JSON');
+            return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
         }
 
-        const mediaType = type === 'VIDEO' ? 'VIDEO' : 'IMAGE';
-
-        // Resolve user
-        let targetEmail = email;
-
-        // SECURITY CHECK: IDOR Prevention
-        // If authenticated via session (not secret header), ensure user is not impersonating
-        if (isSessionAuth && !isHeaderAuth) {
-            // We import isAdmin dynamically or check role manually if helper not available, 
-            // but we see auth-helpers exists. Let's assume we can import it or just check role directly from session if type allows.
-            // safely check role from session object if we don't want to add import at top yet, 
-            // BUT simpler to just enforce: specific email request requires ADMIN or SECRET.
-            // If just session, default to session user.
-
-            const sessionEmail = session?.user?.email;
-            const userRole = (session?.user as { role?: string })?.role;
-            const isUserAdmin = userRole === 'admin' || userRole === 'developer';
-
-            if (!isUserAdmin) {
-                if (targetEmail && targetEmail !== sessionEmail) {
-                    await Logger.warn(MODULE, `🚨 IDOR Attempt: User ${sessionEmail} tried to post as ${targetEmail}`);
-                    return NextResponse.json({ error: 'Forbidden: You can only post for your own account' }, { status: 403 });
-                }
-                // Force target to be their own email
-                targetEmail = sessionEmail;
-            }
+        const parsed = StoryWebhookSchema.safeParse(rawBody);
+        if (!parsed.success) {
+            const issues = parsed.error.issues.map((i) => `${i.path.join('.') || '(root)'}: ${i.message}`);
+            await Logger.warn(MODULE, '❌ Webhook body failed validation', { issues });
+            return NextResponse.json({ error: 'Invalid request body', issues }, { status: 400 });
         }
 
-        // Fallback for system automations (Header Auth) or Admin usage
-        if (!targetEmail) {
-            targetEmail = process.env.ADMIN_EMAIL?.split(',')[0].trim();
+        const { url, type, email, caption } = parsed.data;
+
+        // 3. Validate the URL itself (SSRF protection: block localhost, private IPs, metadata endpoints).
+        try {
+            validateFetchUrl(url);
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'Invalid url';
+            await Logger.warn(MODULE, `❌ Webhook url rejected: ${message}`);
+            return NextResponse.json({ error: 'Invalid url' }, { status: 400 });
         }
+
+        const mediaType = type;
+
+        // 4. Resolve target user. Prefer the body's email; fall back to the
+        //    first ADMIN_EMAIL for system automations that don't specify one.
+        const targetEmail = email ?? process.env.ADMIN_EMAIL?.split(',')[0].trim();
 
         if (!targetEmail) {
             await Logger.error(MODULE, '❌ No target user email found for webhook');
@@ -81,7 +95,6 @@ export async function POST(request: NextRequest) {
 
         await Logger.info(MODULE, `👤 Resolving user from email: ${targetEmail}`);
 
-        // Find user ID from email in Supabase (NextAuth schema)
         const { data: userData, error: userError } = await supabaseAdmin
             .schema('next_auth')
             .from('users')
@@ -97,8 +110,7 @@ export async function POST(request: NextRequest) {
         const targetUserId = userData.id;
         await Logger.info(MODULE, `🚀 Triggering publish for user ${targetUserId}`, { email: targetEmail, url, mediaType });
 
-        // Trigger publishing using the resolved user's tokens
-        const result = await publishMedia(url, mediaType, 'STORY', undefined, targetUserId);
+        const result = await publishMedia(url, mediaType, 'STORY', caption, targetUserId);
 
         await Logger.info(MODULE, `✅ Webhook publication successful for ${targetEmail}`, { igMediaId: result.id });
 
