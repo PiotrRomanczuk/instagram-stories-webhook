@@ -336,10 +336,12 @@ describe('Authentication Flow', () => {
 			expect(result.role).toBe('user');
 		});
 
-		it('should use test role mappings in test mode', async () => {
+		it('should resolve role from database (no hardcoded test mapping)', async () => {
+			// SECURITY: production code must NOT contain hardcoded role mappings.
+			// Tests rely on the mocked getUserRole instead.
 			const token: JWT = {
 				id: 'test-user-id',
-				role: 'user' as any, // Will be overridden by callback
+				role: 'user' as any,
 				name: 'Admin Test',
 				email: 'admin@test.com',
 				picture: '',
@@ -352,6 +354,8 @@ describe('Authentication Flow', () => {
 				name: 'Admin Test',
 			};
 
+			(getUserRole as Mock).mockResolvedValue('admin');
+
 			const jwtCallback = authOptions.callbacks?.jwt;
 			if (!jwtCallback) throw new Error('jwt callback not defined');
 
@@ -363,7 +367,7 @@ describe('Authentication Flow', () => {
 			});
 
 			expect(result.role).toBe('admin');
-			expect(getUserRole).not.toHaveBeenCalled(); // Should use hardcoded test mapping
+			expect(getUserRole).toHaveBeenCalledWith('admin@test.com');
 		});
 
 		it('should fallback to admin role for ADMIN_EMAIL users', async () => {
