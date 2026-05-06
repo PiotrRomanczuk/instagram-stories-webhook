@@ -1,4 +1,17 @@
 import type { Session } from 'next-auth';
+import type { UserRole } from '@/lib/types';
+
+/**
+ * Test-only role mapping. Used to be hardcoded in `lib/auth.ts`
+ * but was removed for security reasons. Tests that need
+ * deterministic roles for known emails should reference this.
+ */
+export const TEST_USER_ROLES: Record<string, UserRole> = {
+    'user@test.com': 'user',
+    'admin@test.com': 'admin',
+    'user2@test.com': 'user',
+    'p.romanczuk@gmail.com': 'admin',
+};
 
 /**
  * Create a mock NextAuth session
