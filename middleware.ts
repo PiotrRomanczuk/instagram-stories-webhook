@@ -7,6 +7,31 @@ import type { UserRole } from '@/lib/types';
 
 const intlMiddleware = createMiddleware(routing);
 
+/**
+ * Detect whether we are running in a real production deployment.
+ * We require BOTH NODE_ENV=production and VERCEL_ENV=production so that
+ * preview deployments and local builds aren't treated as production.
+ */
+function isProductionRuntime(): boolean {
+	return (
+		process.env.NODE_ENV === 'production' &&
+		process.env.VERCEL_ENV === 'production'
+	);
+}
+
+// Fail fast at module load: a production deploy without NEXTAUTH_SECRET is
+// catastrophically misconfigured (route protection would silently break).
+// Throwing here causes the worker boot to fail before any request is served.
+if (isProductionRuntime() && !process.env.NEXTAUTH_SECRET) {
+	console.error(
+		'[middleware] FATAL: NEXTAUTH_SECRET is not set in production. ' +
+			'Refusing to boot — all route protection would be disabled.',
+	);
+	throw new Error(
+		'NEXTAUTH_SECRET must be set in production (middleware would fail open).',
+	);
+}
+
 const authMiddleware = withAuth(
 	function onSuccess(req) {
 		return intlMiddleware(req as NextRequest);
@@ -54,8 +79,21 @@ export default async function middleware(req: NextRequest) {
 		return intlMiddleware(req);
 	}
 
-	// If auth isn't configured, render landing at root instead of looping redirects.
+	// If NEXTAUTH_SECRET is missing we cannot validate sessions. Fail closed
+	// in production (return 503) and fail open in dev/preview so local work
+	// without the secret still functions.
 	if (!process.env.NEXTAUTH_SECRET) {
+		if (isProductionRuntime()) {
+			console.error(
+				'[middleware] NEXTAUTH_SECRET is not configured in production. ' +
+					'Refusing request to avoid serving unauthenticated traffic.',
+			);
+			return new NextResponse('Service Unavailable', { status: 503 });
+		}
+		console.warn(
+			'[middleware] NEXTAUTH_SECRET is not set — allowing request because ' +
+				'this is not a production runtime. Set NEXTAUTH_SECRET before deploying.',
+		);
 		return intlMiddleware(req);
 	}
 
