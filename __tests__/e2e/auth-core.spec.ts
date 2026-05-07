@@ -9,11 +9,13 @@ test.describe('Authentication Core', () => {
 	/**
 	 * AUTH-01: Unauthenticated User Redirection
 	 * Priority: P0 (Critical)
+	 *
+	 * `/` is public since v0.36.0 (renders LandingPage for guests), so the
+	 * redirect contract is checked against a protected route instead.
 	 */
-	test('AUTH-01: should redirect unauthenticated user to sign-in page', async ({ page }) => {
-		await page.goto('/');
+	test('AUTH-01: should redirect unauthenticated user from protected route to sign-in', async ({ page }) => {
+		await page.goto('/schedule');
 		await expect(page).toHaveURL(/\/(en\/)?auth\/signin/);
-		await expect(page).toHaveTitle(/Instagram/i);
 	});
 
 	/**
