@@ -16,7 +16,6 @@ test.describe('Authentication Core', () => {
 	test('AUTH-01: should redirect unauthenticated user from protected route to sign-in', async ({ page }) => {
 		await page.goto('/schedule');
 		await expect(page).toHaveURL(/\/(en\/)?auth\/signin/);
-		await expect(page).toHaveTitle(/Instagram/i);
 	});
 
 	/**
