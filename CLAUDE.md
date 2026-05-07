@@ -12,7 +12,7 @@ Run `git branch --show-current && git status --short` before any task.
 1. **Never work on `master` directly.** Create a feature branch FIRST before any changes.
 2. **If a feature branch already exists**, switch to it before doing anything.
 3. **If there are uncommitted changes on the wrong branch**, stash or commit them first.
-4. **Branch naming**: `feature/ISW-XXX-description` (or `fix/`, `chore/`, `refactor/`).
+4. **Branch naming**: `feature/ISW-XXX-description` (or `fix/`, `chore/`, `refactor/`). `ISW-XXX` is a project-internal shorthand; map it to the corresponding GitHub issue number in the PR body via `Closes #N`.
 5. **Create the branch BEFORE writing code** — prevents file loss across concurrent sessions.
 
 **The check must happen at the very start of every task — no exceptions.**
@@ -80,7 +80,7 @@ npm run lint && npx tsc && npm run test
 ```
 **DO NOT COMMIT if any command fails.** Zero exceptions.
 
-Use `/ship` for the full PR workflow (branch → changes → version bump → quality gates → push → PR → Linear).
+Use `/ship` for the full PR workflow (branch → changes → version bump → quality gates → push → PR → GitHub issue update).
 
 ---
 
@@ -141,7 +141,7 @@ Use `/ship` for the full PR workflow (branch → changes → version bump → qu
 | Agent | Use When |
 |-------|----------|
 | **`git-workflow`** | Git, branching, PR lifecycle |
-| **`pr-manager`** | PRs, Linear linking, releases |
+| **`pr-manager`** | PRs, GitHub issue linking, releases |
 | **`test-engineer`** | Tests, MSW, E2E, RLS testing |
 | **`security-reviewer`** | Security audits, RLS validation |
 | **`database-ops`** | Migrations, RLS, query optimization |
@@ -152,7 +152,6 @@ Use `/ship` for the full PR workflow (branch → changes → version bump → qu
 | **`observability-engineer`** | Monitoring, logging, Sentry |
 | **`refactoring-specialist`** | File splitting, tech debt |
 | **`pr-reviewer`** | Code review, conventions |
-| **`linear-coordinator`** | Sprint planning, issue triage |
 | **`supabase-realtime-optimizer`** | Realtime performance |
 | **`supabase-schema-architect`** | Schema design, migrations |
 | **`cron-job-engineer`** | Cron jobs, locking, quotas |
@@ -190,7 +189,7 @@ npm version major --no-git-tag-version   # breaking changes
 **PR checklist:**
 - [ ] Version bumped in `package.json` on the feature branch
 - [ ] Quality gates pass (`npm run lint && npx tsc && npm run test`)
-- [ ] Linear ticket updated
+- [ ] GitHub issue updated/closed (`Closes #N` in PR body)
 
 ---
 
