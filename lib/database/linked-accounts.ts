@@ -65,72 +65,50 @@ export async function getLinkedFacebookAccount(
 }
 
 /**
- * Save or update a linked Facebook account for a user
+ * Save or update a linked Facebook account for a user.
+ *
+ * Uses a single upsert keyed on (user_id, provider) so a stale or
+ * undecryptable existing row can't cause a duplicate-key insert.
  */
 export async function saveLinkedFacebookAccount(
 	account: LinkedAccount,
 ): Promise<void> {
 	try {
-		// Encrypt tokens before storage
 		const encryptedAccessToken = encryptTokenForStorage(account.access_token);
 		const encryptedRefreshToken = account.refresh_token
 			? encryptTokenForStorage(account.refresh_token)
 			: account.refresh_token;
 
-		// Check if account already exists
-		const existing = await getLinkedFacebookAccount(account.user_id);
+		Logger.info(
+			MODULE,
+			`Upserting Facebook account for user ${account.user_id}`,
+		);
 
-		if (existing) {
-			Logger.info(
-				MODULE,
-				`Updating Facebook account for user ${account.user_id}`,
-			);
-			const { error } = await supabaseAdmin
-				.from('linked_accounts')
-				.update({
+		const now = new Date().toISOString();
+		const { error } = await supabaseAdmin
+			.from('linked_accounts')
+			.upsert(
+				{
+					user_id: account.user_id,
+					provider: 'facebook',
+					provider_account_id: account.provider_account_id,
 					access_token: encryptedAccessToken,
 					refresh_token: encryptedRefreshToken,
 					expires_at: account.expires_at,
 					ig_user_id: account.ig_user_id,
 					ig_username: account.ig_username,
-					updated_at: new Date().toISOString(),
-				})
-				.eq('id', existing.id);
-
-			if (error) {
-				Logger.error(
-					MODULE,
-					`Supabase updateLinkedFacebookAccount Error: ${error.message}`,
-					error,
-				);
-				throw error;
-			}
-		} else {
-			Logger.info(
-				MODULE,
-				`Saving new Facebook account for user ${account.user_id}`,
+					updated_at: now,
+				},
+				{ onConflict: 'user_id,provider', ignoreDuplicates: false },
 			);
-			const { error } = await supabaseAdmin.from('linked_accounts').insert({
-				user_id: account.user_id,
-				provider: 'facebook',
-				provider_account_id: account.provider_account_id,
-				access_token: encryptedAccessToken,
-				refresh_token: encryptedRefreshToken,
-				expires_at: account.expires_at,
-				ig_user_id: account.ig_user_id,
-				ig_username: account.ig_username,
-				created_at: new Date().toISOString(),
-				updated_at: new Date().toISOString(),
-			});
 
-			if (error) {
-				Logger.error(
-					MODULE,
-					`Supabase insertLinkedFacebookAccount Error: ${error.message}`,
-					error,
-				);
-				throw error;
-			}
+		if (error) {
+			Logger.error(
+				MODULE,
+				`Supabase upsertLinkedFacebookAccount Error: ${error.message}`,
+				error,
+			);
+			throw error;
 		}
 	} catch (error) {
 		Logger.error(

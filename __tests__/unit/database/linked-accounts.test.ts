@@ -90,61 +90,32 @@ describe('linked-accounts', () => {
 	});
 
 	describe('saveLinkedFacebookAccount', () => {
-		it('should update existing account', async () => {
-			let callCount = 0;
-			vi.mocked(supabaseAdmin.from).mockImplementation(() => {
-				callCount++;
-				if (callCount === 1) {
-					return {
-						select: vi.fn().mockReturnThis(),
-						eq: vi.fn().mockReturnThis(),
-						single: vi.fn().mockResolvedValue({ data: mockAccount, error: null }),
-					} as never;
-				}
-				return {
-					update: vi.fn().mockReturnThis(),
-					eq: vi.fn().mockResolvedValue({ error: null }),
-				} as never;
-			});
+		it('should upsert account on (user_id, provider) conflict', async () => {
+			const upsert = vi.fn().mockResolvedValue({ error: null });
+			vi.mocked(supabaseAdmin.from).mockReturnValue({ upsert } as never);
 
 			await expect(saveLinkedFacebookAccount(mockAccount)).resolves.toBeUndefined();
+
+			expect(upsert).toHaveBeenCalledTimes(1);
+			const [row, options] = upsert.mock.calls[0];
+			expect(row).toMatchObject({
+				user_id: mockAccount.user_id,
+				provider: 'facebook',
+				provider_account_id: mockAccount.provider_account_id,
+				ig_user_id: mockAccount.ig_user_id,
+				ig_username: mockAccount.ig_username,
+			});
+			expect(options).toEqual({
+				onConflict: 'user_id,provider',
+				ignoreDuplicates: false,
+			});
 		});
 
-		it('should insert new account when none exists', async () => {
-			let callCount = 0;
-			vi.mocked(supabaseAdmin.from).mockImplementation(() => {
-				callCount++;
-				if (callCount === 1) {
-					return {
-						select: vi.fn().mockReturnThis(),
-						eq: vi.fn().mockReturnThis(),
-						single: vi.fn().mockResolvedValue({ data: null, error: { code: 'PGRST116' } }),
-					} as never;
-				}
-				return {
-					insert: vi.fn().mockResolvedValue({ error: null }),
-				} as never;
-			});
-
-			await expect(saveLinkedFacebookAccount(mockAccount)).resolves.toBeUndefined();
-		});
-
-		it('should throw on update error', async () => {
-			let callCount = 0;
-			vi.mocked(supabaseAdmin.from).mockImplementation(() => {
-				callCount++;
-				if (callCount === 1) {
-					return {
-						select: vi.fn().mockReturnThis(),
-						eq: vi.fn().mockReturnThis(),
-						single: vi.fn().mockResolvedValue({ data: mockAccount, error: null }),
-					} as never;
-				}
-				return {
-					update: vi.fn().mockReturnThis(),
-					eq: vi.fn().mockResolvedValue({ error: { message: 'Update failed' } }),
-				} as never;
-			});
+		it('should throw on upsert error', async () => {
+			const upsert = vi
+				.fn()
+				.mockResolvedValue({ error: { message: 'Upsert failed' } });
+			vi.mocked(supabaseAdmin.from).mockReturnValue({ upsert } as never);
 
 			await expect(saveLinkedFacebookAccount(mockAccount)).rejects.toThrow();
 		});
