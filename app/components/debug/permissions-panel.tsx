@@ -15,8 +15,6 @@ export function PermissionsPanel({ permissions = [] }: PermissionsPanelProps) {
         'instagram_content_publish',
         'instagram_manage_insights',
         'instagram_manage_messages',
-        'instagram_manage_comments',
-        'instagram_manage_contents',
         'pages_read_engagement',
         'pages_show_list'
     ];
