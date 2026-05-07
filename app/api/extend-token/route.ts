@@ -1,17 +1,28 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
 import { getServerSession } from "next-auth/next";
 import { getLinkedFacebookAccount, saveLinkedFacebookAccount } from '@/lib/database/linked-accounts';
 import { authOptions } from "@/lib/auth";
 import { preventWriteForDemo } from '@/lib/preview-guard';
+import { rateLimitRequest } from '@/lib/middleware/rate-limit';
 
-export async function POST() {
+// P1-2: token-extension is sensitive (calls Meta with the user's long-lived token).
+// Limit per IP+user to thwart credential-stuffing-style abuse and runaway loops.
+const TOKEN_EXTEND_RATE_LIMIT = { limit: 10, windowMs: 60 * 1000 };
+
+export async function POST(req: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
 
         if (!session?.user?.id) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
+
+        const rateCheck = await rateLimitRequest(req, {
+            ...TOKEN_EXTEND_RATE_LIMIT,
+            key: `user:${session.user.id}`,
+        });
+        if (rateCheck.isRateLimited) return rateCheck.response!;
 
         const demoGuard = preventWriteForDemo(session);
         if (demoGuard) return demoGuard;

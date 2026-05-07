@@ -8,13 +8,20 @@ import { saveLinkedFacebookAccount } from '@/lib/database/linked-accounts';
 import { authOptions } from '@/lib/auth';
 import { Logger } from '@/lib/utils/logger';
 import { verifySignedState } from '@/lib/utils/crypto-signing';
+import { rateLimitRequest } from '@/lib/middleware/rate-limit';
 
 const MODULE = 'auth';
+
+// P1-2: rate-limit OAuth callback per IP to thwart code-injection abuse.
+const CALLBACK_RATE_LIMIT = { limit: 20, windowMs: 60 * 1000 };
 
 /**
  * Handles the Facebook OAuth callback for account linking.
  */
 export async function GET(req: NextRequest) {
+	const rateCheck = await rateLimitRequest(req, CALLBACK_RATE_LIMIT);
+	if (rateCheck.isRateLimited) return rateCheck.response!;
+
 	await Logger.info(MODULE, '📥 Facebook callback received');
 	const session = await getServerSession(authOptions);
 	const { searchParams } = new URL(req.url);

@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
                     failed++;
                 }
             } catch (err) {
-                Logger.error(MODULE, `Token refresh failed for user ${account.user_id}`, err);
+                Logger.error(MODULE, `Token refresh failed for user ${account.user_id}`, Logger.safeError(err));
                 failed++;
             }
         }
@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
             timestamp: new Date().toISOString(),
         });
     } catch (error) {
-        Logger.error(MODULE, 'TikTok token refresh cron failed', error);
+        Logger.error(MODULE, 'TikTok token refresh cron failed', Logger.safeError(error));
         return NextResponse.json(
             { error: error instanceof Error ? error.message : 'Unknown error' },
             { status: 500 },

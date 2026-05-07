@@ -44,7 +44,7 @@ export const GET = createCronHandler(
                     `Engagement: ${engagementResult.storiesUpdated} updated for user ${account.user_id}`,
                 );
             } catch (err) {
-                Logger.error(MODULE, `Archive failed for user ${account.user_id}`, err);
+                Logger.error(MODULE, `Archive failed for user ${account.user_id}`, Logger.safeError(err));
                 results.push({
                     userId: account.user_id,
                     totalFetched: 0,

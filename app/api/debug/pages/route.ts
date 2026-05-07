@@ -1,26 +1,18 @@
 import { NextResponse } from 'next/server';
 import axios from 'axios';
-import { getServerSession } from "next-auth/next";
 import { getLinkedFacebookAccount } from '@/lib/database/linked-accounts';
-import { authOptions } from "@/lib/auth";
-import { isAdmin } from '@/lib/auth-helpers';
+import { getSession } from '@/lib/auth-helpers';
+import { guardDebugRoute } from '@/lib/debug-route-guard';
 
 const GRAPH_API_BASE = 'https://graph.facebook.com/v24.0';
 
 export async function GET() {
-    // Block in production
-    if (process.env.NODE_ENV === 'production') {
-        return NextResponse.json({ error: 'Not available in production' }, { status: 404 });
-    }
+    const guard = await guardDebugRoute();
+    if (guard) return guard;
 
-    const session = await getServerSession(authOptions);
-
+    const session = await getSession();
     if (!session?.user?.id) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    if (!isAdmin(session)) {
-        return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
     const linkedAccount = await getLinkedFacebookAccount(session.user.id);

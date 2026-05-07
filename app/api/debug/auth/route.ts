@@ -1,27 +1,17 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from "next-auth/next";
 import { getLinkedFacebookAccount } from '@/lib/database/linked-accounts';
-import { authOptions } from "@/lib/auth";
-import { isAdmin } from '@/lib/auth-helpers';
+import { getSession } from '@/lib/auth-helpers';
+import { guardDebugRoute } from '@/lib/debug-route-guard';
 import axios from 'axios';
 
 export async function GET() {
-    // Block in production
-    if (process.env.NODE_ENV === 'production') {
-        return NextResponse.json({ error: 'Not available in production' }, { status: 404 });
-    }
+    const guard = await guardDebugRoute();
+    if (guard) return guard;
 
-    const session = await getServerSession(authOptions);
-
-    if (!session) {
-        return NextResponse.json({
-            authenticated: false,
-            message: 'Not signed in'
-        }, { status: 401 });
-    }
-
-    if (!isAdmin(session)) {
-        return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
+    const session = await getSession();
+    // guardDebugRoute already verified the session, but TypeScript needs help
+    if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     try {

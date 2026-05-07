@@ -61,6 +61,75 @@ export class Logger {
         return `${token.substring(0, 6)}...${token.substring(token.length - 4)}`;
     }
 
+    /**
+     * Sanitises an unknown error for safe logging.
+     *
+     * Strips axios `config`, `request`, and nested `response.config` properties
+     * which carry the request URL and `params` (including `access_token`,
+     * `input_token`, `client_secret` etc.). Returns a plain object suitable
+     * for passing to `Logger.{info,warn,error}` as the `details` arg.
+     */
+    static safeError(error: unknown): Record<string, unknown> {
+        if (error === null || error === undefined) {
+            return { error: 'null' };
+        }
+        if (typeof error !== 'object') {
+            return { error: String(error) };
+        }
+        const e = error as {
+            message?: unknown;
+            name?: unknown;
+            code?: unknown;
+            status?: unknown;
+            isAxiosError?: unknown;
+            response?: { status?: unknown; statusText?: unknown; data?: unknown };
+        };
+        const safe: Record<string, unknown> = {};
+        if (typeof e.message === 'string') safe.message = e.message;
+        if (typeof e.name === 'string') safe.name = e.name;
+        if (e.code !== undefined) safe.code = e.code;
+        if (e.status !== undefined) safe.status = e.status;
+        if (e.isAxiosError && e.response) {
+            // Keep status + response body, drop the request config (which contains tokens).
+            safe.response = {
+                status: e.response.status,
+                statusText: e.response.statusText,
+                data: e.response.data,
+            };
+        }
+        return safe;
+    }
+
+    /**
+     * Returns a token-free projection of a linked-account row, safe to spread
+     * into log payloads. Explicitly picks non-secret fields and drops every
+     * `*_token` column.
+     */
+    static safeAccountForLog(account: {
+        id?: string;
+        user_id?: string;
+        userId?: string;
+        provider?: string;
+        provider_account_id?: string;
+        ig_user_id?: string;
+        ig_username?: string;
+        expires_at?: number | null;
+        refresh_expires_at?: number | null;
+    } | null | undefined): Record<string, unknown> {
+        if (!account) return { account: null };
+        return {
+            id: account.id,
+            userId: account.user_id ?? account.userId,
+            provider: account.provider,
+            providerAccountId: account.provider_account_id,
+            igUserId: account.ig_user_id,
+            igUsername: account.ig_username,
+            expiresAt: account.expires_at ?? null,
+            refreshExpiresAt: account.refresh_expires_at ?? null,
+        };
+    }
+
+
     private static formatMessage(level: LogLevel, module: string, message: string): string {
         const timestamp = new Date().toISOString();
         return `[${timestamp}] [${level.toUpperCase()}] [${module}] ${message}`;

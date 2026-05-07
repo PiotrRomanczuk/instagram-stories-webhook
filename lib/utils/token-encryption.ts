@@ -1,6 +1,16 @@
 import { encryptToken, decryptToken } from '@/lib/utils/crypto-signing';
 import { Logger } from '@/lib/utils/logger';
 
+/**
+ * NOTE: A bulk re-encryption helper for migrating plaintext tokens to encrypted
+ * form previously lived at `app/api/admin/encrypt-tokens/route.ts`. That route
+ * was deleted (P1-6) because leaving a one-off migration endpoint live meant a
+ * leaked CRON_SECRET could re-encrypt all stored tokens with a stale
+ * TOKEN_ENCRYPTION_KEY, locking users out. If a similar bulk re-encryption is
+ * needed in the future, re-implement it as a one-off script under `scripts/`
+ * (run locally against the production DB), NOT as a live HTTP route.
+ */
+
 const MODULE = 'token-encryption';
 
 /**

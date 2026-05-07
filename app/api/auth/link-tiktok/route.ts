@@ -10,6 +10,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { Logger } from '@/lib/utils/logger';
 import { createSignedState } from '@/lib/utils/crypto-signing';
+import { rateLimitRequest } from '@/lib/middleware/rate-limit';
 import { randomBytes, createHash } from 'crypto';
 
 function base64UrlEncode(buf: Buffer): string {
@@ -18,8 +19,14 @@ function base64UrlEncode(buf: Buffer): string {
 
 const MODULE = 'auth:tiktok';
 
+// P1-2: limit OAuth initiations per IP.
+const LINK_RATE_LIMIT = { limit: 10, windowMs: 60 * 1000 };
+
 export async function GET(req: NextRequest) {
     try {
+        const rateCheck = await rateLimitRequest(req, LINK_RATE_LIMIT);
+        if (rateCheck.isRateLimited) return rateCheck.response!;
+
         Logger.info(MODULE, 'Initiating TikTok link flow');
 
         const session = await getServerSession(authOptions);

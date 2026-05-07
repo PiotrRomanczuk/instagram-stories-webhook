@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { GranularScope, FacebookPage } from '@/lib/types';
+import { Logger } from '@/lib/utils/logger';
 
 const GRAPH_API_BASE = 'https://graph.facebook.com/v24.0';
 
@@ -35,7 +36,7 @@ export async function getInstagramBusinessAccountId(
 					console.log('Found page IDs from granular scopes:', pageIds);
 				}
 			} catch (err) {
-				console.warn('Could not fetch token debug info:', err);
+				console.warn('Could not fetch token debug info:', Logger.safeError(err));
 			}
 		}
 
@@ -54,7 +55,7 @@ export async function getInstagramBusinessAccountId(
 			const errorMessage = axios.isAxiosError(error)
 				? error.response?.data || error.message
 				: error;
-			console.warn('/me/accounts failed:', errorMessage);
+			console.warn('/me/accounts failed:', axios.isAxiosError(error) ? errorMessage : Logger.safeError(error));
 		}
 
 		// 2. If /me/accounts returned empty but we have page IDs from granular scopes, fetch them directly
@@ -73,7 +74,7 @@ export async function getInstagramBusinessAccountId(
 					const errorMessage = axios.isAxiosError(err)
 						? err.response?.data || err.message
 						: err;
-					console.error(`Failed to fetch page ${pageId}:`, errorMessage);
+					console.error(`Failed to fetch page ${pageId}:`, axios.isAxiosError(err) ? errorMessage : Logger.safeError(err));
 				}
 			}
 		}
@@ -116,7 +117,7 @@ export async function getInstagramBusinessAccountId(
 		const errorMessage = axios.isAxiosError(error)
 			? error.response?.data || error.message
 			: error;
-		console.error('Error fetching IG Account ID:', errorMessage);
+		console.error('Error fetching IG Account ID:', axios.isAxiosError(error) ? errorMessage : Logger.safeError(error));
 		return null;
 	}
 }

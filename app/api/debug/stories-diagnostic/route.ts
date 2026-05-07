@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
-import { isAdmin } from '@/lib/auth-helpers';
+import { getSession } from '@/lib/auth-helpers';
+import { guardDebugRoute } from '@/lib/debug-route-guard';
 import { getRecentStories } from '@/lib/instagram/media';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
 
@@ -15,20 +14,14 @@ import { supabaseAdmin } from '@/lib/config/supabase-admin';
  * - Comparison and analysis
  * - Troubleshooting suggestions
  */
-export async function GET(request: NextRequest) {
-	// Block in production
-	if (process.env.NODE_ENV === 'production') {
-		return NextResponse.json({ error: 'Not available in production' }, { status: 404 });
-	}
+export async function GET(_request: NextRequest) {
+	const guard = await guardDebugRoute();
+	if (guard) return guard;
 
 	try {
-		// Verify authentication
-		const session = await getServerSession(authOptions);
+		const session = await getSession();
 		if (!session?.user?.id) {
 			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-		}
-		if (!isAdmin(session)) {
-			return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
 		}
 
 		const userId = session.user.id;
@@ -208,21 +201,21 @@ function generateTroubleshootingSteps(analysis: DiagnosticAnalysis): string[] {
 	const steps: string[] = [];
 
 	if (analysis.issues_found.length === 0) {
-		steps.push('✅ No issues found. All stories are properly published and visible.');
+		steps.push('No issues found. All stories are properly published and visible.');
 		return steps;
 	}
 
 	// Issue: Expired stories
 	if (analysis.expired_stories > 0) {
 		steps.push(
-			`📅 ${analysis.expired_stories} stories expired: Instagram stories automatically disappear after 24 hours. This is normal behavior.`
+			`${analysis.expired_stories} stories expired: Instagram stories automatically disappear after 24 hours. This is normal behavior.`
 		);
 	}
 
 	// Issue: Recent failures
 	if (analysis.recent_failures > 0) {
 		steps.push(
-			`❌ ${analysis.recent_failures} recent failures: Check publishing_logs table for error_message column. Common issues: expired token (code 190), rate limit (code 368), invalid media.`
+			`${analysis.recent_failures} recent failures: Check publishing_logs table for error_message column. Common issues: expired token (code 190), rate limit (code 368), invalid media.`
 		);
 	}
 
@@ -230,7 +223,7 @@ function generateTroubleshootingSteps(analysis: DiagnosticAnalysis): string[] {
 	const missingStories = analysis.stories_in_db_only.filter(s => s.hours_ago < 24);
 	if (missingStories.length > 0) {
 		steps.push(
-			`⚠️ ${missingStories.length} recent stories missing: Stories marked SUCCESS in database but not found on Instagram. Possible causes:`
+			`${missingStories.length} recent stories missing: Stories marked SUCCESS in database but not found on Instagram. Possible causes:`
 		);
 		steps.push('  1. Instagram processing delay (wait 60-90 seconds for videos)');
 		steps.push('  2. Publishing succeeded but media was removed by Instagram');
@@ -241,16 +234,16 @@ function generateTroubleshootingSteps(analysis: DiagnosticAnalysis): string[] {
 	// Issue: Stories on Instagram not in database
 	if (analysis.stories_in_instagram_only.length > 0) {
 		steps.push(
-			`📝 ${analysis.stories_in_instagram_only.length} stories on Instagram not logged: These stories were published outside this app (manually or via other tools).`
+			`${analysis.stories_in_instagram_only.length} stories on Instagram not logged: These stories were published outside this app (manually or via other tools).`
 		);
 	}
 
 	// General troubleshooting
 	steps.push('');
-	steps.push('🔍 General troubleshooting steps:');
+	steps.push('General troubleshooting steps:');
 	steps.push('1. Check /debug page for Instagram connection status');
 	steps.push('2. Verify access token is not expired');
-	steps.push('3. Check Instagram profile directly (@www_hehe_pl)');
+	steps.push('3. Check Instagram profile directly');
 	steps.push('4. Review recent publishing_logs for error messages');
 	steps.push('5. Try publishing a test story via /debug page');
 

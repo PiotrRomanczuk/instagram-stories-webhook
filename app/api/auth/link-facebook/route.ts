@@ -3,8 +3,12 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { Logger } from "@/lib/utils/logger";
 import { createSignedState } from "@/lib/utils/crypto-signing";
+import { rateLimitRequest } from "@/lib/middleware/rate-limit";
 
 const MODULE = 'auth';
+
+// P1-2: OAuth initiation endpoint — limit per IP to prevent OAuth state spam.
+const LINK_RATE_LIMIT = { limit: 10, windowMs: 60 * 1000 };
 
 /**
  * Initiates the Facebook OAuth flow for account linking.
@@ -13,6 +17,9 @@ const MODULE = 'auth';
  */
 export async function GET(req: NextRequest) {
     try {
+        const rateCheck = await rateLimitRequest(req, LINK_RATE_LIMIT);
+        if (rateCheck.isRateLimited) return rateCheck.response!;
+
         await Logger.info(MODULE, "🔗 Initiating Facebook Link Flow...");
 
         const session = await getServerSession(authOptions);

@@ -168,7 +168,7 @@ export async function refreshTikTokToken(
         Logger.info(MODULE, `TikTok token refreshed for user ${userId}`);
         return data;
     } catch (err) {
-        Logger.error(MODULE, `TikTok token refresh exception: ${err instanceof Error ? err.message : 'Unknown'}`, err);
+        Logger.error(MODULE, `TikTok token refresh exception: ${err instanceof Error ? err.message : 'Unknown'}`, Logger.safeError(err));
         return null;
     }
 }

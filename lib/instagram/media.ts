@@ -87,7 +87,7 @@ export async function getRecentStories(
 			await Logger.error(MODULE, `Failed to fetch stories: ${errorMessage}`, error.response?.data);
 		} else if (error instanceof Error) {
 			errorMessage = error.message;
-			await Logger.error(MODULE, `Failed to fetch stories: ${errorMessage}`, error);
+			await Logger.error(MODULE, `Failed to fetch stories: ${errorMessage}`, Logger.safeError(error));
 		}
 
 		throw new Error(errorMessage);
@@ -104,7 +104,7 @@ export async function getLastStory(userId: string): Promise<InstagramStory | nul
 		const response = await getRecentStories(userId, 1);
 		return response.stories[0] || null;
 	} catch (error) {
-		await Logger.error(MODULE, 'Failed to fetch last story', error);
+		await Logger.error(MODULE, 'Failed to fetch last story', Logger.safeError(error));
 		return null;
 	}
 }
@@ -141,7 +141,7 @@ export async function getMediaDetails(
 			errorMessage = error.message;
 		}
 
-		await Logger.error(MODULE, `Failed to fetch media ${mediaId}: ${errorMessage}`, error);
+		await Logger.error(MODULE, `Failed to fetch media ${mediaId}: ${errorMessage}`, Logger.safeError(error));
 		return null;
 	}
 }
@@ -160,7 +160,7 @@ export async function verifyStoryExists(
 		const details = await getMediaDetails(mediaId, userId);
 		return details !== null;
 	} catch (error) {
-		await Logger.error(MODULE, `Failed to verify story ${mediaId}`, error);
+		await Logger.error(MODULE, `Failed to verify story ${mediaId}`, Logger.safeError(error));
 		return false;
 	}
 }
@@ -190,7 +190,7 @@ export async function verifyStoryByUrl(
 
 		return matchingStory || null;
 	} catch (error) {
-		await Logger.error(MODULE, `Failed to verify story by URL`, error);
+		await Logger.error(MODULE, `Failed to verify story by URL`, Logger.safeError(error));
 		return null;
 	}
 }
@@ -220,7 +220,7 @@ export async function wasPublishedRecently(
 
 		return recentPublish !== undefined;
 	} catch (error) {
-		await Logger.error(MODULE, `Failed to check recent publish`, error);
+		await Logger.error(MODULE, `Failed to check recent publish`, Logger.safeError(error));
 		return false;
 	}
 }

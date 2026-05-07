@@ -101,7 +101,7 @@ export async function publishMedia(
         if (axios.isAxiosError(error)) {
             await Logger.error(MODULE, `Instagram API Error: ${errorMessage}`, error.response?.data?.error);
         } else {
-            await Logger.error(MODULE, `Non-Axios Error: ${errorMessage}`, error);
+            await Logger.error(MODULE, `Non-Axios Error: ${errorMessage}`, Logger.safeError(error));
         }
 
         await recordPublishFailure(

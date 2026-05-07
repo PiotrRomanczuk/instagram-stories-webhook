@@ -10,12 +10,19 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { Logger } from '@/lib/utils/logger';
 import { verifySignedState } from '@/lib/utils/crypto-signing';
+import { rateLimitRequest } from '@/lib/middleware/rate-limit';
 import { saveTikTokAccount } from '@/lib/tiktok/auth';
 import { TikTokTokenResponse } from '@/lib/types/tiktok';
 
 const MODULE = 'auth:tiktok';
 
+// P1-2: rate-limit OAuth callback per IP to thwart code-injection abuse.
+const CALLBACK_RATE_LIMIT = { limit: 20, windowMs: 60 * 1000 };
+
 export async function GET(req: NextRequest) {
+    const rateCheck = await rateLimitRequest(req, CALLBACK_RATE_LIMIT);
+    if (rateCheck.isRateLimited) return rateCheck.response!;
+
     Logger.info(MODULE, 'TikTok callback received');
 
     const session = await getServerSession(authOptions);
