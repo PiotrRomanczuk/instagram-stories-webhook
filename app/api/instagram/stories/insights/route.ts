@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { getMediaInsights } from '@/lib/instagram/insights';
+import { getCachedMediaInsights } from '@/lib/instagram/insights-cache';
 
 const MAX_IDS = 100;
 const CONCURRENCY = 6;
@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
 	const userId = session.user.id;
 	const entries = await withConcurrency(ids, CONCURRENCY, async (mediaId) => {
 		try {
-			const raw = await getMediaInsights(mediaId, userId, 'STORY');
+			const raw = await getCachedMediaInsights(mediaId, userId, 'STORY');
 			const metrics: Record<string, number> = {};
 			for (const m of raw) {
 				metrics[m.name] = m.values[0]?.value ?? 0;

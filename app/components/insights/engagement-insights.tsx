@@ -4,8 +4,8 @@ import { useMemo, useState } from 'react';
 import useSWR from 'swr';
 import { useTheme } from 'next-themes';
 import { Skeleton } from '@/app/components/ui/skeleton';
-import type { StoriesResponse, InstagramStory } from '@/lib/instagram/media';
-import type { StoryInsightsResponse } from '@/app/api/instagram/stories/insights/route';
+import type { InstagramStory } from '@/lib/instagram/media';
+import type { StoriesWithInsightsResponse } from '@/app/api/instagram/stories/with-insights/route';
 import { rankStoriesByEngagement, scoreStory } from '@/lib/insights/score-story';
 import { insightsTokenStyle, MONO_STACK } from './insights-tokens';
 import { StatusBar } from './status-bar';
@@ -32,23 +32,14 @@ export function EngagementInsights() {
 	const { resolvedTheme } = useTheme();
 	const themeName = resolvedTheme === 'dark' ? 'dark' : 'light';
 
-	const { data: storiesData, isLoading: storiesLoading } = useSWR<StoriesResponse>(
-		'/api/instagram/recent-stories?limit=200',
+	const { data: combined, isLoading } = useSWR<StoriesWithInsightsResponse>(
+		'/api/instagram/stories/with-insights?limit=200',
 		fetcher,
-		{ revalidateOnFocus: false, dedupingInterval: 60_000 },
+		{ revalidateOnFocus: false, dedupingInterval: 60_000, keepPreviousData: true },
 	);
 
-	const stories = useMemo(() => storiesData?.stories ?? [], [storiesData]);
-	const insightsKey = stories.length
-		? `/api/instagram/stories/insights?ids=${stories.map((s) => s.id).join(',')}`
-		: null;
-	const { data: insightsData, isLoading: insightsLoading } = useSWR<StoryInsightsResponse>(
-		insightsKey,
-		fetcher,
-		{ revalidateOnFocus: false, dedupingInterval: 60_000 },
-	);
-
-	const insights = useMemo(() => insightsData?.insights ?? {}, [insightsData]);
+	const stories = useMemo(() => combined?.stories ?? [], [combined]);
+	const insights = useMemo(() => combined?.insights ?? {}, [combined]);
 
 	const [selectedIds, setSelectedIds] = useState<string[]>([]);
 	const [filter, setFilter] = useState<FilterMode>('all');
@@ -121,10 +112,9 @@ export function EngagementInsights() {
 		);
 	}
 
-	const isLoading = storiesLoading || (stories.length > 0 && insightsLoading);
 	const tokenStyle = insightsTokenStyle(themeName);
 
-	if (isLoading) {
+	if (isLoading && !combined) {
 		return (
 			<div style={tokenStyle} className="min-h-[640px]" >
 				<div

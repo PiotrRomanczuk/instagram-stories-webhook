@@ -9,8 +9,7 @@ import { EmptyState } from '@/app/components/ui/empty-state';
 import { Alert, AlertDescription, AlertTitle } from '@/app/components/ui/alert';
 import { Card, CardContent } from '@/app/components/ui/card';
 import { StoriesTable } from './stories-table';
-import type { StoriesResponse } from '@/lib/instagram/media';
-import type { StoryInsightsResponse } from '@/app/api/instagram/stories/insights/route';
+import type { StoriesWithInsightsResponse } from '@/app/api/instagram/stories/with-insights/route';
 
 const fetcher = async <T,>(url: string): Promise<T> => {
 	const res = await fetch(url);
@@ -22,23 +21,19 @@ const fetcher = async <T,>(url: string): Promise<T> => {
 };
 
 export function InstagramStoriesClient() {
-	const { data, error, isLoading, isValidating, mutate } = useSWR<StoriesResponse>(
-		'/api/instagram/recent-stories?limit=200',
-		fetcher,
-		{ revalidateOnFocus: false, dedupingInterval: 30_000 },
-	);
+	const { data, error, isLoading, isValidating, mutate } =
+		useSWR<StoriesWithInsightsResponse>(
+			'/api/instagram/stories/with-insights?limit=200',
+			fetcher,
+			{
+				revalidateOnFocus: false,
+				dedupingInterval: 30_000,
+				keepPreviousData: true,
+			},
+		);
 
 	const stories = data?.stories ?? [];
 	const username = stories[0]?.username;
-
-	const insightsKey = stories.length
-		? `/api/instagram/stories/insights?ids=${stories.map((s) => s.id).join(',')}`
-		: null;
-	const { data: insightsData, isLoading: insightsLoading } =
-		useSWR<StoryInsightsResponse>(insightsKey, fetcher, {
-			revalidateOnFocus: false,
-			dedupingInterval: 60_000,
-		});
 
 	return (
 		<div className="container mx-auto space-y-6 px-4 py-6 sm:px-6 sm:py-8">
@@ -90,7 +85,7 @@ export function InstagramStoriesClient() {
 						</Button>
 					</AlertDescription>
 				</Alert>
-			) : isLoading ? (
+			) : isLoading && !data ? (
 				<div className="space-y-2">
 					{Array.from({ length: 8 }).map((_, i) => (
 						<Skeleton key={i} className="h-24 w-full rounded-xl" />
@@ -105,8 +100,8 @@ export function InstagramStoriesClient() {
 			) : (
 				<StoriesTable
 					stories={stories}
-					insights={insightsData?.insights}
-					insightsLoading={insightsLoading}
+					insights={data?.insights}
+					insightsLoading={isValidating && !data?.insights}
 				/>
 			)}
 		</div>

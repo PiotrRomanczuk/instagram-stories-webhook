@@ -12,6 +12,7 @@ import {
 } from '@/lib/database/composed-videos';
 import { composeVideoFromStories } from '@/lib/media/compose-video';
 import { fetchAndArchiveStories } from '@/lib/instagram/story-archive';
+import { revalidateStoryInsights } from '@/lib/instagram/insights-cache';
 import { publishVideoToTikTok } from '@/lib/tiktok/publish';
 import { updateTikTokPublishStatus } from '@/lib/database/composed-videos';
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
@@ -102,6 +103,9 @@ export async function POST(req: NextRequest) {
 			// catches the most-recent stories by IG ordering, which can miss
 			// engagement-ranked picks further down the active feed.
 			await fetchAndArchiveStories(userId, 200);
+			// User just engaged with these stories; the next /insights load
+			// should bypass the 15-min cache and pull fresh Graph data.
+			revalidateStoryInsights(userId);
 			stories = await loadByIgMediaIds(userId, igMediaIds);
 		} else {
 			requestedCount = storyIds!.length;
