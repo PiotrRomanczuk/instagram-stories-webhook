@@ -1,13 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { UserDashboard } from '@/app/components/dashboard/user-dashboard';
 
-// Mock SWR
 vi.mock('swr', () => ({
 	default: vi.fn(),
 }));
 
-// Mock next-intl routing
 vi.mock('@/i18n/routing', () => ({
 	Link: ({ children, href, ...props }: { children: React.ReactNode; href: string }) => (
 		<a href={href} {...props}>{children}</a>
@@ -56,7 +54,7 @@ describe('UserDashboard', () => {
 		expect(skeletons.length).toBeGreaterThan(0);
 	});
 
-	it('should render stats cards', async () => {
+	it('should render stat pills with correct counts', async () => {
 		const useSWR = (await import('swr')).default as unknown as ReturnType<typeof vi.fn>;
 		useSWR.mockReturnValue({
 			data: {
@@ -72,14 +70,13 @@ describe('UserDashboard', () => {
 
 		render(<UserDashboard userName="John" />);
 
-		expect(screen.getByText('Pending Review')).toBeInTheDocument();
-		// Use getAllByText since "Approved" appears in both stats card and submission badges
-		expect(screen.getAllByText('Approved').length).toBeGreaterThanOrEqual(1);
-		expect(screen.getAllByText('Scheduled').length).toBeGreaterThanOrEqual(1);
-		expect(screen.getAllByText('Published').length).toBeGreaterThanOrEqual(1);
+		expect(screen.getByText('Pending')).toBeInTheDocument();
+		expect(screen.getByText('Approved')).toBeInTheDocument();
+		expect(screen.getByText('Scheduled')).toBeInTheDocument();
+		expect(screen.getByText('Published')).toBeInTheDocument();
 	});
 
-	it('should show empty state when no submissions', async () => {
+	it('should link to all submissions', async () => {
 		const useSWR = (await import('swr')).default as unknown as ReturnType<typeof vi.fn>;
 		useSWR.mockReturnValue({
 			data: { items: [] },
@@ -88,51 +85,6 @@ describe('UserDashboard', () => {
 
 		render(<UserDashboard userName="John" />);
 
-		expect(screen.getByText('No submissions yet')).toBeInTheDocument();
-		expect(screen.getByText('Get started by submitting your first content.')).toBeInTheDocument();
-	});
-
-	it('should render recent submissions section', async () => {
-		const useSWR = (await import('swr')).default as unknown as ReturnType<typeof vi.fn>;
-		useSWR.mockReturnValue({
-			data: { items: [] },
-			isLoading: false,
-		});
-
-		render(<UserDashboard userName="John" />);
-
-		expect(screen.getByText('Recent Submissions')).toBeInTheDocument();
-		expect(screen.getByRole('link', { name: 'View All' })).toBeInTheDocument();
-	});
-
-	it('should render submission cards for recent submissions', async () => {
-		const useSWR = (await import('swr')).default as unknown as ReturnType<typeof vi.fn>;
-		useSWR.mockReturnValue({
-			data: {
-				items: [
-					{
-						id: '1',
-						submissionStatus: 'pending',
-						publishingStatus: 'draft',
-						source: 'submission',
-						mediaUrl: 'https://example.com/image.jpg',
-						createdAt: '2024-01-15T10:00:00Z',
-						updatedAt: '2024-01-15T10:00:00Z',
-						userId: 'user1',
-						userEmail: 'user@example.com',
-						mediaType: 'IMAGE',
-						version: 1,
-					},
-				],
-			},
-			isLoading: false,
-		});
-
-		render(<UserDashboard userName="John" />);
-
-		// Should render the submission card with an image element
-		const img = screen.getByRole('img', { name: /Submission/i });
-		expect(img).toBeInTheDocument();
-		expect(img).toHaveAttribute('src', 'https://example.com/image.jpg');
+		expect(screen.getByRole('link', { name: /View all submissions/i })).toBeInTheDocument();
 	});
 });

@@ -18,18 +18,22 @@ export interface ComposeResult {
 }
 
 /**
- * Composes a video from multiple story segments + audio overlay.
+ * Composes a video from multiple story segments, optionally overlaying an
+ * audio track.
  *
  * Pipeline:
  * 1. Images → 5s video segments with silent audio
- * 2. Videos → scale to 1080x1920
+ * 2. Videos → scale to 1080x1920 (IG-original audio kept)
  * 3. Concatenate all segments
- * 4. Overlay audio track
+ * 4. Either overlay an external audio track or keep the segment audio
  * 5. Output H.264/AAC MP4
+ *
+ * Pass `audioTrack: null` for the TT-inbox flow — the human will pick a
+ * native TikTok sound after upload, so baking music in is counter-productive.
  */
 export async function composeVideoFromStories(
     stories: StoryArchive[],
-    audioTrack: AudioTrack,
+    audioTrack: AudioTrack | null,
     config: Partial<CompositionConfig> = {},
     outputId: string,
 ): Promise<ComposeResult> {
@@ -54,7 +58,8 @@ export async function composeVideoFromStories(
 
     try {
         // Step 1: Create individual segments for each story
-        Logger.info(MODULE, `Composing video from ${stories.length} stories with audio "${audioTrack.title}"`);
+        const audioLabel = audioTrack ? `audio "${audioTrack.title}"` : 'IG-original audio';
+        Logger.info(MODULE, `Composing video from ${stories.length} stories with ${audioLabel}`);
 
         for (let i = 0; i < stories.length; i++) {
             const story = stories[i];
@@ -83,9 +88,13 @@ export async function composeVideoFromStories(
         const concatContent = segmentFiles.map((f) => `file '${f}'`).join('\n');
         await fs.writeFile(concatListPath, concatContent);
 
-        // Step 3: Concatenate + overlay audio
+        // Step 3: Concatenate, optionally overlaying audio
         const outputPath = getStoragePath(`composed/${outputId}.mp4`);
-        await concatenateWithAudio(concatListPath, audioTrack.localPath, outputPath, cfg);
+        if (audioTrack) {
+            await concatenateWithAudio(concatListPath, audioTrack.localPath, outputPath, cfg);
+        } else {
+            await concatenatePreservingAudio(concatListPath, outputPath, cfg);
+        }
 
         // Get output file info
         const stats = await fs.stat(outputPath);
@@ -179,6 +188,32 @@ async function concatenateWithAudio(
     ];
 
     await runFfmpeg(args, 'concatenate + audio overlay');
+}
+
+/**
+ * Concatenates segments keeping each segment's own audio (silent for images,
+ * IG-original for videos). Used by the TT-inbox flow where the human picks
+ * a native TikTok sound after upload.
+ */
+async function concatenatePreservingAudio(
+    concatListPath: string,
+    outputPath: string,
+    config: CompositionConfig,
+): Promise<void> {
+    const args = [
+        '-y',
+        '-f', 'concat', '-safe', '0', '-i', concatListPath,
+        '-map', '0:v',
+        '-map', '0:a',
+        '-c:v', 'libx264', '-preset', 'medium', '-pix_fmt', 'yuv420p',
+        '-b:v', '3500k', '-maxrate', '3500k', '-bufsize', '7000k',
+        '-c:a', 'aac', '-b:a', '128k',
+        '-t', String(config.maxDurationSec),
+        '-movflags', '+faststart',
+        outputPath,
+    ];
+
+    await runFfmpeg(args, 'concatenate (preserve segment audio)');
 }
 
 /**
