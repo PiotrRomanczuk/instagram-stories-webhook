@@ -91,17 +91,20 @@ export interface StoryArchiveInsert {
 }
 
 export interface EngagementMetrics {
+    /** v22+ `views` is mapped onto this field. */
     impressions?: number;
     reach?: number;
     replies?: number;
+    shares?: number;
+    profileVisits?: number;
+    follows?: number;
+    totalInteractions?: number;
     /** @deprecated Retired in Graph API v22+. Kept for legacy data. */
     tapsForward?: number;
     /** @deprecated Retired in Graph API v22+. Kept for legacy data. */
     tapsBack?: number;
     /** @deprecated Retired in Graph API v22+. Kept for legacy data. */
     exits?: number;
-    totalInteractions?: number;
-    shares?: number;
 }
 
 export function mapStoryArchiveRow(row: StoryArchiveRow): StoryArchive {

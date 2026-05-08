@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { processScheduledPosts } from '@/lib/scheduler/process-service';
+import { runCronBatch, forceProcessPost } from '@/lib/scheduler/process-service';
 import { cleanupOldMedia } from '@/lib/scheduler/cleanup-service';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
@@ -49,32 +49,25 @@ export async function GET(request: NextRequest) {
 			}
 		}
 
-		// If a specific postId is provided (manual trigger), we bypass duplicate checks
-		// because the user explicitly requested "Submit Now"
-		const result = await processScheduledPosts(postId, !!postId);
-
-		// Run cleanup only on general background sweeps (cron), not on specific user triggers
-		if (!postId) {
-			// Non-blocking cleanup (fire and forget)
-			cleanupOldMedia().catch((err) => console.error('Cleanup failed:', err));
+		// Single-post manual trigger: bypass duplicate checks because the user
+		// explicitly requested "Submit Now".
+		if (postId) {
+			const result = await forceProcessPost(postId, true);
+			if (!result.success) {
+				console.warn(
+					`[API] ⚠️ Post ${postId} was not processed: ${result.error}`,
+				);
+				return NextResponse.json(
+					{ error: result.error ?? 'Post could not be processed' },
+					{ status: result.httpStatus ?? 400 },
+				);
+			}
+			return NextResponse.json(result);
 		}
 
-		// If a specific post was requested but not processed, return an error
-		if (postId && result.processed === 0) {
-			console.warn(
-				`[API] ⚠️ Post ${postId} was not processed: ${result.message}`,
-			);
-			return NextResponse.json(
-				{
-					error:
-						result.message ||
-						'Post could not be processed (it might be locked or already finished)',
-					...result,
-				},
-				{ status: 400 },
-			);
-		}
-
+		// No postId: full cron sweep + non-blocking cleanup.
+		const result = await runCronBatch();
+		cleanupOldMedia().catch((err) => console.error('Cleanup failed:', err));
 		return NextResponse.json(result);
 	} catch (error: unknown) {
 		const errorMessage =

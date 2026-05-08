@@ -9,13 +9,17 @@
  * - Handle graceful shutdown
  */
 
-import { publishQueue, ingestQueue, analyticsQueue } from '@/lib/queue/queues';
+import {
+    getPublishQueue,
+    getIngestQueue,
+    getAnalyticsQueue,
+} from '@/lib/queue/queues';
 import { startPublishWorker } from './workers/publish.worker';
 import { startAnalyticsWorker } from './workers/analytics.worker';
 
 async function registerRepeatJobs(): Promise<void> {
     // Publish queue — pick up due scheduled posts every minute
-    await publishQueue.add(
+    await getPublishQueue().add(
         'process-due-posts',
         {},
         {
@@ -25,7 +29,7 @@ async function registerRepeatJobs(): Promise<void> {
     );
 
     // Ingest queue — fetch new stories every 6 hours
-    await ingestQueue.add(
+    await getIngestQueue().add(
         'fetch-stories',
         {},
         {
@@ -35,7 +39,7 @@ async function registerRepeatJobs(): Promise<void> {
     );
 
     // Analytics queue — refresh post metrics every 6 hours
-    await analyticsQueue.add(
+    await getAnalyticsQueue().add(
         'refresh-metrics',
         {},
         {

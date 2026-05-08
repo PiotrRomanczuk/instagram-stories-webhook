@@ -21,17 +21,28 @@ export interface StoriesResponse {
 	count: number;
 }
 
+const PAGE_SIZE = 100;
+const HARD_CAP = 200;
+const MAX_PAGES = 10;
+
+interface StoriesPage {
+	data?: Record<string, unknown>[];
+	paging?: { next?: string };
+}
+
 /**
- * Fetches recent stories from Instagram Business Account
- * BMS-144: Uses /stories endpoint instead of /media, removes redundant 24h filter,
- * replaces `any` types with Record<string, unknown>.
- * @param userId The user ID to fetch stories for
- * @param limit Number of stories to fetch (default: 10, max: 25)
- * @returns Array of recent stories
+ * Fetches active Instagram stories for the linked Business account.
+ *
+ * The Graph `/{ig-user-id}/stories` edge is paginated (default 25/page,
+ * max ~100). To return more than one page we follow `paging.next` until
+ * we hit the requested limit, run out of pages, or reach a safety cap.
+ *
+ * @param userId App user id (resolves token + ig_user_id from linked_accounts)
+ * @param limit  Soft cap on returned stories. Hard cap is 200.
  */
 export async function getRecentStories(
 	userId: string,
-	limit: number = 10
+	limit: number = 10,
 ): Promise<StoriesResponse> {
 	try {
 		const accessToken = await getFacebookAccessToken(userId);
@@ -39,47 +50,44 @@ export async function getRecentStories(
 			throw new Error(`No access token found for user ${userId}`);
 		}
 
-		// Get the Instagram Business Account ID from linked accounts
 		const { getLinkedFacebookAccount } = await import('@/lib/database/linked-accounts');
 		const linkedAccount = await getLinkedFacebookAccount(userId);
-
 		if (!linkedAccount?.ig_user_id) {
 			throw new Error('No Instagram account linked');
 		}
 
-		const igUserId = linkedAccount.ig_user_id;
+		const targetCount = Math.min(Math.max(1, limit), HARD_CAP);
+		const collected: Record<string, unknown>[] = [];
+		const fields = 'id,media_type,media_url,thumbnail_url,permalink,caption,timestamp';
+		let nextUrl: string | null =
+			`${GRAPH_API_BASE}/${linkedAccount.ig_user_id}/stories` +
+			`?fields=${encodeURIComponent(fields)}` +
+			`&limit=${Math.min(targetCount, PAGE_SIZE)}` +
+			`&access_token=${encodeURIComponent(accessToken)}`;
 
-		// BMS-144: Use /stories endpoint (returns only active stories, no client-side filter needed)
-		const url = `${GRAPH_API_BASE}/${igUserId}/stories`;
-		const response = await axios.get(url, {
-			params: {
-				fields: 'id,media_type,media_url,thumbnail_url,permalink,caption,timestamp',
-				limit: Math.min(limit, 25), // Instagram API limit
-				access_token: accessToken,
-			},
-		});
+		for (let page = 0; page < MAX_PAGES && nextUrl && collected.length < targetCount; page++) {
+			const { data: pageData }: { data: StoriesPage } = await axios.get(nextUrl);
+			collected.push(...(pageData.data ?? []));
+			nextUrl = pageData.paging?.next ?? null;
+		}
 
-		const allMedia = response.data.data || [];
+		const recentStories = collected.slice(0, targetCount).map((media) => ({
+			id: media.id as string,
+			media_type: media.media_type as 'IMAGE' | 'VIDEO',
+			media_url: media.media_url as string,
+			thumbnail_url: media.thumbnail_url as string | undefined,
+			permalink: media.permalink as string | undefined,
+			caption: media.caption as string | undefined,
+			timestamp: media.timestamp as string,
+			username: linkedAccount.ig_username,
+		}));
 
-		// Stories endpoint already returns only active stories (no 24h client-side filter needed)
-		const recentStories = allMedia
-			.map((media: Record<string, unknown>) => ({
-				id: media.id as string,
-				media_type: media.media_type as 'IMAGE' | 'VIDEO',
-				media_url: media.media_url as string,
-				thumbnail_url: media.thumbnail_url as string | undefined,
-				permalink: media.permalink as string | undefined,
-				caption: media.caption as string | undefined,
-				timestamp: media.timestamp as string,
-				username: linkedAccount.ig_username,
-			}));
+		await Logger.info(
+			MODULE,
+			`Fetched ${recentStories.length} stories for user ${userId} (target ${targetCount})`,
+		);
 
-		await Logger.info(MODULE, `Fetched ${recentStories.length} recent stories for user ${userId}`);
-
-		return {
-			stories: recentStories,
-			count: recentStories.length,
-		};
+		return { stories: recentStories, count: recentStories.length };
 	} catch (error: unknown) {
 		let errorMessage = 'Failed to fetch recent stories';
 		if (axios.isAxiosError(error)) {

@@ -1,6 +1,6 @@
 /**
  * Integration tests for cron service (BMS-148)
- * Tests processScheduledPosts and forceProcessPost with vi.mock (no real DB/API).
+ * Tests runCronBatch and forceProcessPost with vi.mock (no real DB/API).
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -112,7 +112,7 @@ vi.mock('@/lib/database/linked-accounts', () => ({
 	}),
 }));
 
-import { processScheduledPosts, forceProcessPost } from '@/lib/scheduler/process-service';
+import { runCronBatch, forceProcessPost } from '@/lib/scheduler/process-service';
 import { publishMedia } from '@/lib/instagram';
 import { processAndUploadStoryImage } from '@/lib/media/story-processor';
 import {
@@ -151,14 +151,14 @@ function makeItem(overrides: Partial<ContentItem> = {}): ContentItem {
 
 // ── Tests ──────────────────────────────────────────────────────────────
 
-describe('processScheduledPosts (mocked)', () => {
+describe('runCronBatch (mocked)', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 
 		// Defaults that most tests need
 		vi.mocked(acquireContentProcessingLock).mockResolvedValue(true);
 		vi.mocked(releaseContentProcessingLock).mockResolvedValue(true);
-		vi.mocked(markContentPublished).mockResolvedValue(true);
+		vi.mocked(markContentPublished).mockResolvedValue(undefined);
 		vi.mocked(markContentFailed).mockResolvedValue(true);
 		vi.mocked(markContentCancelled).mockResolvedValue(true);
 		vi.mocked(generateContentHash).mockResolvedValue('hash-abc123');
@@ -190,7 +190,7 @@ describe('processScheduledPosts (mocked)', () => {
 	it('should return empty result when no pending items', async () => {
 		vi.mocked(getPendingContentItems).mockResolvedValue([]);
 
-		const result = await processScheduledPosts();
+		const result = await runCronBatch();
 		expect(result.processed).toBe(0);
 		expect(result.succeeded).toBe(0);
 		expect(result.results).toHaveLength(0);
@@ -200,7 +200,7 @@ describe('processScheduledPosts (mocked)', () => {
 		const item = makeItem();
 		vi.mocked(getPendingContentItems).mockResolvedValue([item]);
 
-		const result = await processScheduledPosts();
+		const result = await runCronBatch();
 
 		expect(result.processed).toBe(1);
 		expect(result.succeeded).toBe(1);
@@ -213,7 +213,7 @@ describe('processScheduledPosts (mocked)', () => {
 		const item = makeItem({ mediaType: 'IMAGE' });
 		vi.mocked(getPendingContentItems).mockResolvedValue([item]);
 
-		await processScheduledPosts();
+		await runCronBatch();
 
 		expect(processAndUploadStoryImage).toHaveBeenCalledWith(item.mediaUrl, item.id);
 		// publishMedia should receive the processed URL
@@ -232,7 +232,7 @@ describe('processScheduledPosts (mocked)', () => {
 		vi.mocked(getPendingContentItems).mockResolvedValue([item]);
 		vi.mocked(processAndUploadStoryImage).mockRejectedValue(new Error('Sharp not available'));
 
-		const result = await processScheduledPosts();
+		const result = await runCronBatch();
 
 		expect(result.succeeded).toBe(1);
 		// Falls back to original mediaUrl
@@ -253,7 +253,7 @@ describe('processScheduledPosts (mocked)', () => {
 		];
 		vi.mocked(getPendingContentItems).mockResolvedValue(items);
 
-		const result = await processScheduledPosts();
+		const result = await runCronBatch();
 
 		expect(result.processed).toBe(2);
 		expect(result.succeeded).toBe(2);
@@ -265,7 +265,7 @@ describe('processScheduledPosts (mocked)', () => {
 		vi.mocked(getPendingContentItems).mockResolvedValue([item]);
 		vi.mocked(acquireContentProcessingLock).mockResolvedValue(false);
 
-		const result = await processScheduledPosts();
+		const result = await runCronBatch();
 
 		// Post is skipped (not in results)
 		expect(result.processed).toBe(0);
@@ -277,7 +277,7 @@ describe('processScheduledPosts (mocked)', () => {
 		vi.mocked(getPendingContentItems).mockResolvedValue([item]);
 		vi.mocked(publishMedia).mockRejectedValue(new Error('Token expired'));
 
-		const result = await processScheduledPosts();
+		const result = await runCronBatch();
 
 		expect(result.failed).toBe(1);
 		expect(result.results[0].error).toBe('Token expired');
@@ -294,7 +294,7 @@ describe('processScheduledPosts (mocked)', () => {
 		vi.mocked(getPendingContentItems).mockResolvedValue([item]);
 		vi.mocked(publishMedia).mockRejectedValue(new Error('Still broken'));
 
-		const result = await processScheduledPosts();
+		const result = await runCronBatch();
 
 		expect(result.failed).toBe(1);
 		expect(markContentFailed).toHaveBeenCalledWith(
@@ -312,7 +312,7 @@ describe('processScheduledPosts (mocked)', () => {
 			existingPostId: 'old-post-99',
 		});
 
-		const result = await processScheduledPosts();
+		const result = await runCronBatch();
 
 		expect(result.processed).toBe(0); // cancelled posts are not in results
 		expect(markContentCancelled).toHaveBeenCalledWith(
@@ -322,22 +322,12 @@ describe('processScheduledPosts (mocked)', () => {
 		expect(publishMedia).not.toHaveBeenCalled();
 	});
 
-	it('should bypass duplicate check when flag is set', async () => {
-		const item = makeItem();
-		vi.mocked(getPendingContentItems).mockResolvedValue([item]);
-
-		const result = await processScheduledPosts(undefined, true);
-
-		expect(result.succeeded).toBe(1);
-		expect(checkForRecentPublish).not.toHaveBeenCalled();
-	});
-
 	it('should proceed when content hash generation fails', async () => {
 		const item = makeItem({ contentHash: undefined });
 		vi.mocked(getPendingContentItems).mockResolvedValue([item]);
 		vi.mocked(generateContentHash).mockRejectedValue(new Error('Network error'));
 
-		const result = await processScheduledPosts();
+		const result = await runCronBatch();
 
 		expect(result.succeeded).toBe(1);
 		// Still publishes - hash failure is non-fatal
@@ -357,7 +347,7 @@ describe('processScheduledPosts (mocked)', () => {
 		});
 		vi.mocked(getPendingContentItems).mockResolvedValue([]);
 
-		await processScheduledPosts();
+		await runCronBatch();
 
 		expect(getPendingContentItems).toHaveBeenCalledWith(5);
 	});
@@ -376,7 +366,7 @@ describe('processScheduledPosts (mocked)', () => {
 			igUserId: 'ig-123',
 		});
 
-		const result = await processScheduledPosts();
+		const result = await runCronBatch();
 
 		expect(result.processed).toBe(0);
 		expect(result.message).toContain('Quota exhausted');
@@ -401,21 +391,12 @@ describe('processScheduledPosts (mocked)', () => {
 			igUserId: 'ig-123',
 		});
 
-		const result = await processScheduledPosts();
+		const result = await runCronBatch();
 
 		// Only 1 post should be processed (capped by quota)
 		expect(result.processed).toBe(1);
 		expect(result.succeeded).toBe(1);
 		expect(publishMedia).toHaveBeenCalledTimes(1);
-	});
-
-	it('should not quota-check when processing specific postId', async () => {
-		const item = makeItem({ id: 'specific-post' });
-		vi.mocked(getContentItemForProcessing).mockResolvedValue(item);
-
-		await processScheduledPosts('specific-post');
-
-		expect(checkPublishingQuota).not.toHaveBeenCalled();
 	});
 
 	it('should not quota-check when quotaCheckEnabled is false', async () => {
@@ -427,7 +408,7 @@ describe('processScheduledPosts (mocked)', () => {
 		});
 		vi.mocked(getPendingContentItems).mockResolvedValue([makeItem()]);
 
-		await processScheduledPosts();
+		await runCronBatch();
 
 		expect(checkPublishingQuota).not.toHaveBeenCalled();
 	});
@@ -435,7 +416,7 @@ describe('processScheduledPosts (mocked)', () => {
 	it('should record quota snapshots for cron runs', async () => {
 		vi.mocked(getPendingContentItems).mockResolvedValue([makeItem()]);
 
-		await processScheduledPosts();
+		await runCronBatch();
 
 		// Should record start and end snapshots
 		expect(recordQuotaSnapshot).toHaveBeenCalledTimes(2);
@@ -454,43 +435,12 @@ describe('processScheduledPosts (mocked)', () => {
 		vi.mocked(expireOverdueContent).mockResolvedValue(5);
 		vi.mocked(getPendingContentItems).mockResolvedValue([]);
 
-		await processScheduledPosts();
+		await runCronBatch();
 
 		expect(recoverStaleLocks).toHaveBeenCalledTimes(1);
 		expect(expireOverdueContent).toHaveBeenCalledTimes(1);
 	});
 
-	it('should not run maintenance when processing specific postId', async () => {
-		const item = makeItem({ id: 'specific-1' });
-		vi.mocked(getContentItemForProcessing).mockResolvedValue(item);
-
-		await processScheduledPosts('specific-1');
-
-		expect(recoverStaleLocks).not.toHaveBeenCalled();
-		expect(expireOverdueContent).not.toHaveBeenCalled();
-	});
-
-	// ── Specific post processing (with postId) ──
-
-	it('should process a specific post by ID', async () => {
-		const item = makeItem({ id: 'specific-1' });
-		vi.mocked(getContentItemForProcessing).mockResolvedValue(item);
-
-		const result = await processScheduledPosts('specific-1');
-
-		expect(result.processed).toBe(1);
-		expect(result.succeeded).toBe(1);
-		expect(getPendingContentItems).not.toHaveBeenCalled(); // Bypasses batch query
-	});
-
-	it('should return empty result when specific post not found', async () => {
-		vi.mocked(getContentItemForProcessing).mockResolvedValue(null);
-
-		const result = await processScheduledPosts('missing-id');
-
-		expect(result.processed).toBe(0);
-		expect(result.message).toContain('not found');
-	});
 });
 
 describe('forceProcessPost (mocked)', () => {
@@ -499,7 +449,7 @@ describe('forceProcessPost (mocked)', () => {
 
 		vi.mocked(acquireContentProcessingLock).mockResolvedValue(true);
 		vi.mocked(releaseContentProcessingLock).mockResolvedValue(true);
-		vi.mocked(markContentPublished).mockResolvedValue(true);
+		vi.mocked(markContentPublished).mockResolvedValue(undefined);
 		vi.mocked(markContentFailed).mockResolvedValue(true);
 		vi.mocked(markContentCancelled).mockResolvedValue(true);
 		vi.mocked(generateContentHash).mockResolvedValue('hash-xyz');
@@ -571,7 +521,7 @@ describe('forceProcessPost (mocked)', () => {
 		expect(result.error).toBe('DB down');
 	});
 
-	it('should pass bypassDuplicates flag through to processScheduledPosts', async () => {
+	it('passes bypassDuplicates through to publishContentItem', async () => {
 		const item = makeItem({ id: 'dup-1', publishingStatus: 'scheduled' });
 		vi.mocked(getContentItemForProcessing).mockResolvedValue(item);
 

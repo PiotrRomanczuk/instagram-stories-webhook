@@ -19,7 +19,9 @@ export async function GET(req: NextRequest) {
 
         if (!session?.user?.id) {
             await Logger.warn(MODULE, "⚠️ No session found in link-facebook initiation, redirecting to signin");
-            const signinUrl = new URL("/auth/signin", req.url);
+            const baseUrl =
+                process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || req.url;
+            const signinUrl = new URL("/auth/signin", baseUrl);
             return NextResponse.redirect(signinUrl.toString());
         }
 
@@ -35,8 +37,6 @@ export async function GET(req: NextRequest) {
             "instagram_content_publish",
             "instagram_manage_insights",
             "instagram_manage_messages",
-            "instagram_manage_comments",
-            "instagram_manage_contents",
             "pages_read_engagement",
             "pages_show_list",
             "public_profile",

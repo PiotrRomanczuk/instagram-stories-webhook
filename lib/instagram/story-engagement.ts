@@ -17,41 +17,33 @@ export interface EngagementResult {
 }
 
 /**
- * Computes a composite engagement score from raw metrics.
+ * Composite "most viewable / insightful" score for a story.
  *
- * Note: Meta retired taps_forward / taps_back / exits in Graph API v22+.
- * Score now uses the supported metric set, with legacy fields still
- * contributing if present in older rows.
+ * Views (stored under `impressions` for legacy-schema compatibility) are the
+ * base unit. Engagement signals can lift a story but rarely overpower a clear
+ * viewability winner. `reach`, `navigation`, and `total_interactions` are
+ * intentionally excluded to avoid double-counting `views` and `replies + shares`.
  *
  * Weights:
- * - impressions: 1.0      (base visibility)
- * - reach: 1.5            (unique viewers)
- * - replies: 5.0          (deep engagement signal)
- * - shares: 4.0           (high-value virality signal)
- * - totalInteractions: 2.0 (catches taps/swipes Meta no longer breaks down)
- * - tapsBack (legacy): 0.5
- * - tapsForward (legacy): -0.3
- * - exits (legacy): -2.0
+ * - views (impressions): 1.0     (raw viewability)
+ * - replies:            10.0     (rare, deep DM-style engagement)
+ * - shares:              8.0     (virality signal)
+ * - profileVisits:       5.0     (curiosity → bio click)
+ * - follows:            50.0     (strongest signal — committed because of this story)
  */
 export function computeEngagementScore(metrics: EngagementMetrics): number {
-    const impressions = metrics.impressions ?? 0;
-    const reach = metrics.reach ?? 0;
+    const views = metrics.impressions ?? 0;
     const replies = metrics.replies ?? 0;
     const shares = metrics.shares ?? 0;
-    const totalInteractions = metrics.totalInteractions ?? 0;
-    const tapsBack = metrics.tapsBack ?? 0;
-    const tapsForward = metrics.tapsForward ?? 0;
-    const exits = metrics.exits ?? 0;
+    const profileVisits = metrics.profileVisits ?? 0;
+    const follows = metrics.follows ?? 0;
 
     return (
-        impressions * 1.0 +
-        reach * 1.5 +
-        replies * 5.0 +
-        shares * 4.0 +
-        totalInteractions * 2.0 +
-        tapsBack * 0.5 -
-        tapsForward * 0.3 -
-        exits * 2.0
+        views * 1.0 +
+        replies * 10.0 +
+        shares * 8.0 +
+        profileVisits * 5.0 +
+        follows * 50.0
     );
 }
 
@@ -112,6 +104,12 @@ export async function fetchEngagementForArchivedStories(
                             break;
                         case 'shares':
                             metrics.shares = value;
+                            break;
+                        case 'profile_visits':
+                            metrics.profileVisits = value;
+                            break;
+                        case 'follows':
+                            metrics.follows = value;
                             break;
                         // Legacy fields kept for older rows (Graph API <v22)
                         case 'taps_forward':

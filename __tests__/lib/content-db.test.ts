@@ -885,7 +885,7 @@ describe('content-db', () => {
 	describe('markContentPublished', () => {
 
 
-		it('should mark content as published with IG media ID', async () => {
+		it('resolves on a successful update', async () => {
 			const mockQuery = {
 				update: vi.fn().mockReturnThis(),
 				eq: vi.fn().mockReturnThis(),
@@ -898,8 +898,7 @@ describe('content-db', () => {
 
 			vi.mocked(supabaseAdmin.from).mockReturnValue(mockQuery as any);
 
-			const result = await markContentPublished('1', 'ig_123456');
-			expect(result).toBe(true);
+			await expect(markContentPublished('1', 'ig_123456')).resolves.toBeUndefined();
 			expect(mockQuery.update).toHaveBeenCalledWith(
 				expect.objectContaining({
 					publishing_status: 'published',
@@ -908,7 +907,7 @@ describe('content-db', () => {
 			);
 		});
 
-		it('should mark with content hash', async () => {
+		it('records the content hash when provided', async () => {
 			const mockQuery = {
 				update: vi.fn().mockReturnThis(),
 				eq: vi.fn().mockReturnThis(),
@@ -921,8 +920,7 @@ describe('content-db', () => {
 
 			vi.mocked(supabaseAdmin.from).mockReturnValue(mockQuery as any);
 
-			const result = await markContentPublished('1', 'ig_123', 'hash_abc');
-			expect(result).toBe(true);
+			await expect(markContentPublished('1', 'ig_123', 'hash_abc')).resolves.toBeUndefined();
 			expect(mockQuery.update).toHaveBeenCalledWith(
 				expect.objectContaining({
 					content_hash: 'hash_abc',
@@ -930,32 +928,74 @@ describe('content-db', () => {
 			);
 		});
 
-		it('should handle errors', async () => {
+		it('throws when row was not in processing state (no retry)', async () => {
 			const mockQuery = {
 				update: vi.fn().mockReturnThis(),
 				eq: vi.fn().mockReturnThis(),
 				select: vi.fn().mockReturnThis(),
 				maybeSingle: vi.fn().mockResolvedValue({
 					data: null,
-					error: new Error('Update failed'),
+					error: null,
 				}),
 			};
 
 			vi.mocked(supabaseAdmin.from).mockReturnValue(mockQuery as any);
 
-			const result = await markContentPublished('1', 'ig_123');
-			expect(result).toBe(false);
+			await expect(markContentPublished('1', 'ig_123')).rejects.toThrow(
+				/was not in processing state/i,
+			);
+			// Fast-fail: no retries on stale-status.
+			expect(mockQuery.update).toHaveBeenCalledTimes(1);
 		});
 
-		it('should handle exceptions', async () => {
-			const mockQuery = {
-				update: vi.fn().mockRejectedValue(new Error('Network error')),
-			};
+		it('throws CRITICAL after exhausting retries on DB errors', async () => {
+			vi.useFakeTimers();
+			try {
+				const mockQuery = {
+					update: vi.fn().mockReturnThis(),
+					eq: vi.fn().mockReturnThis(),
+					select: vi.fn().mockReturnThis(),
+					maybeSingle: vi.fn().mockResolvedValue({
+						data: null,
+						error: new Error('Update failed'),
+					}),
+				};
 
-			vi.mocked(supabaseAdmin.from).mockReturnValue(mockQuery as any);
+				vi.mocked(supabaseAdmin.from).mockReturnValue(mockQuery as any);
 
-			const result = await markContentPublished('1', 'ig_123');
-			expect(result).toBe(false);
+				// Attach the rejection handler BEFORE draining timers so the
+				// rejection isn't seen as unhandled while we await fake-timers.
+				const settled = markContentPublished('1', 'ig_123').catch((e) => e);
+				await vi.runAllTimersAsync();
+				const error = await settled;
+
+				expect(error).toBeInstanceOf(Error);
+				expect((error as Error).message).toMatch(/CRITICAL.*manual reconciliation/i);
+				expect(mockQuery.update).toHaveBeenCalledTimes(3);
+			} finally {
+				vi.useRealTimers();
+			}
+		});
+
+		it('throws CRITICAL after exhausting retries on thrown exceptions', async () => {
+			vi.useFakeTimers();
+			try {
+				const mockQuery = {
+					update: vi.fn().mockRejectedValue(new Error('Network error')),
+				};
+
+				vi.mocked(supabaseAdmin.from).mockReturnValue(mockQuery as any);
+
+				const settled = markContentPublished('1', 'ig_123').catch((e) => e);
+				await vi.runAllTimersAsync();
+				const error = await settled;
+
+				expect(error).toBeInstanceOf(Error);
+				expect((error as Error).message).toMatch(/CRITICAL.*manual reconciliation/i);
+				expect(mockQuery.update).toHaveBeenCalledTimes(3);
+			} finally {
+				vi.useRealTimers();
+			}
 		});
 	});
 

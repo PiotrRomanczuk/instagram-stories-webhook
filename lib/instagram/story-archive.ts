@@ -26,8 +26,17 @@ export interface ArchiveResult {
 /**
  * Fetches all active stories for a user and archives new ones to local storage.
  * Stories are deduplicated by ig_media_id to prevent re-downloads.
+ *
+ * @param userId App user id
+ * @param limit  Max stories to fetch from IG. The default (25) is fine for the
+ *               periodic cron, but on-demand archiving (e.g. before composing
+ *               from a live picker) needs to cover every story the user might
+ *               pick — pass a higher value such as 200.
  */
-export async function fetchAndArchiveStories(userId: string): Promise<ArchiveResult> {
+export async function fetchAndArchiveStories(
+    userId: string,
+    limit: number = 25,
+): Promise<ArchiveResult> {
     const result: ArchiveResult = {
         userId,
         totalFetched: 0,
@@ -47,7 +56,7 @@ export async function fetchAndArchiveStories(userId: string): Promise<ArchiveRes
         }
 
         // Fetch active stories from Instagram API
-        const { stories } = await getRecentStories(userId, 25);
+        const { stories } = await getRecentStories(userId, limit);
         result.totalFetched = stories.length;
 
         if (stories.length === 0) {

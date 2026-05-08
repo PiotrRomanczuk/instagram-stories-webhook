@@ -1,27 +1,21 @@
-import { publishMedia } from '@/lib/instagram';
-import { processAndUploadStoryImage } from '@/lib/media/story-processor';
-import { processAndUploadStoryVideo } from '@/lib/media/video-processor';
 import { Logger } from '@/lib/utils/logger';
 import { isPublishingEnabled } from '@/lib/scheduler/publishing-toggle';
-import { getFacebookAccessToken } from '@/lib/database/linked-accounts';
-import {
-	generateContentHash,
-	checkForRecentPublish,
-} from '@/lib/utils/duplicate-detection';
 // TODO: Re-enable when AI analysis is set up
 // import { saveMemeForAnalysis } from '@/lib/ai-analysis/meme-archiver';
 import {
 	ProcessResult,
 	BatchResult,
 	ContentItem,
+	QuotaInfo,
 } from '@/lib/types';
 import { fetchUpcomingPosts } from '@/lib/content-db/queries';
-import {
-	MAX_RETRY_COUNT,
-	RETRY_BACKOFF_MS,
-	supabaseContentLifecycle,
-} from '@/lib/content-db/processing';
+import { supabaseContentLifecycle } from '@/lib/content-db/processing';
 import type { ContentLifecycle } from '@/lib/scheduler/content-lifecycle';
+import {
+	publishContentItem,
+	type ProcessOutcome,
+	type PublishContentItemOptions,
+} from '@/lib/scheduler/publish-content-item';
 import { parseCronConfig } from '@/lib/validations/cron.schema';
 import { checkPublishingQuota } from '@/lib/scheduler/quota-gate';
 import { generateCronRunId, recordQuotaSnapshot } from '@/lib/scheduler/quota-history';
@@ -31,15 +25,65 @@ import {
 	isTokenExpired,
 	isTokenExpiringSoon,
 } from '@/lib/database/linked-accounts';
-import { alertPublishFailure, alertTokenExpiry, alertHighQuota } from '@/lib/utils/admin-alerts';
+import { alertTokenExpiry, alertHighQuota } from '@/lib/utils/admin-alerts';
 
 const MODULE = 'scheduler';
+
+/**
+ * Map a per-item ProcessOutcome to the legacy ProcessResult shape used by
+ * BatchResult.results. Skipped outcomes return null — the orchestrator
+ * surfaces those via the new dedicated counters (skippedLocked, etc.) and
+ * keeps `results` to published + failed items only, matching historical
+ * behavior for that field.
+ */
+function outcomeToResult(outcome: ProcessOutcome): ProcessResult | null {
+	switch (outcome.status) {
+		case 'published':
+			return {
+				id: outcome.id,
+				success: true,
+				result: { id: outcome.igMediaId },
+			};
+		case 'skipped-locked':
+		case 'skipped-duplicate':
+		case 'skipped-stale-status':
+			return null;
+		case 'failed-retryable':
+		case 'failed-terminal':
+			return {
+				id: outcome.id,
+				success: false,
+				error: outcome.error,
+			};
+	}
+}
+
+/**
+ * BatchResult with all counters zeroed — used by early returns (publishing
+ * paused, no pending posts, quota exhausted) so every caller gets the full
+ * shape regardless of whether the batch ran.
+ */
+function emptyBatchResult(message: string, quotaInfo?: QuotaInfo): BatchResult {
+	return {
+		message,
+		processed: 0,
+		succeeded: 0,
+		failed: 0,
+		failedRetryable: 0,
+		failedTerminal: 0,
+		skippedLocked: 0,
+		skippedDuplicate: 0,
+		skippedStale: 0,
+		results: [],
+		quotaInfo,
+	};
+}
 
 /**
  * Logs execution context at cron start for debugging.
  * Includes: token status, upcoming posts, and queue health.
  */
-async function logExecutionContext(cronRunId: string | undefined): Promise<void> {
+async function logExecutionContext(cronRunId: string): Promise<void> {
 	try {
 		// 1. Token Status - Fetch all linked accounts and check expiry
 		const accounts = await getAllLinkedAccounts();
@@ -93,7 +137,7 @@ async function logExecutionContext(cronRunId: string | undefined): Promise<void>
 
 		// 5. Log everything with structured details
 		await Logger.info(MODULE, '📊 Cron Execution Context', {
-			cronRunId: cronRunId || 'N/A',
+			cronRunId,
 			tokenStatus,
 			upcomingPosts: upcomingPosts
 				.filter((p: ContentItem) => p.scheduledTime !== undefined)
@@ -114,105 +158,58 @@ async function logExecutionContext(cronRunId: string | undefined): Promise<void>
 }
 
 /**
- * Core logic for processing pending scheduled posts.
- * This is shared between the API endpoint and the background cron worker.
- * If a postId is provided, it attempts to process that specific post immediately.
+ * Run one cron batch: stale-lock recovery, overdue expiry, quota gate, then
+ * iterate due items through `publishContentItem`. Returns a BatchResult with
+ * per-status counters (succeeded / failedRetryable / failedTerminal /
+ * skippedLocked / skippedDuplicate / skippedStale).
  *
- * NOTE: This now uses the unified content_items table instead of scheduled_posts.
+ * The single-item "Submit Now" path lives in `forceProcessPost`, not here.
  */
-export async function processScheduledPosts(
-	postId?: string,
-	bypassDuplicateCheck: boolean = false,
+export async function runCronBatch(
 	lifecycle: ContentLifecycle = supabaseContentLifecycle,
 ): Promise<BatchResult> {
 	const config = parseCronConfig();
-	const cronRunId = postId ? undefined : generateCronRunId();
+	const cronRunId = generateCronRunId();
 
 	await Logger.info(
 		MODULE,
-		postId
-			? `🚀 Attempting to post ${postId} immediately...${bypassDuplicateCheck ? ' (Bypassing duplicate check)' : ''}`
-			: `🔄 Checking for pending scheduled posts (max=${config.maxPostsPerCronRun}, delay=${config.publishDelayMs}ms)...`,
+		`🔄 Checking for pending scheduled posts (max=${config.maxPostsPerCronRun}, delay=${config.publishDelayMs}ms)...`,
 	);
 
 	try {
-		// Publishing toggle: check if publishing is enabled (cron path only)
-		if (!postId) {
-			if (!(await isPublishingEnabled())) {
-				await Logger.info(MODULE, '⏸️ Publishing is paused (toggle off). Skipping.');
-				return {
-					message: 'Publishing paused',
-					processed: 0,
-					succeeded: 0,
-					failed: 0,
-					results: [],
-				};
-			}
+		if (!(await isPublishingEnabled())) {
+			await Logger.info(MODULE, '⏸️ Publishing is paused (toggle off). Skipping.');
+			return emptyBatchResult('Publishing paused');
 		}
 
-		// Maintenance: recover stale locks and expire overdue posts (cron path only)
-		if (!postId) {
-			const recoveredLocks = await lifecycle.recoverStaleLocks();
-			if (recoveredLocks > 0) {
-				await Logger.info(
-					MODULE,
-					`🔓 Recovered ${recoveredLocks} stale processing lock(s)`,
-				);
-			}
-
-			const expiredCount = await lifecycle.expireOverdueContent();
-			if (expiredCount > 0) {
-				await Logger.info(
-					MODULE,
-					`⏰ Expired ${expiredCount} overdue post(s) (>24h past scheduled time)`,
-				);
-			}
-
-			// Log execution context for debugging (cron path only)
-			await logExecutionContext(cronRunId);
+		// Maintenance: recover stale locks and expire overdue posts
+		const recoveredLocks = await lifecycle.recoverStaleLocks();
+		if (recoveredLocks > 0) {
+			await Logger.info(MODULE, `🔓 Recovered ${recoveredLocks} stale processing lock(s)`);
 		}
 
-		let pendingItems: ContentItem[] = [];
-
-		if (postId) {
-			// Fetch specific post regardless of scheduled time
-			const item = await lifecycle.getItemForProcessing(postId);
-
-			if (!item) {
-				await Logger.warn(
-					MODULE,
-					`⚠️ Post ${postId} not found or not in scheduled status`,
-				);
-				return {
-					message: 'Post not found or not scheduled',
-					processed: 0,
-					succeeded: 0,
-					failed: 0,
-					results: [],
-				};
-			}
-			pendingItems = [item];
-		} else {
-			// Standard cron-style processing of due posts from content_items
-			pendingItems = await lifecycle.getPendingItems(config.maxPostsPerCronRun);
+		const expiredCount = await lifecycle.expireOverdueContent();
+		if (expiredCount > 0) {
+			await Logger.info(
+				MODULE,
+				`⏰ Expired ${expiredCount} overdue post(s) (>24h past scheduled time)`,
+			);
 		}
+
+		await logExecutionContext(cronRunId);
+
+		let pendingItems = await lifecycle.getPendingItems(config.maxPostsPerCronRun);
 
 		if (pendingItems.length === 0) {
 			await Logger.info(MODULE, '✅ No pending posts to publish');
-			return {
-				message: 'No pending posts',
-				processed: 0,
-				succeeded: 0,
-				failed: 0,
-				results: [],
-			};
+			return emptyBatchResult('No pending posts');
 		}
 
-		// Quota gate: only for cron path (not specific postId)
-		let quotaInfo: BatchResult['quotaInfo'] | undefined;
+		// Quota gate
+		let quotaInfo: QuotaInfo | undefined;
 		let postsSkippedQuota = 0;
 
-		if (!postId && config.quotaCheckEnabled) {
+		if (config.quotaCheckEnabled) {
 			const quotaResult = await checkPublishingQuota(pendingItems, config.quotaSafetyMargin);
 			quotaInfo = {
 				quotaTotal: quotaResult.quotaTotal,
@@ -220,7 +217,6 @@ export async function processScheduledPosts(
 				quotaRemaining: quotaResult.quotaRemaining,
 			};
 
-			// Alert admins if quota usage is at or above 80%
 			if (quotaResult.quotaTotal > 0) {
 				const usagePct = Math.round((quotaResult.quotaUsage / quotaResult.quotaTotal) * 100);
 				if (usagePct >= 80) {
@@ -228,24 +224,21 @@ export async function processScheduledPosts(
 				}
 			}
 
-			// Record start snapshot
-			if (cronRunId) {
-				await recordQuotaSnapshot({
-					userId: quotaResult.userId,
-					igUserId: quotaResult.igUserId,
-					quotaTotal: quotaResult.quotaTotal,
-					quotaUsage: quotaResult.quotaUsage,
-					quotaDuration: null,
-					cronRunId,
-					snapshotType: 'cron_start',
-					postsAttempted: pendingItems.length,
-					postsSucceeded: 0,
-					postsFailed: 0,
-					postsSkippedQuota: 0,
-					maxPostsConfig: config.maxPostsPerCronRun,
-					errorMessage: null,
-				});
-			}
+			await recordQuotaSnapshot({
+				userId: quotaResult.userId,
+				igUserId: quotaResult.igUserId,
+				quotaTotal: quotaResult.quotaTotal,
+				quotaUsage: quotaResult.quotaUsage,
+				quotaDuration: null,
+				cronRunId,
+				snapshotType: 'cron_start',
+				postsAttempted: pendingItems.length,
+				postsSucceeded: 0,
+				postsFailed: 0,
+				postsSkippedQuota: 0,
+				maxPostsConfig: config.maxPostsPerCronRun,
+				errorMessage: null,
+			});
 
 			if (!quotaResult.allowed) {
 				await Logger.warn(
@@ -253,35 +246,28 @@ export async function processScheduledPosts(
 					`⚠️ Quota exhausted (${quotaResult.quotaUsage}/${quotaResult.quotaTotal}), skipping all ${pendingItems.length} posts`,
 				);
 
-				if (cronRunId) {
-					await recordQuotaSnapshot({
-						userId: quotaResult.userId,
-						igUserId: quotaResult.igUserId,
-						quotaTotal: quotaResult.quotaTotal,
-						quotaUsage: quotaResult.quotaUsage,
-						quotaDuration: null,
-						cronRunId,
-						snapshotType: 'cron_end',
-						postsAttempted: 0,
-						postsSucceeded: 0,
-						postsFailed: 0,
-						postsSkippedQuota: pendingItems.length,
-						maxPostsConfig: config.maxPostsPerCronRun,
-						errorMessage: 'Quota exhausted',
-					});
-				}
+				await recordQuotaSnapshot({
+					userId: quotaResult.userId,
+					igUserId: quotaResult.igUserId,
+					quotaTotal: quotaResult.quotaTotal,
+					quotaUsage: quotaResult.quotaUsage,
+					quotaDuration: null,
+					cronRunId,
+					snapshotType: 'cron_end',
+					postsAttempted: 0,
+					postsSucceeded: 0,
+					postsFailed: 0,
+					postsSkippedQuota: pendingItems.length,
+					maxPostsConfig: config.maxPostsPerCronRun,
+					errorMessage: 'Quota exhausted',
+				});
 
-				return {
-					message: `Quota exhausted (${quotaResult.quotaUsage}/${quotaResult.quotaTotal})`,
-					processed: 0,
-					succeeded: 0,
-					failed: 0,
-					results: [],
+				return emptyBatchResult(
+					`Quota exhausted (${quotaResult.quotaUsage}/${quotaResult.quotaTotal})`,
 					quotaInfo,
-				};
+				);
 			}
 
-			// Cap batch to remaining quota
 			if (pendingItems.length > quotaResult.quotaRemaining) {
 				postsSkippedQuota = pendingItems.length - quotaResult.quotaRemaining;
 				await Logger.info(
@@ -292,245 +278,66 @@ export async function processScheduledPosts(
 			}
 		}
 
-		// Only log future count if we are doing a broad sweep
-		if (!postId) {
-			const oneDayFromNow = Date.now() + 24 * 60 * 60 * 1000;
-			const futureCount = await lifecycle.countUpcomingItems(oneDayFromNow);
-			await Logger.info(
-				MODULE,
-				`📋 Found ${pendingItems.length} due post(s) to publish (plus ${futureCount} scheduled in next 24h)`,
-			);
-		} else {
-			await Logger.info(MODULE, `📋 Processing specific post: ${postId}`);
-		}
+		const oneDayFromNow = Date.now() + 24 * 60 * 60 * 1000;
+		const futureCount = await lifecycle.countUpcomingItems(oneDayFromNow);
+		await Logger.info(
+			MODULE,
+			`📋 Found ${pendingItems.length} due post(s) to publish (plus ${futureCount} scheduled in next 24h)`,
+		);
 
 		const results: ProcessResult[] = [];
+		let skippedLocked = 0;
+		let skippedDuplicate = 0;
+		let skippedStale = 0;
+		let failedRetryable = 0;
+		let failedTerminal = 0;
 
 		for (let i = 0; i < pendingItems.length; i++) {
 			const item = pendingItems[i];
-			try {
-				// 1. Acquire processing lock to prevent race conditions
-				const lockAcquired = await lifecycle.acquireLock(item.id);
-				if (!lockAcquired) {
-					await Logger.info(
-						MODULE,
-						`⏳ Post ${item.id} is already being processed or locked, skipping`,
-					);
-					continue;
-				}
+			const outcome = await publishContentItem(item, lifecycle);
 
-				await Logger.info(MODULE, `🔒 Acquired lock for post ${item.id}`);
+			switch (outcome.status) {
+				case 'skipped-locked':
+					skippedLocked++;
+					break;
+				case 'skipped-duplicate':
+					skippedDuplicate++;
+					break;
+				case 'skipped-stale-status':
+					skippedStale++;
+					break;
+				case 'failed-retryable':
+					failedRetryable++;
+					break;
+				case 'failed-terminal':
+					failedTerminal++;
+					break;
+				case 'published':
+					break;
+			}
 
-				// 2. Generate content hash if not already present
-				let contentHash = item.contentHash;
-				if (!contentHash) {
-					try {
-						contentHash = await generateContentHash(item.mediaUrl);
-						await Logger.info(
-							MODULE,
-							`Generated content hash for post ${item.id}: ${contentHash.substring(0, 16)}...`,
-						);
-					} catch (hashError) {
-						await Logger.warn(
-							MODULE,
-							`Failed to generate content hash for post ${item.id}, proceeding without duplicate check`,
-							hashError,
-						);
-					}
-				}
+			const mapped = outcomeToResult(outcome);
+			if (mapped) {
+				results.push(mapped);
+			}
 
-				// 3. Check for duplicates if we have a content hash (and we're not bypassing it)
-				if (contentHash && !bypassDuplicateCheck) {
-					const duplicateCheck = await checkForRecentPublish(
-						contentHash,
-						item.userId,
-						24,
-					);
-					if (duplicateCheck.isDuplicate) {
-						await Logger.warn(
-							MODULE,
-							`⚠️ Duplicate content detected for post ${item.id}! Same content was published as ${duplicateCheck.existingPostId}`,
-						);
-
-						// Mark as cancelled instead of publishing
-						await lifecycle.markCancelled(
-							item.id,
-							`Duplicate content detected. Already published as post ${duplicateCheck.existingPostId}`,
-						);
-
-						continue;
-					}
-				} else if (bypassDuplicateCheck) {
-					await Logger.info(
-						MODULE,
-						`⏩ Bypassing duplicate check for post ${item.id}`,
-					);
-				}
-
-				await Logger.info(
-					MODULE,
-					`📤 Publishing scheduled post ${item.id} for user ${item.userId}...`,
-				);
-
-				// 4. Process media for story format if needed
-				let publishUrl = item.mediaUrl;
-				const postType = 'STORY'; // content_items are always stories for now
-				if (item.mediaType === 'IMAGE') {
-					try {
-						await Logger.info(MODULE, `Processing image for story format...`, { postId: item.id });
-						publishUrl = await processAndUploadStoryImage(item.mediaUrl, item.id);
-						await Logger.info(MODULE, `Image processed successfully`, { postId: item.id });
-					} catch (processError) {
-						await Logger.warn(MODULE, `Image processing failed, using original: ${processError}`, { postId: item.id });
-						// Fall back to original URL if processing fails
-					}
-				} else if (item.mediaType === 'VIDEO') {
-					// INS-58: Check if video is already processed for Instagram Stories
-					if (item.storyReady) {
-						await Logger.info(MODULE, `✅ Video ${item.id} already processed and ready for Stories (story_ready=true), skipping redundant processing`, {
-							postId: item.id,
-							mediaUrl: item.mediaUrl,
-							processingBackend: item.processingBackend || 'unknown',
-							processingApplied: item.processingApplied || []
-						});
-						// Video is already processed, use existing URL directly
-						publishUrl = item.mediaUrl;
-					} else {
-						try {
-							await Logger.info(MODULE, `Processing video for story format (story_ready=false)...`, { postId: item.id });
-							publishUrl = await processAndUploadStoryVideo(item.mediaUrl, item.id);
-							await Logger.info(MODULE, `Video processed successfully`, { postId: item.id });
-							await lifecycle.markStoryProcessingComplete(item.id);
-						} catch (processError) {
-							await Logger.warn(MODULE, `Video processing failed, using original: ${processError}`, { postId: item.id });
-							await lifecycle.markStoryProcessingFailed(
-								item.id,
-								processError instanceof Error ? processError.message : 'Unknown error',
-							);
-							// Fall back to original URL if processing fails
-						}
-					}
-				}
-
-				// 5. Resolve which user's Instagram tokens to use for publishing.
-				// For submissions: the submitter may not have a linked IG account,
-				// so fall back to the admin who reviewed/approved the content.
-				let publishUserId = item.userId;
-				if (item.source === 'submission' && item.reviewedBy) {
-					const submitterToken = await getFacebookAccessToken(item.userId);
-					if (!submitterToken) {
-						await Logger.info(
-							MODULE,
-							`Submitter ${item.userId} has no linked IG account, using reviewer ${item.reviewedBy} for publishing`,
-							{ postId: item.id },
-						);
-						publishUserId = item.reviewedBy;
-					}
-				}
-
-				// 6. Publish the media using the resolved user's tokens
-				const result = await publishMedia(
-					publishUrl,
-					item.mediaType,
-					postType,
-					item.caption,
-					publishUserId,
-					item.userTags,
-				);
-
-				// 7. Update status to published with content hash
-				// BMS-157: Retry DB update to handle publish success + DB failure
-				let dbUpdateSuccess = false;
-				for (let dbAttempt = 0; dbAttempt < 3; dbAttempt++) {
-					dbUpdateSuccess = await lifecycle.markPublished(item.id, result.id, contentHash || undefined);
-					if (dbUpdateSuccess) break;
-					await Logger.warn(
-						MODULE,
-						`DB update failed for published post ${item.id}, retrying (${dbAttempt + 1}/3)`,
-					);
-					await new Promise((r) => setTimeout(r, 1000 * (dbAttempt + 1)));
-				}
-
-				if (!dbUpdateSuccess) {
-					await Logger.error(
-						MODULE,
-						`CRITICAL: Post ${item.id} was published to Instagram (ig_media_id=${result.id}) but DB update failed after 3 retries. Manual intervention required.`,
-					);
-				}
-
-				await Logger.info(
-					MODULE,
-					`✅ Successfully published scheduled post ${item.id}`,
-				);
-
-				results.push({
-					id: item.id,
-					success: true,
-					result,
-				});
-
-				// 8. Inter-publish delay (skip for last item and postId path)
-				const isLastItem = i === pendingItems.length - 1;
-				if (!postId && !isLastItem && config.publishDelayMs > 0) {
-					await Logger.info(MODULE, `⏱️ Waiting ${config.publishDelayMs}ms before next publish...`);
-					await new Promise((r) => setTimeout(r, config.publishDelayMs));
-				}
-			} catch (error: unknown) {
-				const errorMessage =
-					error instanceof Error ? error.message : 'Unknown error';
-				await Logger.error(
-					MODULE,
-					`❌ Failed to publish scheduled post ${item.id}: ${errorMessage}`,
-					error,
-				);
-
-				// markContentFailed atomically transitions processing -> scheduled/failed,
-				// so we do NOT call releaseContentProcessingLock first (that would create a
-				// race window where another cron run picks up the item between the two calls).
-				const retryCount = (item.retryCount || 0) + 1;
-
-				await lifecycle.markFailed(
-					item.id,
-					retryCount >= MAX_RETRY_COUNT
-						? `${errorMessage} (after ${retryCount} attempts)`
-						: `${errorMessage} (attempt ${retryCount}/${MAX_RETRY_COUNT})`,
-					retryCount,
-				);
-
-				if (retryCount >= MAX_RETRY_COUNT) {
-					await Logger.error(
-						MODULE,
-						`Post ${item.id} permanently failed after ${retryCount} attempts`,
-					);
-					await alertPublishFailure(item.id, errorMessage, retryCount);
-				} else {
-					const backoffIndex = Math.min(retryCount - 1, RETRY_BACKOFF_MS.length - 1);
-					const backoffMs = RETRY_BACKOFF_MS[Math.max(0, backoffIndex)];
-					const backoffMin = Math.round(backoffMs / 60000);
-					await Logger.info(
-						MODULE,
-						`Post ${item.id} will be retried in ${backoffMin}min (attempt ${retryCount}/${MAX_RETRY_COUNT})`,
-					);
-				}
-
-				results.push({
-					id: item.id,
-					success: false,
-					error: errorMessage,
-				});
+			const isLastItem = i === pendingItems.length - 1;
+			if (!isLastItem && config.publishDelayMs > 0) {
+				await Logger.info(MODULE, `⏱️ Waiting ${config.publishDelayMs}ms before next publish...`);
+				await new Promise((r) => setTimeout(r, config.publishDelayMs));
 			}
 		}
 
 		const successCount = results.filter((r) => r.success).length;
-		const failCount = results.filter((r) => !r.success).length;
+		const failCount = failedRetryable + failedTerminal;
 
 		await Logger.info(
 			MODULE,
-			`📊 Processed ${results.length} post(s): ${successCount} succeeded, ${failCount} failed`,
+			`📊 Processed ${results.length} post(s): ${successCount} succeeded, ${failCount} failed (retryable=${failedRetryable}, terminal=${failedTerminal}, skipped: locked=${skippedLocked}, dup=${skippedDuplicate}, stale=${skippedStale})`,
 		);
 
 		// Record end snapshot
-		if (cronRunId && quotaInfo) {
+		if (quotaInfo) {
 			const userId = pendingItems[0]?.userId;
 			if (userId) {
 				const account = await import('@/lib/database/linked-accounts').then(
@@ -559,6 +366,11 @@ export async function processScheduledPosts(
 			processed: results.length,
 			succeeded: successCount,
 			failed: failCount,
+			failedRetryable,
+			failedTerminal,
+			skippedLocked,
+			skippedDuplicate,
+			skippedStale,
 			results,
 			quotaInfo,
 		};
@@ -568,28 +380,36 @@ export async function processScheduledPosts(
 	}
 }
 
+export interface ForceProcessOutcome {
+	success: boolean;
+	error?: string;
+	/** When set, the caller should respond with this HTTP status code. */
+	httpStatus?: number;
+	outcome?: ProcessOutcome;
+}
+
 /**
- * Force process a specific post, bypassing duplicate detection.
- * Used by the developer cron-debug interface to manually process overdue posts.
+ * Force-process a single content item — used by the developer cron-debug
+ * interface and by the user-facing "Post Immediately" action. Pre-flights
+ * the row, then delegates to `publishContentItem`.
+ *
+ * Q8 of the design grilling: when the lock is held by another worker, this
+ * fails fast with a 409-equivalent error. Waiting risks hangs in an
+ * interactive tool; breaking the lock risks double-publish.
  */
 export async function forceProcessPost(
 	postId: string,
 	bypassDuplicates: boolean,
 	lifecycle: ContentLifecycle = supabaseContentLifecycle,
-): Promise<{ success: boolean; error?: string }> {
+): Promise<ForceProcessOutcome> {
 	try {
-		// Verify post exists and is in valid status (now using content_items)
 		const item = await lifecycle.getItemForProcessing(postId);
 
 		if (!item) {
-			await Logger.warn(
-				MODULE,
-				`Post ${postId} not found for force-process`,
-			);
-			return { success: false, error: 'Post not found' };
+			await Logger.warn(MODULE, `Post ${postId} not found for force-process`);
+			return { success: false, error: 'Post not found', httpStatus: 404 };
 		}
 
-		// Check status
 		if (!['scheduled', 'processing'].includes(item.publishingStatus)) {
 			await Logger.warn(
 				MODULE,
@@ -598,30 +418,61 @@ export async function forceProcessPost(
 			return {
 				success: false,
 				error: `Post status is ${item.publishingStatus}, cannot process`,
+				httpStatus: 409,
 			};
 		}
 
-		// Process the post with bypass flag
-		const result = await processScheduledPosts(postId, bypassDuplicates, lifecycle);
+		const options: PublishContentItemOptions = { bypassDuplicateCheck: bypassDuplicates };
+		const outcome = await publishContentItem(item, lifecycle, options);
 
-		if (result.succeeded > 0) {
-			await Logger.info(
-				MODULE,
-				`✅ Force-processed post ${postId} successfully`,
-			);
-			return { success: true };
-		} else {
-			const error =
-				result.results[0]?.error || 'Processing failed for unknown reason';
-			await Logger.warn(
-				MODULE,
-				`Force-process of post ${postId} failed: ${error}`,
-			);
-			return { success: false, error };
+		switch (outcome.status) {
+			case 'published':
+				await Logger.info(MODULE, `✅ Force-processed post ${postId} successfully`);
+				return { success: true, outcome };
+
+			case 'skipped-locked':
+				await Logger.warn(
+					MODULE,
+					`Force-process of post ${postId} blocked: lock held by another worker`,
+				);
+				return {
+					success: false,
+					error:
+						'Item is being processed by another worker. Wait and retry, or wait for stale-lock recovery (~5 min).',
+					httpStatus: 409,
+					outcome,
+				};
+
+			case 'skipped-duplicate':
+				await Logger.warn(
+					MODULE,
+					`Force-process of post ${postId} skipped: duplicate of ${outcome.existingPostId}`,
+				);
+				return {
+					success: false,
+					error: `Duplicate content; already published as ${outcome.existingPostId}`,
+					httpStatus: 409,
+					outcome,
+				};
+
+			case 'skipped-stale-status':
+				return {
+					success: false,
+					error: 'Post status moved out of scheduled before publishing',
+					httpStatus: 409,
+					outcome,
+				};
+
+			case 'failed-retryable':
+			case 'failed-terminal':
+				await Logger.warn(
+					MODULE,
+					`Force-process of post ${postId} failed: ${outcome.error}`,
+				);
+				return { success: false, error: outcome.error, outcome };
 		}
 	} catch (error: unknown) {
-		const errorMessage =
-			error instanceof Error ? error.message : 'Unknown error';
+		const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 		await Logger.error(
 			MODULE,
 			`Force-process endpoint error for post ${postId}: ${errorMessage}`,

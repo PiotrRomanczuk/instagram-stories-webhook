@@ -153,7 +153,10 @@ async function waitForPublishComplete(
 
         const status = result.data?.status;
 
-        if (status === 'PUBLISH_COMPLETE') {
+        // PUBLISH_COMPLETE = direct-post finished. SEND_TO_USER_INBOX = upload
+        // succeeded into the user's TT inbox; user finalizes inside the app.
+        // Both are terminal success states.
+        if (status === 'PUBLISH_COMPLETE' || status === 'SEND_TO_USER_INBOX') {
             return {
                 publishId,
                 status: 'published',
