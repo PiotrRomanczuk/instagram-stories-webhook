@@ -63,14 +63,14 @@ export async function publishContentItem(
 		);
 		return { id, status: 'skipped-locked' };
 	}
-	await Logger.info(MODULE, `🔒 Acquired lock for post ${id}`);
+	await Logger.debug(MODULE, `🔒 Acquired lock for post ${id}`);
 
 	try {
 		let contentHash = item.contentHash;
 		if (!contentHash) {
 			try {
 				contentHash = await generateContentHash(item.mediaUrl);
-				await Logger.info(
+				await Logger.debug(
 					MODULE,
 					`Generated content hash for post ${id}: ${contentHash.substring(0, 16)}...`,
 				);
@@ -111,7 +111,7 @@ export async function publishContentItem(
 			);
 		}
 
-		await Logger.info(
+		await Logger.debug(
 			MODULE,
 			`📤 Publishing scheduled post ${id} for user ${item.userId}...`,
 		);
@@ -119,9 +119,9 @@ export async function publishContentItem(
 		let publishUrl = item.mediaUrl;
 		if (item.mediaType === 'IMAGE') {
 			try {
-				await Logger.info(MODULE, `Processing image for story format...`, { postId: id });
+				await Logger.debug(MODULE, `Processing image for story format...`, { postId: id });
 				publishUrl = await processAndUploadStoryImage(item.mediaUrl, id);
-				await Logger.info(MODULE, `Image processed successfully`, { postId: id });
+				await Logger.debug(MODULE, `Image processed successfully`, { postId: id });
 			} catch (processError) {
 				await Logger.warn(MODULE, `Image processing failed, using original: ${processError}`, { postId: id });
 			}
@@ -140,9 +140,9 @@ export async function publishContentItem(
 				publishUrl = item.mediaUrl;
 			} else {
 				try {
-					await Logger.info(MODULE, `Processing video for story format (story_ready=false)...`, { postId: id });
+					await Logger.debug(MODULE, `Processing video for story format (story_ready=false)...`, { postId: id });
 					publishUrl = await processAndUploadStoryVideo(item.mediaUrl, id);
-					await Logger.info(MODULE, `Video processed successfully`, { postId: id });
+					await Logger.debug(MODULE, `Video processed successfully`, { postId: id });
 					await lifecycle.markStoryProcessingComplete(id);
 				} catch (processError) {
 					await Logger.warn(MODULE, `Video processing failed, using original: ${processError}`, { postId: id });
