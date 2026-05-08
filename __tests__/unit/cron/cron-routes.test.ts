@@ -17,7 +17,7 @@ import { NextRequest } from 'next/server';
 // ---------------------------------------------------------------------------
 
 vi.mock('@/lib/scheduler/process-service', () => ({
-	processScheduledPosts: vi.fn(),
+	runCronBatch: vi.fn(),
 }));
 
 vi.mock('@/lib/scheduler/cron-lock', () => ({
@@ -86,7 +86,7 @@ import { GET as processVideosRoute } from '@/app/api/cron/process-videos/route';
 import { GET as cleanupOrphansRoute } from '@/app/api/cron/cleanup-orphans/route';
 import { GET as tokenRefreshRoute } from '@/app/api/schedule/refresh-token/route';
 
-import { processScheduledPosts } from '@/lib/scheduler/process-service';
+import { runCronBatch } from '@/lib/scheduler/process-service';
 import { acquireCronLock, releaseCronLock } from '@/lib/scheduler/cron-lock';
 import { runIdentityAudit } from '@/lib/scheduler/identity-service';
 import { processVideosQueue, cleanupOldProcessedVideos } from '@/lib/jobs/process-videos';
@@ -137,7 +137,7 @@ describe('GET /api/cron/process', () => {
 	beforeEach(() => {
 		vi.mocked(acquireCronLock).mockResolvedValue(true);
 		vi.mocked(releaseCronLock).mockResolvedValue(undefined);
-		vi.mocked(processScheduledPosts).mockResolvedValue({
+		vi.mocked(runCronBatch).mockResolvedValue({
 			processed: 1,
 			succeeded: 1,
 			failed: 0,
@@ -195,13 +195,13 @@ describe('GET /api/cron/process', () => {
 		expect(res.status).toBe(200);
 		const body = await res.json();
 		expect(body.skipped).toBe(true);
-		expect(processScheduledPosts).not.toHaveBeenCalled();
+		expect(runCronBatch).not.toHaveBeenCalled();
 	});
 
 	it('processes scheduled posts on success', async () => {
 		const res = await processRoute(authedRequest());
 		expect(res.status).toBe(200);
-		expect(processScheduledPosts).toHaveBeenCalledOnce();
+		expect(runCronBatch).toHaveBeenCalledOnce();
 		expect(acquireCronLock).toHaveBeenCalledOnce();
 	});
 
@@ -211,14 +211,14 @@ describe('GET /api/cron/process', () => {
 	});
 
 	it('releases cron lock even when processing throws', async () => {
-		vi.mocked(processScheduledPosts).mockRejectedValue(new Error('DB down'));
+		vi.mocked(runCronBatch).mockRejectedValue(new Error('DB down'));
 		const res = await processRoute(authedRequest());
 		expect(res.status).toBe(500);
 		expect(releaseCronLock).toHaveBeenCalledOnce();
 	});
 
-	it('returns 500 when processScheduledPosts throws', async () => {
-		vi.mocked(processScheduledPosts).mockRejectedValue(new Error('Unexpected'));
+	it('returns 500 when runCronBatch throws', async () => {
+		vi.mocked(runCronBatch).mockRejectedValue(new Error('Unexpected'));
 		const res = await processRoute(authedRequest());
 		expect(res.status).toBe(500);
 		const body = await res.json();
