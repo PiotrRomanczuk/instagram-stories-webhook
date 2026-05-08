@@ -1,13 +1,5 @@
-import { publishMedia } from '@/lib/instagram';
-import { processAndUploadStoryImage } from '@/lib/media/story-processor';
-import { processAndUploadStoryVideo } from '@/lib/media/video-processor';
 import { Logger } from '@/lib/utils/logger';
 import { isPublishingEnabled } from '@/lib/scheduler/publishing-toggle';
-import { getFacebookAccessToken } from '@/lib/database/linked-accounts';
-import {
-	generateContentHash,
-	checkForRecentPublish,
-} from '@/lib/utils/duplicate-detection';
 // TODO: Re-enable when AI analysis is set up
 // import { saveMemeForAnalysis } from '@/lib/ai-analysis/meme-archiver';
 import {
@@ -16,12 +8,12 @@ import {
 	ContentItem,
 } from '@/lib/types';
 import { fetchUpcomingPosts } from '@/lib/content-db/queries';
-import {
-	MAX_RETRY_COUNT,
-	RETRY_BACKOFF_MS,
-	supabaseContentLifecycle,
-} from '@/lib/content-db/processing';
+import { supabaseContentLifecycle } from '@/lib/content-db/processing';
 import type { ContentLifecycle } from '@/lib/scheduler/content-lifecycle';
+import {
+	publishContentItem,
+	type ProcessOutcome,
+} from '@/lib/scheduler/publish-content-item';
 import { parseCronConfig } from '@/lib/validations/cron.schema';
 import { checkPublishingQuota } from '@/lib/scheduler/quota-gate';
 import { generateCronRunId, recordQuotaSnapshot } from '@/lib/scheduler/quota-history';
@@ -31,7 +23,36 @@ import {
 	isTokenExpired,
 	isTokenExpiringSoon,
 } from '@/lib/database/linked-accounts';
-import { alertPublishFailure, alertTokenExpiry, alertHighQuota } from '@/lib/utils/admin-alerts';
+import { alertTokenExpiry, alertHighQuota } from '@/lib/utils/admin-alerts';
+
+/**
+ * Map a per-item ProcessOutcome to the legacy ProcessResult shape used by
+ * BatchResult. Locked-skips return null — the orchestrator omits them from
+ * results to preserve historical behavior. (Phase 3 will surface locked /
+ * duplicate / stale counts in BatchResult directly.)
+ */
+function outcomeToResult(outcome: ProcessOutcome): ProcessResult | null {
+	switch (outcome.status) {
+		case 'published':
+			return {
+				id: outcome.id,
+				success: true,
+				result: { id: outcome.igMediaId },
+			};
+		case 'skipped-duplicate':
+		case 'skipped-stale-status':
+			return null;
+		case 'skipped-locked':
+			return null;
+		case 'failed-retryable':
+		case 'failed-terminal':
+			return {
+				id: outcome.id,
+				success: false,
+				error: outcome.error,
+			};
+	}
+}
 
 const MODULE = 'scheduler';
 
@@ -308,210 +329,19 @@ export async function processScheduledPosts(
 
 		for (let i = 0; i < pendingItems.length; i++) {
 			const item = pendingItems[i];
-			try {
-				// 1. Acquire processing lock to prevent race conditions
-				const lockAcquired = await lifecycle.acquireLock(item.id);
-				if (!lockAcquired) {
-					await Logger.info(
-						MODULE,
-						`⏳ Post ${item.id} is already being processed or locked, skipping`,
-					);
-					continue;
-				}
+			const outcome = await publishContentItem(item, lifecycle, {
+				bypassDuplicateCheck,
+			});
+			const mapped = outcomeToResult(outcome);
+			if (mapped) {
+				results.push(mapped);
+			}
 
-				await Logger.info(MODULE, `🔒 Acquired lock for post ${item.id}`);
-
-				// 2. Generate content hash if not already present
-				let contentHash = item.contentHash;
-				if (!contentHash) {
-					try {
-						contentHash = await generateContentHash(item.mediaUrl);
-						await Logger.info(
-							MODULE,
-							`Generated content hash for post ${item.id}: ${contentHash.substring(0, 16)}...`,
-						);
-					} catch (hashError) {
-						await Logger.warn(
-							MODULE,
-							`Failed to generate content hash for post ${item.id}, proceeding without duplicate check`,
-							hashError,
-						);
-					}
-				}
-
-				// 3. Check for duplicates if we have a content hash (and we're not bypassing it)
-				if (contentHash && !bypassDuplicateCheck) {
-					const duplicateCheck = await checkForRecentPublish(
-						contentHash,
-						item.userId,
-						24,
-					);
-					if (duplicateCheck.isDuplicate) {
-						await Logger.warn(
-							MODULE,
-							`⚠️ Duplicate content detected for post ${item.id}! Same content was published as ${duplicateCheck.existingPostId}`,
-						);
-
-						// Mark as cancelled instead of publishing
-						await lifecycle.markCancelled(
-							item.id,
-							`Duplicate content detected. Already published as post ${duplicateCheck.existingPostId}`,
-						);
-
-						continue;
-					}
-				} else if (bypassDuplicateCheck) {
-					await Logger.info(
-						MODULE,
-						`⏩ Bypassing duplicate check for post ${item.id}`,
-					);
-				}
-
-				await Logger.info(
-					MODULE,
-					`📤 Publishing scheduled post ${item.id} for user ${item.userId}...`,
-				);
-
-				// 4. Process media for story format if needed
-				let publishUrl = item.mediaUrl;
-				const postType = 'STORY'; // content_items are always stories for now
-				if (item.mediaType === 'IMAGE') {
-					try {
-						await Logger.info(MODULE, `Processing image for story format...`, { postId: item.id });
-						publishUrl = await processAndUploadStoryImage(item.mediaUrl, item.id);
-						await Logger.info(MODULE, `Image processed successfully`, { postId: item.id });
-					} catch (processError) {
-						await Logger.warn(MODULE, `Image processing failed, using original: ${processError}`, { postId: item.id });
-						// Fall back to original URL if processing fails
-					}
-				} else if (item.mediaType === 'VIDEO') {
-					// INS-58: Check if video is already processed for Instagram Stories
-					if (item.storyReady) {
-						await Logger.info(MODULE, `✅ Video ${item.id} already processed and ready for Stories (story_ready=true), skipping redundant processing`, {
-							postId: item.id,
-							mediaUrl: item.mediaUrl,
-							processingBackend: item.processingBackend || 'unknown',
-							processingApplied: item.processingApplied || []
-						});
-						// Video is already processed, use existing URL directly
-						publishUrl = item.mediaUrl;
-					} else {
-						try {
-							await Logger.info(MODULE, `Processing video for story format (story_ready=false)...`, { postId: item.id });
-							publishUrl = await processAndUploadStoryVideo(item.mediaUrl, item.id);
-							await Logger.info(MODULE, `Video processed successfully`, { postId: item.id });
-							await lifecycle.markStoryProcessingComplete(item.id);
-						} catch (processError) {
-							await Logger.warn(MODULE, `Video processing failed, using original: ${processError}`, { postId: item.id });
-							await lifecycle.markStoryProcessingFailed(
-								item.id,
-								processError instanceof Error ? processError.message : 'Unknown error',
-							);
-							// Fall back to original URL if processing fails
-						}
-					}
-				}
-
-				// 5. Resolve which user's Instagram tokens to use for publishing.
-				// For submissions: the submitter may not have a linked IG account,
-				// so fall back to the admin who reviewed/approved the content.
-				let publishUserId = item.userId;
-				if (item.source === 'submission' && item.reviewedBy) {
-					const submitterToken = await getFacebookAccessToken(item.userId);
-					if (!submitterToken) {
-						await Logger.info(
-							MODULE,
-							`Submitter ${item.userId} has no linked IG account, using reviewer ${item.reviewedBy} for publishing`,
-							{ postId: item.id },
-						);
-						publishUserId = item.reviewedBy;
-					}
-				}
-
-				// 6. Publish the media using the resolved user's tokens
-				const result = await publishMedia(
-					publishUrl,
-					item.mediaType,
-					postType,
-					item.caption,
-					publishUserId,
-					item.userTags,
-				);
-
-				// 7. Reconcile DB with Instagram. The lifecycle adapter retries
-				// internally and throws on exhaustion. We catch locally because
-				// the post is live on IG by this point — we must NOT fall into
-				// the outer catch and markFailed an already-published post.
-				try {
-					await lifecycle.markPublished(item.id, result.id, contentHash || undefined);
-				} catch (markPublishedError) {
-					await Logger.error(
-						MODULE,
-						`CRITICAL: Post ${item.id} published to Instagram (ig_media_id=${result.id}) but DB reconciliation failed. Manual intervention required.`,
-						markPublishedError,
-					);
-				}
-
-				await Logger.info(
-					MODULE,
-					`✅ Successfully published scheduled post ${item.id}`,
-				);
-
-				results.push({
-					id: item.id,
-					success: true,
-					result,
-				});
-
-				// 8. Inter-publish delay (skip for last item and postId path)
-				const isLastItem = i === pendingItems.length - 1;
-				if (!postId && !isLastItem && config.publishDelayMs > 0) {
-					await Logger.info(MODULE, `⏱️ Waiting ${config.publishDelayMs}ms before next publish...`);
-					await new Promise((r) => setTimeout(r, config.publishDelayMs));
-				}
-			} catch (error: unknown) {
-				const errorMessage =
-					error instanceof Error ? error.message : 'Unknown error';
-				await Logger.error(
-					MODULE,
-					`❌ Failed to publish scheduled post ${item.id}: ${errorMessage}`,
-					error,
-				);
-
-				// markContentFailed atomically transitions processing -> scheduled/failed,
-				// so we do NOT call releaseContentProcessingLock first (that would create a
-				// race window where another cron run picks up the item between the two calls).
-				const retryCount = (item.retryCount || 0) + 1;
-
-				await lifecycle.markFailed(
-					item.id,
-					retryCount >= MAX_RETRY_COUNT
-						? `${errorMessage} (after ${retryCount} attempts)`
-						: `${errorMessage} (attempt ${retryCount}/${MAX_RETRY_COUNT})`,
-					retryCount,
-				);
-
-				if (retryCount >= MAX_RETRY_COUNT) {
-					await Logger.error(
-						MODULE,
-						`Post ${item.id} permanently failed after ${retryCount} attempts`,
-					);
-					await alertPublishFailure(item.id, errorMessage, retryCount);
-				} else {
-					const backoffIndex = Math.min(retryCount - 1, RETRY_BACKOFF_MS.length - 1);
-					const backoffMs = RETRY_BACKOFF_MS[Math.max(0, backoffIndex)];
-					const backoffMin = Math.round(backoffMs / 60000);
-					await Logger.info(
-						MODULE,
-						`Post ${item.id} will be retried in ${backoffMin}min (attempt ${retryCount}/${MAX_RETRY_COUNT})`,
-					);
-				}
-
-				results.push({
-					id: item.id,
-					success: false,
-					error: errorMessage,
-				});
+			// Inter-publish delay (skip for last item and postId path)
+			const isLastItem = i === pendingItems.length - 1;
+			if (!postId && !isLastItem && config.publishDelayMs > 0) {
+				await Logger.info(MODULE, `⏱️ Waiting ${config.publishDelayMs}ms before next publish...`);
+				await new Promise((r) => setTimeout(r, config.publishDelayMs));
 			}
 		}
 
