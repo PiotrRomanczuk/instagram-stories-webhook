@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { requireDeveloper, getUserEmail } from '@/lib/auth-helpers';
 import { Logger } from '@/lib/utils/logger';
-import { processScheduledPosts } from '@/lib/scheduler/process-service';
+import { runCronBatch } from '@/lib/scheduler/process-service';
 import { runIdentityAudit } from '@/lib/scheduler/identity-service';
 
 const MODULE = 'cron-debug:trigger';
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
 
 		try {
 			if (job === 'process') {
-				result = await processScheduledPosts();
+				result = await runCronBatch();
 			} else if (job === 'identity-audit') {
 				result = await runIdentityAudit();
 			} else if (job === 'check-media-health') {

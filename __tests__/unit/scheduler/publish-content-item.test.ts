@@ -27,6 +27,7 @@ vi.mock('@/lib/utils/logger', () => ({
 import { publishContentItem } from '@/lib/scheduler/publish-content-item';
 import { InMemoryContentLifecycle } from '@/lib/scheduler/content-lifecycle';
 import { publishMedia } from '@/lib/instagram';
+import { processAndUploadStoryVideo } from '@/lib/media/video-processor';
 import { checkForRecentPublish } from '@/lib/utils/duplicate-detection';
 import { alertPublishFailure } from '@/lib/utils/admin-alerts';
 
@@ -91,6 +92,45 @@ describe('publishContentItem', () => {
 		});
 		expect(publishMedia).not.toHaveBeenCalled();
 		expect(lifecycle.events.map((e) => e.op)).toEqual(['acquireLock', 'markCancelled']);
+	});
+
+	it('emits markStoryProcessingComplete after a successful video processing pass', async () => {
+		const lifecycle = new InMemoryContentLifecycle();
+		const item = makeItem({
+			id: 'video-1',
+			mediaType: 'VIDEO',
+			mediaUrl: 'https://cdn.example.com/video.mp4',
+			storyReady: false,
+		});
+		lifecycle.seed([item]);
+
+		const outcome = await publishContentItem(item, lifecycle);
+
+		expect(outcome.status).toBe('published');
+		expect(processAndUploadStoryVideo).toHaveBeenCalledOnce();
+		expect(lifecycle.events.map((e) => e.op)).toEqual([
+			'acquireLock',
+			'markStoryProcessingComplete',
+			'markPublished',
+		]);
+		expect(lifecycle.snapshot('video-1')?.storyReady).toBe(true);
+	});
+
+	it('skips video story-processing when story_ready=true', async () => {
+		const lifecycle = new InMemoryContentLifecycle();
+		const item = makeItem({
+			id: 'video-2',
+			mediaType: 'VIDEO',
+			mediaUrl: 'https://cdn.example.com/video.mp4',
+			storyReady: true,
+		});
+		lifecycle.seed([item]);
+
+		const outcome = await publishContentItem(item, lifecycle);
+
+		expect(outcome.status).toBe('published');
+		expect(processAndUploadStoryVideo).not.toHaveBeenCalled();
+		expect(lifecycle.events.map((e) => e.op)).toEqual(['acquireLock', 'markPublished']);
 	});
 
 	it('returns "failed-retryable" with retryCount=1 when publish throws and retries remain', async () => {
