@@ -43,8 +43,8 @@ export function AnalyticsLayout() {
 		return (
 			<div className="flex min-h-[600px] items-center justify-center">
 				<div className="space-y-4 text-center">
-					<Loader2 className="mx-auto h-12 w-12 animate-spin text-[#92a4c9]" />
-					<p className="font-medium text-[#92a4c9]">Loading analytics...</p>
+					<Loader2 className="mx-auto h-12 w-12 animate-spin text-muted-foreground" />
+					<p className="font-medium text-muted-foreground">Loading analytics...</p>
 				</div>
 			</div>
 		);
@@ -53,9 +53,9 @@ export function AnalyticsLayout() {
 	if (error || !data) {
 		return (
 			<div className="flex min-h-[600px] flex-col items-center justify-center text-center">
-				<AlertTriangle className="mb-4 h-12 w-12 text-red-400" />
-				<h3 className="text-lg font-semibold text-white">Couldn&apos;t load analytics</h3>
-				<p className="mb-4 mt-2 text-sm text-[#92a4c9]">
+				<AlertTriangle className="mb-4 h-12 w-12 text-red-500" />
+				<h3 className="text-lg font-semibold text-foreground">Couldn&apos;t load analytics</h3>
+				<p className="mb-4 mt-2 text-sm text-muted-foreground">
 					{error instanceof Error ? error.message : 'Unknown error'}
 				</p>
 				<Button onClick={() => mutate()} variant="outline">
@@ -69,14 +69,16 @@ export function AnalyticsLayout() {
 		<div className="space-y-6">
 			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 				<div>
-					<h1 className="text-2xl font-bold text-white">Pipeline analytics</h1>
-					<p className="text-sm text-[#92a4c9]">
+					<h1 className="text-2xl font-bold tracking-tight text-foreground">
+						Pipeline analytics
+					</h1>
+					<p className="mt-1 text-sm text-muted-foreground">
 						IG → TikTok throughput. Counts of stories archived, compositions drafted to
 						the TT inbox, publish-rate health, and today&apos;s inbox-slot saturation.
 					</p>
 				</div>
 
-				<div className="flex items-center gap-1 rounded-lg border border-[#2a3649] bg-[#1a2332] p-1">
+				<div className="flex items-center gap-1 rounded-lg border bg-muted/40 p-1">
 					{(['7d', '30d', '90d'] as DateRange[]).map((range) => (
 						<button
 							key={range}
@@ -84,8 +86,8 @@ export function AnalyticsLayout() {
 							className={cn(
 								'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
 								dateRange === range
-									? 'bg-[#2b6cee] text-white'
-									: 'text-[#92a4c9] hover:text-white',
+									? 'bg-background text-foreground shadow-sm'
+									: 'text-muted-foreground hover:text-foreground',
 							)}
 						>
 							{range === '7d' && 'Last 7 days'}

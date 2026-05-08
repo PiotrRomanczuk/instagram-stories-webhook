@@ -2,17 +2,22 @@
 
 import { useMemo, useState } from 'react';
 import useSWR from 'swr';
-import { Trophy, Eye, Sparkles, ChevronUp, BarChart3 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card';
-import { Button } from '@/app/components/ui/button';
+import { useTheme } from 'next-themes';
 import { Skeleton } from '@/app/components/ui/skeleton';
-import { Link } from '@/i18n/routing';
-import { cn } from '@/lib/utils';
 import type { StoriesResponse, InstagramStory } from '@/lib/instagram/media';
 import type { StoryInsightsResponse } from '@/app/api/instagram/stories/insights/route';
 import { rankStoriesByEngagement, scoreStory } from '@/lib/insights/score-story';
-import { SelectedStrip } from './selected-strip';
+import { insightsTokenStyle, MONO_STACK } from './insights-tokens';
+import { StatusBar } from './status-bar';
+import {
+	LeaderboardToolbar,
+	type FilterMode,
+	type SortMode,
+} from './leaderboard-toolbar';
 import { LeaderboardRow } from './leaderboard-row';
+import { CompilationPane } from './compilation-pane';
+import { ZeroState } from './zero-state';
+import { useCompilationSummary } from './use-compilation-summary';
 
 const fetcher = async <T,>(url: string): Promise<T> => {
 	const res = await fetch(url);
@@ -23,10 +28,10 @@ const fetcher = async <T,>(url: string): Promise<T> => {
 	return res.json();
 };
 
-type SortMode = 'engagement' | 'newest' | 'oldest';
-type FilterMode = 'all' | 'image' | 'video';
-
 export function EngagementInsights() {
+	const { resolvedTheme } = useTheme();
+	const themeName = resolvedTheme === 'dark' ? 'dark' : 'light';
+
 	const { data: storiesData, isLoading: storiesLoading } = useSWR<StoriesResponse>(
 		'/api/instagram/recent-stories?limit=200',
 		fetcher,
@@ -43,19 +48,21 @@ export function EngagementInsights() {
 		{ revalidateOnFocus: false, dedupingInterval: 60_000 },
 	);
 
-	const [selectedIds, setSelectedIds] = useState<string[]>([]);
-	const [sort, setSort] = useState<SortMode>('engagement');
-	const [filter, setFilter] = useState<FilterMode>('all');
-
 	const insights = useMemo(() => insightsData?.insights ?? {}, [insightsData]);
 
+	const [selectedIds, setSelectedIds] = useState<string[]>([]);
+	const [filter, setFilter] = useState<FilterMode>('all');
+	const [sort, setSort] = useState<SortMode>('top');
+	const [qualifiedOnly, setQualifiedOnly] = useState(true);
+
 	const ranked = useMemo(() => {
-		const scored = rankStoriesByEngagement(
+		const all = rankStoriesByEngagement(
 			stories.map((s) => ({ id: s.id, story: s, metrics: insights[s.id]?.metrics })),
 		);
-		const filtered = scored.filter((r) => {
-			if (filter === 'image') return r.story.story.media_type === 'IMAGE';
-			if (filter === 'video') return r.story.story.media_type === 'VIDEO';
+		const filtered = all.filter((r) => {
+			if (filter === 'photos' && r.story.story.media_type !== 'IMAGE') return false;
+			if (filter === 'videos' && r.story.story.media_type !== 'VIDEO') return false;
+			if (qualifiedOnly && !r.qualifies) return false;
 			return true;
 		});
 		if (sort === 'newest' || sort === 'oldest') {
@@ -68,230 +75,203 @@ export function EngagementInsights() {
 			);
 		}
 		return filtered;
-	}, [stories, insights, sort, filter]);
+	}, [stories, insights, filter, sort, qualifiedOnly]);
 
-	const stats = useMemo(() => {
-		if (stories.length === 0) return null;
-		const qualified = ranked.filter((r) => r.qualifies);
-		const totalImpressions = stories.reduce((s, x) => {
-			const m = insights[x.id]?.metrics;
-			return s + (m?.impressions ?? m?.views ?? 0);
-		}, 0);
-		const totalReach = stories.reduce((s, x) => s + (insights[x.id]?.metrics?.reach ?? 0), 0);
-		const reachRate = totalImpressions > 0 ? (totalReach / totalImpressions) * 100 : 0;
-		const top = ranked[0];
-		const topRatePct = top?.qualifies ? (top.rate * 100).toFixed(0) : '—';
-		return {
-			active: stories.length,
-			qualified: qualified.length,
-			topRatePct,
-			avgImpressions: stories.length > 0 ? Math.round(totalImpressions / stories.length) : 0,
-			reachRate,
-		};
-	}, [stories, ranked, insights]);
-
-	const maxRate = useMemo(
-		() => ranked.reduce((m, r) => Math.max(m, r.qualifies ? r.rate : 0), 0),
-		[ranked],
+	const pendingCount = useMemo(
+		() => stories.filter((s) => !scoreStory(insights[s.id]?.metrics ?? {}).qualifies).length,
+		[stories, insights],
 	);
 
-	const selectedStories: InstagramStory[] = useMemo(() => {
+	const positionByStory = useMemo(
+		() => new Map(selectedIds.map((id, i) => [id, i + 1])),
+		[selectedIds],
+	);
+	const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+
+	const pickedStories: InstagramStory[] = useMemo(() => {
 		const byId = new Map(stories.map((s) => [s.id, s]));
-		return selectedIds.map((id) => byId.get(id)).filter((s): s is InstagramStory => !!s);
+		return selectedIds
+			.map((id) => byId.get(id))
+			.filter((s): s is InstagramStory => Boolean(s));
 	}, [selectedIds, stories]);
 
-	function toggleSelect(id: string) {
-		setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+	const summary = useCompilationSummary(pickedStories.length);
+
+	const rateById = useMemo(() => {
+		const m = new Map<string, number | null>();
+		for (const s of stories) {
+			const score = scoreStory(insights[s.id]?.metrics ?? {});
+			m.set(s.id, score.qualifies ? score.rate : null);
+		}
+		return m;
+	}, [stories, insights]);
+
+	const viewsById = useMemo(() => {
+		const m = new Map<string, number | undefined>();
+		for (const s of stories) {
+			const metrics = insights[s.id]?.metrics;
+			m.set(s.id, metrics?.impressions ?? metrics?.views);
+		}
+		return m;
+	}, [stories, insights]);
+
+	function toggle(id: string) {
+		setSelectedIds((prev) =>
+			prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+		);
 	}
 
 	const isLoading = storiesLoading || (stories.length > 0 && insightsLoading);
+	const tokenStyle = insightsTokenStyle(themeName);
 
 	if (isLoading) {
 		return (
-			<div className="space-y-5">
-				<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-					{Array.from({ length: 4 }).map((_, i) => (
-						<Skeleton key={i} className="h-24" />
-					))}
+			<div style={tokenStyle} className="min-h-[640px]" >
+				<div
+					className="space-y-4 p-6"
+					style={{ background: 'var(--bg)', color: 'var(--ink)', minHeight: '100%' }}
+				>
+					<Skeleton className="h-10 w-64" />
+					<Skeleton className="h-12 w-full" />
+					<Skeleton className="h-[420px] w-full" />
 				</div>
-				<Skeleton className="h-[420px]" />
 			</div>
-		);
-	}
-
-	if (stories.length === 0) {
-		return (
-			<Card>
-				<CardContent className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-					<div className="rounded-full bg-muted p-4">
-						<BarChart3 className="h-8 w-8 text-muted-foreground/60" />
-					</div>
-					<h3 className="text-lg font-semibold">No active IG stories</h3>
-					<p className="max-w-md text-sm text-muted-foreground">
-						Stories live for 24 hours. Post a story or wait for new content; this page
-						auto-refreshes every minute.
-					</p>
-					<Button asChild size="sm">
-						<Link href="/">Back to dashboard</Link>
-					</Button>
-				</CardContent>
-			</Card>
 		);
 	}
 
 	return (
-		<div className="space-y-5">
-			<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-				<HeroStat
-					label="Active stories"
-					value={stats!.active.toString()}
-					icon={<Sparkles className="h-4 w-4" />}
-					tone="bg-purple-100 text-purple-700"
-				/>
-				<HeroStat
-					label="Top rate"
-					value={`${stats!.topRatePct}${stats!.topRatePct === '—' ? '' : '%'}`}
-					icon={<Trophy className="h-4 w-4" />}
-					tone="bg-amber-100 text-amber-700"
-				/>
-				<HeroStat
-					label="Avg views"
-					value={fmtCount(stats!.avgImpressions)}
-					icon={<Eye className="h-4 w-4" />}
-					tone="bg-blue-100 text-blue-700"
-				/>
-				<HeroStat
-					label="Reach rate"
-					value={`${stats!.reachRate.toFixed(0)}%`}
-					icon={<ChevronUp className="h-4 w-4" />}
-					tone="bg-emerald-100 text-emerald-700"
-				/>
-			</div>
+		<div
+			style={{
+				...tokenStyle,
+				background: 'var(--bg)',
+				color: 'var(--ink)',
+				fontFamily: "'Inter', system-ui, sans-serif",
+			}}
+			className="flex min-h-[calc(100vh-4rem)] flex-col"
+		>
+			<header className="flex flex-col gap-1.5 px-5 pb-4 pt-6 sm:px-6">
+				<div
+					className="flex items-center gap-2 text-[11.5px]"
+					style={{ color: 'var(--muted)' }}
+				>
+					<span
+						className="uppercase"
+						style={{
+							fontFamily: MONO_STACK,
+							letterSpacing: '0.08em',
+						}}
+					>
+						Insights
+					</span>
+					<span aria-hidden style={{ color: 'var(--muted-2)' }}>
+						·
+					</span>
+					<span style={{ fontFamily: MONO_STACK }}>24h window</span>
+				</div>
+				<h1
+					className="text-3xl font-bold tracking-tight sm:text-[32px]"
+					style={{ color: 'var(--ink)', letterSpacing: '-0.025em' }}
+				>
+					Story Engagement
+				</h1>
+				<p
+					className="max-w-[640px] text-[13.5px]"
+					style={{ color: 'var(--muted)' }}
+				>
+					Per-story performance. Pick the moments worth reposting — they&apos;ll be
+					composed in order into your next TikTok inbox draft.
+				</p>
+			</header>
 
-			<SelectedStrip
-				stories={selectedStories}
-				onReorder={setSelectedIds}
-				onRemove={(id) => setSelectedIds((prev) => prev.filter((x) => x !== id))}
-				onClear={() => setSelectedIds([])}
+			<StatusBar storyCount={stories.length} inboxUsed={0} summary={summary} />
+
+			<LeaderboardToolbar
+				filter={filter}
+				sort={sort}
+				qualifiedOnly={qualifiedOnly}
+				total={stories.length}
+				shown={ranked.length}
+				onFilterChange={setFilter}
+				onSortChange={setSort}
+				onQualifiedOnlyChange={setQualifiedOnly}
 			/>
 
-			<Card>
-				<CardHeader className="pb-3">
-					<div className="flex flex-wrap items-start justify-between gap-2">
-						<div>
-							<CardTitle className="flex items-center gap-2 text-base">
-								<Trophy className="h-4 w-4 text-amber-500" />
-								Story leaderboard
-							</CardTitle>
-							<p className="mt-0.5 text-xs text-muted-foreground">
-								Click a story to add it to your TT inbox draft. Drag tiles in the
-								selection above to reorder.
-							</p>
-						</div>
-						<div className="flex flex-wrap items-center gap-1.5">
-							<FilterChips value={filter} onChange={setFilter} />
-							<SortChips value={sort} onChange={setSort} />
-						</div>
-					</div>
-				</CardHeader>
-				<CardContent>
-					<ul className="divide-y rounded-lg border">
-						{ranked.map((r, idx) => (
-							<LeaderboardRow
-								key={r.story.id}
-								story={r.story.story}
-								score={scoreStory(r.story.metrics ?? {})}
-								metrics={r.story.metrics}
-								rank={idx}
-								maxRate={maxRate}
-								isSelected={selectedIds.includes(r.story.id)}
-								onToggle={() => toggleSelect(r.story.id)}
-							/>
-						))}
-					</ul>
-					{ranked.length === 0 && (
-						<div className="py-8 text-center text-sm text-muted-foreground">
-							No stories match this filter.
-						</div>
+			<div
+				className="flex min-h-0 flex-1 flex-col xl:flex-row"
+				style={{ borderTop: '1px solid var(--line-2)' }}
+			>
+				<div className="min-w-0 flex-1 overflow-auto">
+					{ranked.length === 0 ? (
+						<ZeroState
+							filter={filter}
+							qualifiedOnly={qualifiedOnly}
+							onShowAll={() => {
+								setFilter('all');
+								setQualifiedOnly(false);
+							}}
+						/>
+					) : (
+						<>
+							{!qualifiedOnly && pendingCount > 0 && (
+								<div
+									className="flex items-center gap-2.5 px-5 py-2.5 text-[12px] sm:px-6"
+									style={{
+										background: 'var(--bg-2)',
+										borderBottom: '1px solid var(--line-2)',
+										color: 'var(--muted)',
+									}}
+								>
+									<span style={{ fontFamily: MONO_STACK, color: 'var(--ink)' }}>
+										{pendingCount}
+									</span>{' '}
+									{pendingCount === 1 ? 'story' : 'stories'} below the 50-impression floor.
+									<span aria-hidden style={{ color: 'var(--muted-2)' }}>
+										·
+									</span>
+									<button
+										onClick={() => setQualifiedOnly(true)}
+										style={{
+											color: 'var(--ink)',
+											borderBottom: '1px dashed var(--line)',
+											background: 'transparent',
+											border: 'none',
+											padding: 0,
+											cursor: 'pointer',
+										}}
+									>
+										Hide pending
+									</button>
+								</div>
+							)}
+							{ranked.map((r, idx) => (
+								<LeaderboardRow
+									key={r.story.id}
+									story={r.story.story}
+									score={scoreStory(r.story.metrics ?? {})}
+									metrics={r.story.metrics}
+									rank={idx}
+									isSelected={selectedSet.has(r.story.id)}
+									position={positionByStory.get(r.story.id) ?? null}
+									onToggle={() => toggle(r.story.id)}
+								/>
+							))}
+						</>
 					)}
-				</CardContent>
-			</Card>
-		</div>
-	);
-}
-
-function HeroStat({
-	label,
-	value,
-	icon,
-	tone,
-}: {
-	label: string;
-	value: string;
-	icon: React.ReactNode;
-	tone: string;
-}) {
-	return (
-		<Card>
-			<CardContent className="p-4">
-				<div className="flex items-center gap-2">
-					<div className={cn('rounded-md p-1.5', tone)}>{icon}</div>
-					<span className="text-xs font-medium text-muted-foreground">{label}</span>
 				</div>
-				<div className="mt-2 text-2xl font-bold tabular-nums">{value}</div>
-			</CardContent>
-		</Card>
-	);
-}
 
-function FilterChips({ value, onChange }: { value: FilterMode; onChange: (v: FilterMode) => void }) {
-	const opts: { v: FilterMode; label: string }[] = [
-		{ v: 'all', label: 'All' },
-		{ v: 'image', label: 'Photos' },
-		{ v: 'video', label: 'Videos' },
-	];
-	return <Chips opts={opts} value={value} onChange={onChange} />;
-}
-
-function SortChips({ value, onChange }: { value: SortMode; onChange: (v: SortMode) => void }) {
-	const opts: { v: SortMode; label: string }[] = [
-		{ v: 'engagement', label: 'Top rate' },
-		{ v: 'newest', label: 'Newest' },
-		{ v: 'oldest', label: 'Oldest' },
-	];
-	return <Chips opts={opts} value={value} onChange={onChange} />;
-}
-
-function Chips<T extends string>({
-	opts,
-	value,
-	onChange,
-}: {
-	opts: { v: T; label: string }[];
-	value: T;
-	onChange: (v: T) => void;
-}) {
-	return (
-		<div className="flex items-center gap-0.5 rounded-md border bg-muted/40 p-0.5">
-			{opts.map((o) => (
-				<button
-					key={o.v}
-					onClick={() => onChange(o.v)}
-					className={cn(
-						'rounded px-2 py-0.5 text-[11px] font-medium transition-colors',
-						value === o.v
-							? 'bg-background text-foreground shadow-sm'
-							: 'text-muted-foreground hover:text-foreground',
-					)}
-				>
-					{o.label}
-				</button>
-			))}
+				<CompilationPane
+					stories={pickedStories}
+					rateById={rateById}
+					viewsById={viewsById}
+					summary={summary}
+					onReorder={setSelectedIds}
+					onRemove={(id) =>
+						setSelectedIds((prev) => prev.filter((x) => x !== id))
+					}
+					onClear={() => setSelectedIds([])}
+					onSent={() => setSelectedIds([])}
+				/>
+			</div>
 		</div>
 	);
-}
-
-function fmtCount(n: number): string {
-	if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
-	return n.toString();
 }

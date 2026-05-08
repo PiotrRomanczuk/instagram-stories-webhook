@@ -8,6 +8,7 @@ import {
 	TrendingUp,
 	TrendingDown,
 } from 'lucide-react';
+import { Card, CardContent } from '@/app/components/ui/card';
 import { cn } from '@/lib/utils';
 
 export interface KpiDelta {
@@ -35,39 +36,41 @@ function KpiCard({ label, value, hint, change, icon }: KpiCardProps) {
 	const isNegative = change != null && change < 0;
 
 	return (
-		<div className="flex flex-col gap-2 rounded-xl border border-[#2a3649] bg-[#1a2332] p-5">
-			<div className="flex items-center justify-between">
-				<span className="text-xs font-medium uppercase tracking-wider text-[#92a4c9]">
-					{label}
-				</span>
-				<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#2b6cee]/10 text-[#2b6cee]">
-					{icon}
-				</div>
-			</div>
-
-			<div className="flex items-end justify-between gap-2">
-				<span className="text-2xl font-bold text-white">{value}</span>
-				{change != null && (
-					<div
-						className={cn(
-							'flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium',
-							isPositive && 'bg-emerald-400/10 text-emerald-400',
-							isNegative && 'bg-red-400/10 text-red-400',
-							!isPositive && !isNegative && 'bg-[#2a3649] text-[#92a4c9]',
-						)}
-					>
-						{isPositive && <TrendingUp className="h-3 w-3" />}
-						{isNegative && <TrendingDown className="h-3 w-3" />}
-						<span>
-							{isPositive && '+'}
-							{change}%
-						</span>
+		<Card>
+			<CardContent className="flex flex-col gap-2 p-5">
+				<div className="flex items-center justify-between">
+					<span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+						{label}
+					</span>
+					<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+						{icon}
 					</div>
-				)}
-			</div>
+				</div>
 
-			<span className="text-[11px] text-[#92a4c9]">{hint}</span>
-		</div>
+				<div className="flex items-end justify-between gap-2">
+					<span className="text-2xl font-bold tabular-nums text-foreground">{value}</span>
+					{change != null && (
+						<div
+							className={cn(
+								'flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium',
+								isPositive && 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+								isNegative && 'bg-red-500/10 text-red-600 dark:text-red-400',
+								!isPositive && !isNegative && 'bg-muted text-muted-foreground',
+							)}
+						>
+							{isPositive && <TrendingUp className="h-3 w-3" />}
+							{isNegative && <TrendingDown className="h-3 w-3" />}
+							<span>
+								{isPositive && '+'}
+								{change}%
+							</span>
+						</div>
+					)}
+				</div>
+
+				<span className="text-[11px] text-muted-foreground">{hint}</span>
+			</CardContent>
+		</Card>
 	);
 }
 
