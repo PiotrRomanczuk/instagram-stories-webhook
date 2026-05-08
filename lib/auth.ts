@@ -1,3 +1,5 @@
+import 'server-only';
+
 import { AuthOptions, Session, User, Account } from 'next-auth';
 import { JWT } from 'next-auth/jwt';
 import GoogleProvider from 'next-auth/providers/google';
@@ -37,31 +39,44 @@ declare module 'next-auth/jwt' {
 	}
 }
 
+// SECURITY: Test credentials provider must NEVER be available in production by default.
+// It can be enabled in non-prod or with an explicit ENABLE_TEST_AUTH=true flag for staging debug.
+const isTestAuthEnabled =
+	process.env.NODE_ENV !== 'production' || process.env.ENABLE_TEST_AUTH === 'true';
+
+// SECURITY: The hardcoded demo account must require an explicit opt-in flag.
+const isDemoEnabled = process.env.ENABLE_DEMO === 'true';
+const DEMO_EMAIL = 'demo@demo.com';
+
 export const authOptions: AuthOptions = {
 	providers: [
-		// Primary Layer: Google Auth is now the ONLY login method
+		// Primary Layer: Google Auth is the ONLY login method in production.
 		GoogleProvider({
 			clientId: process.env.AUTH_GOOGLE_ID || '',
 			clientSecret: process.env.AUTH_GOOGLE_SECRET || '',
 		}),
-		// Test/Demo credentials provider - always registered.
-		// The signIn callback controls who actually gets through.
-		CredentialsProvider({
-			id: 'test-credentials',
-			name: 'Test Credentials',
-			credentials: {
-				email: { label: 'Email', type: 'email' },
-			},
-			async authorize(credentials) {
-				if (!credentials?.email) return null;
-				return {
-					id: 'test-' + credentials.email.replace(/[^a-z0-9]/g, '-'),
-					email: credentials.email,
-					name: credentials.email.split('@')[0],
-					image: '',
-				};
-			},
-		}),
+		// Test/Demo credentials provider — only registered when explicitly enabled.
+		// The signIn callback adds an additional layer of allow-list checking.
+		...(isTestAuthEnabled
+			? [
+					CredentialsProvider({
+						id: 'test-credentials',
+						name: 'Test Credentials',
+						credentials: {
+							email: { label: 'Email', type: 'email' },
+						},
+						async authorize(credentials) {
+							if (!credentials?.email) return null;
+							return {
+								id: 'test-' + credentials.email.replace(/[^a-z0-9]/g, '-'),
+								email: credentials.email,
+								name: credentials.email.split('@')[0],
+								image: '',
+							};
+						},
+					}),
+				]
+			: []),
 	],
 	...(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
 		? {
@@ -81,15 +96,19 @@ export const authOptions: AuthOptions = {
 			const userEmail = user.email?.toLowerCase() || '';
 			const provider = account?.provider || 'unknown';
 
-			// Demo login — always allowed, no whitelist needed
-			const DEMO_EMAIL = 'demo@demo.com';
+			// Demo login — gated behind ENABLE_DEMO so it cannot be exploited in production.
 			if (provider === 'test-credentials' && userEmail === DEMO_EMAIL) {
+				if (!isDemoEnabled) {
+					await Logger.warn(MODULE, `❌ DEMO ACCESS DENIED (ENABLE_DEMO not set): ${userEmail}`);
+					await recordAuthEvent({ email: userEmail, provider, outcome: 'denied', denyReason: 'demo_disabled' });
+					return false;
+				}
 				await Logger.info(MODULE, `✅ DEMO ACCESS GRANTED: ${userEmail}`);
 				await recordAuthEvent({ email: userEmail, provider, outcome: 'granted' });
 				return true;
 			}
 
-			// Allow test credentials in development/test mode
+			// Test credentials provider — only reachable when isTestAuthEnabled is true.
 			if (provider === 'test-credentials') {
 				// Emails from env var (comma-separated); empty list means whitelist-only
 				const testEmailsEnv = process.env.TEST_AUTH_EMAILS;
@@ -166,34 +185,25 @@ export const authOptions: AuthOptions = {
 				// Get role from database
 				const email = user.email?.toLowerCase() || '';
 
-				// Demo user always gets demo role
-				if (email === 'demo@demo.com') {
+				// Demo user always gets demo role (only reachable when ENABLE_DEMO=true)
+				if (email === DEMO_EMAIL) {
 					token.role = 'demo';
 				} else {
-					// Handle known test emails in dev/test mode
-					const testUserRoles: Record<string, UserRole> = {
-						'user@test.com': 'user',
-						'admin@test.com': 'admin',
-						'user2@test.com': 'user',
-						'p.romanczuk@gmail.com': 'admin',
-					};
-					if ((process.env.NODE_ENV !== 'production' || process.env.ENABLE_TEST_AUTH === 'true') && testUserRoles[email]) {
-						token.role = testUserRoles[email];
-					} else {
-						const role = await getUserRole(email);
+					// SECURITY: Roles must come from the database. No hardcoded role mappings
+					// in production code — test-only mappings live in test fixtures.
+					const role = await getUserRole(email);
 
-						// If in DB whitelist, use that role. Otherwise check if in ADMIN_EMAIL (treat as admin)
-						if (role) {
-							token.role = role as UserRole;
-						} else {
-							// Fallback for ADMIN_EMAIL users not yet in whitelist
-							const adminEmail = process.env.ADMIN_EMAIL || '';
-							const envAdmins = adminEmail
-								.split(',')
-								.map((e) => e.trim().toLowerCase())
-								.filter((e) => e);
-							token.role = envAdmins.includes(email) ? 'admin' : 'user';
-						}
+					// If in DB whitelist, use that role. Otherwise check if in ADMIN_EMAIL (treat as admin)
+					if (role) {
+						token.role = role as UserRole;
+					} else {
+						// Fallback for ADMIN_EMAIL users not yet in whitelist
+						const adminEmail = process.env.ADMIN_EMAIL || '';
+						const envAdmins = adminEmail
+							.split(',')
+							.map((e) => e.trim().toLowerCase())
+							.filter((e) => e);
+						token.role = envAdmins.includes(email) ? 'admin' : 'user';
 					}
 				}
 

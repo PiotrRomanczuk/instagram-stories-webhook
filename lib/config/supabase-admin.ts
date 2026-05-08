@@ -1,3 +1,5 @@
+import 'server-only';
+
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 // Lazy-initialized so env vars loaded after this module evaluates (e.g.

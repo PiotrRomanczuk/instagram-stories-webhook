@@ -1,6 +1,6 @@
 {
   "name": "instagram-stories-webhook",
-  "version": "0.49.5",
+  "version": "0.49.6",
   "private": true,
   "scripts": {
     "dev": "concurrently -n next,cron -c blue,magenta \"next dev\" \"npm run dev:cron\"",
@@ -94,6 +94,7 @@
     "react-dom": "19.2.3",
     "react-hook-form": "^7.71.1",
     "react-player": "^3.4.0",
+    "server-only": "^0.0.1",
     "sharp": "^0.34.5",
     "sonner": "^2.0.7",
     "swr": "^2.3.8",

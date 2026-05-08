@@ -40,6 +40,9 @@ export default defineConfig({
     resolve: {
         alias: {
             '@': path.resolve(__dirname, './'),
+            // Server-only is a runtime marker — alias to its empty entrypoint
+            // so test code that imports server modules doesn't blow up.
+            'server-only': path.resolve(__dirname, './node_modules/server-only/empty.js'),
         },
     },
 });
