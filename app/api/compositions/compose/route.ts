@@ -56,7 +56,17 @@ async function loadByIgMediaIds(
 		.in('ig_media_id', igMediaIds)
 		.eq('download_status', 'completed');
 	if (error) throw new Error(error.message);
-	return (data ?? []).map((r) => mapStoryArchiveRow(r as StoryArchiveRow));
+	const rows = (data ?? []).map((r) => mapStoryArchiveRow(r as StoryArchiveRow));
+	// Postgres `IN (...)` doesn't preserve input order; the client may have
+	// sequenced the picks deliberately (drag-to-reorder), so we re-sort to
+	// match the request order before composition iterates the segments.
+	const indexById = new Map(igMediaIds.map((id, i) => [id, i]));
+	rows.sort(
+		(a, b) =>
+			(indexById.get(a.igMediaId) ?? Number.POSITIVE_INFINITY) -
+			(indexById.get(b.igMediaId) ?? Number.POSITIVE_INFINITY),
+	);
+	return rows;
 }
 
 export async function POST(req: NextRequest) {
