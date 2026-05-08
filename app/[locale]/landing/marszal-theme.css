@@ -1,0 +1,110 @@
+/* Marszal marketing-surface design tokens + a few component classes
+ * for patterns that resist clean utility-first expression
+ * (attr() pseudo-elements, data-URI SVG masks, conic-gradients).
+ */
+
+@theme inline {
+	--color-marszal-bg: #f0eee9;
+	--color-marszal-bg2: #e8e6e0;
+	--color-marszal-surface: #ffffff;
+	--color-marszal-ink: #0d0d0e;
+	--color-marszal-ink2: #1a1a1c;
+	--color-marszal-muted: #6b6a64;
+	--color-marszal-muted2: #93918a;
+	--color-marszal-line: #d9d6cf;
+	--color-marszal-line2: #e6e3dc;
+	--color-marszal-accent: oklch(0.55 0.18 295);
+	--color-marszal-accent-soft: oklch(0.94 0.04 295);
+	--color-marszal-good: oklch(0.62 0.13 150);
+
+	--font-marszal: var(--font-inter), 'Inter', system-ui, sans-serif;
+	--font-marszal-mono: var(--font-jetbrains-mono), var(--font-geist-mono), 'JetBrains Mono', ui-monospace, monospace;
+
+	--animate-marszal-pulse: marszal-pulse 2s ease-in-out infinite;
+}
+
+@keyframes marszal-pulse {
+	0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklab, oklch(0.62 0.13 150) 35%, transparent); }
+	50% { box-shadow: 0 0 0 5px color-mix(in oklab, oklch(0.62 0.13 150) 0%, transparent); }
+}
+
+@layer components {
+	/* Swipe card — needs `attr(data-label)` for the bottom-left badge */
+	.marszal-scard {
+		position: absolute;
+		inset: 0;
+		border-radius: 14px;
+		overflow: hidden;
+		border: 1px solid var(--color-marszal-line);
+		background: var(--color-marszal-surface);
+		box-shadow:
+			0 16px 30px -18px rgba(0, 0, 0, 0.25),
+			0 4px 10px -6px rgba(0, 0, 0, 0.1);
+		transform-origin: 50% 110%;
+		will-change: transform, opacity;
+		display: flex;
+		flex-direction: column;
+	}
+	.marszal-scard-thumb {
+		flex: 1;
+		background:
+			repeating-linear-gradient(135deg, rgba(0, 0, 0, 0.04) 0 8px, transparent 8px 16px),
+			var(--card-bg, #ddd6cf);
+		position: relative;
+	}
+	.marszal-scard-thumb::after {
+		content: attr(data-label);
+		position: absolute;
+		left: 12px;
+		bottom: 12px;
+		font-family: var(--font-marszal-mono);
+		font-size: 10.5px;
+		color: rgba(255, 255, 255, 0.95);
+		background: rgba(0, 0, 0, 0.55);
+		padding: 3px 7px;
+		border-radius: 4px;
+		letter-spacing: 0.02em;
+	}
+
+	/* Compare-table marks — bullet pseudo-elements */
+	.marszal-mark-yes::before {
+		content: '';
+		width: 14px;
+		height: 14px;
+		display: inline-block;
+		background-color: var(--color-marszal-ink);
+		border-radius: 999px;
+		background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%23f0eee9' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='2,6.5 5,9 10,3.5'/></svg>");
+		background-size: 10px;
+		background-position: center;
+		background-repeat: no-repeat;
+	}
+	.marszal-mark-partial::before {
+		content: '';
+		width: 14px;
+		height: 14px;
+		display: inline-block;
+		background: conic-gradient(var(--color-marszal-muted) 50%, transparent 0);
+		border: 1px solid var(--color-marszal-muted);
+		border-radius: 999px;
+	}
+	.marszal-mark-no::before {
+		content: '—';
+		width: 14px;
+		height: 14px;
+		line-height: 14px;
+		text-align: center;
+		display: inline-block;
+		color: var(--color-marszal-muted2);
+	}
+
+	/* Pulsing green dot in the v1.4 pill */
+	.marszal-pulse-dot {
+		box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-marszal-good) 25%, transparent);
+	}
+
+	/* Active cron core: highlighted border + LOCK label */
+	.marszal-core-lead {
+		border-color: var(--color-marszal-ink);
+	}
+}
