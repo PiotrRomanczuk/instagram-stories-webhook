@@ -180,22 +180,20 @@ describe('Dashboard Page Integration', () => {
 
 			// Welcome section
 			expect(screen.getByText('Hello, John')).toBeInTheDocument();
-			expect(screen.getByText(/Welcome back/)).toBeInTheDocument();
 
-			// Stats cards
-			expect(screen.getByText('Pending Review')).toBeInTheDocument();
-			const approvedElements = screen.getAllByText('Approved');
-			expect(approvedElements.length).toBeGreaterThanOrEqual(1);
-			const scheduledElements = screen.getAllByText('Scheduled');
-			expect(scheduledElements.length).toBeGreaterThanOrEqual(1);
-			const publishedElements = screen.getAllByText('Published');
-			expect(publishedElements.length).toBeGreaterThanOrEqual(1);
+			// Stat pills
+			expect(screen.getByText('Pending')).toBeInTheDocument();
+			expect(screen.getByText('Approved')).toBeInTheDocument();
+			expect(screen.getByText('Scheduled')).toBeInTheDocument();
+			expect(screen.getByText('Published')).toBeInTheDocument();
 
 			// Submit button
 			expect(screen.getByRole('link', { name: /Submit New/i })).toBeInTheDocument();
 
-			// Recent submissions section
-			expect(screen.getByText('Recent Submissions')).toBeInTheDocument();
+			// View-all submissions link
+			expect(
+				screen.getByRole('link', { name: /View all submissions/i }),
+			).toBeInTheDocument();
 		});
 
 		it('should display correct stats from user submissions', async () => {
@@ -223,7 +221,7 @@ describe('Dashboard Page Integration', () => {
 			expect(ones.length).toBeGreaterThan(0);
 		});
 
-		it('should show empty state when no submissions', async () => {
+		it('should show zero counts when there are no submissions', async () => {
 			const useSWR = (await import('swr')).default as unknown as ReturnType<typeof vi.fn>;
 			useSWR.mockReturnValue({
 				data: { items: [] },
@@ -232,9 +230,11 @@ describe('Dashboard Page Integration', () => {
 
 			render(<UserDashboard userName="John" />);
 
-			expect(screen.getByText('No submissions yet')).toBeInTheDocument();
-			expect(screen.getByText('Get started by submitting your first content.')).toBeInTheDocument();
-			expect(screen.getByRole('link', { name: /Submit Now/i })).toBeInTheDocument();
+			// All four stat pills should render with a zero count.
+			const zeros = screen.getAllByText('0');
+			expect(zeros.length).toBeGreaterThanOrEqual(4);
+			// Submit CTA is always present so the user can start a submission.
+			expect(screen.getByRole('link', { name: /Submit New/i })).toBeInTheDocument();
 		});
 
 		it('should show loading skeletons when loading', async () => {
@@ -250,24 +250,12 @@ describe('Dashboard Page Integration', () => {
 			expect(skeletons.length).toBeGreaterThan(0);
 		});
 
-		it('should render recent submission cards', async () => {
+		it('should reflect submission counts in the stat pills', async () => {
 			const useSWR = (await import('swr')).default as unknown as ReturnType<typeof vi.fn>;
 			useSWR.mockReturnValue({
 				data: {
 					items: [
-						{
-							id: '1',
-							submissionStatus: 'pending',
-							publishingStatus: 'draft',
-							source: 'submission',
-							mediaUrl: 'https://example.com/image.jpg',
-							createdAt: '2024-01-15T10:00:00Z',
-							updatedAt: '2024-01-15T10:00:00Z',
-							userId: 'user1',
-							userEmail: 'user@example.com',
-							mediaType: 'IMAGE',
-							version: 1,
-						},
+						{ id: '1', submissionStatus: 'pending', publishingStatus: 'draft', source: 'submission', createdAt: '2024-01-15T10:00:00Z', updatedAt: '2024-01-15T10:00:00Z', userId: 'user1', userEmail: 'user@example.com', mediaType: 'IMAGE', mediaUrl: 'https://example.com/image.jpg', version: 1 },
 					],
 				},
 				isLoading: false,
@@ -275,10 +263,10 @@ describe('Dashboard Page Integration', () => {
 
 			render(<UserDashboard userName="John" />);
 
-			// Should render the submission card with an image element
-			const img = screen.getByRole('img', { name: /Submission/i });
-			expect(img).toBeInTheDocument();
-			expect(img).toHaveAttribute('src', 'https://example.com/image.jpg');
+			expect(screen.getByText('Pending')).toBeInTheDocument();
+			// At least one '1' (pending count) should render in the stat row.
+			const ones = screen.getAllByText('1');
+			expect(ones.length).toBeGreaterThan(0);
 		});
 
 		it('should have link to view all submissions', async () => {
@@ -290,7 +278,7 @@ describe('Dashboard Page Integration', () => {
 
 			render(<UserDashboard userName="John" />);
 
-			const viewAllLink = screen.getByRole('link', { name: 'View All' });
+			const viewAllLink = screen.getByRole('link', { name: /View all submissions/i });
 			expect(viewAllLink).toHaveAttribute('href', '/submissions');
 		});
 

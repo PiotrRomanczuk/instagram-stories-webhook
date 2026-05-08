@@ -83,8 +83,8 @@ export function PostedTiktokClient() {
         <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
             <div className="space-y-5">
                 <PageHeader
-                    title="Posted to TikTok"
-                    description="The completed end of the pipeline — Instagram stories that were composed into a video and pushed to TikTok. Auto-refreshes every 30s."
+                    title="TikTok Drafts"
+                    description="Compositions uploaded to your TikTok inbox as drafts. Open the TikTok app to pick a native sound and finalize the post. Auto-refreshes every 30s."
                     badge={
                         <div className="flex items-center gap-2">
                             {pagination && (

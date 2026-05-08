@@ -5,12 +5,11 @@ import { Sparkles, AlertCircle } from 'lucide-react';
 import { Link } from '@/i18n/routing';
 import { Card, CardContent } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
-import { PipelineStats } from './pipeline-stats';
-import { PipelineFlowCard } from './pipeline-flow-card';
-import { PipelineHealthCard } from './pipeline-health-card';
-import { ConnectionsCard } from './connections-card';
-import { RecentCompositionsCard } from './recent-compositions-card';
+import { StatusStrip } from './status-strip';
+import { FunnelKpis } from './funnel-kpis';
+import { NextDraftHero } from './next-draft-hero';
 import { TopStoriesCard } from './top-stories-card';
+import { PipelineHealthCard } from './pipeline-health-card';
 
 interface PipelineSummaryResponse {
 	stats: {
@@ -51,17 +50,24 @@ export function PipelineDashboard({ userName }: PipelineDashboardProps) {
 
 	return (
 		<div className="space-y-5">
-			<div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-				<div>
-					<h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight sm:text-3xl">
-						<Sparkles className="h-6 w-6 text-primary" />
-						Welcome back, {userName}
-					</h1>
-					<p className="text-sm text-muted-foreground">
-						Your IG → TikTok pipeline at a glance.
-					</p>
+			<header className="space-y-2">
+				<div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+					<div>
+						<h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight sm:text-3xl">
+							<Sparkles className="h-6 w-6 text-primary" />
+							Welcome back, {userName}
+						</h1>
+						<p className="text-sm text-muted-foreground">
+							Pick top IG stories, send a draft to TikTok, finalize there.
+						</p>
+					</div>
 				</div>
-			</div>
+				<StatusStrip
+					instagram={data?.connections.instagram}
+					tiktok={data?.connections.tiktok}
+					isLoading={isLoading}
+				/>
+			</header>
 
 			{blocked && !isLoading && (
 				<Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/30">
@@ -77,7 +83,7 @@ export function PipelineDashboard({ userName }: PipelineDashboardProps) {
 										? 'Connect both Instagram and TikTok to start.'
 										: !igConnected
 											? 'Connect Instagram to begin archiving stories.'
-											: 'Connect TikTok to publish composed videos.'}
+											: 'Connect TikTok to send drafts to the inbox.'}
 								</p>
 							</div>
 						</div>
@@ -103,31 +109,26 @@ export function PipelineDashboard({ userName }: PipelineDashboardProps) {
 							</div>
 						</div>
 						<Button asChild size="sm" variant="outline" className="shrink-0">
-							<Link href="/compositions?status=failed">Review failures</Link>
+							<Link href="/posted-tiktok">Review failures</Link>
 						</Button>
 					</CardContent>
 				</Card>
 			)}
 
-			<PipelineStats stats={stats} isLoading={isLoading} />
+			<NextDraftHero canSend={!blocked} />
+
+			<FunnelKpis stats={stats} isLoading={isLoading} />
 
 			<div className="grid gap-4 lg:grid-cols-3">
-				<div className="space-y-4 lg:col-span-2">
-					<PipelineFlowCard stats={stats} isLoading={isLoading} />
+				<div className="lg:col-span-2">
 					<TopStoriesCard />
-					<RecentCompositionsCard />
 				</div>
-				<div className="space-y-4">
+				<div>
 					<PipelineHealthCard
 						cron={data?.cron}
 						pipelineEnabled={data?.pipelineEnabled}
 						isLoading={isLoading}
 						onPipelineRun={() => mutate()}
-					/>
-					<ConnectionsCard
-						instagram={data?.connections.instagram}
-						tiktok={data?.connections.tiktok}
-						isLoading={isLoading}
 					/>
 				</div>
 			</div>

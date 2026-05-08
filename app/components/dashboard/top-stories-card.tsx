@@ -7,9 +7,7 @@ import {
 	Eye,
 	Users,
 	MessageCircle,
-	Share2,
-	Zap,
-	Film,
+	Send,
 	Loader2,
 	Check,
 	Image as ImageIcon,
@@ -22,17 +20,21 @@ import { Badge } from '@/app/components/ui/badge';
 import { Link } from '@/i18n/routing';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import type { StoryArchive } from '@/lib/types/story-archive';
+import type { StoriesResponse } from '@/lib/instagram/media';
+import type { StoryInsightsResponse } from '@/app/api/instagram/stories/insights/route';
+import { rankStoriesByEngagement } from '@/lib/insights/score-story';
+import { proxyUrl } from '@/lib/instagram/proxy-url';
 
-interface TopStoriesResponse {
-	stories: StoryArchive[];
-	total: number;
-}
-
-const fetcher = (url: string) => fetch(url).then((r) => r.json());
+const fetcher = async <T,>(url: string): Promise<T> => {
+	const res = await fetch(url);
+	if (!res.ok) {
+		const body = await res.json().catch(() => ({}));
+		throw new Error(body.error ?? `Request failed (${res.status})`);
+	}
+	return res.json();
+};
 
 const MIN_STORIES = 3;
-const MAX_STORIES = 20;
 const DEFAULT_TARGET = 7;
 
 function fmt(n: number | undefined): string {
@@ -50,23 +52,36 @@ function fmtAge(iso: string): string {
 }
 
 export function TopStoriesCard() {
-	const { data, isLoading, mutate } = useSWR<TopStoriesResponse>(
-		`/api/analytics/story-engagement?sortBy=engagement_score&limit=${MAX_STORIES}`,
+	const { data: storiesData, isLoading: storiesLoading, mutate } = useSWR<StoriesResponse>(
+		'/api/instagram/recent-stories?limit=200',
 		fetcher,
-		{ refreshInterval: 60_000 },
+		{ revalidateOnFocus: false, dedupingInterval: 60_000 },
 	);
 
+	const liveStories = useMemo(() => storiesData?.stories ?? [], [storiesData]);
+	const insightsKey = liveStories.length
+		? `/api/instagram/stories/insights?ids=${liveStories.map((s) => s.id).join(',')}`
+		: null;
+	const { data: insightsData, isLoading: insightsLoading } = useSWR<StoryInsightsResponse>(
+		insightsKey,
+		fetcher,
+		{ revalidateOnFocus: false, dedupingInterval: 60_000 },
+	);
+
+	const ranked = useMemo(() => {
+		const insights = insightsData?.insights ?? {};
+		return rankStoriesByEngagement(
+			liveStories.map((s) => ({ id: s.id, story: s, metrics: insights[s.id]?.metrics })),
+		);
+	}, [liveStories, insightsData]);
+
 	const [selected, setSelected] = useState<Set<string>>(new Set());
-	const [composing, setComposing] = useState(false);
+	const [sending, setSending] = useState(false);
 
-	const stories = useMemo(() => {
-		const all = data?.stories ?? [];
-		return all.filter((s) => s.engagementScore !== undefined && s.engagementScore !== null);
-	}, [data]);
-
-	const maxScore = useMemo(
-		() => stories.reduce((m, s) => Math.max(m, s.engagementScore ?? 0), 0),
-		[stories],
+	const isLoading = storiesLoading || (liveStories.length > 0 && insightsLoading);
+	const maxRate = useMemo(
+		() => ranked.reduce((m, r) => Math.max(m, r.rate), 0),
+		[ranked],
 	);
 
 	function toggle(id: string) {
@@ -79,34 +94,37 @@ export function TopStoriesCard() {
 	}
 
 	function selectTop() {
-		const top = stories.slice(0, DEFAULT_TARGET).map((s) => s.id);
+		const top = ranked.slice(0, DEFAULT_TARGET).map((r) => r.story.story.id);
 		setSelected(new Set(top));
 	}
 
-	async function compose() {
+	async function send() {
 		if (selected.size < MIN_STORIES) {
 			toast.error(`Pick at least ${MIN_STORIES} stories`);
 			return;
 		}
-		setComposing(true);
+		setSending(true);
 		try {
 			const res = await fetch('/api/compositions/compose', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ storyIds: Array.from(selected) }),
+				body: JSON.stringify({ igMediaIds: Array.from(selected) }),
 			});
 			const body = await res.json().catch(() => ({}));
 			if (res.ok) {
-				toast.success(`Composing ${body.storyCount} stories with "${body.audioTrackTitle}"`);
+				toast.success(
+					`Composing ${body.storyCount} stories — TT inbox in ~60s`,
+					{ description: body.message },
+				);
 				setSelected(new Set());
 				mutate();
 			} else {
-				toast.error(body.error ?? `Compose failed (${res.status})`);
+				toast.error(body.error ?? `Send failed (${res.status})`);
 			}
 		} catch (err) {
-			toast.error(`Compose failed: ${err instanceof Error ? err.message : 'Unknown'}`);
+			toast.error(`Send failed: ${err instanceof Error ? err.message : 'Unknown'}`);
 		} finally {
-			setComposing(false);
+			setSending(false);
 		}
 	}
 
@@ -117,14 +135,14 @@ export function TopStoriesCard() {
 					<div>
 						<CardTitle className="flex items-center gap-2 text-base">
 							<Trophy className="h-4 w-4 text-amber-500" />
-							Top stories by engagement
+							Top live stories by engagement
 						</CardTitle>
 						<p className="mt-0.5 text-xs text-muted-foreground">
-							Pick the ones to compose into your next TikTok.
+							Pick the ones to send as a TikTok inbox draft.
 						</p>
 					</div>
 					<Button asChild variant="ghost" size="sm" className="h-7 text-xs">
-						<Link href="/insights">All metrics</Link>
+						<Link href="/instagram-stories">Live view</Link>
 					</Button>
 				</div>
 			</CardHeader>
@@ -135,37 +153,39 @@ export function TopStoriesCard() {
 							<Skeleton key={i} className="h-20 w-full" />
 						))}
 					</div>
-				) : stories.length === 0 ? (
+				) : ranked.length === 0 ? (
 					<div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed py-8 text-center">
 						<Trophy className="h-8 w-8 text-muted-foreground/40" />
-						<p className="text-sm font-medium">No engagement data yet</p>
+						<p className="text-sm font-medium">No active IG stories</p>
 						<p className="max-w-xs text-xs text-muted-foreground">
-							Insights are pulled within the 24h story window. Once stories are
-							archived and the engagement cron runs, ranked results appear here.
+							Stories live for 24h. Post a story or wait for new content; this card
+							auto-refreshes.
 						</p>
 					</div>
 				) : (
 					<>
 						<div className="mb-2 flex items-center justify-between">
 							<div className="text-xs text-muted-foreground">
-								{stories.length} ranked · {selected.size} selected
+								{ranked.length} active · {selected.size} selected
 							</div>
 							<Button
 								variant="ghost"
 								size="sm"
 								className="h-7 text-xs"
 								onClick={selectTop}
-								disabled={composing}
+								disabled={sending}
 							>
-								Auto-pick top {Math.min(DEFAULT_TARGET, stories.length)}
+								Auto-pick top {Math.min(DEFAULT_TARGET, ranked.length)}
 							</Button>
 						</div>
 
 						<ul className="divide-y rounded-lg border">
-							{stories.slice(0, 10).map((s, idx) => {
+							{ranked.slice(0, 10).map((r, idx) => {
+								const s = r.story.story;
 								const isSelected = selected.has(s.id);
-								const score = s.engagementScore ?? 0;
-								const scorePct = maxScore > 0 ? (score / maxScore) * 100 : 0;
+								const ratePct = (r.rate * 100).toFixed(0);
+								const widthPct = maxRate > 0 ? (r.rate / maxRate) * 100 : 0;
+								const m = r.story.metrics;
 								return (
 									<li
 										key={s.id}
@@ -183,16 +203,16 @@ export function TopStoriesCard() {
 											aria-pressed={isSelected}
 											aria-label={isSelected ? 'Deselect story' : 'Select story'}
 										>
-											{s.thumbnailPath ? (
+											{s.thumbnail_url || s.media_url ? (
 												// eslint-disable-next-line @next/next/no-img-element
 												<img
-													src={s.thumbnailPath}
+													src={proxyUrl(s.thumbnail_url ?? s.media_url)}
 													alt=""
 													className="absolute inset-0 h-full w-full object-cover"
 												/>
 											) : (
 												<div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-700 to-slate-900">
-													{s.mediaType === 'VIDEO' ? (
+													{s.media_type === 'VIDEO' ? (
 														<Video className="h-4 w-4 text-white/50" />
 													) : (
 														<ImageIcon className="h-4 w-4 text-white/50" />
@@ -214,13 +234,21 @@ export function TopStoriesCard() {
 										<div className="flex-1 min-w-0">
 											<div className="flex items-center gap-1.5">
 												<div className="text-sm font-semibold tabular-nums">
-													{score.toFixed(0)}
+													{r.qualifies ? `${ratePct}%` : '—'}
 												</div>
 												<Badge variant="secondary" className="h-4 px-1 text-[10px]">
-													score
+													rate
 												</Badge>
+												{!r.qualifies && (
+													<Badge
+														variant="outline"
+														className="h-4 px-1 text-[9px] text-muted-foreground"
+													>
+														low impressions
+													</Badge>
+												)}
 												<span className="ml-auto text-[10px] text-muted-foreground">
-													{fmtAge(s.igTimestamp)} ago
+													{fmtAge(s.timestamp)} ago
 												</span>
 											</div>
 											<div className="mt-0.5 h-1 w-full overflow-hidden rounded-full bg-muted">
@@ -233,32 +261,21 @@ export function TopStoriesCard() {
 																? 'bg-emerald-500'
 																: 'bg-blue-500',
 													)}
-													style={{ width: `${Math.max(scorePct, 4)}%` }}
+													style={{ width: `${Math.max(widthPct, 4)}%` }}
 												/>
 											</div>
 											<div className="mt-1 flex items-center gap-3 text-[11px] text-muted-foreground">
-												<span className="flex items-center gap-1" title="Impressions">
+												<span className="flex items-center gap-1" title="Views">
 													<Eye className="h-3 w-3" />
-													{fmt(s.impressions)}
+													{fmt(m?.impressions ?? m?.views)}
 												</span>
 												<span className="flex items-center gap-1" title="Reach">
 													<Users className="h-3 w-3" />
-													{fmt(s.reach)}
+													{fmt(m?.reach)}
 												</span>
 												<span className="flex items-center gap-1" title="Replies">
 													<MessageCircle className="h-3 w-3" />
-													{fmt(s.replies)}
-												</span>
-												<span className="flex items-center gap-1" title="Shares">
-													<Share2 className="h-3 w-3 text-emerald-500" />
-													{fmt(s.shares)}
-												</span>
-												<span
-													className="flex items-center gap-1"
-													title="Total interactions"
-												>
-													<Zap className="h-3 w-3 text-amber-500" />
-													{fmt(s.totalInteractions)}
+													{fmt(m?.replies)}
 												</span>
 											</div>
 										</div>
@@ -272,20 +289,20 @@ export function TopStoriesCard() {
 								{selected.size < MIN_STORIES ? (
 									<>Pick {MIN_STORIES - selected.size} more</>
 								) : (
-									<>Ready to compose {selected.size} stories</>
+									<>Ready to send {selected.size} stories</>
 								)}
 							</div>
 							<Button
 								size="sm"
-								onClick={compose}
-								disabled={composing || selected.size < MIN_STORIES}
+								onClick={send}
+								disabled={sending || selected.size < MIN_STORIES}
 							>
-								{composing ? (
+								{sending ? (
 									<Loader2 className="h-4 w-4 animate-spin" />
 								) : (
-									<Film className="h-4 w-4" />
+									<Send className="h-4 w-4" />
 								)}
-								<span>Compose video</span>
+								<span>Send to TT inbox</span>
 							</Button>
 						</div>
 					</>

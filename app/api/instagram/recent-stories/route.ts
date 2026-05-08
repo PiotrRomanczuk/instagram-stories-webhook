@@ -20,7 +20,11 @@ export async function GET(request: NextRequest) {
 
 		// Get limit from query params (default 10)
 		const { searchParams } = new URL(request.url);
-		const limit = parseInt(searchParams.get('limit') || '10', 10);
+		const requested = parseInt(searchParams.get('limit') || '10', 10);
+		const limit = Math.min(
+			Math.max(1, Number.isFinite(requested) ? requested : 10),
+			200,
+		);
 
 		// Fetch recent stories
 		const result = await getRecentStories(session.user.id, limit);

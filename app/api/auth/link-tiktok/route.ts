@@ -22,15 +22,20 @@ export async function GET(req: NextRequest) {
     try {
         Logger.info(MODULE, 'Initiating TikTok link flow');
 
+        // Build URLs from NEXTAUTH_URL so cookies and redirects use the
+        // public origin even when running behind a Cloudflare/ngrok tunnel.
+        const appBase = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || req.url;
+        const isHttps = new URL(appBase).protocol === 'https:';
+
         const session = await getServerSession(authOptions);
         if (!session?.user?.id) {
             Logger.warn(MODULE, 'No session found, redirecting to signin');
-            return NextResponse.redirect(new URL('/auth/signin', req.url));
+            return NextResponse.redirect(new URL('/auth/signin', appBase));
         }
 
         const userId = session.user.id;
         const clientKey = process.env.TIKTOK_CLIENT_KEY;
-        const redirectUri = `${process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL}/api/auth/link-tiktok/callback`;
+        const redirectUri = `${appBase}/api/auth/link-tiktok/callback`;
 
         if (!clientKey) {
             throw new Error('TIKTOK_CLIENT_KEY not configured');
@@ -38,7 +43,7 @@ export async function GET(req: NextRequest) {
 
         // video.upload allows uploading the file to the user's TikTok drafts (inbox).
         // video.publish would post directly — keep it off so users finish in TikTok with music.
-        const scopes = ['user.info.basic', 'video.list', 'video.upload'].join(',');
+        const scopes = ['user.info.basic', 'video.upload'].join(',');
 
         // Generate signed state for CSRF protection
         const stateSecret = process.env.NEXTAUTH_SECRET || process.env.WEBHOOK_SECRET || '';
@@ -67,8 +72,13 @@ export async function GET(req: NextRequest) {
         const response = NextResponse.redirect(tiktokAuthUrl.toString());
         const cookieOpts = {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
+            // Browsers reject Set-Cookie with SameSite=None unless Secure is set,
+            // and most reject non-Secure cookies on HTTPS origins. Drive the
+            // flag from the public origin (NEXTAUTH_URL), not NODE_ENV — local
+            // dev behind a Cloudflare/ngrok tunnel is HTTPS even when NODE_ENV=development.
+            secure: isHttps,
             sameSite: 'lax' as const,
+            path: '/',
             maxAge: 600, // 10 minutes
         };
         response.cookies.set('tiktok_link_state', state, cookieOpts);

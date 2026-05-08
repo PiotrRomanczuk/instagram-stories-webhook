@@ -2,14 +2,13 @@ import type { LucideIcon } from 'lucide-react';
 import {
 	Home,
 	Archive,
-	Film,
 	Music,
 	Send,
 	ClipboardCheck,
 	Calendar,
 	CheckCircle2,
-	Activity,
-	Heart,
+	BarChart3,
+	TrendingUp,
 	Users,
 	Settings,
 	Plug,
@@ -43,23 +42,14 @@ const ADMIN_DEV_DEMO: UserRole[] = ['admin', 'developer', 'demo'];
 
 export const NAV_GROUPS: NavGroup[] = [
 	{
-		id: 'pipeline',
-		labelKey: 'pipeline',
+		id: 'tiktokPipeline',
+		labelKey: 'tiktokPipeline',
 		items: [
 			{ href: '/', labelKey: 'dashboard', icon: Home },
 			{ href: '/story-archive', labelKey: 'storyArchive', icon: Archive, roles: ADMIN_DEV },
-			{ href: '/compositions', labelKey: 'compositions', icon: Film, roles: ADMIN_DEV },
-			{ href: '/audio', labelKey: 'audio', icon: Music, roles: ADMIN_DEV },
-			{ href: '/posted-tiktok', labelKey: 'postedTiktok', icon: CheckCircle2, roles: ADMIN_DEV },
-		],
-	},
-	{
-		id: 'insights',
-		labelKey: 'insights',
-		roles: ADMIN_DEV,
-		items: [
-			{ href: '/insights', labelKey: 'engagement', icon: Heart },
-			{ href: '/analytics', labelKey: 'pipelineHealth', icon: Activity },
+			{ href: '/insights', labelKey: 'storyPerformance', icon: TrendingUp, roles: ADMIN_DEV },
+			{ href: '/posted-tiktok', labelKey: 'tiktokDrafts', icon: CheckCircle2, roles: ADMIN_DEV },
+			{ href: '/analytics', labelKey: 'pipelineAnalytics', icon: BarChart3, roles: ADMIN_DEV },
 		],
 	},
 	{
@@ -71,8 +61,8 @@ export const NAV_GROUPS: NavGroup[] = [
 		],
 	},
 	{
-		id: 'tools',
-		labelKey: 'tools',
+		id: 'legacy',
+		labelKey: 'legacy',
 		roles: ADMIN_DEV_DEMO,
 		defaultCollapsed: true,
 		items: [
@@ -82,6 +72,7 @@ export const NAV_GROUPS: NavGroup[] = [
 			{ href: '/schedule', labelKey: 'schedule', icon: Calendar, roles: ADMIN_DEV_DEMO },
 			{ href: '/posted-stories', labelKey: 'postedStories', icon: CheckCircle2, roles: ADMIN_DEV_DEMO },
 			{ href: '/memes', labelKey: 'memes', icon: Sparkles, roles: ADMIN_DEV },
+			{ href: '/audio', labelKey: 'audio', icon: Music, roles: ADMIN_DEV },
 		],
 	},
 	{

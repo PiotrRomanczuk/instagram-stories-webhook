@@ -18,6 +18,10 @@ export async function GET(req: NextRequest) {
 	await Logger.info(MODULE, '📥 Facebook callback received');
 	const session = await getServerSession(authOptions);
 	const { searchParams } = new URL(req.url);
+	// Build redirects from NEXTAUTH_URL so we land on the public host
+	// instead of the local listener when running behind a tunnel/proxy.
+	const baseUrl =
+		process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || req.url;
 	const code = searchParams.get('code');
 	const state = searchParams.get('state');
 	const error = searchParams.get('error');
@@ -29,7 +33,7 @@ export async function GET(req: NextRequest) {
 			error,
 			description: errorDesc,
 		});
-		return NextResponse.redirect(new URL('/?error=fb_auth_failed', req.url));
+		return NextResponse.redirect(new URL('/?error=fb_auth_failed', baseUrl));
 	}
 
 	// 2. Validate session
@@ -38,7 +42,7 @@ export async function GET(req: NextRequest) {
 			MODULE,
 			'⚠️ No session found during Facebook linking callback',
 		);
-		return NextResponse.redirect(new URL('/auth/signin', req.url));
+		return NextResponse.redirect(new URL('/auth/signin', baseUrl));
 	}
 
 	const userId = session.user.id;
@@ -51,7 +55,7 @@ export async function GET(req: NextRequest) {
 			'🔒 State mismatch in Facebook linking callback',
 			{ userId, state, cookieState },
 		);
-		return NextResponse.redirect(new URL('/?error=state_mismatch', req.url));
+		return NextResponse.redirect(new URL('/?error=state_mismatch', baseUrl));
 	}
 
 	// Verify state signature and contents
@@ -65,7 +69,7 @@ export async function GET(req: NextRequest) {
 			`🔒 State signature verification failed: ${stateVerification.error}`,
 			{ userId },
 		);
-		return NextResponse.redirect(new URL('/?error=invalid_state', req.url));
+		return NextResponse.redirect(new URL('/?error=invalid_state', baseUrl));
 	}
 
 	// Verify the userId in state matches the session (prevents session fixation)
@@ -78,14 +82,14 @@ export async function GET(req: NextRequest) {
 				stateUserId: stateVerification.data?.userId,
 			},
 		);
-		return NextResponse.redirect(new URL('/?error=user_mismatch', req.url));
+		return NextResponse.redirect(new URL('/?error=user_mismatch', baseUrl));
 	}
 
 	if (!code) {
 		await Logger.error(MODULE, '❌ No code provided in Facebook callback', {
 			userId,
 		});
-		return NextResponse.redirect(new URL('/?error=no_code', req.url));
+		return NextResponse.redirect(new URL('/?error=no_code', baseUrl));
 	}
 
 	try {
@@ -228,7 +232,7 @@ export async function GET(req: NextRequest) {
 		);
 
 		// 9. Redirect back to dashboard with success
-		const response = NextResponse.redirect(new URL('/?status=linked', req.url));
+		const response = NextResponse.redirect(new URL('/?status=linked', baseUrl));
 		response.cookies.delete('fb_link_state');
 		return response;
 	} catch (error: unknown) {
@@ -240,7 +244,7 @@ export async function GET(req: NextRequest) {
 			{ userId, error },
 		);
 		return NextResponse.redirect(
-			new URL('/?error=linking_failed', req.url),
+			new URL('/?error=linking_failed', baseUrl),
 		);
 	}
 }

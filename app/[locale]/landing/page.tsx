@@ -1,9 +1,9 @@
 import { LandingPage } from './landing-page';
 
 export const metadata = {
-	title: 'Marszal-Arts — Unified content queue for Instagram & TikTok',
+	title: 'Marszal — Schedule, swipe, ship.',
 	description:
-		'Marszal-Arts is a single-operator content automation tool. Queue, schedule, and publish your own Instagram Stories and TikTok videos from one place.',
+		'A pipeline-grade scheduler for Instagram Stories & TikTok. Submit, swipe-review, drag onto a calendar — Marszal auto-publishes through the Meta Graph API without you re-uploading a thing.',
 };
 
 export default function Landing() {
