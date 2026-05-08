@@ -158,7 +158,7 @@ describe('processScheduledPosts (mocked)', () => {
 		// Defaults that most tests need
 		vi.mocked(acquireContentProcessingLock).mockResolvedValue(true);
 		vi.mocked(releaseContentProcessingLock).mockResolvedValue(true);
-		vi.mocked(markContentPublished).mockResolvedValue(true);
+		vi.mocked(markContentPublished).mockResolvedValue(undefined);
 		vi.mocked(markContentFailed).mockResolvedValue(true);
 		vi.mocked(markContentCancelled).mockResolvedValue(true);
 		vi.mocked(generateContentHash).mockResolvedValue('hash-abc123');
@@ -499,7 +499,7 @@ describe('forceProcessPost (mocked)', () => {
 
 		vi.mocked(acquireContentProcessingLock).mockResolvedValue(true);
 		vi.mocked(releaseContentProcessingLock).mockResolvedValue(true);
-		vi.mocked(markContentPublished).mockResolvedValue(true);
+		vi.mocked(markContentPublished).mockResolvedValue(undefined);
 		vi.mocked(markContentFailed).mockResolvedValue(true);
 		vi.mocked(markContentCancelled).mockResolvedValue(true);
 		vi.mocked(generateContentHash).mockResolvedValue('hash-xyz');

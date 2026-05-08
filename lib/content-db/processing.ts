@@ -122,43 +122,78 @@ export async function releaseContentProcessingLock(id: string): Promise<boolean>
 	}
 }
 
+/**
+ * Reliability budget for markContentPublished — the post is live on Instagram
+ * by the time we get here, so a DB write failure means the system has drifted
+ * out of sync with reality. Three attempts with linear backoff before giving up.
+ */
+const MARK_PUBLISHED_MAX_ATTEMPTS = 3;
+const MARK_PUBLISHED_BACKOFF_MS = 1000;
+
+/**
+ * Reliable variant: retries transient DB failures internally and throws on
+ * exhaustion. A thrown error means Instagram has the post but content_items
+ * does not — operator reconciliation required.
+ */
 export async function markContentPublished(
 	id: string,
 	igMediaId: string,
 	contentHash?: string,
-): Promise<boolean> {
-	try {
-		const { data, error } = await supabaseAdmin
-			.from('content_items')
-			.update({
-				publishing_status: 'published',
-				published_at: new Date().toISOString(),
-				ig_media_id: igMediaId,
-				content_hash: contentHash,
-				error: null,
-				processing_started_at: null,
-				updated_at: new Date().toISOString(),
-			})
-			.eq('id', id)
-			.eq('publishing_status', 'processing')
-			.select('id')
-			.maybeSingle();
+): Promise<void> {
+	let lastError: unknown;
 
-		if (error) {
-			console.error('Error marking content as published:', error);
-			return false;
+	for (let attempt = 1; attempt <= MARK_PUBLISHED_MAX_ATTEMPTS; attempt++) {
+		try {
+			const { data, error } = await supabaseAdmin
+				.from('content_items')
+				.update({
+					publishing_status: 'published',
+					published_at: new Date().toISOString(),
+					ig_media_id: igMediaId,
+					content_hash: contentHash,
+					error: null,
+					processing_started_at: null,
+					updated_at: new Date().toISOString(),
+				})
+				.eq('id', id)
+				.eq('publishing_status', 'processing')
+				.select('id')
+				.maybeSingle();
+
+			if (error) {
+				lastError = error;
+				console.error(
+					`markContentPublished: DB error for ${id} (attempt ${attempt}/${MARK_PUBLISHED_MAX_ATTEMPTS}):`,
+					error,
+				);
+			} else if (!data) {
+				// Status moved on between fetch and write — no row to update.
+				// Not retryable; surface immediately so callers can decide.
+				throw new Error(
+					`markContentPublished: item ${id} was not in processing state, possible duplicate publish`,
+				);
+			} else {
+				return;
+			}
+		} catch (error) {
+			if (error instanceof Error && error.message.startsWith('markContentPublished:')) {
+				throw error;
+			}
+			lastError = error;
+			console.error(
+				`markContentPublished: unexpected error for ${id} (attempt ${attempt}/${MARK_PUBLISHED_MAX_ATTEMPTS}):`,
+				error,
+			);
 		}
 
-		if (!data) {
-			console.error(`markContentPublished: item ${id} was not in processing state, possible duplicate publish`);
-			return false;
+		if (attempt < MARK_PUBLISHED_MAX_ATTEMPTS) {
+			await new Promise((r) => setTimeout(r, MARK_PUBLISHED_BACKOFF_MS * attempt));
 		}
-
-		return true;
-	} catch (error) {
-		console.error('Error in markContentPublished:', error);
-		return false;
 	}
+
+	throw new Error(
+		`CRITICAL: Post ${id} published to Instagram (ig_media_id=${igMediaId}) but DB update failed after ${MARK_PUBLISHED_MAX_ATTEMPTS} attempts. Manual reconciliation required. Last error: ${lastError instanceof Error ? lastError.message : String(lastError)}`,
+	);
 }
 
 /**
