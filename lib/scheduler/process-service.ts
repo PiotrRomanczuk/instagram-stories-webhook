@@ -438,23 +438,17 @@ export async function processScheduledPosts(
 					item.userTags,
 				);
 
-				// 7. Update status to published with content hash
-				// BMS-157: Retry DB update to handle publish success + DB failure
-				let dbUpdateSuccess = false;
-				for (let dbAttempt = 0; dbAttempt < 3; dbAttempt++) {
-					dbUpdateSuccess = await lifecycle.markPublished(item.id, result.id, contentHash || undefined);
-					if (dbUpdateSuccess) break;
-					await Logger.warn(
-						MODULE,
-						`DB update failed for published post ${item.id}, retrying (${dbAttempt + 1}/3)`,
-					);
-					await new Promise((r) => setTimeout(r, 1000 * (dbAttempt + 1)));
-				}
-
-				if (!dbUpdateSuccess) {
+				// 7. Reconcile DB with Instagram. The lifecycle adapter retries
+				// internally and throws on exhaustion. We catch locally because
+				// the post is live on IG by this point — we must NOT fall into
+				// the outer catch and markFailed an already-published post.
+				try {
+					await lifecycle.markPublished(item.id, result.id, contentHash || undefined);
+				} catch (markPublishedError) {
 					await Logger.error(
 						MODULE,
-						`CRITICAL: Post ${item.id} was published to Instagram (ig_media_id=${result.id}) but DB update failed after 3 retries. Manual intervention required.`,
+						`CRITICAL: Post ${item.id} published to Instagram (ig_media_id=${result.id}) but DB reconciliation failed. Manual intervention required.`,
+						markPublishedError,
 					);
 				}
 

@@ -13,7 +13,14 @@ export interface ContentLifecycle {
     countUpcomingItems(maxTime: number): Promise<number>;
     getItemForProcessing(id: string): Promise<ContentItem | null>;
     acquireLock(id: string): Promise<boolean>;
-    markPublished(id: string, igMediaId: string, contentHash?: string): Promise<boolean>;
+    /**
+     * Records a successful publish. Reliable: the adapter retries internally and
+     * throws if the DB cannot be reconciled with the already-published Instagram
+     * media. Callers must NOT swallow this error — a thrown markPublished means
+     * the post is live on Instagram but the DB doesn't know, and an operator
+     * needs to reconcile.
+     */
+    markPublished(id: string, igMediaId: string, contentHash?: string): Promise<void>;
     markFailed(id: string, errorMessage: string, retryCount?: number): Promise<boolean>;
     markCancelled(id: string, reason: string): Promise<boolean>;
     markStoryProcessingComplete(id: string): Promise<void>;
@@ -93,9 +100,11 @@ export class InMemoryContentLifecycle implements ContentLifecycle {
         return true;
     }
 
-    async markPublished(id: string, igMediaId: string, contentHash?: string): Promise<boolean> {
+    async markPublished(id: string, igMediaId: string, contentHash?: string): Promise<void> {
         const rec = this.records.get(id);
-        if (!rec) return false;
+        if (!rec) {
+            throw new Error(`InMemoryContentLifecycle: unknown item ${id}`);
+        }
         rec.locked = false;
         rec.item = {
             ...rec.item,
@@ -104,7 +113,6 @@ export class InMemoryContentLifecycle implements ContentLifecycle {
             contentHash: contentHash ?? rec.item.contentHash,
         };
         this.events.push({ op: 'markPublished', id, payload: { igMediaId, contentHash } });
-        return true;
     }
 
     async markFailed(id: string, errorMessage: string, retryCount?: number): Promise<boolean> {
@@ -112,11 +120,20 @@ export class InMemoryContentLifecycle implements ContentLifecycle {
         if (!rec) return false;
         rec.locked = false;
         const terminal = retryCount !== undefined && retryCount >= 3;
+        // Mirror the prod backoff in lib/content-db/processing.ts (calculateRetryScheduledTime):
+        // non-terminal failures push scheduled_time into the future so getPendingItems
+        // won't re-pick the item until backoff elapses.
+        const backoffMs = [1 * 60 * 1000, 5 * 60 * 1000, 15 * 60 * 1000];
+        const nextScheduledTime =
+            !terminal && retryCount !== undefined && retryCount > 0
+                ? Date.now() + backoffMs[Math.min(retryCount - 1, backoffMs.length - 1)]
+                : rec.item.scheduledTime;
         rec.item = {
             ...rec.item,
             publishingStatus: terminal ? 'failed' : 'scheduled',
             error: errorMessage,
             retryCount: retryCount ?? rec.item.retryCount,
+            scheduledTime: nextScheduledTime,
         };
         this.events.push({ op: 'markFailed', id, payload: { errorMessage, retryCount } });
         return true;
