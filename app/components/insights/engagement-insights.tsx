@@ -6,6 +6,7 @@ import { useTheme } from 'next-themes';
 import { Skeleton } from '@/app/components/ui/skeleton';
 import type { InstagramStory } from '@/lib/instagram/media';
 import type { StoriesWithInsightsResponse } from '@/app/api/instagram/stories/with-insights/route';
+import type { UsedStoriesResponse } from '@/app/api/analytics/used-stories/route';
 import { rankStoriesByEngagement, scoreStory } from '@/lib/insights/score-story';
 import { insightsTokenStyle, MONO_STACK } from './insights-tokens';
 import { StatusBar } from './status-bar';
@@ -38,13 +39,21 @@ export function EngagementInsights() {
 		{ revalidateOnFocus: false, dedupingInterval: 60_000, keepPreviousData: true },
 	);
 
+	const { data: usedData } = useSWR<UsedStoriesResponse>(
+		'/api/analytics/used-stories',
+		fetcher,
+		{ revalidateOnFocus: false, dedupingInterval: 60_000, keepPreviousData: true },
+	);
+
 	const stories = useMemo(() => combined?.stories ?? [], [combined]);
 	const insights = useMemo(() => combined?.insights ?? {}, [combined]);
+	const usedById = useMemo(() => usedData?.used ?? {}, [usedData]);
 
 	const [selectedIds, setSelectedIds] = useState<string[]>([]);
 	const [filter, setFilter] = useState<FilterMode>('all');
 	const [sort, setSort] = useState<SortMode>('top');
 	const [qualifiedOnly, setQualifiedOnly] = useState(true);
+	const [hideUsed, setHideUsed] = useState(false);
 
 	const ranked = useMemo(() => {
 		const all = rankStoriesByEngagement(
@@ -54,6 +63,7 @@ export function EngagementInsights() {
 			if (filter === 'photos' && r.story.story.media_type !== 'IMAGE') return false;
 			if (filter === 'videos' && r.story.story.media_type !== 'VIDEO') return false;
 			if (qualifiedOnly && !r.qualifies) return false;
+			if (hideUsed && usedById[r.story.id]) return false;
 			return true;
 		});
 		if (sort === 'newest' || sort === 'oldest') {
@@ -66,7 +76,12 @@ export function EngagementInsights() {
 			);
 		}
 		return filtered;
-	}, [stories, insights, filter, sort, qualifiedOnly]);
+	}, [stories, insights, filter, sort, qualifiedOnly, hideUsed, usedById]);
+
+	const usedCountVisible = useMemo(
+		() => stories.reduce((acc, s) => (usedById[s.id] ? acc + 1 : acc), 0),
+		[stories, usedById],
+	);
 
 	const pendingCount = useMemo(
 		() => stories.filter((s) => !scoreStory(insights[s.id]?.metrics ?? {}).qualifies).length,
@@ -162,7 +177,7 @@ export function EngagementInsights() {
 					className="text-3xl font-bold tracking-tight sm:text-[32px]"
 					style={{ color: 'var(--ink)', letterSpacing: '-0.025em' }}
 				>
-					Story Engagement
+					TikTok Builder
 				</h1>
 				<p
 					className="max-w-[640px] text-[13.5px]"
@@ -179,11 +194,14 @@ export function EngagementInsights() {
 				filter={filter}
 				sort={sort}
 				qualifiedOnly={qualifiedOnly}
+				hideUsed={hideUsed}
+				usedCount={usedCountVisible}
 				total={stories.length}
 				shown={ranked.length}
 				onFilterChange={setFilter}
 				onSortChange={setSort}
 				onQualifiedOnlyChange={setQualifiedOnly}
+				onHideUsedChange={setHideUsed}
 			/>
 
 			<div
@@ -233,18 +251,23 @@ export function EngagementInsights() {
 									</button>
 								</div>
 							)}
-							{ranked.map((r, idx) => (
-								<LeaderboardRow
-									key={r.story.id}
-									story={r.story.story}
-									score={scoreStory(r.story.metrics ?? {})}
-									metrics={r.story.metrics}
-									rank={idx}
-									isSelected={selectedSet.has(r.story.id)}
-									position={positionByStory.get(r.story.id) ?? null}
-									onToggle={() => toggle(r.story.id)}
-								/>
-							))}
+							{ranked.map((r, idx) => {
+								const usedEntry = usedById[r.story.id];
+								return (
+									<LeaderboardRow
+										key={r.story.id}
+										story={r.story.story}
+										score={scoreStory(r.story.metrics ?? {})}
+										metrics={r.story.metrics}
+										rank={idx}
+										isSelected={selectedSet.has(r.story.id)}
+										position={positionByStory.get(r.story.id) ?? null}
+										usedAt={usedEntry?.usedAt ?? null}
+										usedVideoCount={usedEntry?.videoCount ?? 0}
+										onToggle={() => toggle(r.story.id)}
+									/>
+								);
+							})}
 						</>
 					)}
 				</div>

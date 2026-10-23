@@ -18,7 +18,19 @@ interface LeaderboardRowProps {
 	rank: number;
 	isSelected: boolean;
 	position: number | null;
+	usedAt: string | null;
+	usedVideoCount: number;
 	onToggle: () => void;
+}
+
+function fmtUsedDate(iso: string): string {
+	const d = new Date(iso);
+	if (Number.isNaN(d.getTime())) return 'unknown date';
+	return d.toLocaleDateString(undefined, {
+		month: 'short',
+		day: 'numeric',
+		year: d.getFullYear() === new Date().getFullYear() ? undefined : 'numeric',
+	});
 }
 
 function fmt(n: number | undefined): string {
@@ -49,6 +61,8 @@ export function LeaderboardRow({
 	rank,
 	isSelected,
 	position,
+	usedAt,
+	usedVideoCount,
 	onToggle,
 }: LeaderboardRowProps) {
 	const ratePct = (score.rate * 100).toFixed(0);
@@ -187,6 +201,33 @@ export function LeaderboardRow({
 								engagement
 							</span>
 						</>
+					)}
+					{usedAt && (
+						<span
+							className="uppercase"
+							title={
+								usedVideoCount > 1
+									? `Used in ${usedVideoCount} compilations · most recent ${fmtUsedDate(usedAt)}`
+									: `Used in compilation from ${fmtUsedDate(usedAt)}`
+							}
+							style={{
+								fontFamily: MONO_STACK,
+								fontSize: 10,
+								letterSpacing: '0.08em',
+								padding: '2px 6px',
+								borderRadius: 4,
+								background: 'var(--bg-2)',
+								color: 'var(--muted)',
+								boxShadow: 'inset 0 0 0 1px var(--line-2)',
+							}}
+						>
+							Used
+							{usedVideoCount > 1 && (
+								<span style={{ marginLeft: 4, color: 'var(--muted-2)' }}>
+									×{usedVideoCount}
+								</span>
+							)}
+						</span>
 					)}
 				</div>
 

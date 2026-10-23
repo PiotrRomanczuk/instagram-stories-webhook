@@ -9,11 +9,14 @@ interface LeaderboardToolbarProps {
 	filter: FilterMode;
 	sort: SortMode;
 	qualifiedOnly: boolean;
+	hideUsed: boolean;
+	usedCount: number;
 	total: number;
 	shown: number;
 	onFilterChange: (v: FilterMode) => void;
 	onSortChange: (v: SortMode) => void;
 	onQualifiedOnlyChange: (v: boolean) => void;
+	onHideUsedChange: (v: boolean) => void;
 }
 
 const FILTERS: { k: FilterMode; label: string }[] = [
@@ -32,11 +35,14 @@ export function LeaderboardToolbar({
 	filter,
 	sort,
 	qualifiedOnly,
+	hideUsed,
+	usedCount,
 	total,
 	shown,
 	onFilterChange,
 	onSortChange,
 	onQualifiedOnlyChange,
+	onHideUsedChange,
 }: LeaderboardToolbarProps) {
 	return (
 		<div className="flex flex-wrap items-center gap-3 px-5 py-3.5 sm:px-6">
@@ -143,6 +149,66 @@ export function LeaderboardToolbar({
 					/>
 				</button>
 				<span>Qualified only</span>
+
+				<span
+					aria-hidden
+					className="hidden sm:inline"
+					style={{ color: 'var(--muted-2)' }}
+				>
+					·
+				</span>
+
+				<button
+					type="button"
+					role="switch"
+					aria-checked={hideUsed}
+					onClick={() => onHideUsedChange(!hideUsed)}
+					className="relative inline-flex"
+					title={
+						usedCount > 0
+							? `${usedCount} ${usedCount === 1 ? 'story has' : 'stories have'} been used in a previous TikTok compilation`
+							: 'No previously used stories'
+					}
+					style={{
+						width: 28,
+						height: 16,
+						borderRadius: 999,
+						background: hideUsed ? 'var(--accent)' : 'var(--bar-track)',
+						boxShadow: hideUsed ? 'none' : 'inset 0 0 0 1px var(--line)',
+						cursor: 'pointer',
+						border: 'none',
+						padding: 0,
+					}}
+				>
+					<span
+						className="absolute"
+						style={{
+							top: 2,
+							left: hideUsed ? 14 : 2,
+							width: 12,
+							height: 12,
+							borderRadius: '50%',
+							background: '#fff',
+							boxShadow: '0 1px 2px rgba(0,0,0,0.2)',
+							transition: 'left 0.18s',
+						}}
+					/>
+				</button>
+				<span>
+					Hide already used
+					{usedCount > 0 && (
+						<span
+							style={{
+								marginLeft: 6,
+								fontFamily: MONO_STACK,
+								color: 'var(--muted-2)',
+							}}
+						>
+							{usedCount}
+						</span>
+					)}
+				</span>
+
 				<span
 					aria-hidden
 					className="hidden sm:inline"
