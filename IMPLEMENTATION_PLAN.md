@@ -1137,7 +1137,7 @@ BullMQ repeat job fires at 07:00 daily. Generates all 12 signs in parallel (text
 
 ## M11 — Strummy Integration
 
-> Requires Strummy (strummy.app) to have a stable API surface. Not started until M9 is live and stable.
+> Requires Strummy (strummy.online) to have a stable API surface. Not started until M9 is live and stable.
 
 ---
 

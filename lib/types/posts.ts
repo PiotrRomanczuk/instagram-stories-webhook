@@ -7,6 +7,7 @@ import {
 	ContentSource,
 	SubmissionStatus,
 	PublishingStatus,
+	PublishingChannel,
 	ProcessingStatus,
 	ProcessingBackend,
 } from './common';
@@ -21,6 +22,7 @@ export type {
 	ContentSource,
 	SubmissionStatus,
 	PublishingStatus,
+	PublishingChannel,
 	ProcessingStatus,
 	ProcessingBackend,
 };
@@ -102,8 +104,10 @@ export interface ContentItem {
 	processingStartedAt?: string;
 
 	// Publishing
+	publishingChannel?: PublishingChannel; // defaults to 'instagram' (DB column default)
 	publishedAt?: string;
 	igMediaId?: string;
+	tiktokPostId?: string;
 	error?: string;
 
 	// Metadata
@@ -197,7 +201,9 @@ export interface ContentItemRow {
 	scheduled_time?: number | string;
 	processing_started_at?: string;
 	published_at?: string;
+	publishing_channel?: string;
 	ig_media_id?: string;
+	tiktok_post_id?: string;
 	error?: string;
 	content_hash?: string;
 	idempotency_key?: string;
@@ -403,8 +409,10 @@ export function mapContentItemRow(row: ContentItemRow): ContentItem {
 		reviewedBy: row.reviewed_by,
 		scheduledTime: row.scheduled_time ? Number(row.scheduled_time) : undefined,
 		processingStartedAt: row.processing_started_at,
+		publishingChannel: (row.publishing_channel as PublishingChannel | undefined) ?? 'instagram',
 		publishedAt: row.published_at,
 		igMediaId: row.ig_media_id,
+		tiktokPostId: row.tiktok_post_id,
 		error: row.error,
 		contentHash: row.content_hash,
 		idempotencyKey: row.idempotency_key,

@@ -422,6 +422,19 @@ export async function forceProcessPost(
 			};
 		}
 
+		const channel = item.publishingChannel ?? 'instagram';
+		if (channel !== 'instagram') {
+			await Logger.warn(
+				MODULE,
+				`Cannot force-process post ${postId}: channel is ${channel}, only the phone worker can publish this row`,
+			);
+			return {
+				success: false,
+				error: `Channel ${channel} is owned by the device worker, not the IG publisher`,
+				httpStatus: 409,
+			};
+		}
+
 		const options: PublishContentItemOptions = { bypassDuplicateCheck: bypassDuplicates };
 		const outcome = await publishContentItem(item, lifecycle, options);
 

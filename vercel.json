@@ -4,5 +4,10 @@
 			"master": false
 		}
 	},
-	"crons": []
+	"crons": [
+		{
+			"path": "/api/cron/tiktok-health",
+			"schedule": "*/15 * * * *"
+		}
+	]
 }

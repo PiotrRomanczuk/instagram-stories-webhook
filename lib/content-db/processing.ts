@@ -16,7 +16,8 @@ const CONTENT_ITEM_COLUMNS = [
 	'processing_error', 'processing_backend', 'processing_applied',
 	'title', 'caption', 'user_tags', 'hashtags', 'source', 'submission_status',
 	'publishing_status', 'rejection_reason', 'reviewed_at', 'reviewed_by',
-	'scheduled_time', 'processing_started_at', 'published_at', 'ig_media_id',
+	'scheduled_time', 'processing_started_at', 'published_at',
+	'publishing_channel', 'ig_media_id', 'tiktok_post_id',
 	'error', 'content_hash', 'idempotency_key', 'retry_count', 'archived_at',
 	'environment', 'version', 'created_at', 'updated_at',
 ].join(', ');
@@ -31,6 +32,9 @@ export async function getPendingContentItems(maxItems: number = 25): Promise<Con
 			.select(CONTENT_ITEM_COLUMNS)
 			.eq('environment', getCurrentEnvironment())
 			.eq('publishing_status', 'scheduled')
+			// IG cron only owns Instagram rows. tiktok-device rows are pulled
+			// by the host worker via its own claim query.
+			.eq('publishing_channel', 'instagram')
 			.lte('scheduled_time', now)
 			.order('scheduled_time', { ascending: true })
 			.limit(maxItems);
@@ -398,6 +402,7 @@ async function countUpcomingItems(maxTime: number): Promise<number> {
 			.select('id', { count: 'exact', head: true })
 			.eq('environment', getCurrentEnvironment())
 			.eq('publishing_status', 'scheduled')
+			.eq('publishing_channel', 'instagram')
 			.gt('scheduled_time', now)
 			.lte('scheduled_time', maxTime);
 		return count ?? 0;

@@ -8,7 +8,7 @@
 
 import { supabaseAdmin } from '@/lib/config/supabase-admin';
 import { Logger } from '@/lib/utils/logger';
-import type { MediaType, PostType } from '@/lib/types';
+import type { MediaType, PostType, PublishingChannel } from '@/lib/types';
 
 const MODULE = 'instagram-audit';
 
@@ -18,6 +18,8 @@ export interface PublishAttemptContext {
     mediaType: MediaType;
     postType: PostType;
     caption?: string;
+    /** Defaults to 'instagram' for callers that pre-date multi-channel publishing. */
+    publishingChannel?: PublishingChannel;
 }
 
 export async function recordPublishSuccess(
@@ -33,6 +35,7 @@ export async function recordPublishSuccess(
             caption: ctx.caption,
             status: 'SUCCESS',
             ig_media_id: igMediaId,
+            publishing_channel: ctx.publishingChannel ?? 'instagram',
         });
     } catch (error) {
         await Logger.warn(MODULE, 'Failed to record publish success in publishing_logs', error);
@@ -52,6 +55,7 @@ export async function recordPublishFailure(
             caption: ctx.caption,
             status: 'FAILED',
             error_message: errorMessage,
+            publishing_channel: ctx.publishingChannel ?? 'instagram',
         });
     } catch (error) {
         await Logger.warn(MODULE, 'Failed to record publish failure in publishing_logs', error);

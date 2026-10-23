@@ -65,8 +65,15 @@ export class InMemoryContentLifecycle implements ContentLifecycle {
     }
 
     async getPendingItems(maxItems: number): Promise<ContentItem[]> {
+        // Mirror the production query: only Instagram rows participate
+        // in the IG cron batch. Tiktok-device rows are owned by the
+        // separate host-side worker.
         return Array.from(this.records.values())
-            .filter((r) => r.item.publishingStatus === 'scheduled')
+            .filter(
+                (r) =>
+                    r.item.publishingStatus === 'scheduled' &&
+                    (r.item.publishingChannel ?? 'instagram') === 'instagram',
+            )
             .map((r) => r.item)
             .slice(0, maxItems);
     }
@@ -76,6 +83,7 @@ export class InMemoryContentLifecycle implements ContentLifecycle {
         return Array.from(this.records.values()).filter(
             (r) =>
                 r.item.publishingStatus === 'scheduled' &&
+                (r.item.publishingChannel ?? 'instagram') === 'instagram' &&
                 r.item.scheduledTime !== undefined &&
                 r.item.scheduledTime > now &&
                 r.item.scheduledTime <= maxTime,

@@ -53,7 +53,7 @@ It also serves as a **content repurposing pipeline**: ingest existing content fr
 - All others: `{song} 🎸 Follow on TikTok for more → @{tiktok_handle}`
 
 **Future — Strummy integration:**
-This dispatch capability will eventually be embedded directly into the [Strummy](https://strummy.app) guitar teacher CRM. Guitar teachers would post lesson clips and promotional content without leaving their main workflow tool. See UC-04 below.
+This dispatch capability will eventually be embedded directly into the [Strummy](https://strummy.online) guitar teacher CRM. Guitar teachers would post lesson clips and promotional content without leaving their main workflow tool. See UC-04 below.
 
 ### UC-03: Marszal Meme Pipeline (client workflow)
 
@@ -118,7 +118,7 @@ This dispatch capability will eventually be embedded directly into the [Strummy]
 
 ### UC-05: Strummy Integration (future — not in scope for V1)
 
-*The dispatch engine built here gets embedded into [Strummy](https://strummy.app) (guitar teacher CRM) so guitar teachers can publish lesson clips and promotional content without leaving their main tool.*
+*The dispatch engine built here gets embedded into [Strummy](https://strummy.online) (guitar teacher CRM) so guitar teachers can publish lesson clips and promotional content without leaving their main tool.*
 
 **Why this makes sense:**
 - Strummy already has the user's practice schedule, student list, and lesson content — publishing short clips to TikTok/Instagram is a natural extension of the marketing workflow for a guitar teacher

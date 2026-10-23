@@ -108,6 +108,28 @@ export async function alertTokenExpiry(
 }
 
 /**
+ * Alert admins that a TikTok-publishing phone has gone offline (heartbeat stale).
+ */
+export async function alertTikTokDeviceOffline(
+	deviceLabel: string,
+	lastHeartbeatAt: string | null,
+): Promise<void> {
+	try {
+		const lastSeen = lastHeartbeatAt
+			? new Date(lastHeartbeatAt).toLocaleString()
+			: 'never';
+		await Logger.warn(MODULE, `🚨 Alerting admins: TikTok device ${deviceLabel} offline`);
+		await createAdminNotifications(
+			'TikTok Device Offline',
+			`Phone "${deviceLabel}" has stopped sending heartbeats (last seen ${lastSeen}). Scheduled TikTok Stories will not publish until the worker reconnects.`,
+			'system',
+		);
+	} catch (err) {
+		await Logger.warn(MODULE, 'Failed to send TikTok device offline alert', err);
+	}
+}
+
+/**
  * Alert admins that the Meta API quota is critically high (≥80%).
  */
 export async function alertHighQuota(
